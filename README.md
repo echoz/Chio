@@ -57,6 +57,25 @@ the simulation.
 Linux is an intended target but is unverified in this repository. Static Linux
 distribution with musl is also unverified and depends on upstream compatibility.
 
+### Colors over SSH
+
+For a true-color terminal such as Blink, declare that capability on the remote
+host when launching the dashboard:
+
+```sh
+COLORTERM=truecolor .build/debug/chio-dashboard
+# Or build and run:
+COLORTERM=truecolor swift run chio-dashboard
+```
+
+SSH may not forward `COLORTERM`. With only `TERM=xterm-256color`, the pinned
+SwiftTUI renderer falls back to 256 colors and incorrectly maps Chio's dark plum
+background (`#211D2A`) to gray (`#5F5F5F`). The launch prefix preserves the authored
+RGB palette through SwiftTUI's existing capability detection and applies only to
+that process. `NO_COLOR` remains respected; `--force-color` does not select true
+color. This addresses a missing capability declaration on true-color terminals;
+the upstream conversion still needs correction for actual 256-color terminals.
+
 ## Design direction
 
 - Apply a theme to native `GroupBox`, `List`, `TextField`, and `ProgressView` styles.
@@ -102,8 +121,9 @@ see [the design](Docs/Design.md).
 ## Verification
 
 `swift test` covers search rules, public hosted input, themed terminal cells,
-hint wrapping, and complete dashboard layouts. On the current macOS Command Line
-Tools toolchain, SwiftPM fails to discover the installed Testing macro plugin;
+true-color terminal emission, `NO_COLOR`, hint wrapping, and complete dashboard
+layouts. On the current macOS Command Line Tools toolchain, SwiftPM fails to
+discover the installed Testing macro plugin;
 the verified workaround is:
 
 ```sh

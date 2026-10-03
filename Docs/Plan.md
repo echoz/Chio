@@ -23,7 +23,7 @@ Swift 6.4, with SwiftTUI pinned at
 `2d84ac7083993da2ef52e9d3d30255467efb9553`:
 
 - `swift build --product chio-dashboard` passes.
-- 40 Swift Testing tests pass: 34 library tests and 6 dashboard tests, including
+- 42 Swift Testing tests pass: 36 library tests and 6 dashboard tests, including
   parameterized widths, themes, progress values, and sample scenarios.
 - Pure tests cover fuzzy ranking, Unicode matching, stable selection, and
   deterministic simulation transitions.
@@ -38,6 +38,15 @@ Swift 6.4, with SwiftTUI pinned at
   empty-data toggling, and normal exit with terminal restoration.
   A temporary local web-host preview was also visually inspected; it is separate
   evidence from terminal execution.
+- A separate macOS pseudo-terminal comparison reproduced the SSH color issue:
+  with `TERM=xterm-256color` and no `COLORTERM`, the default surface emits
+  `48;5;59` (gray). Adding `COLORTERM=truecolor` emits `48;2;33;29;42` (the authored
+  dark plum). Both runs exited normally and restored the alternate screen.
+  This proves emission, not final rendering on the user's Blink device.
+- Public `TerminalHost` emission regressions preserve the default foreground and
+  background RGB under the documented true-color environment and verify that
+  `NO_COLOR` still suppresses color. These capture bytes through a pipe without
+  taking ownership of a real terminal or using upstream testing SPI.
 
 The installed Command Line Tools' default SwiftPM backend does not discover its
 Swift Testing macro plugin automatically. The complete test run used the explicit
@@ -52,6 +61,13 @@ adds a runtime dependency.
 - Native list focus chrome is still owned by SwiftTUI's theme. Chio selection
   and authored content use Chio tokens; exact native focus palette customization
   requires an upstream public capability.
+- The pinned ANSI-256 quantizer rounds RGB channels onto uniformly spaced cube
+  coordinates, although the terminal cube is nonuniform, and ignores its grayscale
+  ramp. This washes out dark colors. True-color launch guidance is in the README;
+  actual 256-color fallback remains an upstream defect. For dependency upgrades,
+  compare the paused dashboard with `TERM=xterm-256color`, first without
+  `COLORTERM`, then with `COLORTERM=truecolor` (and without `NO_COLOR`). The latter
+  must preserve authored RGB; an eventual upstream fix should improve the former.
 - Native measurement can report `collection.unboundedRealization` for the four
   demo rows. Large-dataset performance and virtualization remain unverified.
 - Type-ahead during slash-to-search focus handoff appends to the query until the
