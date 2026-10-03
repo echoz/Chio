@@ -24,14 +24,17 @@ Markdown remain deferred.
 Use Swift 6.4 or later on macOS 15 or later, matching the pinned upstream requirements:
 
 ```sh
-swift run chio-dashboard
+swift run -c release chio-dashboard
 ```
+
+Use release mode for interactive use. SwiftTUI enables additional verification
+in debug builds; plain `swift run` uses debug mode and can feel noticeably slower.
 
 Or build once and run the binary directly:
 
 ```sh
-swift build --product chio-dashboard
-.build/debug/chio-dashboard
+swift build -c release --product chio-dashboard
+.build/release/chio-dashboard
 ```
 
 Use arrows to navigate, `/` to search, Enter to open, and Escape to clear search.
@@ -71,9 +74,9 @@ For a true-color terminal such as Blink, declare that capability on the remote
 host when launching the dashboard:
 
 ```sh
-COLORTERM=truecolor .build/debug/chio-dashboard
+COLORTERM=truecolor .build/release/chio-dashboard
 # Or build and run:
-COLORTERM=truecolor swift run chio-dashboard
+COLORTERM=truecolor swift run -c release chio-dashboard
 ```
 
 SSH may not forward `COLORTERM`. With only `TERM=xterm-256color`, the pinned

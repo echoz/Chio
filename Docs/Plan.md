@@ -31,6 +31,8 @@ Swift 6.4, with SwiftTUI pinned at
 `2d84ac7083993da2ef52e9d3d30255467efb9553`:
 
 - `swift build --product chio-dashboard` passes.
+- `swift build -c release --product chio-dashboard` also passes. Interactive
+  launch instructions use release mode; debug enables extra upstream verification.
 - 70 Swift Testing tests pass: 47 library tests and 23 dashboard tests, including
   parameterized widths, themes, progress values, sample scenarios, and form states.
   Evidence comprises a full 69-test run followed by the added parameterized form
@@ -76,6 +78,26 @@ plugin flag documented in the README. The native backend was also attempted but
 could not find the Testing module. Neither workaround changes package sources or
 adds a runtime dependency.
 
+## Responsiveness baseline
+
+Local measurements of commit `2aba923` used a 100 × 30 pseudo-terminal,
+`COLORTERM=truecolor`, and `--paused`, with no concurrent build or diagnostic
+overrides. The same script injected individual keys and reconstructed terminal
+text until the list selection marker or typed Name value became visible.
+
+| Interaction | Debug | Release |
+| --- | ---: | ---: |
+| Selection change, median of six keys | 344 ms | 73 ms |
+| Name typing, median of six characters | 729 ms | 122 ms |
+| Open form, one observation | 1,215 ms | 208 ms |
+
+These are small local samples, including capture/decoding overhead, with no SSH
+transit or Blink display time. Both binaries exited normally. Release materially
+improves responsiveness, but typing remains noticeable locally; this does not
+establish which render phase dominates or promise performance on another host.
+Use the supported `SWIFTTUI_DIAGNOSTICS` frame trace to investigate that next,
+alongside terminal input-to-output timing, before adding caches or changing layout.
+
 ## Remaining boundaries
 
 - The public API is experimental. Keep the SwiftTUI revision pinned while its
@@ -111,7 +133,8 @@ adds a runtime dependency.
 ## Next decisions after trying the dashboard
 
 1. Gather visual and interaction feedback from running the binary at everyday
-   terminal sizes. Refine this slice before adding more components.
+   terminal sizes in release mode. Profile typing and selection latency against
+   the baseline above before adding more components.
 2. Validate a Linux build and an actual static musl executable separately, against
    the pinned dependency. Keep failures visible rather than promising portability.
 3. Investigate upstream public focus-theme integration and finite collection
