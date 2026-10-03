@@ -21,7 +21,7 @@ state store, or focus manager is part of this design.
 | --- | --- | --- |
 | Lip Gloss | View layout, padding, borders, colors, style protocols, environment | Semantic tokens and coherent defaults |
 | Bubbles | Lists, tables, text editing, scrolling, spinners, progress, command palettes | Search composition, result/empty states, contextual help |
-| Huh | Bindings, native input controls, sections, submission, focus | Future validation and form workflow |
+| Huh | Bindings, native input controls, submission, focus | Field presentation, validation visibility, form workflow |
 | Glamour | Rich text and links as views; no Markdown parser | Future AST-to-view document rendering |
 | Charmtone/shared palettes | Color primitives and terminal capability handling | A small semantic palette, not a color catalog |
 
@@ -41,8 +41,8 @@ Consumers can copy the default and customize its colors without rebuilding style
 Component options specify behavior; application composition specifies content.
 
 Changing theme preserves query, stable selection, focus, and entered values.
-Native `GroupBox`, `List`, `TextField`, and `ProgressView` styles share the same
-semantic roles. The first appearance closely follows Huh's Charm palette and
+Native `GroupBox`, `List`, `TextField`, `Picker`, `Toggle`, and `ProgressView`
+styles share the same semantic roles. The first appearance closely follows Huh's Charm palette and
 Bubbles' selected rows, muted metadata, and compact keyboard help.
 
 ## Searchable selection
@@ -92,16 +92,65 @@ At widths below 88 cells the dashboard stacks its sections; below 26 rows it
 prioritizes the list and essential shortcuts. The full layout is intended for
 100 × 30 or larger, with a usable compact layout at 36 × 18.
 
+## Forms and agent creation
+
+The second slice adds a Create agent screen through native `fullScreenCover`.
+The dashboard stays mounted underneath, preserving its query, selection, and
+native focus for cancellation. The form uses an eager `VStack` in a native
+`ScrollView`, with Create and Cancel outside the scroll area. It explicitly
+requests Name focus on arrival; native Tab and scroll reveal handle navigation.
+Theme and geometry changes update the same view structure and retain draft values.
+
+Chio supplies two small form primitives:
+
+- `FormField` composes a heading, a supplied native control, and a wrapping helper
+  or visibly marked error. Errors replace helpers, and semantic theme colors
+  determine presentation. Picker/toggle labels remain accessible but are visually
+  omitted inside the field to avoid duplicate headings.
+- `FormValidation<Field>` records field exits and attempted submission. Apps
+  supply their current ordered `Issue` values each time; Chio does not cache
+  validation results or own rules. `message(for:in:)` hides errors until blur or
+  submission. `submit(_:)` reveals errors and returns the first invalid field for
+  an application-owned native focus binding. Hidden fields are excluded by the app.
+
+There is no new form result builder, field registry, or focus manager. The pinned
+SwiftTUI has no `Form` declaration; ordinary view composition remains the API.
+Chio's compact native picker style displays one value and maps arrow keys to
+native selection. It also retains wheel/accessibility selection; it does not
+present a pointer option menu. The toggle keeps native Space/Enter activation.
+
+The demo requires a nonblank Name (at most 32 characters). Choosing Test reveals
+a required Test suite (at most 40 characters); switching roles retains its draft
+but removes its validation while hidden. Outer whitespace is trimmed on creation.
+Start immediately defaults on. Create adds one UUID-identified simulated agent,
+clears the dashboard filter, and selects it; Cancel adds nothing. Agents exist
+only for the current process. Validation prevents submission through both the
+form action and the draft-to-agent boundary.
+
+`n` opens from dashboard results; ordinary characters inside the form edit native
+controls. Escape cancels, Ctrl-S submits, and Ctrl-T changes theme. Text-field
+Return also submits; Return on the toggle keeps native toggle behavior. Duplicate
+submit callbacks are guarded by the current presentation state.
+
+SwiftTUI drains input batches before rendering a newly presented cover. During
+that handoff, the dashboard guards its shortcuts, carries simple name type-ahead,
+maps an initial Tab to a native Role focus request, and handles submission.
+Invalid submission reveals errors when the cover arrives; valid submission adds
+one agent. The return transition consumes stale events until the updated list
+has rendered. Native editing resumes when the cover owns focus. This is a narrow
+transition adapter, not general replay of arbitrary navigation across unrendered
+controls.
+
 ## Source ownership
 
 | Path | Responsibility |
 | --- | --- |
-| `Sources/Chio/Domain` | Theme values and pure search decisions |
+| `Sources/Chio/Domain` | Theme values, pure search decisions, and validation visibility |
 | `Sources/Chio/Presentation` | Components and environment integration |
 | `Sources/Chio/Presentation/Styles` | Native SwiftTUI control styles |
 | `Examples/AgentDashboard` | Demo model, presentation, and thin entry point |
 | `Tests/ChioTests` | Tests grouped by corresponding responsibility |
-| `Tests/ChioDashboardTests` | Simulation and complete dashboard rendering |
+| `Tests/ChioDashboardTests` | Simulation, draft rules, and dashboard/form rendering and interaction |
 
 Only create responsibility groups when they contain useful code. Keep each
 independently useful production type in a matching file and protocol conformances
@@ -133,5 +182,5 @@ work, not a second Chio quantizer or an unconditional true-color override.
 - [Huh themes](https://github.com/charmbracelet/huh/blob/main/theme.go)
 - [Bubbles list](https://github.com/charmbracelet/bubbles/tree/main/list) and [help](https://github.com/charmbracelet/bubbles/tree/main/help)
 
-Charm supplies visual references, not a Go API port. Forms, Markdown, and further
-products remain deferred until the first slice demonstrates the design.
+Charm supplies visual references, not a Go API port. Broader forms, Markdown,
+and further products remain deferred while these concrete workflows are refined.

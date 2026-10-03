@@ -22,6 +22,8 @@ extension View {
             .textFieldStyle(ChioTextFieldStyle(theme: theme))
             .progressViewStyle(ChioProgressViewStyle(theme: theme))
             .buttonStyle(ChioButtonStyle(theme: theme))
+            .pickerStyle(ChioPickerStyle(theme: theme))
+            .toggleStyle(ChioToggleStyle(theme: theme))
             .foregroundStyle(theme.colors.foreground)
             .tint(theme.colors.accent)
             .background(theme.colors.surface)

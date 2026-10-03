@@ -12,12 +12,12 @@ The APIs follow Swift composition and native SwiftTUI styles.
 
 ## Current status
 
-The first vertical slice includes one public library, `Chio`, and the
-`chio-dashboard` executable. Run it to try search, selection, progress, theme
-changes, and successful or failed simulated runs. It requires no external services.
+The package includes one public library, `Chio`, and the `chio-dashboard`
+executable. Run it to try search, selection, agent creation, inline validation,
+progress, themes, and successful or failed simulated runs. It requires no external services.
 
-This is an early API to learn from, not a stable release. Forms and Markdown are
-deferred.
+This is an early API to learn from, not a stable release. Broader forms and
+Markdown remain deferred.
 
 ## Try the dashboard
 
@@ -39,6 +39,14 @@ While browsing: `r` starts a run, `f` simulates failure, `p` pauses progress,
 `e` toggles empty data, `t` changes theme, and `q` quits. Ctrl-C also exits.
 The `›` marker is selection; the native `▌` shows the current list navigation
 target. Tab moves native focus; Enter opens the selected item.
+
+Press `n` while browsing to create an agent. Enter its name, choose a role with
+the arrow keys, and use Space to toggle Start immediately. Test agents also
+require a suite name. Tab and Shift-Tab move between controls. Create or Ctrl-S
+submits; Return in a text field also submits. Invalid submission shows inline
+errors and focuses the first invalid field. Escape cancels; Ctrl-T changes theme
+while preserving the draft. Successful creation clears the filter and selects
+the new agent. Created agents are simulated and last only for the current session.
 
 Try 100 × 30 for the full dashboard. Narrow windows stack the sections; short
 windows prioritize the list and essential hints. The compact layout fits 36 × 18.
@@ -78,8 +86,8 @@ the upstream conversion still needs correction for actual 256-color terminals.
 
 ## Design direction
 
-- Apply a theme to native `GroupBox`, `List`, `TextField`, and `ProgressView` styles.
-- Compose reusable `KeyHint`, `KeyHints`, `StatusBar`, and `SearchableList` views.
+- Apply a theme to native `GroupBox`, `List`, `TextField`, `Picker`, `Toggle`, and `ProgressView` styles.
+- Compose reusable `KeyHint`, `KeyHints`, `StatusBar`, `SearchableList`, and `FormField` views.
 - Customize nested semantic colors, spacing, and treatments through `.chioTheme(...)`.
 - Keep SwiftTUI responsible for rendering, state, input, focus, scrolling, and lifecycle.
 
@@ -118,11 +126,21 @@ and `.onResultKeyPress` for application shortcuts that must not consume search
 text. Native row focus chrome currently remains an upstream styling boundary;
 see [the design](Docs/Design.md).
 
+Forms use the same native composition. `FormField` supplies consistent headings,
+help, and inline errors; `FormValidation<Field>` controls when current errors
+become visible and returns the first invalid field on submission. Applications
+own the validation rules, bindings, and native focus requests. See
+[CreateAgentView](Examples/AgentDashboard/Presentation/CreateAgentView.swift) for
+the complete workflow and [AgentDraft](Examples/AgentDashboard/Domain/AgentDraft.swift)
+for its pure validation rules.
+
 ## Verification
 
-`swift test` covers search rules, public hosted input, themed terminal cells,
-true-color terminal emission, `NO_COLOR`, hint wrapping, and complete dashboard
-layouts. On the current macOS Command Line Tools toolchain, SwiftPM fails to
+`swift test` covers search and validation rules, public hosted input, themed
+terminal cells, true-color terminal emission, `NO_COLOR`, hint wrapping, and
+dashboard/form layouts. Form interactions include conditional fields, first-invalid
+focus, creation, cancellation, theme changes, resizing, and batched input.
+On the current macOS Command Line Tools toolchain, SwiftPM fails to
 discover the installed Testing macro plugin;
 the verified workaround is:
 
@@ -137,7 +155,7 @@ warning for the four demo rows; virtualization of large datasets is not validate
 
 ## Repository
 
-`Sources/Chio/Domain` owns theme values and pure search rules.
+`Sources/Chio/Domain` owns theme values, pure search rules, and validation visibility.
 `Sources/Chio/Presentation` owns views and styles, with native styles in `Presentation/Styles`.
 `Examples/AgentDashboard` owns the simulated demo; `Tests/ChioTests` mirrors library
 responsibilities and checks rendering and behavior without requiring a real TTY.

@@ -1,21 +1,29 @@
 # Implementation plan and verification
 
-The first slice is a runnable local dashboard using simulated agents. Accepted
-contracts and ownership live in [Design.md](Design.md); commands and interaction
-instructions live in [the README](../README.md).
+The delivered slices are a runnable local dashboard and agent creation using
+simulated agents. Accepted contracts and ownership live in [Design.md](Design.md);
+commands and interaction instructions live in [the README](../README.md).
 
-## Delivered slice
+## Delivered slices
 
 - One `Chio` library depending on the published `SwiftTUIViews` product; one
   `chio-dashboard` executable using the SwiftTUI runtime.
 - Semantic theme values, a Charm-inspired default and a light customization,
-  plus native GroupBox, List, TextField, Button, and ProgressView styles.
+  plus native GroupBox, List, TextField, Button, Picker, Toggle, and ProgressView styles.
 - KeyHint, wrapping KeyHints, StatusBar, and searchable selection with fuzzy or
   substring filtering, stable IDs, result counts, and distinct empty states.
 - Simulated running, completed, failed, paused, and empty states; theme switching;
   responsive layout and deterministic plain-text snapshot scenarios.
 - Independent read-only review completed. Its focus/activation and snapshot-flag
   findings were fixed and verified before the initial commit.
+- Create agent screen with native text entry, role selection, a conditional Test
+  suite field, and Start immediately toggle. Creation adds and reveals the selected
+  agent; cancellation restores the dashboard's query, selection, and native focus.
+- Reusable FormField help/error presentation and FormValidation visibility state.
+  Application-owned rules run at submission and the draft-to-agent boundary;
+  failed submission focuses and reveals the first invalid field.
+- Independent read-only form review completed. Its new-row visibility, narrow
+  error visibility, and batched-submission findings were fixed and verified.
 
 ## Verified on macOS
 
@@ -23,8 +31,10 @@ Swift 6.4, with SwiftTUI pinned at
 `2d84ac7083993da2ef52e9d3d30255467efb9553`:
 
 - `swift build --product chio-dashboard` passes.
-- 42 Swift Testing tests pass: 36 library tests and 6 dashboard tests, including
-  parameterized widths, themes, progress values, and sample scenarios.
+- 70 Swift Testing tests pass: 47 library tests and 23 dashboard tests, including
+  parameterized widths, themes, progress values, sample scenarios, and form states.
+  Evidence comprises a full 69-test run followed by the added parameterized form
+  layout test (six size/theme cases); no behavior changed between those runs.
 - Pure tests cover fuzzy ranking, Unicode matching, stable selection, and
   deterministic simulation transitions.
 - Public terminal-cell rendering checks cover theme colors, progress, wrapping
@@ -33,11 +43,23 @@ Swift 6.4, with SwiftTUI pinned at
 - Public hosted-session tests cover Enter/Escape, arrows, Tab/Shift-Tab, internal
   and external query ownership, theme/resize preservation, and raw input batches
   `/q`, `/q\r\r`, `/zzz\r\r`, and `/\t` without intermediate frame waits.
+- Form tests cover validation timing, conditional fields and native navigation,
+  first-invalid focus and visible errors at 36 × 18, draft/focus retention through
+  theme and resize, creation, duplicate submission, and cancellation restoration.
+  Raw opening batches include `nq`, `n\t`, `nRelease\r\r`, repeated Ctrl-S after
+  `nRelease`, and invalid `n\r`. Cell renders cover both themes at 100 × 30,
+  50 × 30, and 36 × 18 with persistent actions and keyboard help.
 - A real macOS pseudo-terminal smoke check covers launch, search text that
   includes `q`, Escape, theme switching, simulated failure, running to completion,
   empty-data toggling, and normal exit with terminal restoration.
   A temporary local web-host preview was also visually inspected; it is separate
   evidence from terminal execution.
+- A second real pseudo-terminal check covers opening Create agent, invalid
+  submission, Name entry, native role arrows, the conditional Test suite field,
+  Start immediately toggling, and successful creation. The new agent and suite
+  appear in the dashboard, the footer remains visible, and `q` exits with code
+  zero and restores the alternate screen. This checks terminal output and input,
+  not the user's Blink device; the new form was not inspected in a browser.
 - A separate macOS pseudo-terminal comparison reproduced the SSH color issue:
   with `TERM=xterm-256color` and no `COLORTERM`, the default surface emits
   `48;5;59` (gray). Adding `COLORTERM=truecolor` emits `48;2;33;29;42` (the authored
@@ -73,11 +95,18 @@ adds a runtime dependency.
 - Type-ahead during slash-to-search focus handoff appends to the query until the
   native editor acquires focus. Chio does not implement an editor, event loop,
   layout engine, or focus graph.
+- Native full-screen presentation also drains input before its first frame. The
+  demo covers simple Name type-ahead, an initial Tab, and valid/invalid submission
+  during that handoff. Arbitrary multi-control navigation within the same opening
+  input batch remains unsupported; a general solution belongs in SwiftTUI.
 - The terminal smoke check used a pseudo-terminal, not every terminal emulator or
   assistive technology. Accessibility and color-capability coverage is partial.
 - Linux execution and Static Linux SDK/musl linking remain unverified. Inspected
   upstream POSIX branches include Glibc paths without corresponding Musl paths;
   this is a source compatibility risk, not a demonstrated build failure here.
+  A local tool inventory found no Linux container/VM runtime and no installed
+  Swift SDK directory. No Linux build or execution was attempted. Source risks
+  include terminal reads, detached process spawning, socket constants, and C math.
 
 ## Next decisions after trying the dashboard
 
@@ -87,9 +116,10 @@ adds a runtime dependency.
    the pinned dependency. Keep failures visible rather than promising portability.
 3. Investigate upstream public focus-theme integration and finite collection
    measurement before scaling the list to large datasets.
-4. Evaluate forms through native controls, validation, help/error presentation,
-   and first-invalid-field focus. Evaluate Markdown through an AST and composed
-   SwiftTUI views; choose a parser only when that slice is authorized.
+4. Try the Create agent workflow before broadening the form API. Additional field
+   types and grouped forms should follow concrete application needs.
+5. Evaluate Markdown through an AST and composed SwiftTUI views; choose a parser
+   only when that slice is authorized.
 
 No new products, renderer, general focus manager, or external agent integration
 are required by these next decisions.

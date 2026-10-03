@@ -1,4 +1,5 @@
 import Chio
+import Foundation
 import SwiftTUI
 
 @MainActor
@@ -11,6 +12,12 @@ struct DashboardView {
     @State private var isLight: Bool
     @State private var isPaused: Bool
     @State private var openedAgent: String?
+    @State private var isCreating = false
+    @State private var creationNumber = 0
+    @State private var draft = AgentDraft()
+    @State private var creationEntry = CreateAgentView.Entry.name
+    @State private var validateOnArrival = false
+    @State private var isReturningFromCreation = false
     let animates: Bool
 
     init(scenario: DashboardScenario = .normal, light: Bool = false, animates: Bool = true, paused: Bool = false) {
@@ -43,8 +50,40 @@ struct DashboardView {
     }
 
     private func handleKey(_ press: KeyPress) -> KeyPressResult {
+        // A read can contain n and subsequent keys before the cover appears.
+        // Prevent stale dashboard handlers from executing shortcuts during that
+        // handoff; native controls own input once the cover has focus.
+        if isCreating {
+            if press == KeyPress(.character("s"), modifiers: .ctrl) {
+                submitDuringPresentation()
+                return .handled
+            }
+            if press == KeyPress(.character("t"), modifiers: .ctrl) {
+                isLight.toggle()
+                return .handled
+            }
+            guard press.modifiers.subtracting(.shift).isEmpty else { return .handled }
+            switch press.key {
+            case .character(let character) where creationEntry == .name: draft.name.append(character)
+            case .space where creationEntry == .name: draft.name.append(" ")
+            case .backspace:
+                if creationEntry == .name && !draft.name.isEmpty { draft.name.removeLast() }
+            case .tab:
+                creationEntry = press.modifiers.contains(.shift) ? .name : .role
+            case .return: submitDuringPresentation()
+            case .escape: isCreating = false
+            default: break
+            }
+            return .handled
+        }
         guard press.modifiers.isEmpty else { return .ignored }
         switch press.key {
+        case .character("n"):
+            draft = AgentDraft()
+            creationEntry = .name
+            validateOnArrival = false
+            creationNumber += 1
+            isCreating = true
         case .character("q"):
             _ = requestTermination()
         case .character("t"):
@@ -61,6 +100,25 @@ struct DashboardView {
             return .ignored
         }
         return .handled
+    }
+
+    private func createAgent() {
+        guard isCreating, let agent = draft.makeAgent(id: UUID().uuidString) else { return }
+        agents.append(agent)
+        query = ""
+        selection = agent.id
+        openedAgent = agent.name
+        if draft.startImmediately { isPaused = false }
+        isCreating = false
+        isReturningFromCreation = true
+    }
+
+    private func submitDuringPresentation() {
+        if draft.issues.isEmpty {
+            createAgent()
+        } else {
+            validateOnArrival = true
+        }
     }
 
     private func header(compact: Bool) -> some View {
@@ -94,6 +152,7 @@ struct DashboardView {
                     KeyHint("↑↓", "navigate")
                     KeyHint("↵", "open")
                     KeyHint("/", "filter")
+                    KeyHint("n", "new")
                     if !brief {
                         KeyHint("r", "run")
                         KeyHint("f", "fail")
@@ -125,38 +184,62 @@ extension DashboardView: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 header(compact: geometry.size.width < 60)
-                layout {
-                    GroupBox("Agents") {
-                        SearchableList(agents, selection: $selection, query: $query, searchText: \.name) { agent in
-                            AgentRow(agent: agent, compact: compact)
+                GeometryReader { contentGeometry in
+                    layout {
+                        GroupBox("Agents") {
+                            ScrollViewReader { proxy in
+                                SearchableList(agents, selection: $selection, query: $query, searchText: \.name) { agent in
+                                    AgentRow(agent: agent, compact: compact)
+                                }
+                                .filtering(.fuzzy)
+                                .onActivate { agent in openedAgent = agent.name }
+                                .onSearchFocusChange { isSearching = $0 }
+                                .onResultKeyPress(perform: handleKey)
+                                .onKeyPress { press in
+                                    // Until the appended row renders, native list handlers
+                                    // still hold the old items and can overwrite selection.
+                                    if isReturningFromCreation { return .handled }
+                                    return isCreating ? handleKey(press) : .ignored
+                                }
+                                .onChange(of: agents.count) {
+                                    if agents.last?.id == selection {
+                                        proxy.scrollTo(edge: .bottom)
+                                    }
+                                    isReturningFromCreation = false
+                                }
+                            }
                         }
-                        .filtering(.fuzzy)
-                        .onActivate { agent in openedAgent = agent.name }
-                        .onSearchFocusChange { isSearching = $0 }
-                        .onResultKeyPress(perform: handleKey)
-                    }
-                    .frame(width: wide ? max(35, (geometry.size.width - 6) / 2) : nil,
-                           height: wide || brief ? nil : max(8, geometry.size.height - 18))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                        .frame(width: wide ? max(35, (geometry.size.width - 6) / 2) : nil,
+                               height: wide || brief ? contentGeometry.size.height : max(8, contentGeometry.size.height - 7))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
-                    if wide || !brief {
-                        AgentDetail(agent: selectedAgent, compact: compact, run: runSelected, fail: failSelected)
-                            .onKeyPress(perform: handleKey)
+                        if wide || !brief {
+                            AgentDetail(agent: selectedAgent, compact: compact, run: runSelected, fail: failSelected)
+                                .onKeyPress(perform: handleKey)
+                        }
                     }
+                    .frame(width: contentGeometry.size.width, height: contentGeometry.size.height, alignment: .topLeading)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
                 if let openedAgent, !brief {
                     Text("Opened \(openedAgent) · activity shown above")
                         .foregroundStyle(theme.colors.secondaryText)
+                        .layoutPriority(1)
                 }
                 footer(brief: brief)
+                    .layoutPriority(1)
             }
             .padding(.horizontal, 2)
             .padding(.vertical, 1)
             .frame(width: geometry.size.width, height: geometry.size.height, alignment: .topLeading)
             .clipped()
             .chioTheme(layoutTheme)
+        }
+        .fullScreenCover(isPresented: $isCreating) {
+            CreateAgentView(draft: $draft, isLight: $isLight, entry: creationEntry,
+                            validateOnArrival: validateOnArrival,
+                            create: createAgent, cancel: { isCreating = false })
+                .id(creationNumber)
         }
         .task {
             guard animates else { return }
