@@ -390,6 +390,27 @@ repeatable terminal checks without changing the public API or dependency pins.
   this does not establish a fix. CI now retains Swift Testing's xUnit report as
   well as console logs to improve evidence on subsequent failures. Assertions,
   deadlines, dependency pins, and the original dashboard remain unchanged.
+- [Run 37210474889](https://github.com/echoz/Chio/actions/runs/37210474889) for
+  text entry (`aae078e`) passed all 170 tests, the optimized build, eight snapshots,
+  and three terminal checks on macOS. Linux passed all 108 library tests but
+  reported 11 failures in the older dashboard form/report/palette workflows.
+  The new choice and text-entry workflows passed on both platforms.
+- Local x86_64 Linux reproduction under Rosetta established a debug timing
+  failure matching the retained CI frames. The form's arrival callback executed,
+  and Name received focus after about 5.4 seconds, beyond the unchanged five-second
+  wait. Both palette commands also executed and eventually presented reports.
+  Public runtime diagnostics reported only the already-known collection warning;
+  the reproduction did not establish a lost callback or state write. An unchanged
+  Linux ARM64 run passed the 13 targeted tests. These are platform/configuration
+  observations, not a live SSH latency measurement.
+- Verification now runs every suite in release mode, retaining the same assertions
+  and deadlines against the optimized runtime. The additional debug pass includes
+  library controls, domain values, raster layouts, and the focused examples; only
+  `CreateAgentTests`, `DashboardPaletteTests`, and `AgentReportInteractionTests`
+  run exclusively in release. This retains their behavioral coverage but does
+  not cover their native debug-only lifecycle/layout traps or debug soundness
+  sampling. Full debug investigation remains available with
+  `swift test --no-parallel`. Separate xUnit artifacts identify each configuration.
 
 ### Static Linux blocker
 

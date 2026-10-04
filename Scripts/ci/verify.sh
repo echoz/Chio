@@ -13,8 +13,14 @@ if [[ "$(uname -s)" == Darwin ]]; then
 fi
 
 mkdir -p .build/ci-results
+# Keep debug checks for library controls, domain values, raster layouts, and the
+# focused examples. Run the dashboard's multi-screen workflows in release below:
+# their five-second waits are not benchmarks of unoptimized rendering.
 swift test --force-resolved-versions --jobs "${SWIFT_BUILD_JOBS:-2}" \
-  --no-parallel --xunit-output .build/ci-results/tests.xml ${testing_flags[@]+"${testing_flags[@]}"}
+  --no-parallel --skip 'CreateAgentTests|DashboardPaletteTests|AgentReportInteractionTests' \
+  --xunit-output .build/ci-results/debug.xml ${testing_flags[@]+"${testing_flags[@]}"}
+swift test -c release --force-resolved-versions --jobs "${SWIFT_BUILD_JOBS:-2}" \
+  --no-parallel --xunit-output .build/ci-results/release-all.xml ${testing_flags[@]+"${testing_flags[@]}"}
 swift build --force-resolved-versions --jobs "${SWIFT_BUILD_JOBS:-2}" \
   -c release --product chio-dashboard
 binary="$(swift build -c release --show-bin-path)/chio-dashboard"

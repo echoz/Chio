@@ -275,7 +275,7 @@ for the reader.
 
 ## Verification
 
-`swift test --no-parallel` covers search and validation rules, public hosted input, themed
+`swift test -c release --no-parallel` covers search and validation rules, public hosted input, themed
 terminal cells, true-color terminal emission, `NO_COLOR`, hint wrapping, and
 dashboard/form/report layouts. Form interactions include conditional fields, first-invalid
 focus, creation, cancellation, theme changes, resizing, and batched input.
@@ -283,13 +283,15 @@ Markdown checks cover parsing, rich text wrapping, preserved code whitespace,
 native scrolling, report snapshots, and returning to the dashboard's focus.
 Palette checks cover filtering, disabled actions, long lists, and focus restoration.
 Pass `--no-parallel` explicitly: concurrent hosted dashboard suites can exceed
-their frame deadlines on this toolchain.
+their frame deadlines on this toolchain. Use the optimized build for the complete
+suite: unoptimized multi-screen rendering can exceed the same five-second waits
+on slower runners even when the expected focus and content arrive correctly.
 On the current macOS Command Line Tools toolchain, SwiftPM fails to
 discover the installed Testing macro plugin;
 the verified workaround is:
 
 ```sh
-swift test --no-parallel -Xswiftc -load-plugin-library \
+swift test -c release --no-parallel -Xswiftc -load-plugin-library \
   -Xswiftc "$(xcode-select -p)/usr/lib/swift/host/plugins/testing/libTestingMacros.dylib"
 ```
 
@@ -303,7 +305,12 @@ Run the complete CI sequence locally with Swift 6.4 and Python 3 installed:
 bash Scripts/ci/verify.sh
 ```
 
-It runs serial tests, builds the release dashboard, captures snapshot scenarios,
+It runs every test in release mode and debug checks for library controls, domain
+values, raster layouts, and the focused examples. The three multi-screen dashboard
+suites run only in release; their debug-only upstream runtime diagnostics are not
+covered by this CI sequence. `swift test --no-parallel` remains available for a
+full debug investigation. Test assertions and deadlines are identical in both modes.
+The script also builds the release dashboard, captures snapshot scenarios,
 and exercises the executable through a real pseudo-terminal. The smoke check
 verifies raw input, search, palette cancellation, report/table and form opening,
 focus restoration, normal exit, and restored terminal attributes. This is not a
