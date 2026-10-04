@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Chio — beautiful terminal interfaces for Swift. Watch real terminal recordings of an opinionated design layer built on SwiftTUI.">
+  <meta name="theme-color" content="#17131e">
+  <title>Chio — Beautiful terminal interfaces for Swift</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="vendor/asciinema-player/asciinema-player.css">
+  <link rel="stylesheet" href="site.css">
+  <script defer src="vendor/asciinema-player/asciinema-player.min.js"></script>
+  <script defer src="recordings.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#demos">Skip to recordings</a>
+  <div class="page">
+    <header class="site-header">
+      <a class="wordmark" href="./" aria-label="Chio home">chio<span aria-hidden="true">_</span></a>
+      <nav aria-label="Project">
+        <a href="https://github.com/echoz/Chio/blob/main/Docs/Usage.md">Documentation</a>
+        <a href="https://github.com/echoz/Chio">GitHub <span aria-hidden="true">↗</span></a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="intro" aria-labelledby="tagline">
+        <p class="eyebrow">SwiftTUI underneath. Chio on top.</p>
+        <h1 id="tagline">Beautiful terminal<br>interfaces for <span>Swift.</span></h1>
+        <p class="lede">An opinionated, declarative layer of themes and thoughtful
+          controls. Make your Swift TUIs <em>chio.</em></p>
+        <p class="definition"><strong>chio</strong> <span>/ Singlish /</span> attractive, pretty, good-looking.</p>
+      </section>
+
+      <section id="demos" class="demos" aria-label="Terminal recordings">
+        <div class="demo-navigation">
+          <nav aria-label="Choose a recording">
+            <a href="#dashboard" data-demo="dashboard" aria-current="true">Dashboard</a>
+            <a href="#choices" data-demo="choices">Choices</a>
+            <a href="#feedback" data-demo="feedback">Feedback</a>
+          </nav>
+          <span class="recording-label"><span aria-hidden="true">●</span> Real terminal recordings</span>
+        </div>
+
+        <article id="dashboard" class="recording" data-cols="100" data-rows="36">
+          <div class="recording-heading">
+            <h2>An agent workspace</h2>
+            <span class="demo-number" aria-hidden="true">01 / 03</span>
+          </div>
+          <div class="recording-preview">
+            <img class="recording-image" src="recordings/dashboard.png" alt="A dark terminal dashboard with four agents, a selected Build Agent, progress, and keyboard hints." width="1248" height="948">
+            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play recording</button>
+          </div>
+          <div class="player" aria-label="Dashboard recording"></div>
+          <p class="player-message" role="status" hidden></p>
+          <div class="recording-caption">
+            <p>Searchable selection, semantic status colors, and an application that feels like one coherent interface.</p>
+            <a class="download" href="recordings/dashboard.cast" download>Download recording ↓</a>
+          </div>
+        </article>
+
+        <article id="choices" class="recording" data-cols="76" data-rows="27">
+          <div class="recording-heading">
+            <h2>A little more choice</h2>
+            <span class="demo-number" aria-hidden="true">02 / 03</span>
+          </div>
+          <div class="recording-preview">
+            <img class="recording-image" src="recordings/choices.png" alt="A searchable capabilities checklist with Build and Test checked and Deploy unavailable." width="960" height="723">
+            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play recording</button>
+          </div>
+          <div class="player" aria-label="Choices recording"></div>
+          <p class="player-message" role="status" hidden></p>
+          <div class="recording-caption">
+            <p>Keyboard focus and checked choices have distinct jobs. Filtering keeps the choices you already made.</p>
+            <a class="download" href="recordings/choices.cast" download>Download recording ↓</a>
+          </div>
+        </article>
+
+        <article id="feedback" class="recording" data-cols="76" data-rows="20">
+          <div class="recording-heading">
+            <h2>Same controls. A lighter mood.</h2>
+            <span class="demo-number" aria-hidden="true">03 / 03</span>
+          </div>
+          <div class="recording-preview">
+            <img class="recording-image" src="recordings/feedback-light.png" alt="The light theme's feedback screen with an accent outline around the focused Publish button." width="960" height="548">
+            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play recording</button>
+          </div>
+          <div class="player" aria-label="Feedback recording"></div>
+          <p class="player-message" role="status" hidden></p>
+          <div class="recording-caption">
+            <p>Shared theme roles carry through buttons, focus, confirmation, and feedback. Your application supplies the meaning.</p>
+            <a class="download" href="recordings/feedback-light.cast" download>Download recording ↓</a>
+          </div>
+        </article>
+        <p class="playback-note">Press play to watch. Pause, seek, or open fullscreen for a closer look.
+          These are recordings; try the binary to use the controls yourself.</p>
+        <noscript><p>Enable JavaScript for playback, or download a recording and open it with asciinema.</p></noscript>
+      </section>
+
+      <section class="try-it" aria-labelledby="try-heading">
+        <div>
+          <p class="eyebrow">Your terminal is next</p>
+          <h2 id="try-heading">Take it for a spin.</h2>
+          <p>From a checkout of Chio, with Swift 6.4+ on macOS 15+ or Linux.</p>
+        </div>
+        <div class="run-command">
+          <pre><code><span aria-hidden="true">$ </span>swift run -c release chio-dashboard</code></pre>
+          <a href="https://github.com/echoz/Chio/blob/main/Docs/Examples.md">Launch options and keyboard controls <span aria-hidden="true">↗</span></a>
+        </div>
+      </section>
+
+      <aside class="project-note" aria-label="Development and stability">
+        <p><strong>Personal software, shared openly.</strong> Built with Codex assistance and human
+          curation. We cannot vouch for its stability or suitability for production use;
+          APIs and behavior may change without notice.
+          <a href="https://github.com/echoz/Chio#development-and-stability">Read the development and stability statement.</a></p>
+      </aside>
+    </main>
+
+    <footer>
+      <span>Make your Swift TUIs chio.</span>
+      <span><a href="https://github.com/echoz/Chio/blob/main/LICENSE">MIT</a>
+        <span aria-hidden="true">·</span> Playback by <a href="https://asciinema.org">asciinema</a></span>
+    </footer>
+  </div>
+</body>
+</html>

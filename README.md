@@ -8,9 +8,9 @@ Charm-inspired themes, searchable lists and checklists, form fields, file
 selection, and Markdown compose with native SwiftTUI views. SwiftTUI handles
 rendering, layout, input, and focus.
 
-![Chio dashboard with selectable agents, status colors, progress, and keyboard hints](Docs/Media/dashboard.png)
+[![Watch Chio's dashboard recording](Docs/Media/dashboard.png)](https://echoz.github.io/Chio/)
 
-[More screenshots and terminal recordings](Docs/Examples.md#gallery-and-recordings)
+[▶ Watch Chio in action](https://echoz.github.io/Chio/) · [Examples and controls](Docs/Examples.md)
 
 ## Development and stability
 

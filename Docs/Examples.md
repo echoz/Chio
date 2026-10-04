@@ -159,10 +159,15 @@ the upstream conversion still needs correction for actual 256-color terminals.
 
 ## Gallery and recordings
 
+[Watch the recordings in your browser](https://echoz.github.io/Chio/), with pause,
+seeking, and fullscreen playback. These are recorded examples; run the binary to
+interact with the controls yourself.
+
 ![Chio's dark dashboard with selectable agents, semantic status colors, progress, and keyboard hints](Media/dashboard.png)
 
 The local agent dashboard combines native controls with Chio's theme, searchable
-selection, progress styling, and contextual help. [Terminal recording](Media/dashboard.cast).
+selection, progress styling, and contextual help.
+[Watch](https://echoz.github.io/Chio/#dashboard) · [Download recording](Media/dashboard.cast).
 
 ### Searchable choices and light-theme feedback
 
@@ -170,13 +175,13 @@ selection, progress styling, and contextual help. [Terminal recording](Media/das
 
 Checked membership stays distinct from keyboard focus. Filtering can hide a
 checked item without removing it from the application's selection.
-[Terminal recording](Media/choices.cast).
+[Watch](https://echoz.github.io/Chio/#choices) · [Download recording](Media/choices.cast).
 
 ![Chio's light-theme feedback example with an accent outline around the focused Publish button](Media/feedback-light.png)
 
 The same semantic theme roles apply to the light palette. Focused buttons use an
 accent outline and preserve the surrounding surface.
-[Terminal recording](Media/feedback-light.cast).
+[Watch](https://echoz.github.io/Chio/#feedback) · [Download recording](Media/feedback-light.cast).
 
 These previews render real release-binary terminal output. Font rendering can
 vary between terminals. The accompanying Asciinema-compatible recordings replay

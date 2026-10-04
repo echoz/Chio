@@ -451,6 +451,9 @@ before cover presentation, dashboard shortcuts are consumed so Enter followed by
 | `Examples/AgentDashboard` | Dashboard and focused control examples, domain rules, presentation, and thin entry point |
 | `Tests/ChioTests` | Tests grouped by corresponding responsibility |
 | `Tests/ChioDashboardTests` | Simulation, draft rules, report snapshots, and dashboard/form/report/palette interaction |
+| `Docs/Site` | Static GitHub Pages showcase and vendored asciinema player |
+| `Docs/Media` | Release-terminal screenshots and recordings shared by docs and the showcase |
+| `Scripts/docs` | Assemble the static site without building the Swift package |
 
 Only create responsibility groups when they contain useful code. Keep each
 independently useful production type in a matching file and protocol conformances

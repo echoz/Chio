@@ -235,6 +235,32 @@ macOS and Linux, retaining verification logs and snapshots. The manual
 against the same dependency pins; [current blockers](#static-linux-blocker)
 remain separate from ordinary Linux support.
 
+### Demo site
+
+The [GitHub Pages showcase](https://echoz.github.io/Chio/) plays recordings from
+`Docs/Media` with a pinned, locally served asciinema player. Site source lives in
+`Docs/Site`; its vendored assets retain their upstream Apache 2.0 license.
+The Swift package has no new dependency. To preview the same deployable output:
+
+```sh
+bash Scripts/docs/build-site.sh
+python3 -m http.server 8000 --bind 127.0.0.1 --directory .build/site
+```
+
+Open `http://127.0.0.1:8000`. The [Pages workflow](../.github/workflows/pages.yml)
+builds on relevant pull requests and deploys relevant `main` changes. Deployment
+uses the repository's GitHub Actions Pages source and `github-pages` environment;
+pull requests receive no deployment permissions. Recordings and player assets are
+served from the same site, without a CDN or an asciinema account. Keep recordings
+limited to local demo data and check playback before replacing them.
+
+Browser checks cover playback, pause, forward/backward seeking, recording
+navigation, and a 390-pixel mobile layout. Missing-recording and script-free
+previews retain screenshots and download links. Playback begins only after an
+explicit click; the player's NPT-poster seek limitation is documented alongside
+the vendored assets. Independent review covers deployment permissions and static
+asset boundaries. These website checks do not add Swift or Linux test evidence.
+
 ## Verified on macOS
 
 Swift 6.4, with SwiftTUI pinned at
