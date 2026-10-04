@@ -111,22 +111,18 @@ struct MarkdownViewRenderTests {
         }
     }
 
-    @Test("Unsupported features remain readable without link activation or table layout")
+    @Test("Unsupported features remain readable without link activation")
     func fallback() {
         let rendered = DefaultRenderer().render(
             MarkdownView(MarkdownDocument("""
             [Docs](guide.md) ![Chart](plot.png)
-
-            | Name | State |
-            | --- | --- |
-            | Agent | done |
 
             <div>literal</div>
             """)).chioTheme(.default),
             proposal: .init(width: 40, height: 20)
         )
         let text = rendered.rasterSurface.lines.joined(separator: " ")
-        for value in ["Docs (guide.md)", "Chart (plot.png)", "Name | State", "Agent | done", "<div>literal</div>"] {
+        for value in ["Docs (guide.md)", "Chart (plot.png)", "<div>literal</div>"] {
             #expect(text.contains(value))
         }
         #expect(!rendered.semanticSnapshot.accessibilityNodes.contains { $0.role == .link })

@@ -16,6 +16,7 @@ public struct MarkdownDocument {
         case list([Item])
         case quote([Block])
         case code(language: String?, text: String)
+        case table(Table)
         case rule
         case fallback(String)
     }
@@ -28,6 +29,16 @@ public struct MarkdownDocument {
     struct Span {
         let text: String
         let attributes: Attributes
+    }
+
+    struct Table {
+        let headers: [[Span]]
+        let rows: [[[Span]]]
+        let alignments: [ColumnAlignment]
+
+        enum ColumnAlignment {
+            case leading, center, trailing
+        }
     }
 
     struct Attributes {
@@ -49,6 +60,10 @@ extension MarkdownDocument.Item: Equatable {}
 extension MarkdownDocument.Item: Sendable {}
 extension MarkdownDocument.Span: Equatable {}
 extension MarkdownDocument.Span: Sendable {}
+extension MarkdownDocument.Table: Equatable {}
+extension MarkdownDocument.Table: Sendable {}
+extension MarkdownDocument.Table.ColumnAlignment: Equatable {}
+extension MarkdownDocument.Table.ColumnAlignment: Sendable {}
 extension MarkdownDocument.Attributes: Equatable {}
 extension MarkdownDocument.Attributes: Sendable {}
 
@@ -86,10 +101,17 @@ private extension MarkdownDocument {
         case let html as Markdown.HTMLBlock:
             return [.fallback(html.rawHTML)]
         case let table as Markdown.Table:
-            // Preserve cell boundaries without introducing a table layout system.
-            let rows = [table.head.cells.map(plainText).joined(separator: " | ")]
-                + table.body.rows.map { $0.cells.map(plainText).joined(separator: " | ") }
-            return [.fallback(rows.joined(separator: "\n"))]
+            return [.table(Table(
+                headers: table.head.cells.map { inlineChildren(of: $0) },
+                rows: table.body.rows.map { row in row.cells.map { inlineChildren(of: $0) } },
+                alignments: table.columnAlignments.map {
+                    switch $0 {
+                    case .center: .center
+                    case .right: .trailing
+                    case .left, nil: .leading
+                    }
+                }
+            ))]
         default:
             if !node.isEmpty { return blockChildren(of: node) }
             return [.fallback(node.format())]
@@ -157,7 +179,4 @@ private extension MarkdownDocument {
         return [Span(text: " (\(destination))", attributes: attributes)]
     }
 
-    static func plainText(_ node: any Markup) -> String {
-        spans(from: node, attributes: []).map(\.text).joined()
-    }
 }

@@ -47,7 +47,9 @@ Reports capture the run at the moment you open them. Use arrows or Home/End to
 scroll, Ctrl-T to change theme, and Escape to return to the same selection and
 filter. Reopen for the latest run state. Tab can focus a code block, where left
 and right scroll long lines. The reports demonstrate headings, rich text, lists,
-quotes, and code using the same theme as the dashboard.
+quotes, code, and tables. The **Table example** near the top shows aligned columns
+and illustrative timings. Tab focuses it; left/right scroll on narrow screens,
+and Shift-Tab returns to vertical reading.
 
 Press `n` while browsing to create an agent. Enter its name, choose a role with
 the arrow keys, and use Space to toggle Start immediately. Test agents also
@@ -95,7 +97,7 @@ the upstream conversion still needs correction for actual 256-color terminals.
 
 ## Design direction
 
-- Apply a theme to native `GroupBox`, `List`, `TextField`, `Picker`, `Toggle`, and `ProgressView` styles.
+- Apply a theme to native `GroupBox`, `List`, `Table`, `TextField`, `Picker`, `Toggle`, and `ProgressView` styles.
 - Compose reusable `KeyHint`, `KeyHints`, `StatusBar`, `SearchableList`, and `FormField` views.
 - Customize nested semantic colors, spacing, and treatments through `.chioTheme(...)`.
 - Keep SwiftTUI responsible for rendering, state, input, focus, scrolling, and lifecycle.
@@ -161,8 +163,10 @@ struct ReportView: View {
 ```
 
 The first Markdown slice supports headings, paragraphs, strong/emphasized text,
-inline and fenced code, lists, quotes, and rules. Links and images show readable
-labels and destinations; HTML is literal and tables use a plain-text fallback.
+inline and fenced code, lists, quotes, rules, and aligned tables with native
+horizontal scrolling. Table body cells retain rich text; native headers use plain
+labels with themed colors. Links and images show readable labels and destinations;
+HTML is literal. Native table border colors remain an upstream styling limitation.
 See [AgentReport](Examples/AgentDashboard/Domain/AgentReport.swift) for snapshot
 ownership and [AgentReportView](Examples/AgentDashboard/Presentation/AgentReportView.swift)
 for the reader.

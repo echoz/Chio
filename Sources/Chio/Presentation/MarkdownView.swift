@@ -60,6 +60,18 @@ private struct MarkdownBlock {
         }
         return Text(Text.RichContent(stringInterpolation: interpolation))
     }
+
+    private func columns(_ table: MarkdownDocument.Table) -> [TableColumn] {
+        table.headers.enumerated().map { index, spans in
+            let alignment: TableColumnAlignment = switch table.alignments[index] {
+            case .leading: .leading
+            case .center: .center
+            case .trailing: .trailing
+            }
+            // Native headers accept labels; body cells retain their rich Text runs.
+            return TableColumn(spans.map(\.text).joined(), alignment: alignment)
+        }
+    }
 }
 
 extension MarkdownBlock: View {
@@ -104,6 +116,23 @@ extension MarkdownBlock: View {
             }
             .padding(.horizontal, theme.spacing.horizontalInset)
             .background(theme.colors.selectedSurface))
+        case let .table(table):
+            return AnyView(ScrollView(.horizontal) {
+                Table(columns: columns(table)) {
+                    ForEach(table.rows.indices, id: \.self) { row in
+                        TableRow {
+                            ForEach(table.rows[row].indices, id: \.self) { column in
+                                text(table.rows[row][column])
+                            }
+                        }
+                        .listRowBackground(theme.colors.surface)
+                    }
+                }
+                .tableStyle(ChioTableStyle(theme: theme))
+                .fixedSize()
+            }
+            .scrollIndicators(.hidden, axes: .horizontal)
+            .fixedSize(horizontal: false, vertical: true))
         case .rule:
             return AnyView(GeometryReader { geometry in
                 Text(String(repeating: "─", count: max(0, geometry.size.width)))

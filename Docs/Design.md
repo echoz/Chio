@@ -41,7 +41,7 @@ Consumers can copy the default and customize its colors without rebuilding style
 Component options specify behavior; application composition specifies content.
 
 Changing theme preserves query, stable selection, focus, and entered values.
-Native `GroupBox`, `List`, `TextField`, `Picker`, `Toggle`, and `ProgressView`
+Native `GroupBox`, `List`, `Table`, `TextField`, `Picker`, `Toggle`, and `ProgressView`
 styles share the same semantic roles. The first appearance closely follows Huh's Charm palette and
 Bubbles' selected rows, muted metadata, and compact keyboard help.
 
@@ -158,10 +158,24 @@ then arrows or Home/End navigate its columns. Theme changes retain native offset
 and focus. A text marker identifies quotes because the pinned leading-edge border
 disappears on one-row content; this is presentation composition, not cell rendering.
 
-Links display their destinations, images display alt text and source, HTML remains
-literal, and tables have a readable cell-separated text fallback. No resource is
-fetched, no command is executed, and links are not active. Syntax highlighting and
-formatted tables need their own concrete use case before expanding this API.
+Tables retain parsed cells and column alignments, then compose native `Table`
+and `TableRow` views. SwiftTUI measures column widths in terminal cells and the
+table's natural height. A native horizontal scroll view preserves readable
+columns on narrow screens; Tab focuses it, arrows/Home/End move horizontally,
+and Shift-Tab returns to the reader. Body cells retain inline styling. Native
+headers accept plain labels with uniform theme colors, so header emphasis/code
+is displayed as readable text. Report tables are eager, not a large-data grid.
+
+`.chioTheme` installs `ChioTableStyle` on ordinary native tables too, supplying
+rounded borders and semantic header colors. The pinned SwiftTUI masks the style's
+border paint with its default control chrome; grid borders and their background
+remain upstream colors. Markdown body rows use the public `listRowBackground`
+modifier for Chio's surface color, retaining contrast in both themes. Keep the
+native chrome limitation visible rather than drawing a replacement table.
+
+Links display their destinations, images display alt text and source, and HTML
+remains literal. No resource is fetched, no command is executed, and links are
+not active. Syntax highlighting and active links remain deferred.
 
 Enter on dashboard results opens a native full-screen report for the selected
 agent. The report captures the current agent value and parsed document once; a

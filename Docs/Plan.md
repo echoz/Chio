@@ -9,7 +9,7 @@ commands and interaction instructions live in [the README](../README.md).
 - One `Chio` library depending on the published `SwiftTUIViews` product; one
   `chio-dashboard` executable using the SwiftTUI runtime.
 - Semantic theme values, a Charm-inspired default and a light customization,
-  plus native GroupBox, List, TextField, Button, Picker, Toggle, and ProgressView styles.
+  plus native GroupBox, List, Table, TextField, Button, Picker, Toggle, and ProgressView styles.
 - KeyHint, wrapping KeyHints, StatusBar, and searchable selection with fuzzy or
   substring filtering, stable IDs, result counts, and distinct empty states.
 - Simulated running, completed, failed, paused, and empty states; theme switching;
@@ -32,6 +32,9 @@ commands and interaction instructions live in [the README](../README.md).
   Creating and running a new agent leads to its own report without external services.
 - Independent read-only Markdown review identified a one-row quote marker gap;
   a composed text marker fixes it. No private renderer or focus API is required.
+- Native Markdown tables replace the text fallback, preserving column alignment,
+  rich body cells, and native width/height measurement. The report includes a
+  visible table example; horizontal scrolling keeps wide tables readable.
 
 ## Verified on macOS
 
@@ -41,7 +44,7 @@ Swift 6.4, with SwiftTUI pinned at
 - `swift build --product chio-dashboard` passes.
 - `swift build -c release --product chio-dashboard` also passes. Interactive
   launch instructions use release mode; debug enables extra upstream verification.
-- 97 Swift Testing tests pass in the integrated run: 67 library tests and 30
+- 103 Swift Testing tests pass: 73 library tests and 30
   dashboard tests, including parameterized widths, themes, progress values,
   sample scenarios, forms, and reports. All existing regressions remain intact.
 - Pure tests cover fuzzy ranking, Unicode matching, stable selection, and
@@ -65,6 +68,15 @@ Swift 6.4, with SwiftTUI pinned at
   focus restoration, created-agent runs, immutable snapshots, and raw Enter-q
   during presentation. Report chrome remains visible in both themes at
   100 × 30, 50 × 30, and 36 × 18. Independent review reports no remaining findings.
+- Table tests cover parsed alignments, empty cells, header-only content, body
+  emphasis/code, Unicode cell alignment, narrow clipping, following prose, and
+  native table semantics. Both Chio themes and customized header colors are
+  verified; native border-color limitations are recorded below. The strengthened
+  hosted navigation regression passes in a focused rerun: Tab moves from the
+  vertical reader to the table, End/Home scroll columns, theme/resize retain
+  focus, and Shift-Tab returns to the reader so Down scrolls vertically.
+  The five table render/interaction tests also pass after the final body-row
+  surface-color change; the remaining full-suite evidence is unchanged.
 - A real macOS pseudo-terminal smoke check covers launch, search text that
   includes `q`, Escape, theme switching, simulated failure, running to completion,
   empty-data toggling, and normal exit with terminal restoration.
@@ -82,6 +94,10 @@ Swift 6.4, with SwiftTUI pinned at
   with exit code zero and alternate-screen restoration. Captured terminal text
   confirms the report hierarchy and persistent header/help. This remains local
   terminal evidence, not a live Blink-over-SSH or Linux check.
+- The table release check confirms the header and all three illustrative rows
+  appear near the report's top, theme switching retains the table, Tab/Shift-Tab
+  returns to vertical reading, End reaches the report's end, and quitting restores
+  the terminal with exit code zero. Captured terminal text was inspected.
 - A separate macOS pseudo-terminal comparison reproduced the SSH color issue:
   with `TERM=xterm-256color` and no `COLORTERM`, the default surface emits
   `48;5;59` (gray). Adding `COLORTERM=truecolor` emits `48;2;33;29;42` (the authored
@@ -139,6 +155,10 @@ display latency are still outside this measurement.
 - Native list focus chrome is still owned by SwiftTUI's theme. Chio selection
   and authored content use Chio tokens; exact native focus palette customization
   requires an upstream public capability.
+- Native Table's generated control chrome masks `TableStylePresentation.borderStyle`.
+  The Chio table style's header colors work, but borders/background chrome remain
+  native upstream colors. Native headers also accept plain strings only; body
+  cells preserve rich Text. Neither limitation is hidden by a second renderer.
 - The pinned ANSI-256 quantizer rounds RGB channels onto uniformly spaced cube
   coordinates, although the terminal cube is nonuniform, and ignores its grayscale
   ramp. This washes out dark colors. True-color launch guidance is in the README;
@@ -175,8 +195,8 @@ display latency are still outside this measurement.
    measurement before scaling the list to large datasets.
 4. Try the Create agent workflow before broadening the form API. Additional field
    types and grouped forms should follow concrete application needs.
-5. Try reading completed and running reports at everyday terminal sizes before
-   adding syntax highlighting, active links, or richer table presentation.
+5. Try reports and horizontally scrolling tables at everyday terminal sizes before
+   adding syntax highlighting, active links, or large-data table behavior.
 
 No new products, renderer, general focus manager, or external agent integration
 are required by these next decisions.

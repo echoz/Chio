@@ -104,12 +104,33 @@ struct MarkdownDocumentTests {
         #expect(paragraphSpans("<https://example.com>").map(\.text).joined() == "https://example.com")
     }
 
-    @Test("Table fallback preserves rows and cell boundaries; HTML stays literal")
+    @Test("HTML blocks stay literal")
     func blockFallback() {
-        let table = MarkdownDocument("| Name | State |\n| --- | --- |\n| A | done |\n")
-        #expect(table.blocks == [.fallback("Name | State\nA | done")])
         let html = MarkdownDocument("<div>raw</div>\n")
         #expect(html.blocks == [.fallback("<div>raw</div>\n")])
+    }
+
+    @Test("Tables retain headers, rich cells, empty cells, and column alignments")
+    func table() throws {
+        let document = MarkdownDocument("""
+        | **Name** | State | Time | Note |
+        | :--- | :---: | ---: | --- |
+        | `swift test` | **Passed** | 3.2 s | |
+        | café | Ready | 0.4 s |
+        """)
+        guard case let .table(table) = try #require(document.blocks.first) else {
+            Issue.record("Expected a table")
+            return
+        }
+        #expect(table.headers.map { $0.map(\.text).joined() } == ["Name", "State", "Time", "Note"])
+        #expect(table.alignments == [.leading, .center, .trailing, .leading])
+        #expect(table.rows.count == 2)
+        #expect(table.rows.allSatisfy { $0.count == 4 })
+        #expect(table.headers[0] == [.init(text: "Name", attributes: [.strong])])
+        #expect(table.rows[0][0] == [.init(text: "swift test", attributes: [.code])])
+        #expect(table.rows[0][1] == [.init(text: "Passed", attributes: [.strong])])
+        #expect(table.rows[0][3].isEmpty)
+        #expect(table.rows[1][3].isEmpty)
     }
 
     @Test("Document equality compares parsed semantics")
