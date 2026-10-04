@@ -81,7 +81,7 @@ spacing and single-printable-cell glyph preconditions.
 Component options specify behavior; application composition specifies content.
 
 Changing theme preserves query, stable selection, focus, and entered values.
-Native `GroupBox`, `List`, `Table`, `TextField`, `TextEditor`, `Picker`, `Toggle`, and `ProgressView`
+Native `GroupBox`, `List`, `Table`, `TextField`, `TextEditor`, `Picker`, `Toggle`, `ProgressView`, `Spinner`, and native prompt
 styles share the same semantic roles. The first appearance closely follows Huh's Charm palette and
 Bubbles' selected rows, muted metadata, and compact keyboard help.
 
@@ -298,6 +298,43 @@ notes are retained for feedback comparison. Editing again clears stale success.
 Cancel clears both fields, and disabled controls leave Cancel and unlocking
 available. There is no authentication, transport, or persistence. Native state
 owns the editable strings; no serializable credential model is introduced.
+
+## Confirmation and transient feedback
+
+`ChioPromptStyle` transforms native alert and confirmation-dialog chrome: bounded
+width, compact insets and message viewport, theme surface, accent border and
+stroke treatment. Bordered prompts reserve at least one vertical cell because
+the native border overlays its outer rows; zero would cover the header. It retains the declaration's native header tone and placement.
+SwiftTUI owns the title row and close button, modal focus, Escape, restoration,
+and dismissal callbacks. Its header background uses native terminal paint;
+arbitrary Chio header colors are not exposed by the pinned public API.
+
+Action buttons are authored content. Their roles style and describe actions;
+custom actions explicitly clear the presentation binding. Escape and the native
+close button dismiss without invoking an authored Cancel closure. Put shared
+dismissal effects in `onDismiss` when needed. Direct actions form a horizontal
+row; the application may provide a `VStack` for more or longer actions. Prompt
+styling cannot automatically reorder or wrap arbitrary action content.
+
+`ChioSpinnerStyle` retains native braille frames and cadence, with muted inactive,
+accent active and success finished states. SwiftTUI owns the ticking task,
+cancellation, accessibility semantics and reduced-motion first-frame behavior.
+Chio adds no animation clock. `.chioTheme` installs both styles.
+
+`ChioToastStyle(theme:tone:)` uses native `TerminalTone` for semantic icon and
+border colors, with theme surface and compact bounds. It is supplied explicitly
+through `.toast(..., style:)`; there is no environment toast style modifier.
+SwiftTUI owns stacking, expiry and dismissal. Toasts retain underlying focus and
+do not block editing. They may cover bottom content while visible; they are not
+an application notification queue or persistent status history.
+
+The `--feedback` example simulates a publish with a cancellable application task.
+Its phase is ready, publishing or published; only one prompt may be presented.
+The native presentation bindings retain the projected state storage before
+entering deferred authoring contexts. A confirmed publish advances the phase,
+and a native toast announces completion.
+A destructive alert resets the local result. The task only advances simulated
+application state; native controls still own presentation and animation timing.
 
 ## Markdown and agent reports
 

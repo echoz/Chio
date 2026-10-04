@@ -27,12 +27,17 @@ struct ChioDashboardCommand {
     @Flag(help: "Run the focused password and multiline text-entry example.")
     var textEntry = false
 
+    @Flag(help: "Run the focused confirmation, spinner and toast example.")
+    var feedback = false
+
     @OptionGroup(title: "SwiftTUI options")
     var swiftTUIOptions: SwiftTUIOptions
 
     @MainActor @ViewBuilder
     private var snapshotView: some View {
-        if textEntry {
+        if feedback {
+            FeedbackExampleView(light: light)
+        } else if textEntry {
             TextEntryExampleView(light: light)
         } else if choices {
             ChoiceExampleView(light: light)
@@ -52,10 +57,10 @@ extension ChioDashboardCommand: AsyncParsableCommand {
         guard (20...240).contains(width), (10...100).contains(height) else {
             throw ValidationError("Use --width 20...240 and --height 10...100.")
         }
-        if choices && textEntry {
-            throw ValidationError("Choose one example: --choices or --text-entry.")
+        if [choices, textEntry, feedback].filter({ $0 }).count > 1 {
+            throw ValidationError("Choose one example: --choices, --text-entry or --feedback.")
         }
-        if (choices || textEntry) && (scenario != .normal || paused) {
+        if (choices || textEntry || feedback) && (scenario != .normal || paused) {
             throw ValidationError("--scenario and --paused describe the dashboard simulation; omit them with a focused example.")
         }
     }
@@ -69,6 +74,8 @@ extension ChioDashboardCommand: AsyncParsableCommand {
                 frameInstant: .zero
             )
             print(frame.rasterSurface.lines.joined(separator: "\n"))
+        } else if feedback {
+            try await WebHostCLIRunner.run(FeedbackApplication(light: light), configuration: swiftTUIOptions.runtimeConfiguration())
         } else if textEntry {
             try await WebHostCLIRunner.run(TextEntryApplication(light: light), configuration: swiftTUIOptions.runtimeConfiguration())
         } else if choices {

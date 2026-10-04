@@ -2,7 +2,8 @@
 
 The delivered proof-of-concept slices are a runnable local dashboard, agent
 creation, Markdown run reports, a command palette using simulated agents,
-a focused searchable-choice form, and native password/multiline text entry.
+a focused searchable-choice form, native password/multiline text entry, and
+confirmation with transient feedback.
 They establish the design direction, not broad parity with Charm's components.
 Accepted contracts and
 ownership live in [Design.md](Design.md); commands and interaction instructions
@@ -83,11 +84,21 @@ live in [the README](../README.md).
   password clearing, cancel, and disabled input. Independent read-only review
   found no actionable issues. A full macOS run passed 169 tests; after making
   the empty editor fill its bounded viewport, all 12 text-entry checks passed
-  again, including the new viewport regression. This covers the current 170
-  tests (108 library and 62 dashboard/example), with existing assertions intact.
+  again, including the new viewport regression. This covered 170
+  tests at that slice (108 library and 62 dashboard/example), with existing assertions intact.
   The optimized build and all three real pseudo-terminal workflows pass, with
   exact terminal-mode restoration. Eight snapshot captures include the compact
   text-entry example; the full-size empty editor was also inspected.
+
+- Confirmation and feedback add `ChioPromptStyle`, `ChioSpinnerStyle`, and
+  explicit `ChioToastStyle`, plus the runnable `--feedback` publish/reset example.
+  Native APIs retain modal focus, dismissal, timing, reduced motion and toast
+  expiry. The independent review's state-binding ownership and clipped-header
+  findings were fixed and covered by public hosted/raster regressions.
+  The integrated macOS checks pass all 184 release tests, 162 selected debug
+  tests, the production release build, nine snapshot captures and all four
+  pseudo-terminal workflows, including clean terminal restoration. New Linux
+  verification remains pending; the prior CI limitation is recorded below.
 
 ## Component coverage
 
@@ -136,12 +147,12 @@ come from Chio's original brief; they are not all standalone Bubbles packages.
 | Pagination | No Chio paginator | Native views and input for presentation | Page arithmetic, navigation and compact display; scrolling is not pagination |
 | Scrollable viewport | Used and tested in reports, tables and code blocks | [ScrollView][native-scroll], positions/readers/styles | Keep native scrolling; add a document-reader convenience only for demonstrated reusable UX |
 | Progress/loading bar | Delivered determinate and indeterminate `ChioProgressViewStyle`, including reduced motion | `ProgressView` owns animation phase | Not a dedicated spinner; animated/gradient fill variants are not part of the current Chio scope |
-| Spinner | No Chio spinner style or integration tests | [Spinner][native-spinner], `SpinnerStyle`, presets/stages and native timing | Style and verify the existing primitive; do not add a timer loop |
+| Spinner | Delivered `ChioSpinnerStyle` with semantic stage paint and native reduced motion | [Spinner][native-spinner], `SpinnerStyle`, presets/stages and native timing | Native braille cadence and stages; no Chio timer or frame catalog |
 | Keyboard hints | Delivered manual `KeyHint` labels and wrapping `KeyHints` | Native key handlers/commands | Shared binding-to-help metadata and compact/expanded help are not delivered; the native registry's `KeyBinding` is not public |
 | Status bar | Delivered composed `StatusBar` | Native layout/text | A footer is not a toast queue or reusable status-message workflow |
 | Empty/status/banner views | Empty messages inside search; semantic statuses in the demo | Native text, layout and theme colors | Extract reusable presentation and actions when useful; no general empty-state/banner component yet |
-| Toasts | No Chio toast styling or exercised workflow | Native [.toast and ToastStyle][native-toast] handle presentation | Pass a Chio style explicitly through the native API; this family is not installed by an environment style modifier |
-| Alerts, confirmation dialogs and sheets | Native covers demonstrated; no Chio prompt style | [Native presentation][native-presentation] and [PromptStyle][native-prompt] | Theme and test actions, dismissal, narrow layout and focus restoration; retain native presentation ownership |
+| Toasts | Delivered explicit `ChioToastStyle` and local completion feedback | Native [.toast and ToastStyle][native-toast] handle presentation | Native expiry and explicit dismissal; no environment toast modifier or app notification queue |
+| Alerts, confirmation dialogs and sheets | Delivered `ChioPromptStyle` for alerts and confirmation dialogs; native covers demonstrated | [Native presentation][native-presentation] and [PromptStyle][native-prompt] | Native focus and dismissal retained; header paint and arbitrary action wrapping remain native/app concerns; no Chio sheet style |
 | Command palette | Delivered `ChioPaletteStyle`, filtering, disabled items and dashboard actions | Native action scopes, command registration and palette presentation | Surrounding palette chrome has an upstream styling limit; this is not a new Chio command system |
 | Tabs | No Chio tab style or tested tabbed application | [TabView][native-tabs] and `TabViewStyle` | Style native selected/focused states and narrow overflow; no replacement tab controller |
 | Timer and stopwatch | No reusable Chio component; demo simulation is not one | [TimelineView][native-timeline] and Swift clocks | Countdown/elapsed-time state, formatting and pause/resume behavior if demanded; keep scheduling native |
@@ -181,14 +192,18 @@ Swift 6.4, with SwiftTUI pinned at
 - `swift build --product chio-dashboard` passes.
 - `swift build -c release --product chio-dashboard` also passes. Interactive
   launch instructions use release mode; debug enables extra upstream verification.
-- 170 Swift Testing tests are verified with explicit `--no-parallel`: 108 library tests and 62
-  dashboard/example tests, including parameterized widths, themes, progress values,
-  sample scenarios, forms, and reports. All existing regressions remain intact.
-  Evidence is the full 169-test run plus all 12 text-entry checks after the final
-  viewport sizing correction and its new regression; unaffected suite results
-  are reused. All six example checks also pass after expanding the compact
-  editor to two visible lines, alongside errors and hints; its rebuilt release
-  passes the terminal workflow.
+- All 184 Swift Testing tests pass in release with explicit `--no-parallel`:
+  120 library tests and 64 dashboard/example tests. The additional selected debug
+  pass covers 162 tests with the same assertions and deadlines; the three larger
+  dashboard workflow suites run in release, as documented below.
+- Feedback checks exercise both native prompt kinds, custom colors, disabled and
+  destructive actions, confirm/Cancel/Escape, one dismissal callback, exact editor
+  focus restoration and resumed editing. The example changes theme, resizes an
+  open prompt to 36 × 18, publishes, observes toast expiry and resets the result.
+  Spinner raster checks cover stages and reduced-motion frames; toast tests cover
+  all native tones, both themes, explicit and timed dismissal, editing beneath
+  feedback, theme changes and resize. Timed lifecycle checks use bounded real
+  hosted sessions, not a virtual clock or a proof of every scheduling interleaving.
 - The combined concurrent dashboard run hit frame-deadline failures across form,
   report, and palette suites. The serial run passes with the same assertions and
   deadlines; concurrent hosted-suite execution remains unverified. Use the
@@ -412,6 +427,14 @@ repeatable terminal checks without changing the public API or dependency pins.
   sampling. Full debug investigation remains available with
   `swift test --no-parallel`. Separate xUnit artifacts identify each configuration.
 
+- [Run 37213492012](https://github.com/echoz/Chio/actions/runs/37213492012) for
+  `9ff6aff` passed macOS verification. Linux passed the selected debug tests, the
+  full release suite, optimized build, and dashboard terminal smoke, then failed
+  the existing choices terminal workflow at the batched Return transition from
+  language to capabilities. The screen retained the filtered Rust row. This
+  predates the feedback slice; its hosted regression passed, so the PTY failure
+  remains open rather than being described as a fully green Linux run.
+
 ### Static Linux blocker
 
 An actual ARM64 release cross-build using the official Swift 6.4.0 compiler and
@@ -537,7 +560,7 @@ unchanged; a local SwiftPM edit is only integration evidence, not distribution.
 ## Next component slices
 
 The coverage audit is complete and the following order is approved. The first
-two slices are implemented; subsequent slices remain planned. Their public APIs remain
+three slices are implemented; subsequent slices remain planned. Their public APIs remain
 open to evidence from focused examples. Broaden reusable component coverage
 before treating the framework as ready for release preparation.
 
@@ -563,7 +586,7 @@ before treating the framework as ready for release preparation.
    wrapping/caret/scrolling work, and disabled/focused states remain readable in
    both themes. Use synthetic secrets in fixtures; do not invent an editor or
    promise reveal/mask configuration absent from native public APIs.
-3. **Confirmation and feedback.** Add a coherent prompt treatment and spinner
+3. **Confirmation and feedback — implemented.** Add a coherent prompt treatment and spinner
    style, followed by native toast styling as the example needs feedback. Prove
    confirm/cancel, return of focus, disabled/destructive actions, narrow prompts,
    reduced motion and transient-message lifecycle. Pass toast styles through its

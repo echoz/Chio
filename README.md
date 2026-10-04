@@ -15,7 +15,8 @@ The APIs follow Swift composition and native SwiftTUI styles.
 The package includes one public library, `Chio`, and the `chio-dashboard`
 executable. Run it to try search, selection, agent creation, inline validation,
 progress, themes, a command palette, and Markdown reports of simulated runs.
-Focused `--choices` and `--text-entry` examples exercise richer form controls.
+Focused `--choices`, `--text-entry`, and `--feedback` examples exercise richer
+controls and confirmation workflows.
 They require no external services.
 
 This is an early API to learn from, not a stable release. The initial demo slices
@@ -145,6 +146,34 @@ Apply `.chioTheme(...)` to customize enabled editor text along with its frame.
 The pinned native editor supplies its own disabled text color and dimming, so
 that inner disabled color is not currently a Chio theme token.
 
+### Try confirmation and feedback
+
+```sh
+COLORTERM=truecolor swift run -c release chio-dashboard --feedback
+```
+
+Press Publish (or Ctrl-P), then Tab to Cancel or Publish and press Return.
+Escape dismisses the prompt. A local simulated publish shows the native spinner,
+then a success toast that expires after three seconds. Discard (Ctrl-D) becomes
+available after completion and opens a destructive confirmation. On the main screen, Ctrl-T changes
+theme and Ctrl-Q quits. Nothing is sent or persisted. The example fits 36 × 18;
+`--feedback --snapshot` captures its initial state without a terminal.
+
+`.chioTheme(...)` installs `ChioPromptStyle` for native alerts/confirmation dialogs
+and `ChioSpinnerStyle` for native `Spinner` stages. Toast styles are passed explicitly:
+
+```swift
+content
+    .toast("Saved", isPresented: $showsToast,
+           style: ChioToastStyle(theme: theme, tone: .success))
+    .chioTheme(theme)
+```
+
+Native prompts retain their header paint and modal focus behavior. Custom action
+closures must clear their presentation binding; a button role alone does not
+dismiss a prompt. Keep action labels short, or compose a `VStack` in the action
+builder when a vertical arrangement fits better.
+
 ### Colors over SSH
 
 For a true-color terminal such as Blink, declare that capability on the remote
@@ -166,7 +195,7 @@ the upstream conversion still needs correction for actual 256-color terminals.
 
 ## Design direction
 
-- Apply a theme to native `GroupBox`, `List`, `Table`, `TextField`, `SecureField`, `TextEditor`, `Picker`, `Toggle`, and `ProgressView` styles.
+- Apply a theme to native `GroupBox`, `List`, `Table`, `TextField`, `SecureField`, `TextEditor`, `Picker`, `Toggle`, `ProgressView`, `Spinner`, and native prompt styles.
 - Compose reusable `KeyHint`, `KeyHints`, `StatusBar`, `SearchableList`, `SearchableChecklist`, and `FormField` views.
 - Customize nested semantic colors, spacing, and treatments through `.chioTheme(...)`.
 - Style native command palettes with `ChioPaletteStyle`; apply `.chioTheme(...)`

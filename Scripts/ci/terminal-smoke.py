@@ -77,7 +77,7 @@ def screen(output):
     return "\n".join("".join(line) for line in cells)
 
 
-def run(binary, choices=False, text_entry=False):
+def run(binary, choices=False, text_entry=False, feedback=False):
     master, slave = pty.openpty()
     process = None
     output = bytearray()
@@ -121,16 +121,29 @@ def run(binary, choices=False, text_entry=False):
         env = dict(os.environ, TERM="xterm-256color", COLORTERM="truecolor")
         for key in ("NO_COLOR", "CLICOLOR", "CLICOLOR_FORCE", "FORCE_COLOR"):
             env.pop(key, None)
-        example = "--text-entry" if text_entry else "--choices" if choices else "--paused"
+        example = "--feedback" if feedback else "--text-entry" if text_entry else "--choices" if choices else "--paused"
         process = subprocess.Popen([str(binary), example], stdin=slave,
                                    stdout=slave, stderr=slave, env=env)
-        until("/ text entry" if text_entry else "1 / 2" if choices else "4 of 4 items")
+        until("Ready to publish" if feedback else "/ text entry" if text_entry else "1 / 2" if choices else "4 of 4 items")
         modes = termios.tcgetattr(slave)
         assert not modes[3] & (termios.ECHO | termios.ICANON), "Terminal is not in raw input mode"
         assert modes[6][termios.VMIN] == 1 and modes[6][termios.VTIME] == 0, "Unexpected raw read timing"
         assert b"\x1b[?1049h" in output, "Alternate screen was not entered"
 
-        if text_entry:
+        if feedback:
+            send(b"\r", "Publish report?")
+            send(b"\x1b", "Ready to publish")
+            assert "Publish report?" not in screen(output), "Escape did not dismiss confirmation"
+            send(b"\r", "Publish report?")
+            send(b"\t\t\r", "Ready to publish")  # Close, message viewport, then Cancel.
+            assert "Publish report?" not in screen(output), "Cancel did not dismiss confirmation"
+            send(b"\r", "Publish report?")
+            send(b"\t\t\t\r", "Report published")
+            until("Published · ready to share")
+            send(b"\x04", "Discard report?")
+            send(b"\t\t\t\r", "Ready to publish")
+            send(b"\x14", "Ready to publish")
+        elif text_entry:
             password = b"ChioDemo482!"  # Synthetic fixture; never use a real credential.
             send(b"\x13", "Error: Use at least 8")
             send(password, "•" * len(password))
@@ -182,7 +195,7 @@ def run(binary, choices=False, text_entry=False):
             send(b"Smoke Agent", "Smoke Agent")
             send(b"\x1b", "/ agent workspace")
 
-        os.write(master, b"\x11" if choices or text_entry else b"q")
+        os.write(master, b"\x11" if choices or text_entry or feedback else b"q")
         deadline = time.monotonic() + 15
         while process.poll() is None and time.monotonic() < deadline:
             receive()
@@ -192,7 +205,8 @@ def run(binary, choices=False, text_entry=False):
         assert process.returncode == 0, f"Dashboard exited with {process.returncode}"
         assert b"\x1b[?1049l" in output, "Alternate screen was not restored"
         assert termios.tcgetattr(slave) == original_modes, "Terminal modes were not restored"
-        print("PASS: secure masking, multiline paste, disabled input, validation, clean exit" if text_entry else
+        print("PASS: confirmation, cancellation, spinner, toast, destructive reset, clean exit" if feedback else
+              "PASS: secure masking, multiline paste, disabled input, validation, clean exit" if text_entry else
               "PASS: searchable choices, hidden checks, validation, save/cancel, clean exit" if choices else
               "PASS: raw input, search, palette, report/table, form, focus restoration, clean exit")
     except Exception:
@@ -216,5 +230,6 @@ if __name__ == "__main__":
     examples = parser.add_mutually_exclusive_group()
     examples.add_argument("--choices", action="store_true", help="Exercise the focused choice example")
     examples.add_argument("--text-entry", action="store_true", help="Exercise the focused text-entry example")
+    examples.add_argument("--feedback", action="store_true", help="Exercise native prompts, spinner and toast")
     arguments = parser.parse_args()
-    run(arguments.binary.resolve(), choices=arguments.choices, text_entry=arguments.text_entry)
+    run(arguments.binary.resolve(), choices=arguments.choices, text_entry=arguments.text_entry, feedback=arguments.feedback)

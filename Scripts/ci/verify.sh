@@ -35,6 +35,9 @@ done
     > .build/ci-results/choices-compact.txt
 "$binary" --text-entry --snapshot --width 36 --height 18 \
     > .build/ci-results/text-entry-compact.txt
+"$binary" --feedback --snapshot --width 36 --height 18 \
+    > .build/ci-results/feedback-compact.txt
 python3 Scripts/ci/terminal-smoke.py "$binary"
 python3 Scripts/ci/terminal-smoke.py "$binary" --choices
 python3 Scripts/ci/terminal-smoke.py "$binary" --text-entry
+python3 Scripts/ci/terminal-smoke.py "$binary" --feedback

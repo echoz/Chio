@@ -24,6 +24,8 @@ extension View {
             .textFieldStyle(ChioTextFieldStyle(theme: theme))
             .textEditorStyle(ChioTextEditorStyle(theme: theme))
             .progressViewStyle(ChioProgressViewStyle(theme: theme))
+            .spinnerStyle(ChioSpinnerStyle(theme: theme))
+            .promptStyle(ChioPromptStyle(theme: theme))
             .buttonStyle(ChioButtonStyle(theme: theme))
             .pickerStyle(ChioPickerStyle(theme: theme))
             .toggleStyle(ChioToggleStyle(theme: theme))
