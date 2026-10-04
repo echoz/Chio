@@ -1,4 +1,5 @@
 import Chio
+import Foundation
 import SwiftTUI
 
 @main
@@ -30,6 +31,12 @@ struct ChioDashboardCommand {
     @Flag(help: "Run the focused confirmation, spinner and toast example.")
     var feedback = false
 
+    @Flag(help: "Run the focused filesystem file-selection example.")
+    var files = false
+
+    @Option(help: "Starting folder for --files (defaults to the current working directory).")
+    var directory: String?
+
     @OptionGroup(title: "SwiftTUI options")
     var swiftTUIOptions: SwiftTUIOptions
 
@@ -57,11 +64,17 @@ extension ChioDashboardCommand: AsyncParsableCommand {
         guard (20...240).contains(width), (10...100).contains(height) else {
             throw ValidationError("Use --width 20...240 and --height 10...100.")
         }
-        if [choices, textEntry, feedback].filter({ $0 }).count > 1 {
-            throw ValidationError("Choose one example: --choices, --text-entry or --feedback.")
+        if [choices, textEntry, feedback, files].filter({ $0 }).count > 1 {
+            throw ValidationError("Choose one example: --choices, --text-entry, --feedback or --files.")
         }
-        if (choices || textEntry || feedback) && (scenario != .normal || paused) {
+        if (choices || textEntry || feedback || files) && (scenario != .normal || paused) {
             throw ValidationError("--scenario and --paused describe the dashboard simulation; omit them with a focused example.")
+        }
+        if directory != nil && !files {
+            throw ValidationError("--directory is available only with --files.")
+        }
+        if files && snapshot {
+            throw ValidationError("--files loads folders asynchronously and does not support --snapshot; run the interactive example.")
         }
     }
 
@@ -74,6 +87,11 @@ extension ChioDashboardCommand: AsyncParsableCommand {
                 frameInstant: .zero
             )
             print(frame.rasterSurface.lines.joined(separator: "\n"))
+        } else if files {
+            let startingDirectory = URL(fileURLWithPath: directory ?? FileManager.default.currentDirectoryPath,
+                                        isDirectory: true)
+            try await WebHostCLIRunner.run(FileSelectionApplication(directory: startingDirectory, light: light),
+                                          configuration: swiftTUIOptions.runtimeConfiguration())
         } else if feedback {
             try await WebHostCLIRunner.run(FeedbackApplication(light: light), configuration: swiftTUIOptions.runtimeConfiguration())
         } else if textEntry {

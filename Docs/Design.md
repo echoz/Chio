@@ -118,6 +118,9 @@ rejects or transforms a write; external query/data changes also reconcile on ren
 Application shortcuts must not consume ordinary text while editing search.
 Selection and keyboard focus are distinct. Empty source data and a search with
 no matches have separate messages.
+When Return has requested results focus, a second Return activates the current
+filtered selection even if native focus is still leaving the editor. No-match
+queries remain inert during that handoff.
 
 The persistent `›` marker represents selection. SwiftTUI's native `▌` and row
 chrome show keyboard focus, which Tab can move without changing selection.
@@ -345,6 +348,49 @@ and a native toast announces completion.
 A destructive alert resets the local result. The task only advances simulated
 application state; native controls still own presentation and animation timing.
 
+## File selection
+
+`FilePicker(directory:selection:allowedExtensions:showsHiddenFiles:onConfirm:onCancel:)`
+chooses one existing readable regular file. It reuses `SearchableList` and its
+native editing, focus and scrolling; Chio adds directory loading,
+navigation, file eligibility, error/retry presentation and explicit confirmation.
+The application's URL binding is committed only after confirmation succeeds.
+Browsing, filtering and cancellation leave the previous committed URL intact.
+If the binding rejects the proposed URL, the picker stays open with feedback.
+After confirm or cancel, the picker becomes inactive; applications dismiss or
+recreate it to start another choice.
+
+The directory is a starting location, not a confinement boundary. Inputs must
+be absolute local file URLs. Dot components normalize lexically, and Parent
+stops at `/`. File and directory symlinks are followed, including outside the
+starting location; display and returned paths retain the chosen symlink route.
+Broken links, unreadable entries and special files cannot be confirmed. Entries
+sort directories first, then by case-insensitive name with deterministic ties.
+Dot files and filesystem-hidden entries are hidden unless explicitly enabled.
+A nil extension set allows all regular files; an empty set allows none. Matching
+is case-insensitive against the chosen filename's extension, without a leading
+dot, and directories remain available. Search filters the current folder only.
+
+Return enters the selected folder or confirms a file; Choose confirms a file.
+Backspace at results and Parent move up; Escape clears search. Cancel and Ctrl-G
+end the choice. Theme and geometry changes preserve the current folder and
+filter. A changed starting directory or hidden-file policy reloads the listing.
+
+An internal actor owns Foundation metadata and enumeration work off the main
+actor; the picker owns the actor through native state. Native `.task(id:)`
+handles cancellation. Each load or confirmation has a fresh generation, and
+completion checks cancellation before reading the exact captured state binding,
+then rejects stale generations. Navigation, editing during confirmation, cancel
+and disappearance invalidate pending work. Confirmation rechecks current kind
+and readability; it does not open a file, read contents, reserve an inode or
+guarantee that a later application open will succeed. Blocking filesystem calls
+may finish after cancellation, but their results cannot commit a cancelled choice.
+
+The `--files` example reads the local starting folder and shows the selected URL;
+it does not modify files. Hosted tests and terminal checks use temporary trees.
+The plain `--snapshot` renderer cannot await filesystem work, so this example
+rejects that flag rather than claiming a loaded directory snapshot.
+
 ## Markdown and agent reports
 
 `MarkdownDocument(source)` parses once into an immutable, `Hashable`, `Sendable`
@@ -398,10 +444,11 @@ before cover presentation, dashboard shortcuts are consumed so Enter followed by
 
 | Path | Responsibility |
 | --- | --- |
-| `Sources/Chio/Domain` | Theme values, pure search/membership decisions, validation visibility, and parsed Markdown |
+| `Sources/Chio/Domain` | Theme values, pure search/membership decisions, validation visibility, file observations, and parsed Markdown |
+| `Sources/Chio/Execution` | Filesystem loading and confirmation checks |
 | `Sources/Chio/Presentation` | Components and environment integration |
 | `Sources/Chio/Presentation/Styles` | Native SwiftTUI control styles |
-| `Examples/AgentDashboard` | Dashboard and focused choice example, domain rules, presentation, and thin entry point |
+| `Examples/AgentDashboard` | Dashboard and focused control examples, domain rules, presentation, and thin entry point |
 | `Tests/ChioTests` | Tests grouped by corresponding responsibility |
 | `Tests/ChioDashboardTests` | Simulation, draft rules, report snapshots, and dashboard/form/report/palette interaction |
 

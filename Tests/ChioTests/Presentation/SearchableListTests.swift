@@ -59,6 +59,29 @@ struct SearchableListTests {
         }
     }
 
+    @Test("Two Enter keys from the native search editor honor the pending results focus", arguments: ["q", "zzz"])
+    func editorSearchAndActivation(query: String) async throws {
+        try await withSearchScene { session, _, recorder in
+            _ = try await recorder.wait(description: "results before entering the native editor") {
+                $0.hasResultsFocus && $0.contains("Q= S=b F=r A=0")
+            }
+            session.send(.key(.character("/")))
+            let editing = try await recorder.wait(description: "actual native editor owns focus") { frame in
+                frame.semantics.accessibilityNodes.contains {
+                    $0.identity == frame.focusedIdentity && $0.role == .textField
+                }
+            }
+            session.sendInput(Array("\(query)\r\r".utf8))
+            session.send(.key(.character("b"), modifiers: .ctrl))
+            let completed = try await recorder.wait(after: editing.sequence, description: "editor batch and focus handoff complete") {
+                $0.hasResultsFocus && $0.contains("Barrier=1") && $0.contains("F=r")
+            }
+            #expect(completed.hasQuery(query))
+            #expect(completed.contains(query == "q" ? "Q=q S=q F=r A=1" : "Q=zzz S=- F=r A=0"))
+            #expect(completed.contains(query == "q" ? "Last=q Quit=0 Barrier=1" : "Last=- Quit=0 Barrier=1"))
+        }
+    }
+
     @Test("Batched unmatched search and two Enter keys cannot activate a stale result")
     func immediateNoMatchActivation() async throws {
         try await withSearchScene { session, _, recorder in

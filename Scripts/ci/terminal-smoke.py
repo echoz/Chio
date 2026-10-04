@@ -14,10 +14,12 @@ from pathlib import Path
 import pty
 import re
 import select
+import signal
 import struct
 import subprocess
 import sys
 import termios
+import tempfile
 import time
 
 
@@ -77,11 +79,13 @@ def screen(output):
     return "\n".join("".join(line) for line in cells)
 
 
-def run(binary, choices=False, text_entry=False, feedback=False):
+def run(binary, choices=False, text_entry=False, feedback=False, files=False):
+    global WIDTH, HEIGHT
     master, slave = pty.openpty()
     process = None
     output = bytearray()
     original_modes = termios.tcgetattr(slave)
+    file_fixture = tempfile.TemporaryDirectory(prefix="chio-files-") if files else None
 
     def receive(timeout=0.1):
         if not select.select([master], [], [], timeout)[0]:
@@ -121,16 +125,39 @@ def run(binary, choices=False, text_entry=False, feedback=False):
         env = dict(os.environ, TERM="xterm-256color", COLORTERM="truecolor")
         for key in ("NO_COLOR", "CLICOLOR", "CLICOLOR_FORCE", "FORCE_COLOR"):
             env.pop(key, None)
-        example = "--feedback" if feedback else "--text-entry" if text_entry else "--choices" if choices else "--paused"
-        process = subprocess.Popen([str(binary), example], stdin=slave,
+        example = "--files" if files else "--feedback" if feedback else "--text-entry" if text_entry else "--choices" if choices else "--paused"
+        command = [str(binary), example]
+        if file_fixture is not None:
+            folder = Path(file_fixture.name)
+            (folder / "alpha.txt").write_text("alpha\n")
+            (folder / "nested").mkdir()
+            (folder / "nested" / "inside.txt").write_text("inside\n")
+            command.extend(["--directory", str(folder)])
+        process = subprocess.Popen(command, stdin=slave,
                                    stdout=slave, stderr=slave, env=env)
-        until("Ready to publish" if feedback else "/ text entry" if text_entry else "1 / 2" if choices else "4 of 4 items")
+        until("alpha.txt" if files else "Ready to publish" if feedback else "/ text entry" if text_entry else "1 / 2" if choices else "4 of 4 items")
         modes = termios.tcgetattr(slave)
         assert not modes[3] & (termios.ECHO | termios.ICANON), "Terminal is not in raw input mode"
         assert modes[6][termios.VMIN] == 1 and modes[6][termios.VTIME] == 0, "Unexpected raw read timing"
         assert b"\x1b[?1049h" in output, "Alternate screen was not entered"
 
-        if feedback:
+        if files:
+            send(b"/alpha", "1 of 2 items")
+            send(b"\r", "alpha.txt")  # Search hands focus to the filtered row.
+            send(b"\x14", "alpha.txt")
+            WIDTH, HEIGHT = 36, 18
+            fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", HEIGHT, WIDTH, 0, 0))
+            process.send_signal(signal.SIGWINCH)
+            until("^Q quit")
+            until("Choose")
+            send(b"\r", "Selected file")
+            until("alpha.txt")
+            send(b"\x0f", "Filter files")  # Ctrl-O reopens the picker.
+            until("nested")
+            send(b"\x07", "Cancelled")
+            until("alpha.txt")  # Cancel preserves the earlier committed file.
+            send(b"\r", "Filter files")  # The native action also reopens.
+        elif feedback:
             send(b"\r", "Publish report?")
             send(b"\x1b", "Ready to publish")
             assert "Publish report?" not in screen(output), "Escape did not dismiss confirmation"
@@ -195,7 +222,7 @@ def run(binary, choices=False, text_entry=False, feedback=False):
             send(b"Smoke Agent", "Smoke Agent")
             send(b"\x1b", "/ agent workspace")
 
-        os.write(master, b"\x11" if choices or text_entry or feedback else b"q")
+        os.write(master, b"\x11" if choices or text_entry or feedback or files else b"q")
         deadline = time.monotonic() + 15
         while process.poll() is None and time.monotonic() < deadline:
             receive()
@@ -205,7 +232,8 @@ def run(binary, choices=False, text_entry=False, feedback=False):
         assert process.returncode == 0, f"Dashboard exited with {process.returncode}"
         assert b"\x1b[?1049l" in output, "Alternate screen was not restored"
         assert termios.tcgetattr(slave) == original_modes, "Terminal modes were not restored"
-        print("PASS: confirmation, cancellation, spinner, toast, destructive reset, clean exit" if feedback else
+        print("PASS: file filtering, confirmation, reopen/cancel, theme, compact resize, clean exit" if files else
+              "PASS: confirmation, cancellation, spinner, toast, destructive reset, clean exit" if feedback else
               "PASS: secure masking, multiline paste, disabled input, validation, clean exit" if text_entry else
               "PASS: searchable choices, hidden checks, validation, save/cancel, clean exit" if choices else
               "PASS: raw input, search, palette, report/table, form, focus restoration, clean exit")
@@ -222,6 +250,8 @@ def run(binary, choices=False, text_entry=False, feedback=False):
                 process.wait(timeout=5)
         os.close(master)
         os.close(slave)
+        if file_fixture is not None:
+            file_fixture.cleanup()
 
 
 if __name__ == "__main__":
@@ -231,5 +261,7 @@ if __name__ == "__main__":
     examples.add_argument("--choices", action="store_true", help="Exercise the focused choice example")
     examples.add_argument("--text-entry", action="store_true", help="Exercise the focused text-entry example")
     examples.add_argument("--feedback", action="store_true", help="Exercise native prompts, spinner and toast")
+    examples.add_argument("--files", action="store_true", help="Exercise filesystem selection in a temporary tree")
     arguments = parser.parse_args()
-    run(arguments.binary.resolve(), choices=arguments.choices, text_entry=arguments.text_entry, feedback=arguments.feedback)
+    run(arguments.binary.resolve(), choices=arguments.choices, text_entry=arguments.text_entry,
+        feedback=arguments.feedback, files=arguments.files)

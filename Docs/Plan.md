@@ -3,7 +3,7 @@
 The delivered proof-of-concept slices are a runnable local dashboard, agent
 creation, Markdown run reports, a command palette using simulated agents,
 a focused searchable-choice form, native password/multiline text entry, and
-confirmation with transient feedback.
+confirmation with transient feedback, and file selection.
 They establish the design direction, not broad parity with Charm's components.
 Accepted contracts and
 ownership live in [Design.md](Design.md); commands and interaction instructions
@@ -100,6 +100,20 @@ live in [the README](../README.md).
   pseudo-terminal workflows, including clean terminal restoration. New Linux
   verification remains pending; the prior CI limitation is recorded below.
 
+- File selection adds `FilePicker`, composing native search, list navigation,
+  buttons and loading feedback around an actor-owned filesystem boundary.
+  `--files` demonstrates folder navigation, fuzzy filtering, explicit file
+  confirmation, reopening and cancellation. The binding changes only after
+  the chosen file passes a fresh kind/readability check. Extension and hidden
+  file policies are explicit; symlinks preserve their chosen lexical paths.
+  Independent review's path-normalization and batched-edit/confirmation findings
+  were fixed; re-review found no remaining actionable issues. The accepted
+  cancellation and stale-result contracts live in [Design.md](Design.md#file-selection).
+  Release testing also exposed a search-to-results handoff gap: a second Return
+  could reach the editor before native focus moved and never activate the result.
+  `SearchableList` now honors its pending native focus request for that key,
+  with editor-focused matching/no-match cases and the original picker regression.
+
 ## Component coverage
 
 Source audit at Chio `424f8e6`, using SwiftTUI revision
@@ -143,7 +157,7 @@ come from Chio's original brief; they are not all standalone Bubbles packages.
 | Searchable/selectable list | Delivered fuzzy/substring search, stable single selection, count, activation and two empty messages | [List][native-list] owns navigation and scrolling | No integrated pagination, loading/error/status workflow, multi-selection or demonstrated large-data performance |
 | Tables | Delivered theme style and Markdown table composition; report navigation tested | [Table][native-table] owns grid, sizing, selection and navigation | Border/background paint correction remains unapplied; richer selected/sorted data-table workflows are not validated |
 | Trees | No Chio tree workflow or style | [OutlineGroup][native-outline], `OutlineStyle`, separate `DisclosureGroup` | `OutlineGroup` expands all descendants and paints connectors with native colors; a collapsible tree needs composition, and exact connector color needs upstream support |
-| File picker | No Chio file browser | No dedicated native picker found; lists, fields and scrolling are building blocks | Filesystem loading, navigation, allowed-item policy, errors and selection are genuinely missing reusable behavior |
+| File picker | `FilePicker` selects one readable regular file; async listing, folder navigation, fuzzy search, extension/hidden policy, errors/retry and explicit confirmation | Native search, lists, buttons, focus, scrolling and task lifetime | No directory/multiple selection, save panel, root confinement, recursive search or filesystem watching; confirmation does not reserve the file |
 | Pagination | No Chio paginator | Native views and input for presentation | Page arithmetic, navigation and compact display; scrolling is not pagination |
 | Scrollable viewport | Used and tested in reports, tables and code blocks | [ScrollView][native-scroll], positions/readers/styles | Keep native scrolling; add a document-reader convenience only for demonstrated reusable UX |
 | Progress/loading bar | Delivered determinate and indeterminate `ChioProgressViewStyle`, including reduced motion | `ProgressView` owns animation phase | Not a dedicated spinner; animated/gradient fill variants are not part of the current Chio scope |
@@ -192,6 +206,26 @@ Swift 6.4, with SwiftTUI pinned at
 - `swift build --product chio-dashboard` passes.
 - `swift build -c release --product chio-dashboard` also passes. Interactive
   launch instructions use release mode; debug enables extra upstream verification.
+- The file-selection candidate completes its 218-test release suite with 217
+  passing tests (151 library and 66 dashboard/example), and its 196-test selected
+  debug suite with 195 passing tests (151 library and 44 example/domain).
+  Each run skips the case-distinct filename ordering test on this Mac's
+  case-insensitive filesystem; permission and hidden-flag tests run and pass.
+  Temporary-tree tests cover sorting, hidden/extension policy, lexical URLs,
+  file/folder links, broken and cyclic links, permissions, special files, and
+  deletion or type changes before confirmation. Controlled delayed operations
+  prove rejection of the exercised stale read/validation completions after
+  navigation, editing, cancellation and reopening. These are bounded schedules,
+  not proof of every interleaving. Hosted examples cover real folder navigation,
+  explicit confirmation, retained choices on cancel, theme and 36 × 18 resizing.
+  The search handoff regression passes in both build configurations, retaining
+  exact-once activation and no-match rejection assertions.
+  `Scripts/ci/verify.sh` completes successfully, including the separate production
+  build, nine snapshot captures and five pseudo-terminal workflows. The new
+  terminal workflow filters and confirms a temporary file, changes theme, resizes
+  to 36 × 18, reopens and cancels while retaining the chosen file, and restores
+  terminal attributes on exit. Fresh Linux and live Blink/SSH verification for
+  this slice remain pending; no dependency or static-link requirement changed.
 - The feedback slice passed all 184 Swift Testing tests in release with explicit `--no-parallel`:
   120 library tests and 64 dashboard/example tests. The additional selected debug
   pass covers 162 tests with the same assertions and deadlines; the three larger
@@ -382,6 +416,13 @@ The text-entry release was sampled at 100 × 30 with no concurrent build or test
 masked typing measured 55 ms median and multiline typing 61 ms median, with six
 characters each. These are local observations including capture/decoding overhead;
 they do not measure SSH transport or Blink display latency.
+
+The file-selection release was sampled at 100 × 30 against a temporary folder
+with 40 files, with no concurrent build or tests. Search typing measured 90 ms
+median and row navigation 25 ms median, with six inputs each. The loaded and
+filtered terminal layouts were inspected; the process exited with code zero and
+restored terminal modes. These small local samples include capture/decoding
+overhead and exclude SSH/Blink latency; they do not establish large-folder performance.
 
 ## Linux and CI
 
@@ -583,8 +624,8 @@ unchanged; a local SwiftPM edit is only integration evidence, not distribution.
 
 ## Next component slices
 
-The coverage audit is complete and the following order is approved. The first
-three slices are implemented; subsequent slices remain planned. Their public APIs remain
+The coverage audit is complete and the following four approved slices are
+implemented. Their public APIs remain
 open to evidence from focused examples. Broaden reusable component coverage
 before treating the framework as ready for release preparation.
 
@@ -615,7 +656,7 @@ before treating the framework as ready for release preparation.
    confirm/cancel, return of focus, disabled/destructive actions, narrow prompts,
    reduced motion and transient-message lifecycle. Pass toast styles through its
    explicit native API. Theme limitations in prompt headers remain visible.
-4. **File selection.** Build one reusable file-choice workflow with application
+4. **File selection — implemented.** Build one reusable file-choice workflow with application
    bindings and an owned filesystem-loading boundary. Specify files versus
    directories, filtering, path/symlink policy, loading/errors and confirmation
    before implementation. Prove navigation, empty/inaccessible directories,

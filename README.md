@@ -27,8 +27,8 @@ before relying on it.
 The package includes one public library, `Chio`, and the `chio-dashboard`
 executable. Run it to try search, selection, agent creation, inline validation,
 progress, themes, a command palette, and Markdown reports of simulated runs.
-Focused `--choices`, `--text-entry`, and `--feedback` examples exercise richer
-controls and confirmation workflows.
+Focused `--choices`, `--text-entry`, `--feedback`, and `--files` examples exercise
+richer controls, confirmation workflows, and local file selection.
 They require no external services.
 
 The initial demo slices explore the design direction; Chio's component coverage
@@ -185,6 +185,39 @@ closures must clear their presentation binding; a button role alone does not
 dismiss a prompt. Keep action labels short, or compose a `VStack` in the action
 builder when a vertical arrangement fits better.
 
+### Try file selection
+
+```sh
+COLORTERM=truecolor swift run -c release chio-dashboard --files
+# Or start in a particular folder:
+COLORTERM=truecolor swift run -c release chio-dashboard --files --directory ./Sources
+```
+
+Use arrows to select, `/` to filter names in the current folder, and Return to
+enter a folder or choose a file. Parent or Backspace at results moves up. Escape
+clears the filter; Cancel or Ctrl-G cancels without replacing a previous choice.
+Ctrl-O reopens after a result, Ctrl-T changes theme, and Ctrl-Q quits.
+The example reads directory metadata and displays the chosen path; it does not
+open file contents or modify files. `--files` requires an interactive session
+and does not support `--snapshot`.
+
+```swift
+FilePicker(directory: startingDirectory, selection: $selectedFile,
+           allowedExtensions: ["swift", "md"], onConfirm: { url in
+    // Use the explicitly confirmed URL.
+}, onCancel: {
+    // Dismiss the picker; selectedFile keeps its previous value.
+})
+.chioTheme(.default)
+```
+
+Omit `allowedExtensions` to allow every regular file; an empty set allows none.
+Matching ignores case, and folders stay visible for navigation. Hidden files
+are off by default; pass `showsHiddenFiles: true` to include them. File and folder
+symlinks work, and the returned URL retains the chosen path. The starting folder
+does not restrict navigation. Confirmation rechecks readability and file kind;
+applications still handle errors when opening the file themselves.
+
 ### Colors over SSH
 
 For a true-color terminal such as Blink, declare that capability on the remote
@@ -207,7 +240,7 @@ the upstream conversion still needs correction for actual 256-color terminals.
 ## Design direction
 
 - Apply a theme to native `GroupBox`, `List`, `Table`, `TextField`, `SecureField`, `TextEditor`, `Picker`, `Toggle`, `ProgressView`, `Spinner`, and native prompt styles.
-- Compose reusable `KeyHint`, `KeyHints`, `StatusBar`, `SearchableList`, `SearchableChecklist`, and `FormField` views.
+- Compose reusable `KeyHint`, `KeyHints`, `StatusBar`, `SearchableList`, `SearchableChecklist`, `FormField`, and `FilePicker` views.
 - Customize nested semantic colors, spacing, and treatments through `.chioTheme(...)`.
 - Style native command palettes with `ChioPaletteStyle`; apply `.chioTheme(...)`
   after `.paletteSheet(...)` so the palette declaration receives the style.
@@ -322,6 +355,9 @@ focus, creation, cancellation, theme changes, resizing, and batched input.
 Markdown checks cover parsing, rich text wrapping, preserved code whitespace,
 native scrolling, report snapshots, and returning to the dashboard's focus.
 Palette checks cover filtering, disabled actions, long lists, and focus restoration.
+File-selection checks use temporary directory trees and controlled delayed
+operations to cover navigation, symlinks, errors, confirmation and stale results
+after navigation or cancellation.
 Pass `--no-parallel` explicitly: concurrent hosted dashboard suites can exceed
 their frame deadlines on this toolchain. Use the optimized build for the complete
 suite: unoptimized multi-screen rendering can exceed the same five-second waits
@@ -361,7 +397,8 @@ full debug investigation. Test assertions and deadlines are identical in both mo
 The script also builds the release dashboard, captures snapshot scenarios,
 and exercises the executable through a real pseudo-terminal. The smoke check
 verifies raw input, search, palette cancellation, report/table and form opening,
-focus restoration, normal exit, and restored terminal attributes. This is not a
+focus restoration, the choices/text-entry/feedback examples, file selection in
+a temporary tree, normal exit, and restored terminal attributes. This is not a
 live Blink/SSH check or a color/latency benchmark. To check an existing binary:
 
 ```sh
@@ -383,9 +420,11 @@ failures. The current blockers and verified platforms are recorded in
 
 ## Repository
 
-`Sources/Chio/Domain` owns theme values, pure search rules, validation visibility, and parsed Markdown.
+`Sources/Chio/Domain` owns theme values, pure search rules, validation visibility,
+file observations, and parsed Markdown. `Sources/Chio/Execution` owns filesystem
+loading and confirmation checks.
 `Sources/Chio/Presentation` owns views and styles, with native styles in `Presentation/Styles`.
-`Examples/AgentDashboard` owns the simulated demo; `Tests/ChioTests` mirrors library
+`Examples/AgentDashboard` owns the dashboard and focused examples; `Tests/ChioTests` mirrors library
 responsibilities and checks rendering and behavior without requiring a real TTY.
 
 The dependency is pinned to inspected SwiftTUI revision

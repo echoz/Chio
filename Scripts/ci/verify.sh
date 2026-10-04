@@ -41,3 +41,4 @@ python3 Scripts/ci/terminal-smoke.py "$binary"
 python3 Scripts/ci/terminal-smoke.py "$binary" --choices
 python3 Scripts/ci/terminal-smoke.py "$binary" --text-entry
 python3 Scripts/ci/terminal-smoke.py "$binary" --feedback
+python3 Scripts/ci/terminal-smoke.py "$binary" --files

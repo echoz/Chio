@@ -125,6 +125,7 @@ public struct SearchableList<Item: Identifiable, RowContent: View> where Item.ID
 
 extension SearchableList: View {
     public var body: some View {
+        let focusStorage = $focus
         let visible = SearchMatcher.filtered(items, query: query.wrappedValue, filter: filter, searchText: searchText)
         let visibleIDs = visible.map(\.id)
         let selectedID = SearchSelection.reconciled(selection.wrappedValue, visibleIDs: visibleIDs)
@@ -137,9 +138,15 @@ extension SearchableList: View {
 
         VStack(alignment: .leading, spacing: theme.spacing.sectionGap) {
             TextField(prompt, text: query)
-                .focused($focus, equals: .search)
+                .focused(focusStorage, equals: .search)
                 .onKeyPress(.return) { _ in
-                    focus = .results
+                    // A second Return may arrive before native focus leaves the
+                    // editor. Honor the requested results focus for that key.
+                    if focusStorage.wrappedValue == .results {
+                        activateSelection()
+                    } else {
+                        focusStorage.wrappedValue = .results
+                    }
                     return .handled
                 }
                 .onKeyPress(.escape) { _ in
