@@ -1,0 +1,108 @@
+diff --git a/Sources/Chio/Presentation/Styles/ChioTableStyle.swift b/Sources/Chio/Presentation/Styles/ChioTableStyle.swift
+index c5954c8..6bfd14c 100644
+--- a/Sources/Chio/Presentation/Styles/ChioTableStyle.swift
++++ b/Sources/Chio/Presentation/Styles/ChioTableStyle.swift
+@@ -1,6 +1,6 @@
+ import SwiftTUIViews
+ 
+-/// Native rounded table chrome with semantic header colors.
++/// A connected native grid on one surface, with semantic header and border colors.
+ public struct ChioTableStyle {
+     public var theme: ChioTheme
+ 
+@@ -15,9 +15,9 @@ extension ChioTableStyle: TableStyle {
+         .init(
+             borderGlyphs: .insetGrouped,
+             headerForegroundStyle: AnyShapeStyle(theme.colors.heading),
+-            headerBackgroundStyle: AnyShapeStyle(theme.colors.selectedSurface),
+-            // The pinned SwiftTUI currently masks this with its native border paint.
+-            borderStyle: AnyShapeStyle(theme.colors.border)
++            headerBackgroundStyle: AnyShapeStyle(theme.colors.surface),
++            borderStyle: AnyShapeStyle(theme.colors.border),
++            backgroundStyle: AnyShapeStyle(theme.colors.surface)
+         )
+     }
+ }
+diff --git a/Tests/ChioTests/Presentation/MarkdownTableRenderTests.swift b/Tests/ChioTests/Presentation/MarkdownTableRenderTests.swift
+index fe99ae9..a4f1d4f 100644
+--- a/Tests/ChioTests/Presentation/MarkdownTableRenderTests.swift
++++ b/Tests/ChioTests/Presentation/MarkdownTableRenderTests.swift
+@@ -4,6 +4,43 @@ import Testing
+ 
+ @MainActor
+ struct MarkdownTableRenderTests {
++    @Test("Table rules form a continuous grid on Chio's surface over a black terminal",
++          arguments: [false, true])
++    func continuousGrid(light: Bool) throws {
++        let theme = light ? ChioTheme.light : .default
++        let surface = DefaultRenderer().render(
++            MarkdownView(MarkdownDocument("""
++            | Stage | Result |
++            | --- | --- |
++            | Build | Passed |
++            | Test | Ready |
++            """))
++            .chioTheme(theme)
++            .environment(\.terminalAppearance, TerminalAppearance(
++                foregroundColor: .white, backgroundColor: .black, tintColor: .blue,
++                source: .activeQuery
++            )),
++            proposal: .init(width: 40, height: 16)
++        ).rasterSurface
++        let lines = surface.lines.map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
++        #expect(lines == [
++            "╭───────┬────────╮",
++            "│ Stage │ Result │",
++            "├───────┼────────┤",
++            "│ Build │ Passed │",
++            "├───────┼────────┤",
++            "│ Test  │ Ready  │",
++            "╰───────┴────────╯",
++        ])
++        let rules = surface.cells.flatMap { $0 }.filter { "╭╮╰╯─│├┼┤┬┴".contains($0.character) }
++        try #require(!rules.isEmpty)
++        #expect(rules.allSatisfy { $0.style?.backgroundColor == theme.colors.surface })
++        let border = try #require(rules.first?.style?.foregroundColor)
++        #expect(border == theme.colors.border)
++        #expect(rules.allSatisfy { $0.style?.foregroundColor == border })
++        #expect(border.contrastRatio(to: theme.colors.surface) > 1.5)
++    }
++
+     @Test("Markdown tables retain native semantics, visible headers, and rich body cells",
+           arguments: [false, true])
+     func richCells(light: Bool) {
+@@ -28,12 +65,12 @@ struct MarkdownTableRenderTests {
+         let cells = surface.cells.flatMap { $0 }
+         #expect(cells.contains {
+             $0.character == "N" && $0.style?.foregroundColor == theme.colors.heading
+-                && $0.style?.backgroundColor == theme.colors.selectedSurface
++                && $0.style?.backgroundColor == theme.colors.surface
+                 && $0.style?.emphasis.contains(.italic) == false
+         })
+         #expect(cells.contains {
+             $0.character == "S" && $0.style?.foregroundColor == theme.colors.heading
+-                && $0.style?.backgroundColor == theme.colors.selectedSurface
++                && $0.style?.backgroundColor == theme.colors.surface
+         })
+         #expect(cells.contains {
+             $0.character == "A" && $0.style?.emphasis.contains(.bold) == true
+@@ -137,12 +174,14 @@ struct MarkdownTableRenderTests {
+             let cells = rendered.rasterSurface.cells.flatMap { $0 }
+             #expect(cells.contains {
+                 $0.character == "H" && $0.style?.foregroundColor == theme.colors.heading
+-                    && $0.style?.backgroundColor == theme.colors.selectedSurface
++                    && $0.style?.backgroundColor == theme.colors.surface
++            })
++            let borders = cells.filter { "╭╮╰╯─│├┼┤┬┴".contains($0.character) }
++            #expect(!borders.isEmpty)
++            #expect(borders.allSatisfy {
++                $0.style?.foregroundColor == theme.colors.border
++                    && $0.style?.backgroundColor == theme.colors.surface
+             })
+-            // Upstream's default control chrome masks TableStylePresentation.borderStyle.
+-            // Verify native rounded geometry; authored border color remains an upstream gap.
+-            #expect(cells.contains { $0.character == "╭" })
+-            #expect(cells.contains { $0.character == "╰" })
+         }
+         #expect(native.rasterSurface.lines.contains { $0.contains("value") })
+     }

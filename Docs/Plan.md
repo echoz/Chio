@@ -184,6 +184,44 @@ display latency are still outside this measurement.
   Swift SDK directory. No Linux build or execution was attempted. Source risks
   include terminal reads, detached process spawning, socket constants, and C math.
 
+## Proposed connected table grid correction
+
+The Blink screenshot exposed native black fills between Chio-colored table rows
+and a border color too faint to read as a connected grid. A scoped terminal
+appearance override fixed the fills but left native borders faint, so it was
+not retained. The responsible fix is a small SwiftTUI style correction.
+
+Two reviewable patches are retained, but are **not applied to the default build**:
+
+- [SwiftTUI table paints](../Patches/SwiftTUI-table-style-paints.patch), against
+  `2d84ac7083993da2ef52e9d3d30255467efb9553`, makes explicit border paint take
+  precedence and adds an optional background paint. Nil retains native control
+  colors; native selection, disabled opacity, geometry, and scrolling remain.
+- [Chio connected grid](../Patches/Chio-connected-table-grid.patch), against
+  `b47280b`, uses one surface for header, rows, and rules, with the exact semantic
+  border color. It includes black-host regressions for every native box glyph,
+  both themes, and custom colors.
+
+The combined candidate passed all 104 Chio tests (74 library, 30 dashboard),
+including native table navigation through theme and resize. Independent review
+found no paint/state/reuse defects. A release build and pseudo-terminal workflow
+also passed: all 176 visible grid glyphs emitted the exact theme border/surface
+RGB in each theme, with scrolling, report return, and clean terminal restoration.
+This is local terminal evidence, not a new live Blink-over-SSH check.
+
+The locally built preview is `.build/previews/chio-dashboard-table-grid`; it is
+an ignored build artifact, not the default dependency or a portable distribution.
+Run it from the repository with `COLORTERM=truecolor` to inspect the report.
+
+SwiftTUI's new focused tests were reviewed
+but not run; its generated public API inventory must still be regenerated.
+The required `swiftly` and `bun` tools are unavailable here, and its external
+development companion could not be retrieved. Full upstream gates remain open.
+
+Shipping this correction requires choosing a reproducible patched SwiftTUI
+dependency or receiving the fix upstream. Chio's published-source pin remains
+unchanged; a local SwiftPM edit is only integration evidence, not distribution.
+
 ## Next decisions after trying the dashboard
 
 1. Gather visual and interaction feedback from running the binary at everyday

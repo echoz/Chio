@@ -1,0 +1,207 @@
+diff --git a/Sources/SwiftTUIPrimitives/Styling/TableStylePresentations.swift b/Sources/SwiftTUIPrimitives/Styling/TableStylePresentations.swift
+index dcf3348c..0bf25f86 100644
+--- a/Sources/SwiftTUIPrimitives/Styling/TableStylePresentations.swift
++++ b/Sources/SwiftTUIPrimitives/Styling/TableStylePresentations.swift
+@@ -45,9 +45,17 @@ public struct TableStylePresentation:
+   /// header no background of its own.
+   public var headerBackgroundStyle: AnyShapeStyle?
+ 
+-  /// Border and separator paint. `nil` means theme-derived, and authored
+-  /// per-view chrome still wins over the style: the draw phase resolves
+-  /// authored chrome, then this paint, then the theme separator color.
++  /// The fill behind the table, including border and separator cells.
++  ///
++  /// `nil`, the default, retains the native control background. Header and
++  /// authored row backgrounds paint over this fill. A supplied paint takes
++  /// precedence over the generated control background in every control state.
++  public var backgroundStyle: AnyShapeStyle?
++
++  /// Border and separator paint. `nil`, the default, retains the native control
++  /// border, including its focused and disabled treatments. A supplied paint
++  /// takes precedence over the generated border in every control state; the
++  /// table still applies native disabled opacity and selected-row chrome.
+   public var borderStyle: AnyShapeStyle?
+ 
+   /// Creates a table presentation.
+@@ -61,7 +69,8 @@ public struct TableStylePresentation:
+     borderGlyphs: TableBorderGlyphs = .plain,
+     headerForegroundStyle: AnyShapeStyle? = nil,
+     headerBackgroundStyle: AnyShapeStyle? = nil,
+-    borderStyle: AnyShapeStyle? = nil
++    borderStyle: AnyShapeStyle? = nil,
++    backgroundStyle: AnyShapeStyle? = nil
+   ) {
+     self.snapshotLabel = snapshotLabel
+     self.contentInsets = contentInsets
+@@ -69,6 +78,7 @@ public struct TableStylePresentation:
+     self.headerForegroundStyle = headerForegroundStyle
+     self.headerBackgroundStyle = headerBackgroundStyle
+     self.borderStyle = borderStyle
++    self.backgroundStyle = backgroundStyle
+   }
+ 
+   /// The `snapshotLabel`, or `"TableStylePresentation"` when that is empty.
+diff --git a/Sources/SwiftTUIViews/Collections/Table.swift b/Sources/SwiftTUIViews/Collections/Table.swift
+index 2f1cfeef..23ff1636 100644
+--- a/Sources/SwiftTUIViews/Collections/Table.swift
++++ b/Sources/SwiftTUIViews/Collections/Table.swift
+@@ -389,8 +389,8 @@ extension Table {
+         selectedRowIndex: selectionPolicy.isMultiple ? activeRowIndex : selectedIndex,
+         style: tableStyle,
+         foregroundStyle: chrome.foregroundStyle,
+-        backgroundStyle: chrome.backgroundStyle,
+-        borderStyle: chrome.borderStyle,
++        backgroundStyle: tableStyle.backgroundStyle ?? chrome.backgroundStyle,
++        borderStyle: tableStyle.borderStyle ?? chrome.borderStyle,
+         selectedRowForegroundStyle: isFocused && showsFocusEffect ? rowChrome.foregroundStyle : nil,
+         selectedRowBackgroundStyle: isFocused && showsFocusEffect ? rowChrome.backgroundStyle : nil,
+         selectedRowMarkerStyle: isFocused && showsFocusEffect ? rowChrome.borderStyle : nil,
+diff --git a/Tests/SwiftTUITests/TableStylePaintTests.swift b/Tests/SwiftTUITests/TableStylePaintTests.swift
+new file mode 100644
+index 00000000..78889627
+--- /dev/null
++++ b/Tests/SwiftTUITests/TableStylePaintTests.swift
+@@ -0,0 +1,143 @@
++import Testing
++
++@testable import SwiftTUICore
++@testable import SwiftTUIRuntime
++@testable import SwiftTUIViews
++
++@MainActor
++struct TableStylePaintTests {
++  @Test("table styles paint connected borders and separator backgrounds")
++  func authoredPaintReachesRaster() throws {
++    let frame = render(
++      table.tableStyle(
++        FixedPaintStyle(
++          presentation: .init(
++            headerForegroundStyle: .color(.white),
++            headerBackgroundStyle: .color(.blue),
++            borderStyle: .color(.yellow),
++            backgroundStyle: .color(.magenta)
++          )
++        )
++      )
++    )
++    let borderGlyphs = Set("┌┐└┘├┤┬┴┼─│")
++    var borderCells = 0
++    var separatorCells = 0
++    for row in frame.rasterSurface.cells {
++      for cell in row where borderGlyphs.contains(cell.character) {
++        borderCells += 1
++        #expect(cell.style?.foregroundColor == .yellow)
++        if cell.character == "─" {
++          separatorCells += 1
++          #expect(cell.style?.backgroundColor == .magenta)
++        }
++      }
++    }
++    #expect(borderCells > 0)
++    #expect(separatorCells > 0)
++    let header = try #require(frame.rasterSurface.cells.flatMap { $0 }.first { $0.character == "V" })
++    #expect(header.style?.foregroundColor == .white)
++    #expect(header.style?.backgroundColor == .blue)
++    let body = try #require(frame.rasterSurface.cells.flatMap { $0 }.first { $0.character == "R" })
++    #expect(body.style?.backgroundColor == .magenta)
++    let authoredRow = try #require(
++      frame.rasterSurface.cells.flatMap { $0 }.first { $0.character == "1" })
++    #expect(authoredRow.style?.backgroundColor == .green)
++  }
++
++  @Test(
++    "authored table paints retain native state, selection, opacity, and geometry",
++    arguments: [(true, false), (true, true), (false, false), (false, true)]
++  )
++  func authoredPaintPreservesNativeState(state: (enabled: Bool, focused: Bool)) throws {
++    var presentation = TableStylePresentation.bordered
++    presentation.borderStyle = .color(.yellow)
++    presentation.backgroundStyle = .color(.magenta)
++    let baseline = render(table.tableStyle(.bordered), enabled: state.enabled, focused: state.focused)
++    let styled = render(
++      table.tableStyle(FixedPaintStyle(presentation: presentation)),
++      enabled: state.enabled, focused: state.focused
++    )
++    let original = try #require(tablePayload(in: baseline.resolvedTree))
++    let payload = try #require(tablePayload(in: styled.resolvedTree))
++    #expect(payload.borderStyle == .color(.yellow))
++    #expect(payload.backgroundStyle == .color(.magenta))
++    #expect(payload.opacity == (state.enabled ? 1 : 0.6))
++    #expect(payload.opacity == original.opacity)
++    #expect(payload.selectedRowIndex == original.selectedRowIndex)
++    #expect(payload.selectedRowForegroundStyle == original.selectedRowForegroundStyle)
++    #expect(payload.selectedRowBackgroundStyle == original.selectedRowBackgroundStyle)
++    #expect(payload.selectedRowMarkerStyle == original.selectedRowMarkerStyle)
++    #expect(payload.showsSelectionMarker == original.showsSelectionMarker)
++    #expect(payload.showsSelectionMarker == state.focused)
++    #expect(styled.rasterSurface.lines == baseline.rasterSurface.lines)
++    #expect(styled.measuredTree.measuredSize == baseline.measuredTree.measuredSize)
++  }
++
++  @Test(
++    "nil table paints preserve generated chrome in every native control state",
++    arguments: [(true, false), (true, true), (false, false), (false, true)]
++  )
++  func nilPaintRetainsNativeChrome(state: (enabled: Bool, focused: Bool)) throws {
++    #expect(TableStylePresentation().backgroundStyle == nil)
++    #expect(TableStylePresentation().borderStyle == nil)
++    let baseline = render(table.tableStyle(.bordered), enabled: state.enabled, focused: state.focused)
++    let styled = render(
++      table.tableStyle(FixedPaintStyle(presentation: .bordered)),
++      enabled: state.enabled, focused: state.focused
++    )
++    let original = try #require(tablePayload(in: baseline.resolvedTree))
++    let payload = try #require(tablePayload(in: styled.resolvedTree))
++    #expect(payload.backgroundStyle == original.backgroundStyle)
++    #expect(payload.borderStyle == original.borderStyle)
++    #expect(payload.backgroundStyle != nil)
++    #expect(payload.borderStyle != nil)
++    #expect(styled.rasterSurface == baseline.rasterSurface)
++  }
++
++  private var table: some View {
++    Table(selection: .constant(0 as Int?), columns: [.init("Value", width: 8)]) {
++      TableRow { Text("Row 0") }.tag(0)
++      TableRow { Text("Row 1") }.tag(1).listRowBackground(.green)
++    }
++  }
++
++  private func render<V: View>(
++    _ view: V, enabled: Bool = true, focused: Bool = false
++  ) -> RenderSnapshot {
++    let identity = testIdentity("TableStylePaint")
++    var environment = EnvironmentValues()
++    environment.isEnabled = enabled
++    if focused {
++      environment.focusedIdentity = identity
++    }
++    return DefaultRenderer().render(
++      view,
++      context: .init(
++        identity: identity, environmentValues: environment, applyEnvironmentValues: true),
++      proposal: .init(width: 24, height: 10)
++    )
++  }
++
++  private func tablePayload(in node: ResolvedNode) -> TablePayload? {
++    if case .table(let payload) = node.drawPayload {
++      return payload
++    }
++    for child in node.children {
++      if let payload = tablePayload(in: child) {
++        return payload
++      }
++    }
++    return nil
++  }
++}
++
++private struct FixedPaintStyle {
++  var presentation: TableStylePresentation
++}
++
++extension FixedPaintStyle: TableStyle {
++  func resolvePresentation(for configuration: TableStyleConfiguration) -> TableStylePresentation {
++    presentation
++  }
++}
