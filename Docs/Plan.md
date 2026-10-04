@@ -192,10 +192,16 @@ Swift 6.4, with SwiftTUI pinned at
 - `swift build --product chio-dashboard` passes.
 - `swift build -c release --product chio-dashboard` also passes. Interactive
   launch instructions use release mode; debug enables extra upstream verification.
-- All 184 Swift Testing tests pass in release with explicit `--no-parallel`:
+- The feedback slice passed all 184 Swift Testing tests in release with explicit `--no-parallel`:
   120 library tests and 64 dashboard/example tests. The additional selected debug
   pass covers 162 tests with the same assertions and deadlines; the three larger
   dashboard workflow suites run in release, as documented below.
+- The button-fill correction passes seven focused tests covering native button
+  focus, form controls, prompts and the feedback example. Its new hosted raster
+  regression checks every button cell in both themes after Tab/Shift-Tab,
+  including destructive, disabled and suppressed-focus states. Button dimensions
+  and native activation remain intact. The release build and feedback terminal
+  workflow also pass; the full suite above was not repeated for this paint change.
 - Feedback checks exercise both native prompt kinds, custom colors, disabled and
   destructive actions, confirm/Cancel/Escape, one dismissal callback, exact editor
   focus restoration and resumed editing. The example changes theme, resizes an

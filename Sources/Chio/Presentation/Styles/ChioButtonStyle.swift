@@ -17,9 +17,9 @@ extension ChioButtonStyle: ButtonStyle {
         configuration.label
             .padding(.horizontal, theme.spacing.horizontalInset)
             .foregroundStyle(configuration.isEnabled ? theme.colors.foreground : theme.colors.mutedText)
-            .background(active ? theme.colors.selectedSurface : theme.colors.surface)
             .border(active ? tone : theme.colors.border,
                     style: theme.treatments.borderStyle, placement: .outset)
+            .background(active ? theme.colors.selectedSurface : theme.colors.surface)
             .opacity(configuration.isEnabled ? 1 : 0.6)
     }
 }

@@ -81,9 +81,16 @@ spacing and single-printable-cell glyph preconditions.
 Component options specify behavior; application composition specifies content.
 
 Changing theme preserves query, stable selection, focus, and entered values.
-Native `GroupBox`, `List`, `Table`, `TextField`, `TextEditor`, `Picker`, `Toggle`, `ProgressView`, `Spinner`, and native prompt
-styles share the same semantic roles. The first appearance closely follows Huh's Charm palette and
+Native `GroupBox`, `List`, `Table`, `Button`, `TextField`, `TextEditor`, `Picker`,
+`Toggle`, `ProgressView`, `Spinner`, and native prompt styles share the same
+semantic roles. The first appearance closely follows Huh's Charm palette and
 Bubbles' selected rows, muted metadata, and compact keyboard help.
+
+Buttons paint their state background across the complete bordered bounds,
+including padding, edges, and corners. Focused or pressed enabled buttons use
+the selected surface with an accent outline (error for destructive actions).
+Unfocused buttons use the ordinary surface; disabled controls retain dimming.
+Native focus-effect suppression also suppresses the focused fill and outline.
 
 ## Searchable selection
 
