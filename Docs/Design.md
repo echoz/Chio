@@ -254,7 +254,7 @@ Swift Markdown 0.9.0 is pinned to revision
 unsafe build flags; a revision dependency permits these without changing upstream.
 The parser brings swift-cmark 0.9.0, compiled from source by SwiftPM, with no
 separately installed cmark library. Ubuntu 24.04/glibc builds and execution are
-verified on ARM64 with Swift 6.4.0. Static musl compilation is blocked in the
+verified on ARM64 and x86_64 with Swift 6.4.0. Static musl compilation is blocked in the
 pinned SwiftTUI dependency; [Plan.md](Plan.md#linux-and-ci) records the evidence.
 
 Native list focus chrome currently resolves through SwiftTUI's own theme;

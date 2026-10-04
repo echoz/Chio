@@ -193,7 +193,13 @@ repeatable terminal checks without changing the public API or dependency pins.
   Logs and text captures are retained as CI artifacts. Snapshot captures are
   inspection artifacts; the Swift tests assert rendering contracts. macOS uses
   the currently available `xcode-27` preview runner because the package needs
-  Swift 6.4. Hosted runner results must be inspected separately from local runs.
+  Swift 6.4.
+- [Hosted CI run 37174523755](https://github.com/echoz/Chio/actions/runs/37174523755)
+  passed for commit `297bacb` on macOS ARM64 and Linux x86_64. Each job passed
+  all 113 tests, the release build, and the terminal smoke check. Both uploaded
+  their full verification log and six snapshot captures; the artifacts were
+  downloaded and checked. This adds x86_64/glibc execution evidence to the local
+  ARM64 Linux run, without extending coverage to other distributions or devices.
 - The workflows and scripts received an independent read-only correctness review
   with no actionable findings. Builds/tests remain serialized within each job.
 
@@ -216,7 +222,9 @@ import would not establish full static compatibility. Upstream POSIX support
 should be fixed and verified before changing Chio's dependency pin.
 
 The manual `.github/workflows/static-linux.yml` reproduces the build attempt for
-x86_64, retaining failures as artifacts. If compilation succeeds in the future,
+x86_64, retaining failures as artifacts. [Run 37174543215](https://github.com/echoz/Chio/actions/runs/37174543215)
+failed at the same Figlet symbols and successfully uploaded its diagnostic log.
+If compilation succeeds in the future,
 it rejects an ELF interpreter/shared-library dependency and executes the same
 terminal smoke check. It does not rewrite dependency sources or mask failures.
 Use the [official Static Linux SDK instructions](https://www.swift.org/documentation/articles/static-linux-getting-started.html)
@@ -260,7 +268,7 @@ portable; correcting the platform implementation remains upstream work.
   dropdown chrome remains native; the pinned `sheetStyle` does not control it.
 - The terminal smoke check used a pseudo-terminal, not every terminal emulator or
   assistive technology. Accessibility and color-capability coverage is partial.
-- Linux/glibc ARM64 tests and terminal execution pass. Static Linux/musl
+- Linux/glibc ARM64 and x86_64 tests and terminal execution pass. Static Linux/musl
   compilation is blocked by the pinned SwiftTUI dependency, as recorded above.
   Other distributions, architectures, and live SSH devices need separate evidence.
 
