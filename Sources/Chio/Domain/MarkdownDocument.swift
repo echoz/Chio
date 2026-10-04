@@ -1,4 +1,5 @@
 import Markdown
+import SwiftTUIViews
 
 /// An immutable, parsed Markdown document, independent of terminal presentation.
 /// Create this value when the source changes and reuse it across view updates.
@@ -34,11 +35,7 @@ public struct MarkdownDocument {
     struct Table {
         let headers: [[Span]]
         let rows: [[[Span]]]
-        let alignments: [ColumnAlignment]
-
-        enum ColumnAlignment {
-            case leading, center, trailing
-        }
+        let alignments: [TableColumnAlignment]
     }
 
     struct Attributes {
@@ -62,8 +59,6 @@ extension MarkdownDocument.Span: Equatable {}
 extension MarkdownDocument.Span: Sendable {}
 extension MarkdownDocument.Table: Equatable {}
 extension MarkdownDocument.Table: Sendable {}
-extension MarkdownDocument.Table.ColumnAlignment: Equatable {}
-extension MarkdownDocument.Table.ColumnAlignment: Sendable {}
 extension MarkdownDocument.Attributes: Equatable {}
 extension MarkdownDocument.Attributes: Sendable {}
 

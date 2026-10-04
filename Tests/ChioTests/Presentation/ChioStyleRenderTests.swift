@@ -156,7 +156,7 @@ struct ChioStyleRenderTests {
     }
 }
 
-private struct RenderItem: Identifiable {
+private struct RenderItem {
     let id: String
     let name: String
 
@@ -165,3 +165,5 @@ private struct RenderItem: Identifiable {
         RenderItem(id: "b", name: "Beta"),
     ]
 }
+
+extension RenderItem: Identifiable {}

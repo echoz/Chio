@@ -248,6 +248,10 @@ before cover presentation, dashboard shortcuts are consumed so Enter followed by
 Only create responsibility groups when they contain useful code. Keep each
 independently useful production type in a matching file and protocol conformances
 in dedicated extensions, following the project working agreements.
+Private nested helpers keep inline conformances where a separate extension would
+require widening access. Raw-value enum declarations retain Swift's required
+placement. Shared frame recorders live in each test target's `TestSupport` group;
+scenario-specific expectations and application fixtures stay beside their suites.
 
 ## References and boundaries
 

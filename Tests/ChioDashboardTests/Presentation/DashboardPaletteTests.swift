@@ -231,9 +231,9 @@ extension PaletteTestApp: App {
 @MainActor
 private func withPaletteScene(
     scenario: DashboardScenario = .normal,
-    perform: @MainActor (HostedSceneSession, HostedRasterSurface, PaletteFrameRecorder) async throws -> Void
+    perform: @MainActor (HostedSceneSession, HostedRasterSurface, HostedFrameRecorder) async throws -> Void
 ) async throws {
-    let recorder = PaletteFrameRecorder()
+    let recorder = HostedFrameRecorder()
     let surface = HostedRasterSurface(surfaceSize: .init(width: 100, height: 30), appearance: .fallback,
                                       onFrame: { recorder.receive($0) })
     let session = try HostedSceneSession(for: PaletteTestApp(scenario: scenario), sceneID: "palette-tests", surface: surface)
@@ -251,7 +251,7 @@ private func withPaletteScene(
 }
 
 @MainActor
-private func dashboard(_ recorder: PaletteFrameRecorder) async throws -> SemanticHostFrame {
+private func dashboard(_ recorder: HostedFrameRecorder) async throws -> SemanticHostFrame {
     try await recorder.wait(description: "dashboard ready") {
         $0.hasPaletteText("/ agent workspace") && $0.focusedIdentity != nil
             && (!$0.focusesAnyTextField || $0.hasPaletteText("No items yet."))
@@ -259,7 +259,7 @@ private func dashboard(_ recorder: PaletteFrameRecorder) async throws -> Semanti
 }
 
 @MainActor
-private func openPalette(_ session: HostedSceneSession, _ recorder: PaletteFrameRecorder) async throws -> SemanticHostFrame {
+private func openPalette(_ session: HostedSceneSession, _ recorder: HostedFrameRecorder) async throws -> SemanticHostFrame {
     session.send(.key(.character("k"), modifiers: .ctrl))
     return try await recorder.wait(description: "palette has native filter focus") {
         $0.hasPalette && $0.focusesPaletteField
@@ -288,53 +288,4 @@ private extension SemanticHostFrame {
         return value
     }
     func hasPaletteText(_ text: String) -> Bool { raster.lines.contains { $0.contains(text) } }
-}
-
-@MainActor
-private final class PaletteFrameRecorder {
-    private var latest: SemanticHostFrame?
-    private var pending: PendingWait?
-    private var deadline: Task<Void, Never>?
-
-    func receive(_ frame: SemanticHostFrame) {
-        latest = frame
-        guard let pending, pending.matches(frame) else { return }
-        self.pending = nil
-        deadline?.cancel()
-        deadline = nil
-        pending.continuation.resume(returning: frame)
-    }
-
-    func wait(after sequence: UInt64? = nil, description: String,
-              matching predicate: @escaping @MainActor (SemanticHostFrame) -> Bool) async throws -> SemanticHostFrame {
-        let matches: @MainActor (SemanticHostFrame) -> Bool = { frame in
-            (sequence == nil || frame.sequence > sequence!) && predicate(frame)
-        }
-        if let latest, matches(latest) { return latest }
-        precondition(pending == nil)
-        return try await withCheckedThrowingContinuation { continuation in
-            pending = PendingWait(matches: matches, continuation: continuation)
-            deadline = Task { @MainActor [weak self] in
-                do { try await Task.sleep(for: .seconds(5)) }
-                catch { return }
-                guard let self, let pending = self.pending else { return }
-                self.pending = nil
-                self.deadline = nil
-                pending.continuation.resume(throwing: FrameTimeout(
-                    expectation: description,
-                    raster: self.latest?.raster.lines.joined(separator: "\n") ?? "No frame received"
-                ))
-            }
-        }
-    }
-
-    private struct PendingWait {
-        let matches: @MainActor (SemanticHostFrame) -> Bool
-        let continuation: CheckedContinuation<SemanticHostFrame, any Error>
-    }
-    private struct FrameTimeout: Error, CustomStringConvertible {
-        let expectation: String
-        let raster: String
-        var description: String { "Timed out waiting for \(expectation). Raster:\n\(raster)" }
-    }
 }

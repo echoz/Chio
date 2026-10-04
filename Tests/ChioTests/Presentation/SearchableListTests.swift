@@ -386,7 +386,7 @@ struct SearchableListTests {
     }
 }
 
-private struct SearchItem: Identifiable, Sendable {
+private struct SearchItem {
     let id: String
     let name: String
 
@@ -398,7 +398,10 @@ private struct SearchItem: Identifiable, Sendable {
     ]
 }
 
-private struct SearchTestApp: App {
+extension SearchItem: Identifiable {}
+extension SearchItem: Sendable {}
+
+private struct SearchTestApp {
     let usesInternalQuery: Bool
     let rejectsQueryWrites: Bool
 
@@ -408,7 +411,9 @@ private struct SearchTestApp: App {
         self.usesInternalQuery = usesInternalQuery
         self.rejectsQueryWrites = rejectsQueryWrites
     }
+}
 
+extension SearchTestApp: App {
     var body: some Scene {
         WindowGroup(id: "search-tests") {
             SearchTestView(usesInternalQuery: usesInternalQuery, rejectsQueryWrites: rejectsQueryWrites)
@@ -418,7 +423,7 @@ private struct SearchTestApp: App {
 }
 
 @MainActor
-private struct SearchTestView: View {
+private struct SearchTestView {
     let usesInternalQuery: Bool
     let rejectsQueryWrites: Bool
     @State private var query = ""
@@ -435,7 +440,9 @@ private struct SearchTestView: View {
         theme.treatments.selectionMarker = ">"
         return theme
     }
+}
 
+extension SearchTestView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             SearchableList(SearchItem.fixtures, selection: $selection,

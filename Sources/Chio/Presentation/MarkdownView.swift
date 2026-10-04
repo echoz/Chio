@@ -63,13 +63,8 @@ private struct MarkdownBlock {
 
     private func columns(_ table: MarkdownDocument.Table) -> [TableColumn] {
         table.headers.enumerated().map { index, spans in
-            let alignment: TableColumnAlignment = switch table.alignments[index] {
-            case .leading: .leading
-            case .center: .center
-            case .trailing: .trailing
-            }
             // Native headers accept labels; body cells retain their rich Text runs.
-            return TableColumn(spans.map(\.text).joined(), alignment: alignment)
+            TableColumn(spans.map(\.text).joined(), alignment: table.alignments[index])
         }
     }
 }

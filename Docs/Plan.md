@@ -45,6 +45,13 @@ live in [the README](../README.md).
   finding was fixed: selection follows the value retained by the application's
   query binding. Hosted tests also caught stale selection and palette reopening;
   synchronous search selection and resolved editor bindings cover those cases.
+- Global and repository guidance audit completed before expanding component
+  coverage. Markdown now reuses native column alignment, test fixtures use
+  dedicated conformance extensions, and dashboard suites share a frame recorder.
+  Independent review found no remaining issues in these corrections; native
+  ownership, application-owned validation, and public APIs are preserved.
+  The full serial suite (113 tests), release build, six snapshot captures, and
+  terminal smoke check passed on macOS after the cleanup.
 
 ## Component coverage
 
@@ -396,11 +403,12 @@ Shipping this correction requires choosing a reproducible patched SwiftTUI
 dependency or receiving the fix upstream. Chio's published-source pin remains
 unchanged; a local SwiftPM edit is only integration evidence, not distribution.
 
-## Proposed next component slices
+## Next component slices
 
-The coverage audit is complete; the following order is a proposal for review,
-not implemented behavior or a frozen public API. Broaden reusable component
-coverage before treating the framework as ready for release preparation.
+The coverage audit is complete and the following order is approved. These slices
+are not yet implemented, and their public APIs remain open to evidence from the
+focused examples. Broaden reusable component coverage before treating the
+framework as ready for release preparation.
 
 1. **Richer choice fields.** Prove searchable single-choice form composition and
    a choose-many workflow using native `List` selection. Reuse `SearchableList`

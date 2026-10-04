@@ -60,21 +60,26 @@ struct ChioFormControlTests {
     }
 }
 
-private struct FormControlTestApp: App {
+private struct FormControlTestApp {
     nonisolated init() {}
+}
+
+extension FormControlTestApp: App {
     var body: some Scene {
         WindowGroup(id: "form-controls") { FormControlTestView() }.exitOnKeys([])
     }
 }
 
 @MainActor
-private struct FormControlTestView: View {
+private struct FormControlTestView {
     private enum Field: Hashable { case model, confirm }
     @State private var model = "s"
     @State private var confirm = false
     @State private var light = false
     @FocusState private var focusedField: Field?
+}
 
+extension FormControlTestView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
             FormField("Model") {

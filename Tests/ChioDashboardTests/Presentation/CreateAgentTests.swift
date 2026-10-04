@@ -241,9 +241,11 @@ struct CreateAgentTests {
     }
 }
 
-private struct CreationTestApp: App {
+private struct CreationTestApp {
     nonisolated init() {}
+}
 
+extension CreationTestApp: App {
     var body: some Scene {
         WindowGroup(id: "creation-tests") { DashboardView(animates: false, paused: true) }
             .exitOnKeys([])
@@ -253,9 +255,9 @@ private struct CreationTestApp: App {
 @MainActor
 private func withCreationScene(
     size: CellSize = .init(width: 100, height: 30),
-    perform: @MainActor (HostedSceneSession, HostedRasterSurface, CreationFrameRecorder) async throws -> Void
+    perform: @MainActor (HostedSceneSession, HostedRasterSurface, HostedFrameRecorder) async throws -> Void
 ) async throws {
-    let recorder = CreationFrameRecorder()
+    let recorder = HostedFrameRecorder()
     let surface = HostedRasterSurface(surfaceSize: size, appearance: .fallback,
                                       onFrame: { recorder.receive($0) })
     let session = try HostedSceneSession(for: CreationTestApp(), sceneID: "creation-tests", surface: surface)
@@ -273,14 +275,14 @@ private func withCreationScene(
 }
 
 @MainActor
-private func waitForDashboard(_ recorder: CreationFrameRecorder) async throws -> SemanticHostFrame {
+private func waitForDashboard(_ recorder: HostedFrameRecorder) async throws -> SemanticHostFrame {
     try await recorder.wait(description: "dashboard has native results focus") {
         $0.isDashboard && $0.focusedIdentity != nil && !$0.focuses(.textField)
     }
 }
 
 @MainActor
-private func openForm(_ session: HostedSceneSession, _ recorder: CreationFrameRecorder) async throws -> SemanticHostFrame {
+private func openForm(_ session: HostedSceneSession, _ recorder: HostedFrameRecorder) async throws -> SemanticHostFrame {
     _ = try await waitForDashboard(recorder)
     session.send(.key(.character("n")))
     return try await recorder.wait(description: "form has default native Name focus") {
@@ -289,7 +291,7 @@ private func openForm(_ session: HostedSceneSession, _ recorder: CreationFrameRe
 }
 
 @MainActor
-private func chooseTestRole(_ session: HostedSceneSession, _ recorder: CreationFrameRecorder) async throws -> SemanticHostFrame {
+private func chooseTestRole(_ session: HostedSceneSession, _ recorder: HostedFrameRecorder) async throws -> SemanticHostFrame {
     session.send(.key(.tab))
     _ = try await recorder.wait(description: "native Tab focuses Role") { $0.focuses(.picker, label: "Role") }
     session.send(.key(.arrowRight))
@@ -301,7 +303,7 @@ private func chooseTestRole(_ session: HostedSceneSession, _ recorder: CreationF
 }
 
 @MainActor
-private func filterBuild(_ session: HostedSceneSession, _ recorder: CreationFrameRecorder) async throws -> SemanticHostFrame {
+private func filterBuild(_ session: HostedSceneSession, _ recorder: HostedFrameRecorder) async throws -> SemanticHostFrame {
     _ = try await waitForDashboard(recorder)
     session.sendInput(Array("/build\r".utf8))
     return try await recorder.wait(description: "filtered dashboard retains selected Build and results focus") {
@@ -337,60 +339,5 @@ private extension SemanticHostFrame {
 
     func hasSelectedRow(_ name: String) -> Bool {
         raster.lines.contains { $0.contains(name) && $0.contains("›") }
-    }
-}
-
-/// Records the runtime's public host frames without reading application storage.
-@MainActor
-private final class CreationFrameRecorder {
-    private var latest: SemanticHostFrame?
-    private var pending: PendingWait?
-    private var deadline: Task<Void, Never>?
-
-    func receive(_ frame: SemanticHostFrame) {
-        latest = frame
-        guard let pending, pending.matches(frame) else { return }
-        self.pending = nil
-        deadline?.cancel()
-        deadline = nil
-        pending.continuation.resume(returning: frame)
-    }
-
-    func wait(after sequence: UInt64? = nil, description: String,
-              matching predicate: @escaping @MainActor (SemanticHostFrame) -> Bool) async throws -> SemanticHostFrame {
-        let matches: @MainActor (SemanticHostFrame) -> Bool = { frame in
-            (sequence == nil || frame.sequence > sequence!) && predicate(frame)
-        }
-        if let latest, matches(latest) { return latest }
-        precondition(pending == nil)
-        return try await withCheckedThrowingContinuation { continuation in
-            pending = PendingWait(matches: matches, continuation: continuation)
-            deadline = Task { @MainActor [weak self] in
-                do { try await Task.sleep(for: .seconds(5)) }
-                catch { return }
-                guard let self, let pending = self.pending else { return }
-                self.pending = nil
-                self.deadline = nil
-                let focus = self.latest?.focusedIdentity
-                let focusedNode = self.latest?.semantics.accessibilityNodes.first { $0.identity == focus }
-                pending.continuation.resume(throwing: FrameTimeout(
-                    expectation: description,
-                    focus: "\(String(describing: focusedNode?.role)) / \(focusedNode?.label ?? "unlabeled") / \(String(describing: focus))",
-                    raster: self.latest?.raster.lines.joined(separator: "\n") ?? "No frame received"
-                ))
-            }
-        }
-    }
-
-    private struct PendingWait {
-        let matches: @MainActor (SemanticHostFrame) -> Bool
-        let continuation: CheckedContinuation<SemanticHostFrame, any Error>
-    }
-
-    private struct FrameTimeout: Error, CustomStringConvertible {
-        let expectation: String
-        let focus: String
-        let raster: String
-        var description: String { "Timed out waiting for \(expectation). Focus: \(focus). Raster:\n\(raster)" }
     }
 }

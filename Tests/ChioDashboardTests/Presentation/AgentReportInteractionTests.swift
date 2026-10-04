@@ -140,9 +140,9 @@ extension ReportTestApp: App {
 
 @MainActor
 private func withReportScene(
-    perform: @MainActor (HostedSceneSession, HostedRasterSurface, ReportFrameRecorder) async throws -> Void
+    perform: @MainActor (HostedSceneSession, HostedRasterSurface, HostedFrameRecorder) async throws -> Void
 ) async throws {
-    let recorder = ReportFrameRecorder()
+    let recorder = HostedFrameRecorder()
     let surface = HostedRasterSurface(surfaceSize: .init(width: 100, height: 30), appearance: .fallback,
                                       onFrame: { recorder.receive($0) })
     let session = try HostedSceneSession(for: ReportTestApp(), sceneID: "report-tests", surface: surface)
@@ -160,14 +160,14 @@ private func withReportScene(
 }
 
 @MainActor
-private func waitForReportDashboard(_ recorder: ReportFrameRecorder) async throws -> SemanticHostFrame {
+private func waitForReportDashboard(_ recorder: HostedFrameRecorder) async throws -> SemanticHostFrame {
     try await recorder.wait(description: "dashboard has native results focus") {
         $0.isReportDashboard && $0.focusedIdentity != nil && !$0.focusesReportControl(.textField)
     }
 }
 
 @MainActor
-private func filterDocs(_ session: HostedSceneSession, _ recorder: ReportFrameRecorder) async throws -> SemanticHostFrame {
+private func filterDocs(_ session: HostedSceneSession, _ recorder: HostedFrameRecorder) async throws -> SemanticHostFrame {
     _ = try await waitForReportDashboard(recorder)
     session.sendInput(Array("/docs\r".utf8))
     return try await recorder.wait(description: "filtered Docs agent has results focus") {
@@ -178,7 +178,7 @@ private func filterDocs(_ session: HostedSceneSession, _ recorder: ReportFrameRe
 }
 
 @MainActor
-private func openReport(_ session: HostedSceneSession, _ recorder: ReportFrameRecorder) async throws -> SemanticHostFrame {
+private func openReport(_ session: HostedSceneSession, _ recorder: HostedFrameRecorder) async throws -> SemanticHostFrame {
     session.send(.key(.return))
     return try await recorder.wait(description: "native report scroll view receives reading focus") {
         $0.isReport && $0.hasReadingFocus
@@ -207,54 +207,5 @@ private extension SemanticHostFrame {
         return semantics.accessibilityNodes.contains {
             $0.identity == focusedIdentity && $0.role == role && (label == nil || $0.label == label)
         }
-    }
-}
-
-@MainActor
-private final class ReportFrameRecorder {
-    private var latest: SemanticHostFrame?
-    private var pending: PendingWait?
-    private var deadline: Task<Void, Never>?
-
-    func receive(_ frame: SemanticHostFrame) {
-        latest = frame
-        guard let pending, pending.matches(frame) else { return }
-        self.pending = nil
-        deadline?.cancel()
-        deadline = nil
-        pending.continuation.resume(returning: frame)
-    }
-
-    func wait(after sequence: UInt64? = nil, description: String,
-              matching predicate: @escaping @MainActor (SemanticHostFrame) -> Bool) async throws -> SemanticHostFrame {
-        let matches: @MainActor (SemanticHostFrame) -> Bool = { frame in
-            (sequence == nil || frame.sequence > sequence!) && predicate(frame)
-        }
-        if let latest, matches(latest) { return latest }
-        precondition(pending == nil)
-        return try await withCheckedThrowingContinuation { continuation in
-            pending = PendingWait(matches: matches, continuation: continuation)
-            deadline = Task { @MainActor [weak self] in
-                do { try await Task.sleep(for: .seconds(5)) }
-                catch { return }
-                guard let self, let pending = self.pending else { return }
-                self.pending = nil
-                self.deadline = nil
-                pending.continuation.resume(throwing: FrameTimeout(
-                    expectation: description,
-                    raster: self.latest?.raster.lines.joined(separator: "\n") ?? "No frame received"
-                ))
-            }
-        }
-    }
-
-    private struct PendingWait {
-        let matches: @MainActor (SemanticHostFrame) -> Bool
-        let continuation: CheckedContinuation<SemanticHostFrame, any Error>
-    }
-    private struct FrameTimeout: Error, CustomStringConvertible {
-        let expectation: String
-        let raster: String
-        var description: String { "Timed out waiting for \(expectation). Raster:\n\(raster)" }
     }
 }
