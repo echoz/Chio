@@ -19,7 +19,14 @@ struct DashboardView {
     @State private var validateOnArrival = false
     @State private var isReturningFromCreation = false
     @State private var report: AgentReport?
+    @State private var showsCommands = false
+    @State private var commandQuery = ""
+    @State private var pendingCommand: Command?
     let animates: Bool
+
+    private enum Command {
+        case create, run, report, theme, pause
+    }
 
     init(scenario: DashboardScenario = .normal, light: Bool = false, animates: Bool = true, paused: Bool = false) {
         _agents = State(wrappedValue: scenario.agents)
@@ -32,6 +39,34 @@ struct DashboardView {
 
     private var theme: ChioTheme { isLight ? .light : .default }
     private var selectedAgent: Agent? { agents.first { $0.id == selection } }
+
+    private func beginCreation() {
+        draft = AgentDraft()
+        creationEntry = .name
+        validateOnArrival = false
+        creationNumber += 1
+        isCreating = true
+    }
+
+    private func openReport(_ agent: Agent) {
+        openedAgent = agent.name
+        report = AgentReport(agent: agent)
+    }
+
+    private func performPendingCommand() {
+        // Let native palette focus return before presenting a destination cover.
+        let command = pendingCommand
+        pendingCommand = nil
+        switch command {
+        case .create: beginCreation()
+        case .run: runSelected()
+        case .report:
+            if let selectedAgent { openReport(selectedAgent) }
+        case .theme: isLight.toggle()
+        case .pause: isPaused.toggle()
+        case nil: break
+        }
+    }
 
     private func runSelected() {
         guard let index = agents.firstIndex(where: { $0.id == selection }) else { return }
@@ -51,6 +86,20 @@ struct DashboardView {
     }
 
     private func handleKey(_ press: KeyPress) -> KeyPressResult {
+        // Carry simple type-ahead until the native palette editor exists,
+        // without firing dashboard shortcuts during the opening input batch.
+        if showsCommands {
+            guard press.modifiers.subtracting(.shift).isEmpty else { return .handled }
+            switch press.key {
+            case .character(let character): commandQuery.append(character)
+            case .space: commandQuery.append(" ")
+            case .backspace:
+                if !commandQuery.isEmpty { commandQuery.removeLast() }
+            case .escape: showsCommands = false
+            default: break
+            }
+            return .handled
+        }
         // A report can be requested before the input batch reaches its cover.
         // Keep subsequent keys out of the dashboard during that handoff.
         if report != nil {
@@ -87,11 +136,7 @@ struct DashboardView {
         guard press.modifiers.isEmpty else { return .ignored }
         switch press.key {
         case .character("n"):
-            draft = AgentDraft()
-            creationEntry = .name
-            validateOnArrival = false
-            creationNumber += 1
-            isCreating = true
+            beginCreation()
         case .character("q"):
             _ = requestTermination()
         case .character("t"):
@@ -156,11 +201,13 @@ struct DashboardView {
                     KeyHint("↵", "results")
                     KeyHint("esc", "clear")
                     KeyHint("tab", "next")
+                    KeyHint("^K", "commands")
                 } else {
                     KeyHint("↑↓", "navigate")
                     KeyHint("↵", "report")
                     KeyHint("/", "filter")
                     KeyHint("n", "new")
+                    KeyHint("^K", "commands")
                     if !brief {
                         KeyHint("r", "run")
                         KeyHint("f", "fail")
@@ -201,8 +248,7 @@ extension DashboardView: View {
                                 }
                                 .filtering(.fuzzy)
                                 .onActivate { agent in
-                                    openedAgent = agent.name
-                                    report = AgentReport(agent: agent)
+                                    openReport(agent)
                                 }
                                 .onSearchFocusChange { isSearching = $0 }
                                 .onResultKeyPress(perform: handleKey)
@@ -210,7 +256,7 @@ extension DashboardView: View {
                                     // Until the appended row renders, native list handlers
                                     // still hold the old items and can overwrite selection.
                                     if isReturningFromCreation { return .handled }
-                                    return isCreating || report != nil ? handleKey(press) : .ignored
+                                    return isCreating || report != nil || showsCommands ? handleKey(press) : .ignored
                                 }
                                 .onChange(of: agents.count) {
                                     if agents.last?.id == selection {
@@ -246,6 +292,39 @@ extension DashboardView: View {
             .clipped()
             .chioTheme(layoutTheme)
         }
+        .panel(id: "dashboard")
+        .keyCommand("Commands", key: .character("k"), modifiers: .ctrl,
+                    isEnabled: !isCreating && report == nil && !showsCommands) {
+            guard !isCreating, report == nil, !showsCommands else { return }
+            commandQuery = ""
+            showsCommands = true
+        }
+        .paletteCommand(name: "Create agent", description: "Set up a new simulated agent") {
+            pendingCommand = .create
+        }
+        .paletteCommand(name: selectedAgent?.phase == .failed ? "Retry selected agent" : "Run selected agent",
+                        description: selectedAgent?.name ?? "Select an agent first",
+                        isEnabled: selectedAgent != nil) {
+            pendingCommand = .run
+        }
+        .paletteCommand(name: "Open agent report",
+                        description: selectedAgent?.name ?? "Select an agent first",
+                        isEnabled: selectedAgent != nil) {
+            pendingCommand = .report
+        }
+        .paletteCommand(name: isLight ? "Switch to dark theme" : "Switch to light theme",
+                        description: "Change the workspace appearance") {
+            pendingCommand = .theme
+        }
+        .paletteCommand(name: isPaused ? "Resume simulation" : "Pause simulation",
+                        description: "Control the local demo") {
+            pendingCommand = .pause
+        }
+        .paletteSheet("Commands", isPresented: $showsCommands)
+        .onChange(of: showsCommands) { _, isPresented in
+            if !isPresented { performPendingCommand() }
+        }
+        .paletteStyle(ChioPaletteStyle(theme: theme, initialQuery: commandQuery))
         .fullScreenCover(isPresented: $isCreating) {
             CreateAgentView(draft: $draft, isLight: $isLight, entry: creationEntry,
                             validateOnArrival: validateOnArrival,

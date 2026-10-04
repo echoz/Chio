@@ -78,7 +78,20 @@ public struct SearchableList<Item: Identifiable, RowContent: View> where Item.ID
         return copy
     }
 
-    private var query: Binding<String> { externalQuery ?? $internalQuery }
+    private var query: Binding<String> {
+        let storage = externalQuery ?? $internalQuery
+        return Binding(
+            get: { storage.wrappedValue },
+            set: { value in
+                storage.wrappedValue = value
+                // Filtering is a selection transition, not just presentation.
+                // Commit both before another control can act on the selection.
+                let ids = SearchMatcher.filtered(items, query: storage.wrappedValue, filter: filter,
+                                                 searchText: searchText).map(\.id)
+                selection.wrappedValue = SearchSelection.reconciled(selection.wrappedValue, visibleIDs: ids)
+            }
+        )
+    }
 
     private func activateSelection() {
         // Input can arrive faster than frames. Reconcile from the current query,
@@ -184,8 +197,8 @@ extension SearchableList: View {
         .onAppear {
             focus = .results
         }
-        .onChange(of: visibleIDs, initial: true) {
-            selection.wrappedValue = SearchSelection.reconciled(selection.wrappedValue, visibleIDs: visibleIDs)
+        .onChange(of: visibleIDs, initial: true) { _, ids in
+            selection.wrappedValue = SearchSelection.reconciled(selection.wrappedValue, visibleIDs: ids)
         }
         .onChange(of: selection.wrappedValue) {
             let reconciled = SearchSelection.reconciled(selection.wrappedValue, visibleIDs: visibleIDs)

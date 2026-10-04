@@ -1,8 +1,9 @@
 # Implementation plan and verification
 
-The delivered slices are a runnable local dashboard, agent creation, and Markdown
-run reports using simulated agents. Accepted contracts and ownership live in [Design.md](Design.md);
-commands and interaction instructions live in [the README](../README.md).
+The delivered slices are a runnable local dashboard, agent creation, Markdown
+run reports, and a command palette using simulated agents. Accepted contracts and
+ownership live in [Design.md](Design.md); commands and interaction instructions
+live in [the README](../README.md).
 
 ## Delivered slices
 
@@ -35,6 +36,13 @@ commands and interaction instructions live in [the README](../README.md).
 - Native Markdown tables replace the text fallback, preserving column alignment,
   rich body cells, and native width/height measurement. The report includes a
   visible table example; horizontal scrolling keeps wide tables readable.
+- ChioPaletteStyle for native command palettes, with fuzzy filtering, stable
+  selection, disabled commands, compact rows, and theme-driven presentation.
+  Ctrl-K opens the dashboard menu; native dismissal precedes report/form launch.
+- Independent read-only palette review completed. Its rejected-query-write
+  finding was fixed: selection follows the value retained by the application's
+  query binding. Hosted tests also caught stale selection and palette reopening;
+  synchronous search selection and resolved editor bindings cover those cases.
 
 ## Verified on macOS
 
@@ -44,9 +52,13 @@ Swift 6.4, with SwiftTUI pinned at
 - `swift build --product chio-dashboard` passes.
 - `swift build -c release --product chio-dashboard` also passes. Interactive
   launch instructions use release mode; debug enables extra upstream verification.
-- 103 Swift Testing tests pass: 73 library tests and 30
+- 113 Swift Testing tests pass with explicit `--no-parallel`: 76 library tests and 37
   dashboard tests, including parameterized widths, themes, progress values,
   sample scenarios, forms, and reports. All existing regressions remain intact.
+- The combined concurrent dashboard run hit frame-deadline failures across form,
+  report, and palette suites. The serial run passes with the same assertions and
+  deadlines; concurrent hosted-suite execution remains unverified. Use the
+  explicit serial command in the README on this toolchain.
 - Pure tests cover fuzzy ranking, Unicode matching, stable selection, and
   deterministic simulation transitions.
 - Public terminal-cell rendering checks cover theme colors, progress, wrapping
@@ -75,8 +87,12 @@ Swift 6.4, with SwiftTUI pinned at
   hosted navigation regression passes in a focused rerun: Tab moves from the
   vertical reader to the table, End/Home scroll columns, theme/resize retain
   focus, and Shift-Tab returns to the reader so Down scrolls vertically.
-  The five table render/interaction tests also pass after the final body-row
-  surface-color change; the remaining full-suite evidence is unchanged.
+- Palette tests cover customized colors in both themes, long-list selection
+  visibility, current-query activation from batched input, disabled actions,
+  empty results, initial type-ahead, resize, theme switching, and reopening.
+  Report/form actions preserve exact native focus and filtering from both search
+  and results. Filtering commits the application selection before palette actions;
+  a rejected external query write cannot change selection for an unchanged query.
 - A real macOS pseudo-terminal smoke check covers launch, search text that
   includes `q`, Escape, theme switching, simulated failure, running to completion,
   empty-data toggling, and normal exit with terminal restoration.
@@ -98,6 +114,11 @@ Swift 6.4, with SwiftTUI pinned at
   appear near the report's top, theme switching retains the table, Tab/Shift-Tab
   returns to vertical reading, End reaches the report's end, and quitting restores
   the terminal with exit code zero. Captured terminal text was inspected.
+- The palette release binary passes a local pseudo-terminal workflow: open a
+  report, reopen into agent creation, edit and cancel, change theme, filter to no
+  commands, and return to editing the original dashboard search. Normal quit
+  restores the alternate screen with exit code zero. Captured terminal text was
+  inspected; this is not a live Blink-over-SSH check.
 - A separate macOS pseudo-terminal comparison reproduced the SSH color issue:
   with `TERM=xterm-256color` and no `COLORTERM`, the default surface emits
   `48;5;59` (gray). Adding `COLORTERM=truecolor` emits `48;2;33;29;42` (the authored
@@ -148,6 +169,11 @@ typing was 103 ms (six inputs each), and opening the form took 206 ms. These sma
 samples show no evident regression from report presentation; SSH and device
 display latency are still outside this measurement.
 
+The command-palette release was checked with the same harness, with no concurrent
+build or tests: selection measured 75 ms median and Name typing 92 ms median
+(six inputs each), with one form opening at 215 ms. These local samples show no
+evident responsiveness regression; they do not include SSH or device latency.
+
 ## Remaining boundaries
 
 - The public API is experimental. Keep the SwiftTUI revision pinned while its
@@ -175,6 +201,9 @@ display latency are still outside this measurement.
   demo covers simple Name type-ahead, an initial Tab, and valid/invalid submission
   during that handoff. Arbitrary multi-control navigation within the same opening
   input batch remains unsupported; a general solution belongs in SwiftTUI.
+- Palette opening carries simple text/backspace until native editing owns focus.
+  Navigation and Return before that first frame are consumed. The surrounding
+  dropdown chrome remains native; the pinned `sheetStyle` does not control it.
 - The terminal smoke check used a pseudo-terminal, not every terminal emulator or
   assistive technology. Accessibility and color-capability coverage is partial.
 - Linux execution and Static Linux SDK/musl linking remain unverified. Inspected

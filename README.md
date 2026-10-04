@@ -14,7 +14,8 @@ The APIs follow Swift composition and native SwiftTUI styles.
 
 The package includes one public library, `Chio`, and the `chio-dashboard`
 executable. Run it to try search, selection, agent creation, inline validation,
-progress, themes, and Markdown reports of simulated runs. It requires no external services.
+progress, themes, a command palette, and Markdown reports of simulated runs.
+It requires no external services.
 
 This is an early API to learn from, not a stable release. Broader forms, syntax
 highlighting, and active Markdown links remain deferred.
@@ -42,6 +43,12 @@ While browsing: `r` starts a run, `f` simulates failure, `p` pauses progress,
 `e` toggles empty data, `t` changes theme, and `q` quits. Ctrl-C also exits.
 The `›` marker is selection; the native `▌` shows the current list navigation
 target. Tab moves native focus; Enter opens the selected agent's report.
+
+Press **Ctrl-K** for the command palette, including while editing the dashboard
+search. Type to filter actions, use arrows or Tab/Shift-Tab to select, Enter to
+run, and Escape to cancel. Create an agent, run/retry the selected agent, open its
+report, change theme, or pause/resume the demo from this menu. Cancel returns to
+the same search and focus; actions requiring selection are disabled when absent.
 
 Reports capture the run at the moment you open them. Use arrows or Home/End to
 scroll, Ctrl-T to change theme, and Escape to return to the same selection and
@@ -100,6 +107,8 @@ the upstream conversion still needs correction for actual 256-color terminals.
 - Apply a theme to native `GroupBox`, `List`, `Table`, `TextField`, `Picker`, `Toggle`, and `ProgressView` styles.
 - Compose reusable `KeyHint`, `KeyHints`, `StatusBar`, `SearchableList`, and `FormField` views.
 - Customize nested semantic colors, spacing, and treatments through `.chioTheme(...)`.
+- Style native command palettes with `ChioPaletteStyle`; apply `.chioTheme(...)`
+  after `.paletteSheet(...)` so the palette declaration receives the style.
 - Keep SwiftTUI responsible for rendering, state, input, focus, scrolling, and lifecycle.
 
 Applications compose SwiftTUI views and import `SwiftTUI` and `Chio`:
@@ -173,18 +182,21 @@ for the reader.
 
 ## Verification
 
-`swift test` covers search and validation rules, public hosted input, themed
+`swift test --no-parallel` covers search and validation rules, public hosted input, themed
 terminal cells, true-color terminal emission, `NO_COLOR`, hint wrapping, and
 dashboard/form/report layouts. Form interactions include conditional fields, first-invalid
 focus, creation, cancellation, theme changes, resizing, and batched input.
 Markdown checks cover parsing, rich text wrapping, preserved code whitespace,
 native scrolling, report snapshots, and returning to the dashboard's focus.
+Palette checks cover filtering, disabled actions, long lists, and focus restoration.
+Pass `--no-parallel` explicitly: concurrent hosted dashboard suites can exceed
+their frame deadlines on this toolchain.
 On the current macOS Command Line Tools toolchain, SwiftPM fails to
 discover the installed Testing macro plugin;
 the verified workaround is:
 
 ```sh
-swift test -Xswiftc -load-plugin-library \
+swift test --no-parallel -Xswiftc -load-plugin-library \
   -Xswiftc "$(xcode-select -p)/usr/lib/swift/host/plugins/testing/libTestingMacros.dylib"
 ```
 

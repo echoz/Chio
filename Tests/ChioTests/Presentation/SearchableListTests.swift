@@ -5,6 +5,22 @@ import Testing
 @MainActor
 @Suite(.serialized)
 struct SearchableListTests {
+    @Test("A rejected query write preserves selection for the authoritative query")
+    func rejectedQueryWrite() async throws {
+        try await withSearchScene(rejectsQueryWrites: true) { session, _, recorder in
+            let initial = try await recorder.wait(description: "constant empty query and Beta selection") {
+                $0.hasResultsFocus && $0.contains("Q= S=b F=r A=0")
+            }
+            session.sendInput(Array("/al".utf8))
+            session.send(.key(.character("b"), modifiers: .ctrl))
+            let edited = try await recorder.wait(after: initial.sequence, description: "rejected query input processed") {
+                $0.contains("Barrier=1")
+            }
+            #expect(edited.contains("Q= S=b"))
+            #expect(edited.contains("4 of 4 items"))
+        }
+    }
+
     @Test("A slash and text arriving in one terminal read enters search without triggering shortcuts")
     func immediateSlashTyping() async throws {
         try await withSearchScene { session, _, recorder in
@@ -384,15 +400,19 @@ private struct SearchItem: Identifiable, Sendable {
 
 private struct SearchTestApp: App {
     let usesInternalQuery: Bool
+    let rejectsQueryWrites: Bool
 
-    nonisolated init() { usesInternalQuery = false }
+    nonisolated init() { usesInternalQuery = false; rejectsQueryWrites = false }
 
-    nonisolated init(usesInternalQuery: Bool) {
+    nonisolated init(usesInternalQuery: Bool, rejectsQueryWrites: Bool = false) {
         self.usesInternalQuery = usesInternalQuery
+        self.rejectsQueryWrites = rejectsQueryWrites
     }
 
     var body: some Scene {
-        WindowGroup(id: "search-tests") { SearchTestView(usesInternalQuery: usesInternalQuery) }
+        WindowGroup(id: "search-tests") {
+            SearchTestView(usesInternalQuery: usesInternalQuery, rejectsQueryWrites: rejectsQueryWrites)
+        }
             .exitOnKeys([])
     }
 }
@@ -400,6 +420,7 @@ private struct SearchTestApp: App {
 @MainActor
 private struct SearchTestView: View {
     let usesInternalQuery: Bool
+    let rejectsQueryWrites: Bool
     @State private var query = ""
     @State private var selection: String? = "b"
     @State private var searchFocused = false
@@ -418,7 +439,8 @@ private struct SearchTestView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             SearchableList(SearchItem.fixtures, selection: $selection,
-                           query: usesInternalQuery ? nil : $query, searchText: \.name) {
+                           query: usesInternalQuery ? nil : (rejectsQueryWrites ? .constant("") : $query),
+                           searchText: \.name) {
                 Text($0.name)
             }
             .filtering(.fuzzy)
@@ -454,6 +476,7 @@ private struct SearchTestView: View {
 @MainActor
 private func withSearchScene(
     usesInternalQuery: Bool = false,
+    rejectsQueryWrites: Bool = false,
     perform: @MainActor (HostedSceneSession, HostedRasterSurface, HostedFrameRecorder) async throws -> Void
 ) async throws {
     let recorder = HostedFrameRecorder()
@@ -463,7 +486,8 @@ private func withSearchScene(
         onFrame: { recorder.receive($0) }
     )
     let session = try HostedSceneSession(
-        for: SearchTestApp(usesInternalQuery: usesInternalQuery), sceneID: "search-tests", surface: surface
+        for: SearchTestApp(usesInternalQuery: usesInternalQuery, rejectsQueryWrites: rejectsQueryWrites),
+        sceneID: "search-tests", surface: surface
     )
     let run = Task { try await session.start() }
     defer { session.stop() }

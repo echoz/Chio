@@ -50,7 +50,10 @@ Bubbles' selected rows, muted metadata, and compact keyboard help.
 `SearchableList` has an always-visible search field, stable item IDs, optional
 external query binding, `.filtering(.fuzzy)`, and an `.onActivate` callback.
 Filtering preserves a visible selection; otherwise it selects the first result,
-or `nil` if there are no results. Filtering never activates an item.
+or `nil` if there are no results. Filtering never activates an item. Editing the
+query also commits selection before another control can act on it. Reconciliation
+uses the query actually retained by its binding, including when an application
+rejects or transforms a write; external query/data changes also reconcile on render.
 
 | Focus | Input | Behavior |
 | --- | --- | --- |
@@ -91,6 +94,42 @@ network calls, credentials, or external service setup.
 At widths below 88 cells the dashboard stacks its sections; below 26 rows it
 prioritizes the list and essential shortcuts. The full layout is intended for
 100 × 30 or larger, with a usable compact layout at 36 × 18.
+
+## Command palette
+
+`ChioPaletteStyle` styles SwiftTUI's native `paletteSheet`; `.chioTheme` installs
+it alongside the other control styles. Apply the theme outside the palette
+declaration so the declaration receives the style. Apps register actions through
+native `Panel`, `keyCommand`, and `paletteCommand` APIs. Chio introduces no
+command registry, dispatcher, or presentation coordinator.
+
+The style uses the existing Chio fuzzy matcher and stable command IDs. A native
+text field keeps editing focus while arrows or Tab/Shift-Tab move selection.
+Return calls the command's native activation; Escape uses native dismissal.
+Disabled commands remain visible and inert, and unmatched queries show an empty
+state. The selected command remains inside a bounded visible window. Short
+terminals omit descriptions; command names and keyboard help remain visible.
+`initialQuery` seeds each opening; native editing owns subsequent query changes.
+Keyboard handlers use the editor's resolved bindings so reopening after a cover
+cannot activate from state retained by an earlier palette lifetime.
+
+Ctrl-K opens the dashboard palette from results, search, or detail controls.
+It offers Create agent, Run/Retry selected agent, Open agent report, theme
+switching, and pause/resume. Actions requiring an agent are disabled without
+selection. Cancel preserves the dashboard query, selection, and native focus.
+The dashboard queues the selected action and observes the native presentation
+binding returning to false before performing it. This lets native focus return
+to the dashboard before opening a report or form. Replacing the palette with a
+cover in the same frame would record the departing palette as the focus target
+to restore after closing the cover.
+
+The opening input batch can precede the palette's first frame. The dashboard
+carries simple text/backspace into the initial query and handles Escape, keeping
+those keys out of background shortcuts. Navigation and Return in that initial
+handoff are consumed; after native focus arrives, the palette owns all editing
+and activation. This is a bounded presentation adapter, not general event replay.
+The surrounding full-width dropdown surface and divider remain native SwiftTUI
+chrome; `sheetStyle` does not style that palette container in the pinned version.
 
 ## Forms and agent creation
 
@@ -199,7 +238,7 @@ before cover presentation, dashboard shortcuts are consumed so Enter followed by
 | `Sources/Chio/Presentation/Styles` | Native SwiftTUI control styles |
 | `Examples/AgentDashboard` | Demo model, presentation, and thin entry point |
 | `Tests/ChioTests` | Tests grouped by corresponding responsibility |
-| `Tests/ChioDashboardTests` | Simulation, draft rules, report snapshots, and dashboard/form/report interaction |
+| `Tests/ChioDashboardTests` | Simulation, draft rules, report snapshots, and dashboard/form/report/palette interaction |
 
 Only create responsibility groups when they contain useful code. Keep each
 independently useful production type in a matching file and protocol conformances
