@@ -7,7 +7,8 @@ confirmation with transient feedback, and file selection.
 They establish the design direction, not broad parity with Charm's components.
 Accepted contracts and
 ownership live in [Design.md](Design.md); commands and interaction instructions
-live in [the README](../README.md).
+live in [the examples guide](Examples.md); component recipes live in
+[API usage](Usage.md).
 
 ## Delivered slices
 
@@ -198,6 +199,42 @@ Do not infer Chio support for every native control from `.chioTheme(...)` alone.
 [native-tabs]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/TabViews/TabView.swift
 [native-timeline]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/Animation/TimelineView.swift
 
+## Running checks
+
+With Swift 6.4 and Python 3 installed, run from the repository root:
+
+```sh
+bash Scripts/ci/verify.sh
+```
+
+This runs all tests in release mode and selected debug tests, builds the release
+executable, captures snapshots, and exercises the dashboard and focused examples
+in pseudo-terminals. Three multi-screen dashboard suites run only in release;
+unoptimized rendering can exceed their frame deadlines. Assertions and deadlines
+are identical in both modes. Pass `--no-parallel` explicitly for hosted tests:
+
+```sh
+swift test -c release --no-parallel
+```
+
+See [macOS toolchain findings](#macos-toolchain-findings) if Testing macros are
+not discovered or the linker warns about nonexistent Command Line Tools paths.
+To check an already-built binary's terminal workflow:
+
+```sh
+python3 Scripts/ci/terminal-smoke.py .build/release/chio-dashboard
+```
+
+Add `--choices`, `--text-entry`, `--feedback`, or `--files` for a focused workflow.
+These check terminal input/output and restoration, not live Blink/SSH rendering
+or latency. `swift test --no-parallel` remains available for a full debug investigation.
+
+[CI](../.github/workflows/ci.yml) runs on pushes to `main` and pull requests on
+macOS and Linux, retaining verification logs and snapshots. The manual
+[Static Linux workflow](../.github/workflows/static-linux.yml) checks musl builds
+against the same dependency pins; [current blockers](#static-linux-blocker)
+remain separate from ordinary Linux support.
+
 ## Verified on macOS
 
 Swift 6.4, with SwiftTUI pinned at
@@ -250,7 +287,7 @@ Swift 6.4, with SwiftTUI pinned at
 - The combined concurrent dashboard run hit frame-deadline failures across form,
   report, and palette suites. The serial run passes with the same assertions and
   deadlines; concurrent hosted-suite execution remains unverified. Use the
-  explicit serial command in the README on this toolchain.
+  explicit serial command under [Running checks](#running-checks) on this toolchain.
 - Pure tests cover fuzzy ranking, Unicode matching, stable selection, and
   deterministic simulation transitions. Immutable replacements preserve originals
   and unrelated fields; progress construction and decoding reject invalid fractions,
@@ -346,9 +383,14 @@ Swift 6.4, with SwiftTUI pinned at
 
 The installed Command Line Tools' default SwiftPM backend does not discover its
 Swift Testing macro plugin automatically. The complete test run used the explicit
-plugin flag documented in the README. The native backend was also attempted but
+plugin flag below. The native backend was also attempted but
 could not find the Testing module. Neither workaround changes package sources or
 adds a runtime dependency.
+
+```sh
+swift test -c release --no-parallel -Xswiftc -load-plugin-library \
+  -Xswiftc "$(xcode-select -p)/usr/lib/swift/host/plugins/testing/libTestingMacros.dylib"
+```
 
 Apple Swift `6.4.0.34.1` with `/Library/Developer/CommandLineTools` selected also
 emits linker warnings for nonexistent `CommandLineTools/Developer/usr/lib` and
@@ -561,7 +603,8 @@ portable; correcting the platform implementation remains upstream work.
   cells preserve rich Text. Neither limitation is hidden by a second renderer.
 - The pinned ANSI-256 quantizer rounds RGB channels onto uniformly spaced cube
   coordinates, although the terminal cube is nonuniform, and ignores its grayscale
-  ramp. This washes out dark colors. True-color launch guidance is in the README;
+  ramp. This washes out dark colors. [True-color launch guidance](Examples.md#colors-over-ssh)
+  is in the examples guide;
   actual 256-color fallback remains an upstream defect. For dependency upgrades,
   compare the paused dashboard with `TERM=xterm-256color`, first without
   `COLORTERM`, then with `COLORTERM=truecolor` (and without `NO_COLOR`). The latter

@@ -483,7 +483,8 @@ because the pinned native `Divider` does not honor ambient foreground styling.
 Color-depth detection and palette conversion also belong to SwiftTUI. The pinned
 ANSI-256 conversion maps dark RGB colors poorly; Chio's default surface becomes
 `#5F5F5F` instead of `#211D2A`. True-color SSH sessions should declare
-`COLORTERM=truecolor` as documented in the README. Keep the authored palette and
+`COLORTERM=truecolor` as documented in [the SSH guide](Examples.md#colors-over-ssh).
+Keep the authored palette and
 native detection; correcting conversion for limited-color terminals is upstream
 work, not a second Chio quantizer or an unconditional true-color override.
 
