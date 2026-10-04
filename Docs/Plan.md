@@ -33,10 +33,10 @@ Swift 6.4, with SwiftTUI pinned at
 - `swift build --product chio-dashboard` passes.
 - `swift build -c release --product chio-dashboard` also passes. Interactive
   launch instructions use release mode; debug enables extra upstream verification.
-- 70 Swift Testing tests pass: 47 library tests and 23 dashboard tests, including
+- 71 Swift Testing tests pass: 48 library tests and 23 dashboard tests, including
   parameterized widths, themes, progress values, sample scenarios, and form states.
-  Evidence comprises a full 69-test run followed by the added parameterized form
-  layout test (six size/theme cases); no behavior changed between those runs.
+  The existing 70 tests pass with the hint-layout change. The new hosted hint
+  regression also passes in its focused run after correcting its fixture's focus.
 - Pure tests cover fuzzy ranking, Unicode matching, stable selection, and
   deterministic simulation transitions.
 - Public terminal-cell rendering checks cover theme colors, progress, wrapping
@@ -95,8 +95,16 @@ These are small local samples, including capture/decoding overhead, with no SSH
 transit or Blink display time. Both binaries exited normally. Release materially
 improves responsiveness, but typing remains noticeable locally; this does not
 establish which render phase dominates or promise performance on another host.
-Use the supported `SWIFTTUI_DIAGNOSTICS` frame trace to investigate that next,
-alongside terminal input-to-output timing, before adding caches or changing layout.
+The supported `SWIFTTUI_DIAGNOSTICS` trace attributes roughly 72–74% of measured
+pipeline time to placement, with no focus-sync convergence passes on these inputs.
+Chio's hint flow now supplies native measurement and placement reuse signatures
+containing its sole layout value, the gap. SwiftTUI still validates child inputs
+and proposals. In the instrumented comparison, median typing changed from about
+123 ms to 104 ms and 108 ms in two repeats; custom child measurement requests per
+typing frame fell from 77 to 35. Selection timing did not consistently improve.
+Hosted regression coverage changes labels, adds/removes hints, changes the gap,
+and resizes through wrapping boundaries. Further placement profiling remains
+useful; this bounded change does not resolve all latency.
 
 ## Remaining boundaries
 

@@ -46,6 +46,11 @@ private struct HintFlowLayout {
 }
 
 extension HintFlowLayout: Layout {
+    // The gap is this layout's only value input. SwiftTUI separately validates
+    // the proposal and child dependencies before reusing native layout work.
+    var measurementReuseSignature: String? { "Chio.HintFlowLayout:gap=\(gap)" }
+    var placementReuseSignature: String? { measurementReuseSignature }
+
     func sizeThatFits(proposal: ProposedViewSize, subviews: LayoutSubviews, cache: inout Void) -> LayoutSize {
         let width: Int
         if case .finite(let value) = proposal.width { width = value }
