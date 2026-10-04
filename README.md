@@ -390,3 +390,7 @@ Read [the design](Docs/Design.md) for contracts and [the plan](Docs/Plan.md) for
 milestones and acceptance gates. Upstream references:
 [style system](https://github.com/SwiftTUI/swift-tui/blob/main/Sources/SwiftTUIViews/SwiftTUIViews.docc/Style-System.md),
 [theme model](https://github.com/SwiftTUI/swift-tui/blob/main/Sources/SwiftTUIPrimitives/Styling/Theme.swift).
+
+## License
+
+Chio is available under the [MIT License](LICENSE).
