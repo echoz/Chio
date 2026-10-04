@@ -335,8 +335,16 @@ swift test -c release --no-parallel -Xswiftc -load-plugin-library \
   -Xswiftc "$(xcode-select -p)/usr/lib/swift/host/plugins/testing/libTestingMacros.dylib"
 ```
 
-This flag is a local toolchain workaround, not a package dependency. Some native
-dashboard measurements also emit an upstream `collection.unboundedRealization`
+This flag is a local toolchain workaround, not a package dependency.
+The same Apple Swift 6.4 Command Line Tools installation can emit linker warnings
+for nonexistent `CommandLineTools/Developer/usr/lib` and
+`CommandLineTools/Developer/Library/Frameworks` search paths. This matches
+[SwiftPM issue #10557](https://github.com/swiftlang/swift-package-manager/issues/10557);
+Chio's verified release builds and terminal checks succeed despite these warnings.
+See [the toolchain findings](Docs/Plan.md#macos-toolchain-findings) for the isolated
+reproduction and comparison with full Xcode.
+
+Some native dashboard measurements also emit an upstream `collection.unboundedRealization`
 warning for the four demo rows; virtualization of large datasets is not validated.
 
 Run the complete CI sequence locally with Swift 6.4 and Python 3 installed:

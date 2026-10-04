@@ -308,11 +308,26 @@ Swift 6.4, with SwiftTUI pinned at
   `NO_COLOR` still suppresses color. These capture bytes through a pipe without
   taking ownership of a real terminal or using upstream testing SPI.
 
+### macOS toolchain findings
+
 The installed Command Line Tools' default SwiftPM backend does not discover its
 Swift Testing macro plugin automatically. The complete test run used the explicit
 plugin flag documented in the README. The native backend was also attempted but
 could not find the Testing module. Neither workaround changes package sources or
 adds a runtime dependency.
+
+Apple Swift `6.4.0.34.1` with `/Library/Developer/CommandLineTools` selected also
+emits linker warnings for nonexistent `CommandLineTools/Developer/usr/lib` and
+`CommandLineTools/Developer/Library/Frameworks` paths. Chio and its dependency
+manifests do not add those paths. This matches the open upstream
+[SwiftPM issue #10557](https://github.com/swiftlang/swift-package-manager/issues/10557).
+An isolated package with one library, one executable, and no dependencies
+reproduced the framework-path warning in release mode and ran successfully.
+The same probe built and ran without warnings using installed Xcode 27 via
+`env -u SDKROOT DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swift build`.
+This comparison did not rebuild Chio with Xcode or change the global developer
+selection. Chio's Command Line Tools release build and feedback terminal check
+at `454356e` passed despite the warnings. No package flags suppress them.
 
 ## Responsiveness baseline
 
