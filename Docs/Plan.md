@@ -1,7 +1,7 @@
 # Implementation plan and verification
 
-The delivered slices are a runnable local dashboard and agent creation using
-simulated agents. Accepted contracts and ownership live in [Design.md](Design.md);
+The delivered slices are a runnable local dashboard, agent creation, and Markdown
+run reports using simulated agents. Accepted contracts and ownership live in [Design.md](Design.md);
 commands and interaction instructions live in [the README](../README.md).
 
 ## Delivered slices
@@ -24,6 +24,14 @@ commands and interaction instructions live in [the README](../README.md).
   failed submission focuses and reveals the first invalid field.
 - Independent read-only form review completed. Its new-row visibility, narrow
   error visibility, and batched-submission findings were fixed and verified.
+- Immutable MarkdownDocument values parsed with Swift Markdown 0.9.0, rendered
+  by MarkdownView as themed native views. The slice includes headings, rich
+  paragraphs, lists, quotes, code, rules, and readable unsupported-node fallbacks.
+- Enter opens a selected agent's snapshot report. Native scrolling, persistent
+  navigation hints, theme switching, and Escape restoration complete the reader.
+  Creating and running a new agent leads to its own report without external services.
+- Independent read-only Markdown review identified a one-row quote marker gap;
+  a composed text marker fixes it. No private renderer or focus API is required.
 
 ## Verified on macOS
 
@@ -33,10 +41,9 @@ Swift 6.4, with SwiftTUI pinned at
 - `swift build --product chio-dashboard` passes.
 - `swift build -c release --product chio-dashboard` also passes. Interactive
   launch instructions use release mode; debug enables extra upstream verification.
-- 71 Swift Testing tests pass: 48 library tests and 23 dashboard tests, including
-  parameterized widths, themes, progress values, sample scenarios, and form states.
-  The existing 70 tests pass with the hint-layout change. The new hosted hint
-  regression also passes in its focused run after correcting its fixture's focus.
+- 97 Swift Testing tests pass in the integrated run: 67 library tests and 30
+  dashboard tests, including parameterized widths, themes, progress values,
+  sample scenarios, forms, and reports. All existing regressions remain intact.
 - Pure tests cover fuzzy ranking, Unicode matching, stable selection, and
   deterministic simulation transitions.
 - Public terminal-cell rendering checks cover theme colors, progress, wrapping
@@ -51,6 +58,13 @@ Swift 6.4, with SwiftTUI pinned at
   Raw opening batches include `nq`, `n\t`, `nRelease\r\r`, repeated Ctrl-S after
   `nRelease`, and invalid `n\r`. Cell renders cover both themes at 100 × 30,
   50 × 30, and 36 × 18 with persistent actions and keyboard help.
+- Markdown model/raster tests cover rich wrapping, Unicode, nested lists and
+  quotes, literal punctuation, code whitespace, and readable fallbacks. Hosted
+  code tests verify horizontal End/Home and theme-preserved offset and focus.
+  Report tests cover vertical navigation, theme/resize retention, filtered-list
+  focus restoration, created-agent runs, immutable snapshots, and raw Enter-q
+  during presentation. Report chrome remains visible in both themes at
+  100 × 30, 50 × 30, and 36 × 18. Independent review reports no remaining findings.
 - A real macOS pseudo-terminal smoke check covers launch, search text that
   includes `q`, Escape, theme switching, simulated failure, running to completion,
   empty-data toggling, and normal exit with terminal restoration.
@@ -62,6 +76,12 @@ Swift 6.4, with SwiftTUI pinned at
   appear in the dashboard, the footer remains visible, and `q` exits with code
   zero and restores the alternate screen. This checks terminal output and input,
   not the user's Blink device; the new form was not inspected in a browser.
+- The report slice's release binary passes a real pseudo-terminal workflow:
+  start a run, wait for completion, open its report, End/Home navigation, change
+  theme without changing reading position, return to filtered results, and quit
+  with exit code zero and alternate-screen restoration. Captured terminal text
+  confirms the report hierarchy and persistent header/help. This remains local
+  terminal evidence, not a live Blink-over-SSH or Linux check.
 - A separate macOS pseudo-terminal comparison reproduced the SSH color issue:
   with `TERM=xterm-256color` and no `COLORTERM`, the default surface emits
   `48;5;59` (gray). Adding `COLORTERM=truecolor` emits `48;2;33;29;42` (the authored
@@ -106,6 +126,12 @@ Hosted regression coverage changes labels, adds/removes hints, changes the gap,
 and resizes through wrapping boundaries. Further placement profiling remains
 useful; this bounded change does not resolve all latency.
 
+The integrated Markdown/report release was rechecked with the original local
+harness and no diagnostic overrides: median selection was 74 ms, median Name
+typing was 103 ms (six inputs each), and opening the form took 206 ms. These small
+samples show no evident regression from report presentation; SSH and device
+display latency are still outside this measurement.
+
 ## Remaining boundaries
 
 - The public API is experimental. Keep the SwiftTUI revision pinned while its
@@ -149,8 +175,8 @@ useful; this bounded change does not resolve all latency.
    measurement before scaling the list to large datasets.
 4. Try the Create agent workflow before broadening the form API. Additional field
    types and grouped forms should follow concrete application needs.
-5. Evaluate Markdown through an AST and composed SwiftTUI views; choose a parser
-   only when that slice is authorized.
+5. Try reading completed and running reports at everyday terminal sizes before
+   adding syntax highlighting, active links, or richer table presentation.
 
 No new products, renderer, general focus manager, or external agent integration
 are required by these next decisions.

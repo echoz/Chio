@@ -15,11 +15,20 @@ let package = Package(
             url: "https://github.com/SwiftTUI/swift-tui.git",
             revision: "2d84ac7083993da2ef52e9d3d30255467efb9553"
         ),
+        // Swift Markdown 0.9.0. A revision pin also permits its conditional
+        // Windows build flags without modifying the upstream package.
+        .package(
+            url: "https://github.com/swiftlang/swift-markdown.git",
+            revision: "25cb61d3482054b09ae76ca4f281b1bfe7fe5a43"
+        ),
     ],
     targets: [
         .target(
             name: "Chio",
-            dependencies: [.product(name: "SwiftTUIViews", package: "swift-tui")]
+            dependencies: [
+                .product(name: "SwiftTUIViews", package: "swift-tui"),
+                .product(name: "Markdown", package: "swift-markdown"),
+            ]
         ),
         .executableTarget(
             name: "ChioDashboard",

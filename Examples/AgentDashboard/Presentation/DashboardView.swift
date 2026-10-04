@@ -18,6 +18,7 @@ struct DashboardView {
     @State private var creationEntry = CreateAgentView.Entry.name
     @State private var validateOnArrival = false
     @State private var isReturningFromCreation = false
+    @State private var report: AgentReport?
     let animates: Bool
 
     init(scenario: DashboardScenario = .normal, light: Bool = false, animates: Bool = true, paused: Bool = false) {
@@ -50,6 +51,13 @@ struct DashboardView {
     }
 
     private func handleKey(_ press: KeyPress) -> KeyPressResult {
+        // A report can be requested before the input batch reaches its cover.
+        // Keep subsequent keys out of the dashboard during that handoff.
+        if report != nil {
+            if press.key == .escape { report = nil }
+            if press == KeyPress(.character("t"), modifiers: .ctrl) { isLight.toggle() }
+            return .handled
+        }
         // A read can contain n and subsequent keys before the cover appears.
         // Prevent stale dashboard handlers from executing shortcuts during that
         // handoff; native controls own input once the cover has focus.
@@ -150,7 +158,7 @@ struct DashboardView {
                     KeyHint("tab", "next")
                 } else {
                     KeyHint("↑↓", "navigate")
-                    KeyHint("↵", "open")
+                    KeyHint("↵", "report")
                     KeyHint("/", "filter")
                     KeyHint("n", "new")
                     if !brief {
@@ -192,14 +200,17 @@ extension DashboardView: View {
                                     AgentRow(agent: agent, compact: compact)
                                 }
                                 .filtering(.fuzzy)
-                                .onActivate { agent in openedAgent = agent.name }
+                                .onActivate { agent in
+                                    openedAgent = agent.name
+                                    report = AgentReport(agent: agent)
+                                }
                                 .onSearchFocusChange { isSearching = $0 }
                                 .onResultKeyPress(perform: handleKey)
                                 .onKeyPress { press in
                                     // Until the appended row renders, native list handlers
                                     // still hold the old items and can overwrite selection.
                                     if isReturningFromCreation { return .handled }
-                                    return isCreating ? handleKey(press) : .ignored
+                                    return isCreating || report != nil ? handleKey(press) : .ignored
                                 }
                                 .onChange(of: agents.count) {
                                     if agents.last?.id == selection {
@@ -240,6 +251,9 @@ extension DashboardView: View {
                             validateOnArrival: validateOnArrival,
                             create: createAgent, cancel: { isCreating = false })
                 .id(creationNumber)
+        }
+        .fullScreenCover(item: $report) { report in
+            AgentReportView(report: report, isLight: $isLight, close: { self.report = nil })
         }
         .task {
             guard animates else { return }

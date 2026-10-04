@@ -22,7 +22,7 @@ state store, or focus manager is part of this design.
 | Lip Gloss | View layout, padding, borders, colors, style protocols, environment | Semantic tokens and coherent defaults |
 | Bubbles | Lists, tables, text editing, scrolling, spinners, progress, command palettes | Search composition, result/empty states, contextual help |
 | Huh | Bindings, native input controls, submission, focus | Field presentation, validation visibility, form workflow |
-| Glamour | Rich text and links as views; no Markdown parser | Future AST-to-view document rendering |
+| Glamour | Rich text and links as views; no Markdown parser | Parsed documents composed from themed native views |
 | Charmtone/shared palettes | Color primitives and terminal capability handling | A small semantic palette, not a color catalog |
 
 Use Huh's Charm palette and Bubbles' hierarchy and keyboard help as the initial
@@ -141,16 +141,51 @@ has rendered. Native editing resumes when the cover owns focus. This is a narrow
 transition adapter, not general replay of arbitrary navigation across unrendered
 controls.
 
+## Markdown and agent reports
+
+`MarkdownDocument(source)` parses once into an immutable, `Equatable`, `Sendable`
+value. Applications create it when content changes and retain it across view
+updates. The third-party AST stays internal. `MarkdownView(document)` consumes
+that value and the current Chio theme; callers supply a native vertical
+`ScrollView` where needed.
+
+Headings, rich paragraphs, emphasis, strong text, inline code, ordered/unordered
+and task lists, nested quotes, fenced code, and rules compose from native views.
+Each paragraph is one rich `Text`, so SwiftTUI owns wrapping across styled spans.
+Smart punctuation is disabled to preserve technical quotes and hyphens. Fenced
+code preserves whitespace in a native horizontal scroll view; Tab can focus it,
+then arrows or Home/End navigate its columns. Theme changes retain native offset
+and focus. A text marker identifies quotes because the pinned leading-edge border
+disappears on one-row content; this is presentation composition, not cell rendering.
+
+Links display their destinations, images display alt text and source, HTML remains
+literal, and tables have a readable cell-separated text fallback. No resource is
+fetched, no command is executed, and links are not active. Syntax highlighting and
+formatted tables need their own concrete use case before expanding this API.
+
+Enter on dashboard results opens a native full-screen report for the selected
+agent. The report captures the current agent value and parsed document once; a
+running simulation can continue underneath without rewriting the reading view.
+Reopening captures the latest state. The content labels the local simulation and
+escapes user-authored metadata as literal Markdown text.
+
+The vertical scroll view receives native focus on arrival. Arrows and Home/End
+move through the report; Escape closes it and Ctrl-T changes the theme. The header
+and wrapping hints remain outside the scroll area, including at 36 × 18. Closing
+restores the dashboard query, selection, and native focus. During the input batch
+before cover presentation, dashboard shortcuts are consumed so Enter followed by
+`q` cannot accidentally quit. SwiftTUI owns the cover and focus restoration.
+
 ## Source ownership
 
 | Path | Responsibility |
 | --- | --- |
-| `Sources/Chio/Domain` | Theme values, pure search decisions, and validation visibility |
+| `Sources/Chio/Domain` | Theme values, pure search decisions, validation visibility, and parsed Markdown |
 | `Sources/Chio/Presentation` | Components and environment integration |
 | `Sources/Chio/Presentation/Styles` | Native SwiftTUI control styles |
 | `Examples/AgentDashboard` | Demo model, presentation, and thin entry point |
 | `Tests/ChioTests` | Tests grouped by corresponding responsibility |
-| `Tests/ChioDashboardTests` | Simulation, draft rules, and dashboard/form rendering and interaction |
+| `Tests/ChioDashboardTests` | Simulation, draft rules, report snapshots, and dashboard/form/report interaction |
 
 Only create responsibility groups when they contain useful code. Keep each
 independently useful production type in a matching file and protocol conformances
@@ -160,8 +195,12 @@ in dedicated extensions, following the project working agreements.
 
 The dependency is pinned because SwiftTUI is still evolving. Its published
 `SwiftTUIViews` product is the library boundary; the demo uses `SwiftTUI`, and
-tests use public `SwiftTUIRuntime` rendering and hosted input APIs. Chio adds no
-external dependency beyond SwiftTUI and does not use testing SPI.
+tests use public `SwiftTUIRuntime` rendering and hosted input APIs without testing SPI.
+Swift Markdown 0.9.0 is pinned to revision
+`25cb61d3482054b09ae76ca4f281b1bfe7fe5a43`. Its manifest includes conditional Windows
+unsafe build flags; a revision dependency permits these without changing upstream.
+The parser brings swift-cmark 0.9.0, compiled from source by SwiftPM, with no
+separately installed cmark library. Linux and static musl linking remain unverified.
 
 Native list focus chrome currently resolves through SwiftTUI's own theme;
 Chio's selected row, content, controls, and hints use the Chio theme. Upstream
@@ -182,5 +221,6 @@ work, not a second Chio quantizer or an unconditional true-color override.
 - [Huh themes](https://github.com/charmbracelet/huh/blob/main/theme.go)
 - [Bubbles list](https://github.com/charmbracelet/bubbles/tree/main/list) and [help](https://github.com/charmbracelet/bubbles/tree/main/help)
 
-Charm supplies visual references, not a Go API port. Broader forms, Markdown,
-and further products remain deferred while these concrete workflows are refined.
+Charm supplies visual references, not a Go API port. Broader forms, syntax
+highlighting, active links, and further products remain deferred while these
+concrete workflows are refined.

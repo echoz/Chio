@@ -14,10 +14,10 @@ The APIs follow Swift composition and native SwiftTUI styles.
 
 The package includes one public library, `Chio`, and the `chio-dashboard`
 executable. Run it to try search, selection, agent creation, inline validation,
-progress, themes, and successful or failed simulated runs. It requires no external services.
+progress, themes, and Markdown reports of simulated runs. It requires no external services.
 
-This is an early API to learn from, not a stable release. Broader forms and
-Markdown remain deferred.
+This is an early API to learn from, not a stable release. Broader forms, syntax
+highlighting, and active Markdown links remain deferred.
 
 ## Try the dashboard
 
@@ -37,11 +37,17 @@ swift build -c release --product chio-dashboard
 .build/release/chio-dashboard
 ```
 
-Use arrows to navigate, `/` to search, Enter to open, and Escape to clear search.
+Use arrows to navigate, `/` to search, Enter to open a report, and Escape to clear search.
 While browsing: `r` starts a run, `f` simulates failure, `p` pauses progress,
 `e` toggles empty data, `t` changes theme, and `q` quits. Ctrl-C also exits.
 The `›` marker is selection; the native `▌` shows the current list navigation
-target. Tab moves native focus; Enter opens the selected item.
+target. Tab moves native focus; Enter opens the selected agent's report.
+
+Reports capture the run at the moment you open them. Use arrows or Home/End to
+scroll, Ctrl-T to change theme, and Escape to return to the same selection and
+filter. Reopen for the latest run state. Tab can focus a code block, where left
+and right scroll long lines. The reports demonstrate headings, rich text, lists,
+quotes, and code using the same theme as the dashboard.
 
 Press `n` while browsing to create an agent. Enter its name, choose a role with
 the arrow keys, and use Space to toggle Start immediately. Test agents also
@@ -137,12 +143,38 @@ own the validation rules, bindings, and native focus requests. See
 the complete workflow and [AgentDraft](Examples/AgentDashboard/Domain/AgentDraft.swift)
 for its pure validation rules.
 
+Markdown also composes with native views. Parse when the source changes and pass
+the retained value to `MarkdownView`; avoid reparsing inside a frequently updated
+`body`:
+
+```swift
+struct ReportView: View {
+    let document: MarkdownDocument // Created by the content owner when its source changes.
+
+    var body: some View {
+        ScrollView {
+            MarkdownView(document)
+        }
+        .chioTheme(.default)
+    }
+}
+```
+
+The first Markdown slice supports headings, paragraphs, strong/emphasized text,
+inline and fenced code, lists, quotes, and rules. Links and images show readable
+labels and destinations; HTML is literal and tables use a plain-text fallback.
+See [AgentReport](Examples/AgentDashboard/Domain/AgentReport.swift) for snapshot
+ownership and [AgentReportView](Examples/AgentDashboard/Presentation/AgentReportView.swift)
+for the reader.
+
 ## Verification
 
 `swift test` covers search and validation rules, public hosted input, themed
 terminal cells, true-color terminal emission, `NO_COLOR`, hint wrapping, and
-dashboard/form layouts. Form interactions include conditional fields, first-invalid
+dashboard/form/report layouts. Form interactions include conditional fields, first-invalid
 focus, creation, cancellation, theme changes, resizing, and batched input.
+Markdown checks cover parsing, rich text wrapping, preserved code whitespace,
+native scrolling, report snapshots, and returning to the dashboard's focus.
 On the current macOS Command Line Tools toolchain, SwiftPM fails to
 discover the installed Testing macro plugin;
 the verified workaround is:
@@ -158,13 +190,16 @@ warning for the four demo rows; virtualization of large datasets is not validate
 
 ## Repository
 
-`Sources/Chio/Domain` owns theme values, pure search rules, and validation visibility.
+`Sources/Chio/Domain` owns theme values, pure search rules, validation visibility, and parsed Markdown.
 `Sources/Chio/Presentation` owns views and styles, with native styles in `Presentation/Styles`.
 `Examples/AgentDashboard` owns the simulated demo; `Tests/ChioTests` mirrors library
 responsibilities and checks rendering and behavior without requiring a real TTY.
 
 The dependency is pinned to inspected SwiftTUI revision
 `2d84ac7083993da2ef52e9d3d30255467efb9553`; this is a revision pin, not a validated release tag.
+The Markdown parser uses Swift Markdown 0.9.0 at revision
+`25cb61d3482054b09ae76ca4f281b1bfe7fe5a43`, plus its source-built swift-cmark dependency.
+Parser types are not exposed through Chio's public API.
 
 Read [the design](Docs/Design.md) for contracts and [the plan](Docs/Plan.md) for
 milestones and acceptance gates. Upstream references:

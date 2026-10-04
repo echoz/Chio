@@ -13,7 +13,7 @@ Keep those owning documents current instead of duplicating their contents here.
   Prefer native control styles and composition; new components must add reusable UX.
 - Keep one package and one public `Chio` library until real dependency boundaries
   justify more products. The local simulated agent dashboard exercises searchable
-  selection and agent creation. Markdown and external integrations remain deferred.
+  selection, agent creation, and Markdown run reports. External integrations remain deferred.
 - Apply themes through the environment. Keep behavior in component options and
   application layout in SwiftTUI composition. Do not use private upstream APIs to
   conceal styling or focus limitations.
@@ -22,6 +22,8 @@ Keep those owning documents current instead of duplicating their contents here.
   batched-input regressions when modifying the transition into search.
 - Keep form validation rules and draft ownership in the application. Chio owns
   field presentation and error visibility; native controls and focus perform editing.
+- Parse Markdown when content changes, then compose native views from the immutable
+  document. Keep parser types internal; native scroll views own document navigation.
 
 Global engineering, organization, and worker-routing policies belong in
 `~/.codex/AGENTS.md` and its companion instructions, not in this file.
