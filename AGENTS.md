@@ -15,8 +15,8 @@ Keep those owning documents current instead of duplicating their contents here.
   Follow the value contracts and explicit state-owner exceptions in
   [Design.md](Docs/Design.md#value-contracts).
 - Keep one package and one public `Chio` library until real dependency boundaries
-  justify more products. The local simulated agent dashboard exercises searchable
-  selection, agent creation, and Markdown run reports. External integrations remain deferred.
+  justify more products. The dashboard and focused examples use local simulated
+  data. External integrations remain deferred.
 - Apply themes through the environment. Keep behavior in component options and
   application layout in SwiftTUI composition. Do not use private upstream APIs to
   conceal styling or focus limitations.

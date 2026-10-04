@@ -120,6 +120,52 @@ Attach application shortcuts with `.onResultKeyPress(perform:)`. The
 `.onSearchFocusChange` callback is for presentation such as contextual hints;
 its render-driven updates must not guard an ancestor's input routing.
 
+## Searchable multiple choice
+
+`SearchableChecklist` combines the existing matcher, native `List` set selection,
+and explicit checkmarks. Its binding contains checked stable IDs; native row focus
+is an independent cursor. Filtering never edits membership. The default filter is
+fuzzy, with optional substring matching and application-owned query binding.
+Counts show all checked IDs, hidden checks, and unavailable checks.
+
+An enabled, visible row may be checked or unchecked. Disabled choices remain
+visible native focus stops with an Unavailable label, but both toggle directions
+are rejected. Checked IDs absent from the source remain in the binding and count
+as unavailable. This avoids silently repairing an application's draft: the app
+owns membership validation, selection limits, removal policy, and explicit reset.
+Changing the source, query, theme, or geometry never auto-selects or prunes IDs.
+
+Native List does not enforce per-row disabled membership itself. A small binding
+adapter accepts changes only for the current visible, enabled IDs and preserves
+all other current membership. It reads the authoritative query and selection at
+dispatch time, including bindings that reject or transform writes. Checkmarks and
+counts always read the value the application retained. No parallel selection store
+or generic validation framework is introduced.
+
+The checklist starts in search. Return requests focus in a List-only native
+namespace, which reaches the first available native row focus region. Arrows move
+that focus without changing checks; Space/Return toggles the focused row. Native
+activation also routes through the same membership gate. Filtering may change
+which item occupies a native row index; Chio promises stable checked IDs, not
+stable item focus through arbitrary source reordering. Native scrolling owns reveal.
+
+`/` enters search from results. Escape clears the filter; in search it also returns
+to rows when results exist. With no results, Return keeps editing focus. Additional
+unmodified input in the search-to-results handoff is consumed until native focus
+arrives, preventing an old row from being toggled. The slash-to-search handoff
+carries simple type-ahead into the native query, as in `SearchableList`.
+`.onResultKeyPress` scopes application shortcuts to the results subtree.
+
+The `--choices` example composes existing `SearchableList` and `FormField` for a
+single language, followed by `SearchableChecklist` for capabilities. A complete
+language value is always retained in the draft, even if search has no matches.
+Search changes the candidate; Next/activation advances the form, and Save commits
+the complete draft. The application validates one through three capabilities and
+current availability. It preserves values and queries on Back, restores original
+choices on Cancel, and captures a local display summary only after successful Save.
+Short terminals reduce decorative space while preserving rows, errors, actions,
+and keyboard hints. This is a focused form example, not a new form coordinator.
+
 ## Composition and layout
 
 `KeyHint` renders one shortcut and explanation; `KeyHints` composes contextual
@@ -275,10 +321,10 @@ before cover presentation, dashboard shortcuts are consumed so Enter followed by
 
 | Path | Responsibility |
 | --- | --- |
-| `Sources/Chio/Domain` | Theme values, pure search decisions, validation visibility, and parsed Markdown |
+| `Sources/Chio/Domain` | Theme values, pure search/membership decisions, validation visibility, and parsed Markdown |
 | `Sources/Chio/Presentation` | Components and environment integration |
 | `Sources/Chio/Presentation/Styles` | Native SwiftTUI control styles |
-| `Examples/AgentDashboard` | Demo model, presentation, and thin entry point |
+| `Examples/AgentDashboard` | Dashboard and focused choice example, domain rules, presentation, and thin entry point |
 | `Tests/ChioTests` | Tests grouped by corresponding responsibility |
 | `Tests/ChioDashboardTests` | Simulation, draft rules, report snapshots, and dashboard/form/report/palette interaction |
 

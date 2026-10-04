@@ -25,4 +25,7 @@ for scenario in normal empty no-matches failed completed; do
 done
 "$binary" --snapshot --width 36 --height 18 --light \
   > .build/ci-results/compact-light.txt
+"$binary" --choices --snapshot --width 36 --height 18 \
+  > .build/ci-results/choices-compact.txt
 python3 Scripts/ci/terminal-smoke.py "$binary"
+python3 Scripts/ci/terminal-smoke.py "$binary" --choices

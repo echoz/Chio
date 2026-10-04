@@ -86,6 +86,26 @@ Linux verification uses Swift 6.4.0 on Ubuntu 24.04. Ordinary Linux builds use
 glibc and need the Swift runtime libraries; they are not self-contained binaries.
 Static Linux distribution is a separate compatibility check, described below.
 
+### Try choice fields
+
+Run the focused two-step form using the same executable:
+
+```sh
+COLORTERM=truecolor swift run -c release chio-dashboard --choices
+```
+
+Search for a language and press Enter to continue, then choose one to three
+capabilities. In the checklist, Enter leaves search for native rows; arrows move
+focus and Space or Enter toggles a check. `/` returns to search and Escape clears
+the filter. Checked items stay selected when a filter hides them. Deploy is
+visible but unavailable in this local demo.
+
+Ctrl-S advances or saves, Ctrl-B goes back, and Ctrl-X cancels and restores the
+original choices. Ctrl-R resets the draft, Ctrl-T changes theme, and Ctrl-Q quits.
+Save validates the complete selection, including hidden checks; it never silently
+truncates it. The example keeps its saved summary only for the current process.
+Use `--choices --snapshot` for a noninteractive language-page capture.
+
 ### Colors over SSH
 
 For a true-color terminal such as Blink, declare that capability on the remote
@@ -108,7 +128,7 @@ the upstream conversion still needs correction for actual 256-color terminals.
 ## Design direction
 
 - Apply a theme to native `GroupBox`, `List`, `Table`, `TextField`, `Picker`, `Toggle`, and `ProgressView` styles.
-- Compose reusable `KeyHint`, `KeyHints`, `StatusBar`, `SearchableList`, and `FormField` views.
+- Compose reusable `KeyHint`, `KeyHints`, `StatusBar`, `SearchableList`, `SearchableChecklist`, and `FormField` views.
 - Customize nested semantic colors, spacing, and treatments through `.chioTheme(...)`.
 - Style native command palettes with `ChioPaletteStyle`; apply `.chioTheme(...)`
   after `.paletteSheet(...)` so the palette declaration receives the style.
@@ -168,6 +188,25 @@ Applications own the validation rules, bindings, and native focus requests. See
 [CreateAgentView](Examples/AgentDashboard/Presentation/CreateAgentView.swift) for
 the complete workflow and [AgentDraft](Examples/AgentDashboard/Domain/AgentDraft.swift)
 for its pure validation rules.
+
+For multiple choices, bind a set of stable IDs:
+
+```swift
+SearchableChecklist(capabilities, selection: $selectedIDs,
+                    searchText: \.name, isEnabled: \.isAvailable) { capability in
+    Text(capability.name)
+}
+.filtering(.fuzzy)
+```
+
+Filtering changes the visible rows, never the checked set. Removed IDs and already
+checked disabled choices remain in the application binding and are reported as
+unavailable; disabled choices cannot be toggled. Applications explicitly validate,
+clear, or replace them. Selection limits and submit/cancel behavior belong to the
+form, as shown by [the choice example](Examples/AgentDashboard/Presentation/ChoiceExampleView.swift).
+Use `.onResultKeyPress` for ordinary-character shortcuts scoped to results.
+Return into results completes at the next frame; additional keys in that same
+input batch are consumed so they cannot toggle an old row.
 
 Markdown also composes with native views. Parse when the source changes and pass
 the retained value to `MarkdownView`; avoid reparsing inside a frequently updated

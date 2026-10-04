@@ -77,7 +77,7 @@ def screen(output):
     return "\n".join("".join(line) for line in cells)
 
 
-def run(binary):
+def run(binary, choices=False):
     master, slave = pty.openpty()
     process = None
     output = bytearray()
@@ -121,30 +121,50 @@ def run(binary):
         env = dict(os.environ, TERM="xterm-256color", COLORTERM="truecolor")
         for key in ("NO_COLOR", "CLICOLOR", "CLICOLOR_FORCE", "FORCE_COLOR"):
             env.pop(key, None)
-        process = subprocess.Popen([str(binary), "--paused"], stdin=slave,
+        process = subprocess.Popen([str(binary), "--choices" if choices else "--paused"], stdin=slave,
                                    stdout=slave, stderr=slave, env=env)
-        until("4 of 4 items")
+        until("1 / 2" if choices else "4 of 4 items")
         modes = termios.tcgetattr(slave)
         assert not modes[3] & (termios.ECHO | termios.ICANON), "Terminal is not in raw input mode"
         assert modes[6][termios.VMIN] == 1 and modes[6][termios.VTIME] == 0, "Unexpected raw read timing"
         assert b"\x1b[?1049h" in output, "Alternate screen was not entered"
 
-        send(b"/docs", "1 of 4 items")
-        send(b"\x0b", "esc close")  # Ctrl-K opens the native palette from search.
-        send(b"zzzz", "No matches.")
-        send(b"\x1b", "1 of 4 items")
-        send(b"q", "docsq")  # Cancellation must restore the editor, not quit.
-        send(b"\x1b", "4 of 4 items")
-        send(b"\x0b", "esc close")
-        send(b"report", "Open agent report")
-        send(b"\r", "/ agent report")
-        until("Table example")
-        send(b"\x1b", "/ agent workspace")
-        send(b"n", "/ create agent")
-        send(b"Smoke Agent", "Smoke Agent")
-        send(b"\x1b", "/ agent workspace")
+        if choices:
+            send(b"/rust", "1 of 4 items")
+            send(b"\r\r", "2 / 2")
+            send(b"\x13", "Error: Choose at least 1")  # Ctrl-S validates.
+            send(b"build", "1 of 6 items")
+            send(b"\r", "1 of 6 items")
+            send(b" ", "1 selected")
+            send(b"\x1b", "6 of 6 items")
+            send(b"/test", "1 hidden")
+            send(b"\r", "1 hidden")
+            send(b" ", "2 selected")
+            send(b"\x13", "Saved: Rust")
+            until("Build, Test")
+            send(b"\x02", "1 / 2")  # Ctrl-B retains draft and query.
+            until("1 of 4 items")
+            send(b"\x18", "Cancelled")  # Ctrl-X restores original choices.
+            until("4 of 4 items")
+            send(b"\x13", "2 / 2")
+            until("0 selected")
+        else:
+            send(b"/docs", "1 of 4 items")
+            send(b"\x0b", "esc close")  # Ctrl-K opens the native palette from search.
+            send(b"zzzz", "No matches.")
+            send(b"\x1b", "1 of 4 items")
+            send(b"q", "docsq")  # Cancellation must restore the editor, not quit.
+            send(b"\x1b", "4 of 4 items")
+            send(b"\x0b", "esc close")
+            send(b"report", "Open agent report")
+            send(b"\r", "/ agent report")
+            until("Table example")
+            send(b"\x1b", "/ agent workspace")
+            send(b"n", "/ create agent")
+            send(b"Smoke Agent", "Smoke Agent")
+            send(b"\x1b", "/ agent workspace")
 
-        os.write(master, b"q")
+        os.write(master, b"\x11" if choices else b"q")
         deadline = time.monotonic() + 15
         while process.poll() is None and time.monotonic() < deadline:
             receive()
@@ -154,7 +174,8 @@ def run(binary):
         assert process.returncode == 0, f"Dashboard exited with {process.returncode}"
         assert b"\x1b[?1049l" in output, "Alternate screen was not restored"
         assert termios.tcgetattr(slave) == original_modes, "Terminal modes were not restored"
-        print("PASS: raw input, search, palette, report/table, form, focus restoration, clean exit")
+        print("PASS: searchable choices, hidden checks, validation, save/cancel, clean exit" if choices else
+              "PASS: raw input, search, palette, report/table, form, focus restoration, clean exit")
     except Exception:
         print("Last terminal screen:\n" + screen(output), file=sys.stderr)
         raise
@@ -173,4 +194,6 @@ def run(binary):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("binary", type=Path, help="Path to a built chio-dashboard executable")
-    run(parser.parse_args().binary.resolve())
+    parser.add_argument("--choices", action="store_true", help="Exercise the focused choice example")
+    arguments = parser.parse_args()
+    run(arguments.binary.resolve(), choices=arguments.choices)

@@ -1,7 +1,8 @@
 # Implementation plan and verification
 
 The delivered proof-of-concept slices are a runnable local dashboard, agent
-creation, Markdown run reports, and a command palette using simulated agents.
+creation, Markdown run reports, a command palette using simulated agents, and
+a focused searchable-choice form.
 They establish the design direction, not broad parity with Charm's components.
 Accepted contracts and
 ownership live in [Design.md](Design.md); commands and interaction instructions
@@ -65,6 +66,17 @@ live in [the README](../README.md).
   form/search/palette input and focus regressions retain their assertions.
   The release build, six snapshot captures, and real pseudo-terminal smoke check
   also pass on macOS for this refactor.
+- Richer choice fields add `SearchableChecklist` with native multi-selection,
+  explicit checks, search, counts, disabled-choice enforcement, and preserved
+  hidden/removed membership. The `--choices` two-step example reuses
+  `SearchableList` and `FormField` for language choice, then demonstrates
+  app-owned one-through-three validation, current availability, and save/cancel.
+  Independent review's repeated-activation and stale-success findings were fixed
+  with scoped transitions, typed feedback, and hosted regressions; re-review
+  found no remaining actionable issues.
+  The integrated macOS run passes 158 tests, an optimized build, seven snapshot
+  captures, and real pseudo-terminal workflows for both the dashboard and choices.
+  Both workflows restore terminal modes and exit cleanly.
 
 ## Component coverage
 
@@ -95,8 +107,8 @@ come from Chio's original brief; they are not all standalone Bubbles packages.
 | Password input | Existing text-field style is inherited by native `SecureField`; no dedicated Chio regression yet | [SecureField][native-secure] uses the same style and masks the rendered value | Validate masking, focus, disabled state, and theme integration; no replacement editor or new secure-field style needed |
 | Multiline input | No Chio editor style or exercised workflow | [TextEditor][native-editor] and `TextEditorStyle.editorContent` preserve native editing/scrolling | Add shell/focus styling and tests; first check inner text paint, which the protected slot sets from native chrome |
 | Compact single choice | Delivered one-row `ChioPickerStyle` with native arrows | `Picker`, `PickerStyle` | This is not a searchable dropdown or a rich option browser |
-| Searchable single choice | Delivered `SearchableList`; can be placed in `FormField` | [List][native-list] plus native editor | Define field-oriented commit/cancel and disabled-choice needs before adding another public type |
-| Multiple choices | No Chio choose-many workflow or tests | Native `List` and `Table` accept `Binding<Set<ID>>` | Compose filtering, checkmarks, counts and validation; define hidden/removed choice semantics without rebuilding selection/focus |
+| Searchable single choice | `SearchableList` composed in `FormField`; `--choices` proves candidate/Next/Save/Cancel | [List][native-list] plus native editor | No separate single-choice wrapper or disabled-single-choice policy yet |
+| Multiple choices | `SearchableChecklist`, visible checks/counts, retained hidden/removed IDs, disabled membership gate; app-owned limits and validation in `--choices` | Native `List` and `Table` accept `Binding<Set<ID>>` | No bulk select, range select, or pre-render source-freshness guarantee; source/eligibility inputs update with rendered views |
 | Yes/no confirmation field | Styled native toggle is usable | `Toggle`, buttons | A distinct two-choice confirmation treatment, if needed; an action-confirmation dialog is a separate scope |
 | Field help and validation | Delivered `FormField` and `FormValidation` visibility state | Bindings, submission and `FocusState` | Current rules, draft ownership and first-invalid focus remain app-owned |
 | Conditional fields and dynamic choices | Conditional Test suite field demonstrated; native composition permits changing options | Result builders, state, `Picker`/`List` | Reusable asynchronous choice loading, stale-result policy and cross-field workflows are not delivered |
@@ -158,7 +170,7 @@ Swift 6.4, with SwiftTUI pinned at
 - `swift build --product chio-dashboard` passes.
 - `swift build -c release --product chio-dashboard` also passes. Interactive
   launch instructions use release mode; debug enables extra upstream verification.
-- 134 Swift Testing tests pass with explicit `--no-parallel`: 88 library tests and 46
+- 158 Swift Testing tests pass with explicit `--no-parallel`: 102 library tests and 56
   dashboard tests, including parameterized widths, themes, progress values,
   sample scenarios, forms, and reports. All existing regressions remain intact.
 - The combined concurrent dashboard run hit frame-deadline failures across form,
@@ -170,6 +182,15 @@ Swift 6.4, with SwiftTUI pinned at
   and unrelated fields; progress construction and decoding reject invalid fractions,
   spacing decoding rejects malformed values, and isolated exit tests retain
   constructor/replacement preconditions for theme spacing and glyphs.
+- Choice tests cover native focus versus checked membership, Space/Return,
+  filtered hidden checks, disabled and removed IDs, reordered/empty sources,
+  rejected/transformed bindings, internal query retention, scroll reveal, and
+  batched search handoff. A focused follow-up also starts on a native row, removes
+  all options, and verifies recovery to search without losing checked IDs.
+  The full form covers minimum/maximum/current-availability
+  validation, successful and rejected Save, Back/Cancel, repeated activation,
+  and continued native editing through theme and 36 × 18 resize. Raster cases
+  exercise both themes at 100 × 30, 50 × 30, and 36 × 18.
 - Public terminal-cell rendering checks cover theme colors, progress, wrapping
   by cell width, empty states, and complete layouts at 100 × 30, 100 × 26,
   100 × 24, 50 × 30, and 36 × 18.
@@ -283,6 +304,16 @@ build or tests: selection measured 75 ms median and Name typing 92 ms median
 (six inputs each), with one form opening at 215 ms. These local samples show no
 evident responsiveness regression; they do not include SSH or device latency.
 
+The richer-choice release was sampled at 100 × 30 with no concurrent build or
+tests. The checklist measured 28 ms median for search typing, 45 ms for row
+navigation, and 67 ms for toggling (six inputs each). The original dashboard
+harness measured 99 ms for selection and 108 ms for Name typing, with one form
+opening at 239 ms. Dashboard samples are slower than the earlier palette sample;
+these runs do not isolate a cause or establish a regression-free result. The
+dashboard retains its original application/view entry structure; `--choices`
+uses a separate native App in the same executable. All timings include local
+capture/decoding overhead and exclude SSH and device display latency.
+
 ## Linux and CI
 
 The initial demonstration slices are delivered. Portability verification adds CI and
@@ -311,6 +342,14 @@ repeatable terminal checks without changing the public API or dependency pins.
   ARM64 Linux run, without extending coverage to other distributions or devices.
 - The workflows and scripts received an independent read-only correctness review
   with no actionable findings. Builds/tests remain serialized within each job.
+- [Run 37183707010](https://github.com/echoz/Chio/actions/runs/37183707010) for the
+  immutable-value commit `dcb0eb2` passed all 134 tests, the release build, and
+  terminal smoke check on Linux x86_64. Its macOS job failed two existing
+  Create-agent opening checks: the form rendered but Name had not acquired native
+  focus before the deadline. Other openings passed; the log does not establish
+  whether acquisition was lost or merely late. Local macOS verification passed.
+  Keep the focus assertions and deadlines intact and distinguish fresh-run evidence
+  from a demonstrated fix for this platform discrepancy.
 
 ### Static Linux blocker
 
@@ -349,6 +388,14 @@ portable; correcting the platform implementation remains upstream work.
 
 - The public API is experimental. Keep the SwiftTUI revision pinned while its
   style and focus contracts evolve; dependency upgrades need the hosted tests.
+- The full-window choice example reads public `terminalSize` for its responsive
+  decisions. Nesting its changing fields under `GeometryReader` triggered the
+  pinned runtime's debug lifecycle-publication assertion for a missing
+  `SearchableList.onAppear` handler. Explicit step identity alone did not fix it.
+  The full-window composition passes the workflow without disabling checks;
+  the upstream root cause and support for the original composition remain unproved.
+  Checklist handlers capture the resolved native namespace during body evaluation,
+  so deferred input uses the same scope as the rendered list.
 - Native list focus chrome is still owned by SwiftTUI's theme. Chio selection
   and authored content use Chio tokens; exact native focus palette customization
   requires an upstream public capability.
@@ -421,12 +468,12 @@ unchanged; a local SwiftPM edit is only integration evidence, not distribution.
 
 ## Next component slices
 
-The coverage audit is complete and the following order is approved. These slices
-are not yet implemented, and their public APIs remain open to evidence from the
-focused examples. Broaden reusable component coverage before treating the
-framework as ready for release preparation.
+The coverage audit is complete and the following order is approved. The first
+slice is implemented; subsequent slices remain planned. Their public APIs remain
+open to evidence from focused examples. Broaden reusable component coverage
+before treating the framework as ready for release preparation.
 
-1. **Richer choice fields.** Prove searchable single-choice form composition and
+1. **Richer choice fields — implemented.** Prove searchable single-choice form composition and
    a choose-many workflow using native `List` selection. Reuse `SearchableList`
    and `FormField` where they already fit; choose a new public abstraction only
    where the combined behavior earns it. Define stable IDs, checked membership
