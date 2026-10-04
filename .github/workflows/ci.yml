@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  macos:
+    # Swift 6.4 needs Xcode 27; this runner is currently a public preview.
+    runs-on: xcode-27
+    timeout-minutes: 45
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.0.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Test, build release, and exercise the terminal
+        shell: bash
+        run: bash Scripts/ci/verify.sh 2>&1 | tee ci-verification.log
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: macos-verification
+          include-hidden-files: true
+          path: |
+            ci-verification.log
+            .build/ci-results/*.txt
+
+  linux:
+    runs-on: ubuntu-24.04
+    container: swift:6.4.0-noble
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Install terminal smoke prerequisite
+        run: apt-get update && apt-get install -y --no-install-recommends python3
+      - name: Test, build release, and exercise the terminal
+        shell: bash
+        run: bash Scripts/ci/verify.sh 2>&1 | tee ci-verification.log
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: linux-verification
+          include-hidden-files: true
+          path: |
+            ci-verification.log
+            .build/ci-results/*.txt

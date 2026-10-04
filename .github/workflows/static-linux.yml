@@ -1,0 +1,51 @@
+name: Static Linux compatibility
+
+# This diagnostic fails visibly while pinned SwiftTUI lacks musl support.
+# Keep it opt-in until upstream supports the Static Linux SDK.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static-linux:
+    runs-on: ubuntu-24.04
+    container: swift:6.4.0-noble
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Install verification tools
+        run: apt-get update && apt-get install -y --no-install-recommends python3 file binutils
+      - name: Install matching Static Linux SDK
+        run: |
+          swift sdk install https://download.swift.org/swift-6.4.0-release/static-sdk/swift-6.4.0-RELEASE/swift-6.4.0-RELEASE_static-linux-0.1.0.artifactbundle.tar.gz \
+            --checksum 47d2fd89eebfdf9eb4d536b6710414297f755c17926cdebc4742c08982b40a9e
+      - name: Build against published dependency pins
+        shell: bash
+        run: |
+          swift build --force-resolved-versions --jobs 2 -c release \
+            --swift-sdk x86_64-swift-linux-musl --product chio-dashboard \
+            2>&1 | tee static-linux-build.log
+      - name: Verify static linkage and run the executable
+        shell: bash
+        run: |
+          binary="$(swift build -c release --swift-sdk x86_64-swift-linux-musl --show-bin-path)/chio-dashboard"
+          file "$binary"
+          readelf -l "$binary" > static-linux-program-headers.txt
+          readelf -d "$binary" > static-linux-dynamic-section.txt
+          if grep -q INTERP static-linux-program-headers.txt || grep -q NEEDED static-linux-dynamic-section.txt; then
+            echo 'Unexpected dynamic interpreter or shared-library dependency' >&2
+            exit 1
+          fi
+          python3 Scripts/ci/terminal-smoke.py "$binary"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: static-linux-diagnostics
+          path: |
+            static-linux-build.log
+            static-linux-program-headers.txt
+            static-linux-dynamic-section.txt

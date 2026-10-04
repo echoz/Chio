@@ -174,6 +174,60 @@ build or tests: selection measured 75 ms median and Name typing 92 ms median
 (six inputs each), with one form opening at 215 ms. These local samples show no
 evident responsiveness regression; they do not include SSH or device latency.
 
+## Linux and CI
+
+The initial feature slices are delivered. Portability verification adds CI and
+repeatable terminal checks without changing the public API or dependency pins.
+
+- Ubuntu 24.04 ARM64, official `swift:6.4.0-noble` container: all 113 tests pass
+  with `--no-parallel` (76 library and 37 dashboard). The debug and release
+  dashboard builds pass. The tested release is a dynamically linked glibc ELF
+  executable requiring Swift/Foundation runtime libraries, not a static artifact.
+- The committed `Scripts/ci/terminal-smoke.py` passes on macOS ARM64 and Linux
+  ARM64 release builds. It checks canonical mode/echo disabled, VMIN=1/VTIME=0,
+  real typed search, palette no matches and cancellation, restored search focus,
+  report/table opening, form entry/cancellation, zero exit, alternate-screen
+  teardown, and exact restoration of the original terminal attributes.
+- `.github/workflows/ci.yml` runs serial tests, an optimized build, snapshot
+  captures, and that smoke check for macOS/Xcode 27 and Ubuntu 24.04/Swift 6.4.0.
+  Logs and text captures are retained as CI artifacts. Snapshot captures are
+  inspection artifacts; the Swift tests assert rendering contracts. macOS uses
+  the currently available `xcode-27` preview runner because the package needs
+  Swift 6.4. Hosted runner results must be inspected separately from local runs.
+- The workflows and scripts received an independent read-only correctness review
+  with no actionable findings. Builds/tests remain serialized within each job.
+
+### Static Linux blocker
+
+An actual ARM64 release cross-build using the official Swift 6.4.0 compiler and
+matching Static Linux SDK `swift-6.4.0-RELEASE_static-linux-0.1.0` fails against
+the unchanged published pins. The SDK archive checksum was verified before use.
+SwiftTUI's `Vendor/swift-figlet/Sources/SwiftFiglet/SwiftFiglet.swift` imports Darwin,
+Glibc, Android, or CRT but not Musl. Compilation fails at line 1771 onward with
+missing `access`, `F_OK`, `opendir`, `fopen`, `getenv`, and related POSIX symbols.
+Figlet is also reached through Chio's library dependency, not only the dashboard.
+No static executable was produced; static linkage and execution are unverified.
+
+The source audit identifies additional Musl gaps in upstream C math imports,
+`PlatformMath`, terminal input/control guards, link opening, image file I/O,
+platform/PTY adapters, and web socket constants. Those are inspection findings,
+not subsequent compiler failures: the build stopped at Figlet. Correcting one
+import would not establish full static compatibility. Upstream POSIX support
+should be fixed and verified before changing Chio's dependency pin.
+
+The manual `.github/workflows/static-linux.yml` reproduces the build attempt for
+x86_64, retaining failures as artifacts. If compilation succeeds in the future,
+it rejects an ELF interpreter/shared-library dependency and executes the same
+terminal smoke check. It does not rewrite dependency sources or mask failures.
+Use the [official Static Linux SDK instructions](https://www.swift.org/documentation/articles/static-linux-getting-started.html)
+with the matching open-source toolchain; Apple's Xcode toolchain is not suitable.
+
+The audit also found hard-coded Darwin VMIN/VTIME tuple indices in upstream
+`TerminalPOSIXController.swift`. Linux's `cfmakeraw` supplies the intended values
+for the tested path: the Linux PTY check observes VMIN=1/VTIME=0, functioning
+input, and complete termios restoration. This is not proof those indices are
+portable; correcting the platform implementation remains upstream work.
+
 ## Remaining boundaries
 
 - The public API is experimental. Keep the SwiftTUI revision pinned while its
@@ -206,12 +260,9 @@ evident responsiveness regression; they do not include SSH or device latency.
   dropdown chrome remains native; the pinned `sheetStyle` does not control it.
 - The terminal smoke check used a pseudo-terminal, not every terminal emulator or
   assistive technology. Accessibility and color-capability coverage is partial.
-- Linux execution and Static Linux SDK/musl linking remain unverified. Inspected
-  upstream POSIX branches include Glibc paths without corresponding Musl paths;
-  this is a source compatibility risk, not a demonstrated build failure here.
-  A local tool inventory found no Linux container/VM runtime and no installed
-  Swift SDK directory. No Linux build or execution was attempted. Source risks
-  include terminal reads, detached process spawning, socket constants, and C math.
+- Linux/glibc ARM64 tests and terminal execution pass. Static Linux/musl
+  compilation is blocked by the pinned SwiftTUI dependency, as recorded above.
+  Other distributions, architectures, and live SSH devices need separate evidence.
 
 ## Proposed connected table grid correction
 
@@ -256,8 +307,8 @@ unchanged; a local SwiftPM edit is only integration evidence, not distribution.
 1. Gather visual and interaction feedback from running the binary at everyday
    terminal sizes in release mode. Profile typing and selection latency against
    the baseline above before adding more components.
-2. Validate a Linux build and an actual static musl executable separately, against
-   the pinned dependency. Keep failures visible rather than promising portability.
+2. Resolve upstream Musl compatibility before promising a self-contained Linux
+   executable. Keep the static diagnostic separate from verified glibc support.
 3. Investigate upstream public focus-theme integration and finite collection
    measurement before scaling the list to large datasets.
 4. Try the Create agent workflow before broadening the form API. Additional field

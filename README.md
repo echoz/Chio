@@ -80,8 +80,9 @@ Other scenarios are `empty`, `no-matches`, and `completed`. Use `--light` for th
 alternate palette or `--paused` to start an interactive demo without advancing
 the simulation.
 
-Linux is an intended target but is unverified in this repository. Static Linux
-distribution with musl is also unverified and depends on upstream compatibility.
+Linux verification uses Swift 6.4.0 on Ubuntu 24.04. Ordinary Linux builds use
+glibc and need the Swift runtime libraries; they are not self-contained binaries.
+Static Linux distribution is a separate compatibility check, described below.
 
 ### Colors over SSH
 
@@ -203,6 +204,35 @@ swift test --no-parallel -Xswiftc -load-plugin-library \
 This flag is a local toolchain workaround, not a package dependency. Some native
 dashboard measurements also emit an upstream `collection.unboundedRealization`
 warning for the four demo rows; virtualization of large datasets is not validated.
+
+Run the complete CI sequence locally with Swift 6.4 and Python 3 installed:
+
+```sh
+bash Scripts/ci/verify.sh
+```
+
+It runs serial tests, builds the release dashboard, captures snapshot scenarios,
+and exercises the executable through a real pseudo-terminal. The smoke check
+verifies raw input, search, palette cancellation, report/table and form opening,
+focus restoration, normal exit, and restored terminal attributes. This is not a
+live Blink/SSH check or a color/latency benchmark. To check an existing binary:
+
+```sh
+python3 Scripts/ci/terminal-smoke.py .build/release/chio-dashboard
+```
+
+[CI](.github/workflows/ci.yml) runs on pushes to `main` and pull requests using
+Xcode 27 on macOS and the official Swift 6.4.0 Ubuntu image on Linux. The macOS
+`xcode-27` runner is currently a public preview. Jobs retain verification logs and
+plain-text snapshots; generated artifacts are not committed.
+
+The manual [Static Linux compatibility](.github/workflows/static-linux.yml)
+workflow installs the checksum-verified Swift 6.4.0 Static Linux SDK, attempts a
+release build against the same dependency pins, then checks ELF linkage and runs
+the terminal smoke check if compilation succeeds. It fails visibly when upstream
+compatibility prevents a build; it does not patch dependency sources or suppress
+failures. The current blockers and verified platforms are recorded in
+[the plan](Docs/Plan.md#linux-and-ci).
 
 ## Repository
 
