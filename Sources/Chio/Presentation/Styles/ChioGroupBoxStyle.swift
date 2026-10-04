@@ -2,7 +2,7 @@ import SwiftTUIViews
 
 /// A heading above padded content with rounded terminal chrome.
 public struct ChioGroupBoxStyle {
-    public var theme: ChioTheme
+    public let theme: ChioTheme
 
     public init(theme: ChioTheme = .default) {
         self.theme = theme

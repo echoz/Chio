@@ -1,9 +1,19 @@
 import SwiftTUI
 
 struct DashboardApplication {
-    var scenario: DashboardScenario = .normal
-    var light = false
-    var paused = false
+    let scenario: DashboardScenario
+    let light: Bool
+    let paused: Bool
+
+    nonisolated init() {
+        self.init(scenario: .normal, light: false, paused: false)
+    }
+
+    nonisolated init(scenario: DashboardScenario, light: Bool, paused: Bool) {
+        self.scenario = scenario
+        self.light = light
+        self.paused = paused
+    }
 }
 
 extension DashboardApplication: SwiftTUIRuntime.App {

@@ -85,7 +85,7 @@ private struct HintTestView {
 
     private var theme: ChioTheme {
         var theme = ChioTheme.default
-        theme.spacing = .init(hintGap: widerGap ? 4 : 2)
+        theme = theme.replacing(spacing: .init(hintGap: widerGap ? 4 : 2))
         return theme
     }
 }

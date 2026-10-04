@@ -3,10 +3,12 @@ import Testing
 
 struct AgentSimulationTests {
     @Test func advancesOnlyRunningAgents() {
-        let advanced = AgentSimulation.advance(Agent.examples, step: 0.1)
-        #expect(advanced.map(\.id) == Agent.examples.map(\.id))
-        #expect(advanced[0].phase == .running(progress: 0.88))
-        #expect(Array(advanced.dropFirst()) == Array(Agent.examples.dropFirst()))
+        let original = Agent.examples
+        let advanced = AgentSimulation.advance(original, step: 0.1)
+        #expect(advanced.map(\.id) == original.map(\.id))
+        #expect(advanced[0].phase == .running(progress: Agent.RunningProgress(fraction: 0.88)!))
+        #expect(Array(advanced.dropFirst()) == Array(original.dropFirst()))
+        #expect(original[0].phase == .running(progress: Agent.RunningProgress(fraction: 0.78)!))
     }
 
     @Test func finishesAtTheProgressBoundary() {
@@ -17,5 +19,13 @@ struct AgentSimulationTests {
 
     @Test func emptySimulationStaysEmpty() {
         #expect(AgentSimulation.advance([]).isEmpty)
+    }
+
+    @Test("Zero-step advancement preserves running values and large finite steps complete")
+    func stepBoundaries() {
+        let original = Agent.examples
+        #expect(AgentSimulation.advance(original, step: 0) == original)
+        #expect(AgentSimulation.advance(original, step: .greatestFiniteMagnitude)[0].phase == .completed)
+        #expect(original[0].phase == .running(progress: Agent.RunningProgress(fraction: 0.78)!))
     }
 }

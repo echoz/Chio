@@ -11,16 +11,8 @@ enum DashboardScenario: String {
         switch self {
         case .empty: []
         case .normal, .noMatches: Agent.examples
-        case .failed: Agent.examples.map { agent in
-            var agent = agent
-            agent.phase = .failed
-            return agent
-        }
-        case .completed: Agent.examples.map { agent in
-            var agent = agent
-            agent.phase = .completed
-            return agent
-        }
+        case .failed: Agent.examples.map { $0.replacingPhase(.failed) }
+        case .completed: Agent.examples.map { $0.replacingPhase(.completed) }
         }
     }
 
@@ -29,4 +21,6 @@ enum DashboardScenario: String {
 
 extension DashboardScenario: CaseIterable {}
 extension DashboardScenario: ExpressibleByArgument {}
+extension DashboardScenario: Hashable {}
+extension DashboardScenario: Codable {}
 extension DashboardScenario: Sendable {}

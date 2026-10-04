@@ -2,9 +2,9 @@ import SwiftTUIViews
 
 /// A searchable native command palette with Chio's colors and compact rows.
 public struct ChioPaletteStyle {
-    public var theme: ChioTheme
+    public let theme: ChioTheme
     /// The query to use when a palette opens. Native editing owns subsequent changes.
-    public var initialQuery: String
+    public let initialQuery: String
 
     public init(theme: ChioTheme = .default, initialQuery: String = "") {
         self.theme = theme

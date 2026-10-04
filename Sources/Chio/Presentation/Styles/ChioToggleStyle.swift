@@ -2,8 +2,8 @@ import SwiftTUIViews
 
 /// A compact native toggle with a textual state and visible keyboard focus.
 public struct ChioToggleStyle {
-    public var theme: ChioTheme
-    public var showsLabel: Bool
+    public let theme: ChioTheme
+    public let showsLabel: Bool
 
     public init(theme: ChioTheme = .default, showsLabel: Bool = true) {
         self.theme = theme

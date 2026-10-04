@@ -117,9 +117,11 @@ struct MarkdownTableRenderTests {
           arguments: [false, true])
     func nativeAndHeaderOnlyTheme(light: Bool) {
         var theme = light ? ChioTheme.light : .default
-        theme.colors.heading = Color(hexRGB: 0x123456)
-        theme.colors.border = Color(hexRGB: 0x345678)
-        theme.colors.selectedSurface = Color(hexRGB: 0x456789)
+        theme = theme.replacing(colors: theme.colors.replacing(
+            heading: Color(hexRGB: 0x123456),
+            selectedSurface: Color(hexRGB: 0x456789),
+            border: Color(hexRGB: 0x345678)
+        ))
         let markdown = DefaultRenderer().render(
             MarkdownView(MarkdownDocument("| Header |\n| --- |"))
                 .chioTheme(theme),

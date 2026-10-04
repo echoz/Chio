@@ -18,7 +18,7 @@ struct AgentReport {
             outcome = "This agent is ready. Return to the dashboard and press **r** to start a simulated run."
             checks = "- [ ] Prepare workspace\n- [ ] Compile package\n- [ ] Run checks"
         case .running(let progress):
-            outcome = "The run was **\(Int(progress * 100))% complete** when this report opened. Reopen it to read the latest state."
+            outcome = "The run was **\(Int(progress.fraction * 100))% complete** when this report opened. Reopen it to read the latest state."
             checks = "- [x] Prepare workspace\n- [ ] Finish compilation and checks"
         case .completed:
             outcome = "**All checks passed.** The simulated run is complete. Your terminal looks *chio*."
@@ -104,4 +104,5 @@ extension AgentReport: Identifiable {
 }
 
 extension AgentReport: Equatable {}
+extension AgentReport: Hashable {}
 extension AgentReport: Sendable {}

@@ -1,21 +1,28 @@
 /// Tracks when application-owned validation messages should become visible.
 /// Compute current issues in field order, excluding fields that are not shown.
 public struct FormValidation<Field: Hashable> {
-    private var visitedFields: Set<Field> = []
-    private var submissionAttempted = false
+    private let visitedFields: Set<Field>
+    private let submissionAttempted: Bool
 
-    public init() {}
-
-    /// Makes a field's current issue visible after focus leaves that field.
-    public mutating func recordExit(from field: Field) {
-        visitedFields.insert(field)
+    public init() {
+        visitedFields = []
+        submissionAttempted = false
     }
 
-    /// Reveals current issues and returns the first invalid field for native focus.
-    @discardableResult
-    public mutating func submit(_ issues: [Issue]) -> Field? {
-        submissionAttempted = true
-        return issues.first?.field
+    private init(visitedFields: Set<Field>, submissionAttempted: Bool) {
+        self.visitedFields = visitedFields
+        self.submissionAttempted = submissionAttempted
+    }
+
+    /// Makes a field's current issue visible after focus leaves that field.
+    public func recordingExit(from field: Field) -> Self {
+        Self(visitedFields: visitedFields.union([field]), submissionAttempted: submissionAttempted)
+    }
+
+    /// Returns new visibility state and the first invalid field for native focus.
+    /// The receiver and the application's current issues remain unchanged.
+    public func submitting(_ issues: [Issue]) -> (validation: Self, firstInvalidField: Field?) {
+        (Self(visitedFields: visitedFields, submissionAttempted: true), issues.first?.field)
     }
 
     /// Reads the first current issue after the field has been exited or submitted.
@@ -36,6 +43,12 @@ public struct FormValidation<Field: Hashable> {
 }
 
 extension FormValidation: Equatable {}
+extension FormValidation: Hashable {}
 extension FormValidation: Sendable where Field: Sendable {}
+extension FormValidation: Encodable where Field: Encodable {}
+extension FormValidation: Decodable where Field: Decodable {}
 extension FormValidation.Issue: Equatable {}
+extension FormValidation.Issue: Hashable {}
 extension FormValidation.Issue: Sendable where Field: Sendable {}
+extension FormValidation.Issue: Encodable where Field: Encodable {}
+extension FormValidation.Issue: Decodable where Field: Decodable {}

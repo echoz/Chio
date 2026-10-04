@@ -20,10 +20,10 @@ extension AgentDetail: View {
                         Text(agent.summary).foregroundStyle(theme.colors.secondaryText)
                     }
                     if case .running(let progress) = agent.phase {
-                        ProgressView(value: progress, barWidth: compact ? 20 : 30) {
+                        ProgressView(value: progress.fraction, barWidth: compact ? 20 : 30) {
                             Text("Running test suite")
                         } currentValueLabel: {
-                            Text("\(Int(progress * 100))%")
+                            Text("\(Int(progress.fraction * 100))%")
                         }
                     } else {
                         Text("\(agent.phase.symbol) \(agent.phase.label)")

@@ -3,10 +3,23 @@ import Foundation
 
 /// Editable creation values. Only visible, required fields participate in validation.
 struct AgentDraft {
-    var name = ""
-    var role = Role.build
-    var suite = ""
-    var startImmediately = true
+    let name: String
+    let role: Role
+    let suite: String
+    let startImmediately: Bool
+
+    init(name: String = "", role: Role = .build, suite: String = "", startImmediately: Bool = true) {
+        self.name = name
+        self.role = role
+        self.suite = suite
+        self.startImmediately = startImmediately
+    }
+
+    func replacing(name: String? = nil, role: Role? = nil, suite: String? = nil,
+                   startImmediately: Bool? = nil) -> AgentDraft {
+        AgentDraft(name: name ?? self.name, role: role ?? self.role,
+                   suite: suite ?? self.suite, startImmediately: startImmediately ?? self.startImmediately)
+    }
 
     enum Field {
         case name
@@ -51,7 +64,7 @@ struct AgentDraft {
             id: id,
             name: trimmedName,
             summary: role == .test ? "Test suite · \(trimmedSuite)" : role.summary,
-            phase: startImmediately ? .running(progress: 0) : .idle
+            phase: startImmediately ? .running(progress: .zero) : .idle
         )
     }
 
@@ -60,8 +73,13 @@ struct AgentDraft {
 }
 
 extension AgentDraft: Equatable {}
+extension AgentDraft: Hashable {}
+extension AgentDraft: Codable {}
 extension AgentDraft: Sendable {}
 extension AgentDraft.Field: Hashable {}
+extension AgentDraft.Field: Codable {}
 extension AgentDraft.Field: Sendable {}
 extension AgentDraft.Role: CaseIterable {}
+extension AgentDraft.Role: Hashable {}
+extension AgentDraft.Role: Codable {}
 extension AgentDraft.Role: Sendable {}

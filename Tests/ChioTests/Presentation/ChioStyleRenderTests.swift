@@ -33,11 +33,15 @@ struct ChioStyleRenderTests {
     @Test("Custom progress treatments and palette reach native controls")
     func customProgressTheme() {
         var theme = ChioTheme.default
-        theme.colors.accent = Color(hexRGB: 0x123456)
-        theme.colors.border = Color(hexRGB: 0x654321)
-        theme.colors.surface = Color(hexRGB: 0x181818)
-        theme.treatments.progressFilledGlyph = "#"
-        theme.treatments.progressEmptyGlyph = "."
+        theme = theme.replacing(colors: theme.colors.replacing(
+            accent: Color(hexRGB: 0x123456),
+            surface: Color(hexRGB: 0x181818),
+            border: Color(hexRGB: 0x654321)
+        ))
+        theme = theme.replacing(treatments: theme.treatments.replacing(
+            progressFilledGlyph: "#",
+            progressEmptyGlyph: "."
+        ))
         let surface = DefaultRenderer().render(
             ProgressView(value: 0.5, barWidth: 8) { EmptyView() } currentValueLabel: { EmptyView() }
                 .chioTheme(theme),
@@ -69,10 +73,12 @@ struct ChioStyleRenderTests {
           arguments: [16, 32])
     func groupBoxTheme(width: Int) {
         var theme = ChioTheme.default
-        theme.colors.heading = Color(hexRGB: 0x112233)
-        theme.colors.foreground = Color(hexRGB: 0x223344)
-        theme.colors.border = Color(hexRGB: 0x334455)
-        theme.colors.surface = Color(hexRGB: 0x445566)
+        theme = theme.replacing(colors: theme.colors.replacing(
+            heading: Color(hexRGB: 0x112233),
+            foreground: Color(hexRGB: 0x223344),
+            surface: Color(hexRGB: 0x445566),
+            border: Color(hexRGB: 0x334455)
+        ))
         let surface = DefaultRenderer().render(
             GroupBox("Agents") { Text("Ready") }.chioTheme(theme),
             proposal: .init(width: width, height: 7)
@@ -92,9 +98,11 @@ struct ChioStyleRenderTests {
           arguments: ["", "query"])
     func textFieldTheme(value: String) {
         var theme = ChioTheme.default
-        theme.colors.foreground = Color(hexRGB: 0x235679)
-        theme.colors.mutedText = Color(hexRGB: 0xAB7890)
-        theme.colors.border = Color(hexRGB: 0x456789)
+        theme = theme.replacing(colors: theme.colors.replacing(
+            foreground: Color(hexRGB: 0x235679),
+            mutedText: Color(hexRGB: 0xAB7890),
+            border: Color(hexRGB: 0x456789)
+        ))
         let surface = DefaultRenderer().render(
             TextField("Search…", text: .constant(value)).chioTheme(theme),
             proposal: .init(width: 16, height: 3)
@@ -112,10 +120,12 @@ struct ChioStyleRenderTests {
     @Test("Search selection is visibly distinct and inherits custom marker and colors")
     func searchSelectionTheme() {
         var theme = ChioTheme.default
-        theme.colors.accent = Color(hexRGB: 0x13579B)
-        theme.colors.selectedSurface = Color(hexRGB: 0x2468AC)
-        theme.colors.foreground = Color(hexRGB: 0x987654)
-        theme.treatments.selectionMarker = ">"
+        theme = theme.replacing(colors: theme.colors.replacing(
+            accent: Color(hexRGB: 0x13579B),
+            foreground: Color(hexRGB: 0x987654),
+            selectedSurface: Color(hexRGB: 0x2468AC)
+        ))
+        theme = theme.replacing(treatments: theme.treatments.replacing(selectionMarker: ">"))
         let surface = DefaultRenderer().render(
             SearchableList(RenderItem.fixtures, selection: .constant("b"), searchText: \.name) {
                 Text($0.name)
@@ -153,6 +163,26 @@ struct ChioStyleRenderTests {
         #expect(unmatched.contains("zzz"))
         #expect(unmatched.contains("No matches. Clear the search to see all items."))
         #expect(!unmatched.contains("No items yet."))
+    }
+
+    @Test("Search modifiers preserve earlier options and leave their original value unchanged")
+    func immutableSearchConfiguration() {
+        let original = SearchableList(RenderItem.fixtures, selection: .constant(nil),
+                                      query: .constant("bt"), searchText: \.name) { Text($0.name) }
+        let substring = original.filtering(.substring)
+            .onActivate { _ in }
+            .onSearchFocusChange { _ in }
+            .onResultKeyPress { _ in .ignored }
+        let filtered = DefaultRenderer().render(substring.chioTheme(.default),
+                                               proposal: .init(width: 60, height: 8))
+            .rasterSurface.lines.joined(separator: "\n")
+        let unmodified = DefaultRenderer().render(original.chioTheme(.default),
+                                                 proposal: .init(width: 60, height: 8))
+            .rasterSurface.lines.joined(separator: "\n")
+        #expect(filtered.contains("0 of 2 items"))
+        #expect(filtered.contains("No matches."))
+        #expect(unmodified.contains("1 of 2 items"))
+        #expect(unmodified.contains("Beta"))
     }
 }
 

@@ -33,10 +33,12 @@ struct MarkdownViewRenderTests {
           arguments: [false, true])
     func theme(light: Bool) {
         var theme = light ? ChioTheme.light : .default
-        theme.colors.heading = Color(hexRGB: 0x123456)
-        theme.colors.accent = Color(hexRGB: 0x234567)
-        theme.colors.border = Color(hexRGB: 0x345678)
-        theme.colors.selectedSurface = Color(hexRGB: 0x456789)
+        theme = theme.replacing(colors: theme.colors.replacing(
+            accent: Color(hexRGB: 0x234567),
+            heading: Color(hexRGB: 0x123456),
+            selectedSurface: Color(hexRGB: 0x456789),
+            border: Color(hexRGB: 0x345678)
+        ))
         let surface = DefaultRenderer().render(
             MarkdownView(MarkdownDocument("# Heading\n\nA `code` span.\n\n> Quote"))
                 .chioTheme(theme),

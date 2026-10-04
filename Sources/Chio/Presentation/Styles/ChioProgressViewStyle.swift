@@ -2,7 +2,7 @@ import SwiftTUIViews
 
 /// A slim progress track driven by SwiftTUI's determinate value or animation phase.
 public struct ChioProgressViewStyle {
-    public var theme: ChioTheme
+    public let theme: ChioTheme
 
     public init(theme: ChioTheme = .default) {
         self.theme = theme

@@ -20,10 +20,10 @@ public struct SearchableList<Item: Identifiable, RowContent: View> where Item.ID
     private let searchText: (Item) -> String
     private let rowContent: @MainActor (Item) -> RowContent
     private let prompt: String
-    private var filter: SearchFilter = .fuzzy
-    private var activation: (@MainActor (Item) -> Void)?
-    private var searchFocusChange: (@MainActor (Bool) -> Void)?
-    private var resultKeyPress: (@MainActor @Sendable (KeyPress) -> KeyPressResult)?
+    private let filter: SearchFilter
+    private let activation: (@MainActor (Item) -> Void)?
+    private let searchFocusChange: (@MainActor (Bool) -> Void)?
+    private let resultKeyPress: (@MainActor @Sendable (KeyPress) -> KeyPressResult)?
 
     @State private var internalQuery = ""
     @FocusState private var focus: Focus?
@@ -43,28 +43,49 @@ public struct SearchableList<Item: Identifiable, RowContent: View> where Item.ID
         self.prompt = prompt
         self.searchText = searchText
         self.rowContent = rowContent
+        filter = .fuzzy
+        activation = nil
+        searchFocusChange = nil
+        resultKeyPress = nil
+    }
+
+    private init(
+        copying source: Self,
+        filter: SearchFilter? = nil,
+        activation: (@MainActor (Item) -> Void)? = nil,
+        searchFocusChange: (@MainActor (Bool) -> Void)? = nil,
+        resultKeyPress: (@MainActor @Sendable (KeyPress) -> KeyPressResult)? = nil
+    ) {
+        items = source.items
+        selection = source.selection
+        externalQuery = source.externalQuery
+        searchText = source.searchText
+        rowContent = source.rowContent
+        prompt = source.prompt
+        self.filter = filter ?? source.filter
+        self.activation = activation ?? source.activation
+        self.searchFocusChange = searchFocusChange ?? source.searchFocusChange
+        self.resultKeyPress = resultKeyPress ?? source.resultKeyPress
+        // Preserve native storage while replacing immutable view configuration.
+        _internalQuery = source._internalQuery
+        _focus = source._focus
+        _theme = source._theme
     }
 
     /// Selects fuzzy ranking or ordered substring matching.
     public func filtering(_ filter: SearchFilter) -> Self {
-        var copy = self
-        copy.filter = filter
-        return copy
+        Self(copying: self, filter: filter)
     }
 
     /// Called when a result is explicitly activated, never merely filtered.
     public func onActivate(_ action: @escaping @MainActor (Item) -> Void) -> Self {
-        var copy = self
-        copy.activation = action
-        return copy
+        Self(copying: self, activation: action)
     }
 
     /// Reports search focus for presentation such as contextual keyboard hints.
     /// Use `onResultKeyPress` to scope input; this render-driven callback can lag.
     public func onSearchFocusChange(_ action: @escaping @MainActor (Bool) -> Void) -> Self {
-        var copy = self
-        copy.searchFocusChange = action
-        return copy
+        Self(copying: self, searchFocusChange: action)
     }
 
     /// Handles application shortcuts only while the native results area has
@@ -73,9 +94,7 @@ public struct SearchableList<Item: Identifiable, RowContent: View> where Item.ID
     public func onResultKeyPress(
         perform action: @escaping @MainActor @Sendable (KeyPress) -> KeyPressResult
     ) -> Self {
-        var copy = self
-        copy.resultKeyPress = action
-        return copy
+        Self(copying: self, resultKeyPress: action)
     }
 
     private var query: Binding<String> {

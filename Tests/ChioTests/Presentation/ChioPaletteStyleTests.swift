@@ -44,9 +44,11 @@ struct ChioPaletteStyleTests {
           arguments: [false, true])
     func themedPalette(light: Bool) async throws {
         var theme = light ? ChioTheme.light : .default
-        theme.colors.heading = Color(hexRGB: 0x123456)
-        theme.colors.accent = Color(hexRGB: 0xA65432)
-        theme.colors.selectedSurface = Color(hexRGB: 0x654321)
+        theme = theme.replacing(colors: theme.colors.replacing(
+            accent: Color(hexRGB: 0xA65432),
+            heading: Color(hexRGB: 0x123456),
+            selectedSurface: Color(hexRGB: 0x654321)
+        ))
         let recorder = HostedFrameRecorder()
         let surface = HostedRasterSurface(surfaceSize: .init(width: 36, height: 18), appearance: .fallback,
                                           onFrame: { recorder.receive($0) })

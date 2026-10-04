@@ -5,7 +5,12 @@ import SwiftTUI
 struct AgentRow {
     @Environment(\.chioTheme) private var theme
     let agent: Agent
-    var compact = false
+    let compact: Bool
+
+    init(agent: Agent, compact: Bool = false) {
+        self.agent = agent
+        self.compact = compact
+    }
 
     private var statusColor: Color {
         switch agent.phase {

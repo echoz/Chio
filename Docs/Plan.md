@@ -48,10 +48,23 @@ live in [the README](../README.md).
 - Global and repository guidance audit completed before expanding component
   coverage. Markdown now reuses native column alignment, test fixtures use
   dedicated conformance extensions, and dashboard suites share a frame recorder.
-  Independent review found no remaining issues in these corrections; native
-  ownership, application-owned validation, and public APIs are preserved.
+  Independent review found no remaining issues in those corrections; that cleanup
+  preserved native ownership, application-owned validation, and public APIs.
   The full serial suite (113 tests), release build, six snapshot captures, and
   terminal smoke check passed on macOS after the cleanup.
+- Immutable domain and view-configuration values now use replacement operations.
+  Theme customization uses `replacing(...)`; validation uses `recordingExit(from:)`
+  and `submitting(_:)`, whose returned visibility state is assigned by the app.
+  These replace the initial mutable APIs. Native control bindings update immutable
+  drafts from their current bound value; simulation returns replacement agents.
+  Running progress is restricted to finite `0..<1`, including through decoding.
+  Hashing and coding are synthesized where their contracts fit, with the native
+  type and snapshot exceptions recorded in [Design.md](Design.md#value-contracts).
+  Independent review found no actionable issues. The full serial suite passes
+  134 tests, including rejection paths and unchanged-original checks; native
+  form/search/palette input and focus regressions retain their assertions.
+  The release build, six snapshot captures, and real pseudo-terminal smoke check
+  also pass on macOS for this refactor.
 
 ## Component coverage
 
@@ -145,7 +158,7 @@ Swift 6.4, with SwiftTUI pinned at
 - `swift build --product chio-dashboard` passes.
 - `swift build -c release --product chio-dashboard` also passes. Interactive
   launch instructions use release mode; debug enables extra upstream verification.
-- 113 Swift Testing tests pass with explicit `--no-parallel`: 76 library tests and 37
+- 134 Swift Testing tests pass with explicit `--no-parallel`: 88 library tests and 46
   dashboard tests, including parameterized widths, themes, progress values,
   sample scenarios, forms, and reports. All existing regressions remain intact.
 - The combined concurrent dashboard run hit frame-deadline failures across form,
@@ -153,7 +166,10 @@ Swift 6.4, with SwiftTUI pinned at
   deadlines; concurrent hosted-suite execution remains unverified. Use the
   explicit serial command in the README on this toolchain.
 - Pure tests cover fuzzy ranking, Unicode matching, stable selection, and
-  deterministic simulation transitions.
+  deterministic simulation transitions. Immutable replacements preserve originals
+  and unrelated fields; progress construction and decoding reject invalid fractions,
+  spacing decoding rejects malformed values, and isolated exit tests retain
+  constructor/replacement preconditions for theme spacing and glyphs.
 - Public terminal-cell rendering checks cover theme colors, progress, wrapping
   by cell width, empty states, and complete layouts at 100 × 30, 100 × 26,
   100 × 24, 50 × 30, and 36 × 18.

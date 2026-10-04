@@ -20,6 +20,38 @@ One SwiftPM package exports the `Chio` library and `chio-dashboard` executable.
 Application content and layout use SwiftTUI directly. No additional renderer,
 state store, or focus manager is part of this design.
 
+## Value contracts
+
+Owned domain values and view configuration have `let` stored properties and pure
+computed observations. Transformations return new values and leave their inputs
+unchanged. Local scratch variables are permitted. SwiftTUI's state, binding,
+focus, namespace, and environment wrappers remain native mutable boundaries;
+ArgumentParser owns command-option mutation. Live test-session recorders own
+mutable frames, continuations, and deadlines. These are explicit state/resource
+owners, not immutable domain values.
+
+Prefer synthesized `Hashable`, `Codable`, and `Sendable` for domain values. Check
+invariants in every construction, replacement, and decoding path. Decoding a
+restricted value must reject malformed input through the same validation as its
+ordinary constructor; successful round trips alone do not prove this guarantee.
+No validating flags substitute for the value's actual invariants or runtime checks.
+
+Native `StrokeStyle` is only `Equatable` and `Sendable` in the pinned dependency,
+including state Chio cannot access. `ChioTheme` and `Treatments` retain those
+conformances; Colors and Spacing also support hashing and coding. Do not clone
+native stroke representation or add lossy coding solely to obtain conformance.
+Parsed Markdown and report snapshots are immutable, hashable, and sendable;
+they have no persistence schema. Native table alignment is not Codable, and
+decoding an agent into a newly generated report would lose its captured document.
+Their missing Codable conformance is an explicit boundary, not a new parser model.
+
+The editable agent draft may contain incomplete user input; its checked creation
+operation enforces the current form rules. Running progress carries an immutable,
+checked finite fraction in `0..<1`; completion has its own phase. Simulation
+returns replacement agents and receives its step explicitly. Native bindings
+edit drafts by reading the current bound value and replacing one field, retaining
+the other fields even when several input events arrive before a frame.
+
 ## Investigation outcome
 
 | Inspiration | Already provided by SwiftTUI | Chio's useful layer |
@@ -42,7 +74,10 @@ only advances simulated application data.
 A concrete theme value contains nested semantic colors, spacing, and visual
 treatments. Chio owns rendering rules; the theme is the primary presentation
 customization point and flows through the environment with `.chioTheme(.default)`.
-Consumers can copy the default and customize its colors without rebuilding styles.
+Consumers use `replacing(...)` on the theme and nested values to customize its
+colors without rebuilding styles. Omitted replacement arguments preserve the
+receiver's values. Construction and replacement keep the existing nonnegative
+spacing and single-printable-cell glyph preconditions.
 Component options specify behavior; application composition specifies content.
 
 Changing theme preserves query, stable selection, focus, and entered values.
@@ -154,8 +189,10 @@ Chio supplies two small form primitives:
 - `FormValidation<Field>` records field exits and attempted submission. Apps
   supply their current ordered `Issue` values each time; Chio does not cache
   validation results or own rules. `message(for:in:)` hides errors until blur or
-  submission. `submit(_:)` reveals errors and returns the first invalid field for
-  an application-owned native focus binding. Hidden fields are excluded by the app.
+  submission. `recordingExit(from:)` returns new visibility after a field exit;
+  `submitting(_:)` returns new visibility plus the first invalid field for an
+  application-owned native focus binding. The caller assigns the returned value
+  to its native state. Hidden fields are excluded by the app.
 
 There is no new form result builder, field registry, or focus manager. The pinned
 SwiftTUI has no `Form` declaration; ordinary view composition remains the API.
@@ -187,7 +224,7 @@ controls.
 
 ## Markdown and agent reports
 
-`MarkdownDocument(source)` parses once into an immutable, `Equatable`, `Sendable`
+`MarkdownDocument(source)` parses once into an immutable, `Hashable`, `Sendable`
 value. Applications create it when content changes and retain it across view
 updates. The third-party AST stays internal. `MarkdownView(document)` consumes
 that value and the current Chio theme; callers supply a native vertical

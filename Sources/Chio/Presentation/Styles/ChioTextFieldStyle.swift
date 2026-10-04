@@ -2,7 +2,7 @@ import SwiftTUIViews
 
 /// A padded search field with an accent border while it owns focus.
 public struct ChioTextFieldStyle {
-    public var theme: ChioTheme
+    public let theme: ChioTheme
 
     public init(theme: ChioTheme = .default) {
         self.theme = theme

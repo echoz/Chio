@@ -2,7 +2,7 @@ import SwiftTUIViews
 
 /// A compact bordered action with visible focus and destructive-role colors.
 public struct ChioButtonStyle {
-    public var theme: ChioTheme
+    public let theme: ChioTheme
 
     public init(theme: ChioTheme = .default) {
         self.theme = theme

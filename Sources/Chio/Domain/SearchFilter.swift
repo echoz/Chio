@@ -7,4 +7,6 @@ public enum SearchFilter {
 }
 
 extension SearchFilter: Equatable {}
+extension SearchFilter: Hashable {}
 extension SearchFilter: Sendable {}
+extension SearchFilter: Codable {}

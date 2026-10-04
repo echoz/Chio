@@ -11,10 +11,12 @@ struct AgentReportTests {
         let completed = AgentSimulation.advance([advanced], step: 1)[0]
 
         #expect(report == sameSnapshot)
+        #expect(Set([report, sameSnapshot]).count == 1)
         #expect(report.agent == agent)
-        #expect(report.agent.phase == .running(progress: 0.78))
+        #expect(report.agent.phase == .running(progress: Agent.RunningProgress(fraction: 0.78)!))
         #expect(completed.phase == .completed)
         #expect(report != AgentReport(agent: advanced))
+        #expect(Set([report, AgentReport(agent: advanced)]).count == 2)
         #expect(report.document != AgentReport(agent: advanced).document)
         #expect(report.document != AgentReport(agent: completed).document)
         #expect(report == sameSnapshot)

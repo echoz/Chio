@@ -7,10 +7,24 @@ struct CreateAgentView {
     @Binding var isLight: Bool
     @State private var validation = FormValidation<AgentDraft.Field>()
     @FocusState private var focus: Focus?
-    var entry: Entry = .name
-    var validateOnArrival = false
+    let entry: Entry
+    let validateOnArrival: Bool
     let create: @MainActor @Sendable () -> Void
     let cancel: @MainActor @Sendable () -> Void
+
+    init(
+        draft: Binding<AgentDraft>, isLight: Binding<Bool>,
+        entry: Entry = .name, validateOnArrival: Bool = false,
+        create: @escaping @MainActor @Sendable () -> Void,
+        cancel: @escaping @MainActor @Sendable () -> Void
+    ) {
+        _draft = draft
+        _isLight = isLight
+        self.entry = entry
+        self.validateOnArrival = validateOnArrival
+        self.create = create
+        self.cancel = cancel
+    }
 
     enum Entry {
         case name
@@ -31,8 +45,42 @@ struct CreateAgentView {
 
     private var theme: ChioTheme { isLight ? .light : .default }
 
+    private var name: Binding<String> {
+        let storage = $draft
+        return Binding(get: { storage.wrappedValue.name }, set: {
+            storage.wrappedValue = storage.wrappedValue.replacing(name: $0)
+        })
+    }
+
+    private var role: Binding<AgentDraft.Role> {
+        let storage = $draft
+        return Binding(get: { storage.wrappedValue.role }, set: {
+            storage.wrappedValue = storage.wrappedValue.replacing(role: $0)
+        })
+    }
+
+    private var suite: Binding<String> {
+        let storage = $draft
+        return Binding(get: { storage.wrappedValue.suite }, set: {
+            storage.wrappedValue = storage.wrappedValue.replacing(suite: $0)
+        })
+    }
+
+    private var startImmediately: Binding<Bool> {
+        let storage = $draft
+        return Binding(get: { storage.wrappedValue.startImmediately }, set: {
+            storage.wrappedValue = storage.wrappedValue.replacing(startImmediately: $0)
+        })
+    }
+
+    private func validate() -> AgentDraft.Field? {
+        let submission = validation.submitting(draft.issues)
+        validation = submission.validation
+        return submission.firstInvalidField
+    }
+
     private func submit() {
-        if let firstInvalid = validation.submit(draft.issues) {
+        if let firstInvalid = validate() {
             focus = firstInvalid == .name ? .name : .suite
         } else {
             create()
@@ -43,14 +91,14 @@ struct CreateAgentView {
         VStack(alignment: .leading, spacing: 1) {
             FormField("Name", description: "Required · up to 32 characters",
                       error: validation.message(for: .name, in: draft.issues)) {
-                TextField("e.g. Release agent", text: $draft.name)
+                TextField("e.g. Release agent", text: name)
                     .accessibilityLabel("Agent name")
                     .focused($focus, equals: .name)
             }
             .id(AgentDraft.Field.name)
 
             FormField("Role", description: "← → choose what this agent does") {
-                Picker("Role", selection: $draft.role) {
+                Picker("Role", selection: role) {
                     ForEach(AgentDraft.Role.allCases, id: \.self) { role in
                         Text(role.rawValue).tag(role)
                     }
@@ -61,7 +109,7 @@ struct CreateAgentView {
             if draft.role == .test {
                 FormField("Test suite", description: "Required for Test · up to 40 characters",
                           error: validation.message(for: .suite, in: draft.issues)) {
-                    TextField("e.g. Integration tests", text: $draft.suite)
+                    TextField("e.g. Integration tests", text: suite)
                         .accessibilityLabel("Test suite")
                         .focused($focus, equals: .suite)
                 }
@@ -69,7 +117,7 @@ struct CreateAgentView {
             }
 
             FormField("Start immediately", description: "Space toggles · runs a local simulation") {
-                Toggle("Start immediately", isOn: $draft.startImmediately)
+                Toggle("Start immediately", isOn: startImmediately)
                     .focused($focus, equals: .start)
             }
         }
@@ -115,7 +163,7 @@ extension CreateAgentView: View {
             }
             .onAppear {
                 focus = entry == .role ? .role : .name
-                if validateOnArrival, let firstInvalid = validation.submit(draft.issues) {
+                if validateOnArrival, let firstInvalid = validate() {
                     focus = firstInvalid == .name ? .name : .suite
                 }
             }
@@ -134,7 +182,7 @@ extension CreateAgentView: View {
                 return .handled
             }
             .onChange(of: focus) { old, _ in
-                if let field = old?.validatedField { validation.recordExit(from: field) }
+                if let field = old?.validatedField { validation = validation.recordingExit(from: field) }
                 if let field = focus?.validatedField {
                     proxy.scrollTo(field, anchor: .top)
                 }

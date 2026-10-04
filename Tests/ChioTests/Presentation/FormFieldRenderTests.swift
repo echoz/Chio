@@ -8,8 +8,10 @@ struct FormFieldRenderTests {
     @Test("Headings and helpers wrap within narrow field widths", arguments: [12, 24])
     func helperTheme(width: Int) {
         var theme = ChioTheme.default
-        theme.colors.heading = Color(hexRGB: 0x123456)
-        theme.colors.secondaryText = Color(hexRGB: 0x654321)
+        theme = theme.replacing(colors: theme.colors.replacing(
+            heading: Color(hexRGB: 0x123456),
+            secondaryText: Color(hexRGB: 0x654321)
+        ))
         let surface = DefaultRenderer().render(
             FormField("Agent name", description: "Helpful words wrap here") {
                 Text("Value")
@@ -30,7 +32,7 @@ struct FormFieldRenderTests {
           arguments: [12, 24])
     func errorTheme(width: Int) {
         var theme = ChioTheme.default
-        theme.colors.error = Color(hexRGB: 0xA12345)
+        theme = theme.replacing(colors: theme.colors.replacing(error: Color(hexRGB: 0xA12345)))
         let surface = DefaultRenderer().render(
             FormField("Name", description: "Hidden helper", error: "Required name") {
                 Text("Value")
@@ -74,10 +76,12 @@ struct FormFieldRenderTests {
     @Test("Themed picker and toggle content stays compact and uses semantic colors")
     func nativeTheme() {
         var theme = ChioTheme.default
-        theme.colors.foreground = Color(hexRGB: 0x123456)
-        theme.colors.success = Color(hexRGB: 0x234567)
-        theme.colors.mutedText = Color(hexRGB: 0x345678)
-        theme.colors.surface = Color(hexRGB: 0x456789)
+        theme = theme.replacing(colors: theme.colors.replacing(
+            foreground: Color(hexRGB: 0x123456),
+            mutedText: Color(hexRGB: 0x345678),
+            surface: Color(hexRGB: 0x456789),
+            success: Color(hexRGB: 0x234567)
+        ))
         let picker = DefaultRenderer().render(
             Picker("Model", selection: .constant("s")) {
                 Text("Small").tag("s")

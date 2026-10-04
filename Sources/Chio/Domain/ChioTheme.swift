@@ -2,9 +2,9 @@ import SwiftTUIViews
 
 /// Semantic colors, cell spacing, and visual treatments for a Chio subtree.
 public struct ChioTheme {
-    public var colors: Colors
-    public var spacing: Spacing
-    public var treatments: Treatments
+    public let colors: Colors
+    public let spacing: Spacing
+    public let treatments: Treatments
 
     public init(
         colors: Colors = .init(),
@@ -14,6 +14,16 @@ public struct ChioTheme {
         self.colors = colors
         self.spacing = spacing
         self.treatments = treatments
+    }
+
+    /// Returns a new theme; omitted components retain their current values.
+    public func replacing(
+        colors: Colors? = nil,
+        spacing: Spacing? = nil,
+        treatments: Treatments? = nil
+    ) -> Self {
+        Self(colors: colors ?? self.colors, spacing: spacing ?? self.spacing,
+             treatments: treatments ?? self.treatments)
     }
 
     /// A dark palette inspired by Charm's Huh controls and Bubbles lists.
@@ -34,17 +44,17 @@ public struct ChioTheme {
     ))
 
     public struct Colors {
-        public var accent: Color
-        public var heading: Color
-        public var foreground: Color
-        public var secondaryText: Color
-        public var mutedText: Color
-        public var surface: Color
-        public var selectedSurface: Color
-        public var border: Color
-        public var success: Color
-        public var warning: Color
-        public var error: Color
+        public let accent: Color
+        public let heading: Color
+        public let foreground: Color
+        public let secondaryText: Color
+        public let mutedText: Color
+        public let surface: Color
+        public let selectedSurface: Color
+        public let border: Color
+        public let success: Color
+        public let warning: Color
+        public let error: Color
 
         public init(
             accent: Color = Color(hexRGB: 0xF780E2),
@@ -71,6 +81,29 @@ public struct ChioTheme {
             self.warning = warning
             self.error = error
         }
+
+        /// Returns a new palette; omitted colors retain their current values.
+        public func replacing(
+            accent: Color? = nil,
+            heading: Color? = nil,
+            foreground: Color? = nil,
+            secondaryText: Color? = nil,
+            mutedText: Color? = nil,
+            surface: Color? = nil,
+            selectedSurface: Color? = nil,
+            border: Color? = nil,
+            success: Color? = nil,
+            warning: Color? = nil,
+            error: Color? = nil
+        ) -> Self {
+            Self(accent: accent ?? self.accent, heading: heading ?? self.heading,
+                 foreground: foreground ?? self.foreground,
+                 secondaryText: secondaryText ?? self.secondaryText,
+                 mutedText: mutedText ?? self.mutedText, surface: surface ?? self.surface,
+                 selectedSurface: selectedSurface ?? self.selectedSurface,
+                 border: border ?? self.border, success: success ?? self.success,
+                 warning: warning ?? self.warning, error: error ?? self.error)
+        }
     }
 
     /// Insets and gaps measured in terminal cells.
@@ -93,21 +126,27 @@ public struct ChioTheme {
             self.sectionGap = sectionGap
             self.hintGap = hintGap
         }
+
+        /// Returns checked spacing; omitted distances retain their current values.
+        public func replacing(
+            horizontalInset: Int? = nil,
+            verticalInset: Int? = nil,
+            sectionGap: Int? = nil,
+            hintGap: Int? = nil
+        ) -> Self {
+            Self(horizontalInset: horizontalInset ?? self.horizontalInset,
+                 verticalInset: verticalInset ?? self.verticalInset,
+                 sectionGap: sectionGap ?? self.sectionGap, hintGap: hintGap ?? self.hintGap)
+        }
     }
 
     public struct Treatments {
-        public var borderStyle: StrokeStyle
+        public let borderStyle: StrokeStyle
         /// A single-cell glyph shown beside the selected search result.
-        public var selectionMarker: String {
-            willSet { Self.requireSingleCellGlyph(newValue) }
-        }
+        public let selectionMarker: String
         /// Single-cell glyphs repeated across a progress track.
-        public var progressFilledGlyph: String {
-            willSet { Self.requireSingleCellGlyph(newValue) }
-        }
-        public var progressEmptyGlyph: String {
-            willSet { Self.requireSingleCellGlyph(newValue) }
-        }
+        public let progressFilledGlyph: String
+        public let progressEmptyGlyph: String
 
         public init(
             borderStyle: StrokeStyle = .rounded,
@@ -122,6 +161,19 @@ public struct ChioTheme {
             self.selectionMarker = selectionMarker
             self.progressFilledGlyph = progressFilledGlyph
             self.progressEmptyGlyph = progressEmptyGlyph
+        }
+
+        /// Returns checked treatments; omitted values retain their current values.
+        public func replacing(
+            borderStyle: StrokeStyle? = nil,
+            selectionMarker: String? = nil,
+            progressFilledGlyph: String? = nil,
+            progressEmptyGlyph: String? = nil
+        ) -> Self {
+            Self(borderStyle: borderStyle ?? self.borderStyle,
+                 selectionMarker: selectionMarker ?? self.selectionMarker,
+                 progressFilledGlyph: progressFilledGlyph ?? self.progressFilledGlyph,
+                 progressEmptyGlyph: progressEmptyGlyph ?? self.progressEmptyGlyph)
         }
 
         private static func requireSingleCellGlyph(_ glyph: String) {
@@ -141,8 +193,33 @@ public struct ChioTheme {
 extension ChioTheme: Equatable {}
 extension ChioTheme: Sendable {}
 extension ChioTheme.Colors: Equatable {}
+extension ChioTheme.Colors: Hashable {}
+extension ChioTheme.Colors: Encodable {}
+extension ChioTheme.Colors: Decodable {}
 extension ChioTheme.Colors: Sendable {}
 extension ChioTheme.Spacing: Equatable {}
+extension ChioTheme.Spacing: Hashable {}
+extension ChioTheme.Spacing: Encodable {}
+extension ChioTheme.Spacing: Decodable {
+    public init(from decoder: any Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        let horizontalInset = try values.decode(Int.self, forKey: .horizontalInset)
+        let verticalInset = try values.decode(Int.self, forKey: .verticalInset)
+        let sectionGap = try values.decode(Int.self, forKey: .sectionGap)
+        let hintGap = try values.decode(Int.self, forKey: .hintGap)
+        let distances: [(CodingKeys, Int)] = [
+            (.horizontalInset, horizontalInset), (.verticalInset, verticalInset),
+            (.sectionGap, sectionGap), (.hintGap, hintGap),
+        ]
+        for (key, distance) in distances where distance < 0 {
+            throw DecodingError.dataCorruptedError(
+                forKey: key, in: values, debugDescription: "Theme spacing must be nonnegative"
+            )
+        }
+        self.init(horizontalInset: horizontalInset, verticalInset: verticalInset,
+                  sectionGap: sectionGap, hintGap: hintGap)
+    }
+}
 extension ChioTheme.Spacing: Sendable {}
 extension ChioTheme.Treatments: Equatable {}
 extension ChioTheme.Treatments: Sendable {}

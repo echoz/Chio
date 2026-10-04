@@ -437,7 +437,7 @@ private struct SearchTestView {
 
     private var theme: ChioTheme {
         var theme = lightTheme ? ChioTheme.light : .default
-        theme.treatments.selectionMarker = ">"
+        theme = theme.replacing(treatments: theme.treatments.replacing(selectionMarker: ">"))
         return theme
     }
 }

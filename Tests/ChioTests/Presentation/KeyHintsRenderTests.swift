@@ -46,9 +46,11 @@ struct KeyHintsRenderTests {
     @Test("Hints use customized accent, secondary text, and spacing")
     func hintTheme() {
         var theme = ChioTheme.default
-        theme.colors.accent = Color(hexRGB: 0x102030)
-        theme.colors.secondaryText = Color(hexRGB: 0x405060)
-        theme.spacing = .init(hintGap: 3)
+        theme = theme.replacing(colors: theme.colors.replacing(
+            accent: Color(hexRGB: 0x102030),
+            secondaryText: Color(hexRGB: 0x405060)
+        ))
+        theme = theme.replacing(spacing: .init(hintGap: 3))
         let surface = DefaultRenderer().render(
             KeyHints {
                 KeyHint("q", "quit")
@@ -69,7 +71,7 @@ struct KeyHintsRenderTests {
     @Test("Status footer retains its separator and wrapped hints at narrow widths")
     func statusBarWrapping() {
         var theme = ChioTheme.default
-        theme.colors.border = Color(hexRGB: 0x234567)
+        theme = theme.replacing(colors: theme.colors.replacing(border: Color(hexRGB: 0x234567)))
         let surface = DefaultRenderer().render(
             StatusBar {
                 KeyHints {

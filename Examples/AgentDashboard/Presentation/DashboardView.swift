@@ -70,13 +70,13 @@ struct DashboardView {
 
     private func runSelected() {
         guard let index = agents.firstIndex(where: { $0.id == selection }) else { return }
-        agents[index].phase = .running(progress: 0)
+        agents[index] = agents[index].replacingPhase(.running(progress: .zero))
         isPaused = false
     }
 
     private func failSelected() {
         guard let index = agents.firstIndex(where: { $0.id == selection }) else { return }
-        agents[index].phase = .failed
+        agents[index] = agents[index].replacingPhase(.failed)
     }
 
     private func toggleEmpty() {
@@ -121,10 +121,14 @@ struct DashboardView {
             }
             guard press.modifiers.subtracting(.shift).isEmpty else { return .handled }
             switch press.key {
-            case .character(let character) where creationEntry == .name: draft.name.append(character)
-            case .space where creationEntry == .name: draft.name.append(" ")
+            case .character(let character) where creationEntry == .name:
+                draft = draft.replacing(name: draft.name + String(character))
+            case .space where creationEntry == .name:
+                draft = draft.replacing(name: draft.name + " ")
             case .backspace:
-                if creationEntry == .name && !draft.name.isEmpty { draft.name.removeLast() }
+                if creationEntry == .name && !draft.name.isEmpty {
+                    draft = draft.replacing(name: String(draft.name.dropLast()))
+                }
             case .tab:
                 creationEntry = press.modifiers.contains(.shift) ? .name : .role
             case .return: submitDuringPresentation()

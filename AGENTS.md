@@ -11,6 +11,9 @@ Keep those owning documents current instead of duplicating their contents here.
 - Build an opinionated, declarative design and interaction layer over SwiftTUI.
   SwiftTUI owns rendering, lifecycle, layout, state, focus, input, and scrolling.
   Prefer native control styles and composition; new components must add reusable UX.
+- Use immutable stored properties for owned domain and view-configuration values.
+  Follow the value contracts and explicit state-owner exceptions in
+  [Design.md](Docs/Design.md#value-contracts).
 - Keep one package and one public `Chio` library until real dependency boundaries
   justify more products. The local simulated agent dashboard exercises searchable
   selection, agent creation, and Markdown run reports. External integrations remain deferred.

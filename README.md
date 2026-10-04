@@ -143,16 +143,28 @@ struct AgentsView: View {
 }
 ```
 
-Copy `ChioTheme.default` and change its semantic colors, spacing, or treatments
-to customize it. Rows are passive views; use `.onActivate` for opening an item
+Theme values are immutable. Use `replacing(...)` to customize colors, spacing,
+or treatments while preserving the original:
+
+```swift
+let base = ChioTheme.default
+let theme = base.replacing(
+    colors: base.colors.replacing(accent: Color(hexRGB: 0x02BF87)),
+    spacing: base.spacing.replacing(hintGap: 3)
+)
+```
+
+Rows are passive views; use `.onActivate` for opening an item
 and `.onResultKeyPress` for application shortcuts that must not consume search
 text. Native row focus chrome currently remains an upstream styling boundary;
 see [the design](Docs/Design.md).
 
 Forms use the same native composition. `FormField` supplies consistent headings,
-help, and inline errors; `FormValidation<Field>` controls when current errors
-become visible and returns the first invalid field on submission. Applications
-own the validation rules, bindings, and native focus requests. See
+help, and inline errors; immutable `FormValidation<Field>` controls when current
+errors become visible. Assign the value returned by `recordingExit(from:)` after
+blur. `submitting(issues)` returns a tuple with the new `validation` value and
+`firstInvalidField`; assign the former and use the latter for native focus.
+Applications own the validation rules, bindings, and native focus requests. See
 [CreateAgentView](Examples/AgentDashboard/Presentation/CreateAgentView.swift) for
 the complete workflow and [AgentDraft](Examples/AgentDashboard/Domain/AgentDraft.swift)
 for its pure validation rules.

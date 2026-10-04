@@ -2,8 +2,8 @@ import SwiftTUIViews
 
 /// A one-row selected value; native arrows and wheel input step through options.
 public struct ChioPickerStyle {
-    public var theme: ChioTheme
-    public var showsLabel: Bool
+    public let theme: ChioTheme
+    public let showsLabel: Bool
 
     public init(theme: ChioTheme = .default, showsLabel: Bool = true) {
         self.theme = theme

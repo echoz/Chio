@@ -4,10 +4,11 @@ enum AgentSimulation {
         precondition(step.isFinite && step >= 0)
         return agents.map { agent in
             guard case .running(let progress) = agent.phase else { return agent }
-            var updated = agent
-            let next = min(1, progress + step)
-            updated.phase = next == 1 ? .completed : .running(progress: next)
-            return updated
+            let next = progress.fraction + step
+            let phase: Agent.Phase = next >= 1
+                ? .completed
+                : .running(progress: Agent.RunningProgress(fraction: next)!)
+            return agent.replacingPhase(phase)
         }
     }
 }
