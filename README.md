@@ -10,6 +10,18 @@ The initial look follows [Huh's Charm palette](https://github.com/charmbracelet/
 and [Bubbles' list and help treatment](https://github.com/charmbracelet/bubbles).
 The APIs follow Swift composition and native SwiftTUI styles.
 
+## Development and stability
+
+Chio is a **personal project built with Codex assistance and human curation**.
+Codex contributes to implementation, tests, and documentation, while the human
+maintainer guides the project's direction, design, and what to keep.
+
+It is built primarily for personal use and shared for anyone who finds it useful.
+We cannot vouch for its stability or suitability for production use. APIs and
+behavior may change without notice. Automated tests cover specific workflows,
+not every terminal, platform, or integration; evaluate it for your own needs
+before relying on it.
+
 ## Current status
 
 The package includes one public library, `Chio`, and the `chio-dashboard`
@@ -19,9 +31,8 @@ Focused `--choices`, `--text-entry`, and `--feedback` examples exercise richer
 controls and confirmation workflows.
 They require no external services.
 
-This is an early API to learn from, not a stable release. The initial demo slices
-prove the design direction; Chio's component coverage remains much smaller than
-Charm's ecosystem. See the [component coverage map](Docs/Plan.md#component-coverage)
+The initial demo slices explore the design direction; Chio's component coverage
+remains much smaller than Charm's ecosystem. See the [component coverage map](Docs/Plan.md#component-coverage)
 for delivered scopes, native SwiftTUI foundations, and proposed next slices.
 
 ## Try the dashboard
