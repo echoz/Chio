@@ -1,8 +1,8 @@
 # Implementation plan and verification
 
 The delivered proof-of-concept slices are a runnable local dashboard, agent
-creation, Markdown run reports, a command palette using simulated agents, and
-a focused searchable-choice form.
+creation, Markdown run reports, a command palette using simulated agents,
+a focused searchable-choice form, and native password/multiline text entry.
 They establish the design direction, not broad parity with Charm's components.
 Accepted contracts and
 ownership live in [Design.md](Design.md); commands and interaction instructions
@@ -77,6 +77,17 @@ live in [the README](../README.md).
   The integrated macOS run passes 158 tests, an optimized build, seven snapshot
   captures, and real pseudo-terminal workflows for both the dashboard and choices.
   Both workflows restore terminal modes and exit cleanly.
+- Everyday text entry adds `ChioTextEditorStyle` and exercises native
+  `SecureField` through the existing text-field style. The focused `--text-entry`
+  example demonstrates masked editing, multiline notes, local validation,
+  password clearing, cancel, and disabled input. Independent read-only review
+  found no actionable issues. A full macOS run passed 169 tests; after making
+  the empty editor fill its bounded viewport, all 12 text-entry checks passed
+  again, including the new viewport regression. This covers the current 170
+  tests (108 library and 62 dashboard/example), with existing assertions intact.
+  The optimized build and all three real pseudo-terminal workflows pass, with
+  exact terminal-mode restoration. Eight snapshot captures include the compact
+  text-entry example; the full-size empty editor was also inspected.
 
 ## Component coverage
 
@@ -104,8 +115,8 @@ come from Chio's original brief; they are not all standalone Bubbles packages.
 | Panels | Delivered through `ChioGroupBoxStyle` | `GroupBox` | Use the native name; SwiftTUI `Panel` means action scope, not a visual box |
 | Buttons and toggles | Delivered themed controls; toggle interaction tested | `Button`, `Toggle` | More variants only when a workflow justifies them |
 | Single-line input | Delivered `ChioTextFieldStyle`, search and form editing | `TextField` | No claim of a full enhanced-input suite such as completion/history |
-| Password input | Existing text-field style is inherited by native `SecureField`; no dedicated Chio regression yet | [SecureField][native-secure] uses the same style and masks the rendered value | Validate masking, focus, disabled state, and theme integration; no replacement editor or new secure-field style needed |
-| Multiline input | No Chio editor style or exercised workflow | [TextEditor][native-editor] and `TextEditorStyle.editorContent` preserve native editing/scrolling | Add shell/focus styling and tests; first check inner text paint, which the protected slot sets from native chrome |
+| Password input | Native `SecureField` inherits Chio's text-field style; raster/semantic concealment, editing, submission and disabled behavior exercised | [SecureField][native-secure] projects masked text before styling | No reveal/mask configuration; application-authored metadata must not echo the password |
+| Multiline input | `ChioTextEditorStyle` frames the native editor; paste, selection, wrapped caret movement, scroll reveal and theme/resize exercised | [TextEditor][native-editor] and `TextEditorStyle.editorContent` preserve native editing/scrolling | Disabled inner text color remains native placeholder paint; no completion/history/editor replacement |
 | Compact single choice | Delivered one-row `ChioPickerStyle` with native arrows | `Picker`, `PickerStyle` | This is not a searchable dropdown or a rich option browser |
 | Searchable single choice | `SearchableList` composed in `FormField`; `--choices` proves candidate/Next/Save/Cancel | [List][native-list] plus native editor | No separate single-choice wrapper or disabled-single-choice policy yet |
 | Multiple choices | `SearchableChecklist`, visible checks/counts, retained hidden/removed IDs, disabled membership gate; app-owned limits and validation in `--choices` | Native `List` and `Table` accept `Binding<Set<ID>>` | No bulk select, range select, or pre-render source-freshness guarantee; source/eligibility inputs update with rendered views |
@@ -170,9 +181,14 @@ Swift 6.4, with SwiftTUI pinned at
 - `swift build --product chio-dashboard` passes.
 - `swift build -c release --product chio-dashboard` also passes. Interactive
   launch instructions use release mode; debug enables extra upstream verification.
-- 158 Swift Testing tests pass with explicit `--no-parallel`: 102 library tests and 56
-  dashboard tests, including parameterized widths, themes, progress values,
+- 170 Swift Testing tests are verified with explicit `--no-parallel`: 108 library tests and 62
+  dashboard/example tests, including parameterized widths, themes, progress values,
   sample scenarios, forms, and reports. All existing regressions remain intact.
+  Evidence is the full 169-test run plus all 12 text-entry checks after the final
+  viewport sizing correction and its new regression; unaffected suite results
+  are reused. All six example checks also pass after expanding the compact
+  editor to two visible lines, alongside errors and hints; its rebuilt release
+  passes the terminal workflow.
 - The combined concurrent dashboard run hit frame-deadline failures across form,
   report, and palette suites. The serial run passes with the same assertions and
   deadlines; concurrent hosted-suite execution remains unverified. Use the
@@ -191,6 +207,15 @@ Swift 6.4, with SwiftTUI pinned at
   validation, successful and rejected Save, Back/Cancel, repeated activation,
   and continued native editing through theme and 36 × 18 resize. Raster cases
   exercise both themes at 100 × 30, 50 × 30, and 36 × 18.
+- Text-entry tests verify enabled custom-color editor paint and visible disabled
+  content in both themes. Synthetic password values stay out of rendered and
+  semantic snapshots, including every hosted frame; secure nodes expose neither
+  a control value nor text-query metadata. Native typing, deletion, secure paste
+  filtering and Return submission remain intact. Multiline tests retain exact
+  pasted line breaks, selection replacement, wrapped caret geometry, scroll
+  reveal, and the editor's single Tab stop through theme/resize. Example tests
+  cover first-invalid focus, password clearing, stale acceptance, locked controls,
+  cancellation, and both themes at 100 × 30, 50 × 30, and 36 × 18.
 - Public terminal-cell rendering checks cover theme colors, progress, wrapping
   by cell width, empty states, and complete layouts at 100 × 30, 100 × 26,
   100 × 24, 50 × 30, and 36 × 18.
@@ -314,6 +339,11 @@ dashboard retains its original application/view entry structure; `--choices`
 uses a separate native App in the same executable. All timings include local
 capture/decoding overhead and exclude SSH and device display latency.
 
+The text-entry release was sampled at 100 × 30 with no concurrent build or tests:
+masked typing measured 55 ms median and multiline typing 61 ms median, with six
+characters each. These are local observations including capture/decoding overhead;
+they do not measure SSH transport or Blink display latency.
+
 ## Linux and CI
 
 The initial demonstration slices are delivered. Portability verification adds CI and
@@ -350,6 +380,16 @@ repeatable terminal checks without changing the public API or dependency pins.
   whether acquisition was lost or merely late. Local macOS verification passed.
   Keep the focus assertions and deadlines intact and distinguish fresh-run evidence
   from a demonstrated fix for this platform discrepancy.
+- [Run 37186814418](https://github.com/echoz/Chio/actions/runs/37186814418) for the
+  choice-field commit `b46228c` passed all 102 library tests on both platforms,
+  including the new checklist. Its dashboard run failed with 13 issues on Linux
+  and one on macOS, involving existing form-arrival focus and report/palette
+  handoff checks. New choice-example checks passed. Some individual issue details
+  were missing from both the streamed logs and retained artifacts. Targeted local
+  reruns of initial/invalid form arrival and both palette handoffs passed unchanged;
+  this does not establish a fix. CI now retains Swift Testing's xUnit report as
+  well as console logs to improve evidence on subsequent failures. Assertions,
+  deadlines, dependency pins, and the original dashboard remain unchanged.
 
 ### Static Linux blocker
 
@@ -399,6 +439,13 @@ portable; correcting the platform implementation remains upstream work.
 - Native list focus chrome is still owned by SwiftTUI's theme. Chio selection
   and authored content use Chio tokens; exact native focus palette customization
   requires an upstream public capability.
+- Native multiline editing samples enabled foreground from its surrounding
+  environment before calling `TextEditorStyle`. The custom-color probe verifies
+  that `.chioTheme` reaches enabled glyphs, surface, and border. Disabled inner
+  glyphs use upstream placeholder paint and opacity; a modifier inside the style
+  cannot replace that sampled paint. Chio keeps the protected native slot and
+  avoids compounding its dimming. Secure controls omit value/text-query metadata
+  from public snapshots; this does not sanitize app-authored labels or feedback.
 - Native Table's generated control chrome masks `TableStylePresentation.borderStyle`.
   The Chio table style's header colors work, but borders/background chrome remain
   native upstream colors. Native headers also accept plain strings only; body
@@ -469,7 +516,7 @@ unchanged; a local SwiftPM edit is only integration evidence, not distribution.
 ## Next component slices
 
 The coverage audit is complete and the following order is approved. The first
-slice is implemented; subsequent slices remain planned. Their public APIs remain
+two slices are implemented; subsequent slices remain planned. Their public APIs remain
 open to evidence from focused examples. Broaden reusable component coverage
 before treating the framework as ready for release preparation.
 
@@ -486,7 +533,7 @@ before treating the framework as ready for release preparation.
    Acceptance: empty/no-match states, externally changed options/bindings, native
    navigation, theme/resize preservation, and usable narrow layouts. This is the
    highest-value behavioral gap after the current single-selection slice.
-2. **Complete everyday text entry.** Exercise native `SecureField` under the
+2. **Complete everyday text entry — implemented.** Exercise native `SecureField` under the
    existing style and add a native `TextEditorStyle` for multiline input. First
    render a small custom-color editor probe to establish how much of the inner
    text appearance can be controlled; record an upstream gap if necessary.

@@ -81,7 +81,7 @@ spacing and single-printable-cell glyph preconditions.
 Component options specify behavior; application composition specifies content.
 
 Changing theme preserves query, stable selection, focus, and entered values.
-Native `GroupBox`, `List`, `Table`, `TextField`, `Picker`, `Toggle`, and `ProgressView`
+Native `GroupBox`, `List`, `Table`, `TextField`, `TextEditor`, `Picker`, `Toggle`, and `ProgressView`
 styles share the same semantic roles. The first appearance closely follows Huh's Charm palette and
 Bubbles' selected rows, muted metadata, and compact keyboard help.
 
@@ -267,6 +267,37 @@ one agent. The return transition consumes stale events until the updated list
 has rendered. Native editing resumes when the cover owns focus. This is a narrow
 transition adapter, not general replay of arbitrary navigation across unrendered
 controls.
+
+## Password and multiline input
+
+Native `SecureField` uses the existing `ChioTextFieldStyle`; no password wrapper
+or separate masking implementation is needed. SwiftTUI projects the value to
+bullets before styling and withholds the secure control's value and text-query
+metadata from public semantic snapshots. Application-authored labels, helpers,
+and feedback must never interpolate a password. Mask shape and reveal controls
+are not public options in the pinned native API.
+
+`ChioTextEditorStyle` places the protected `editorContent` once, adding the Chio
+surface, horizontal inset, border, and focused accent. SwiftTUI retains the text
+binding, cursor, selection, wrapping, paste, viewport, and single focus stop.
+The application bounds the editor's height. Tab moves focus; Return inserts a
+newline; Home/End move within a logical line. Password Return uses native
+submission when an application supplies `.onSubmit`.
+
+The enabled editor samples its text paint from the surrounding environment
+before invoking the style. `.chioTheme` installs both the native style and that
+foreground color. A standalone style's theme controls its frame; it cannot
+retroactively override the sampled inner text paint. Disabled editor text keeps
+SwiftTUI's placeholder paint and dimming; Chio does not apply another opacity
+layer or replace the protected editing content to conceal this limitation.
+
+The `--text-entry` example uses made-up password input and ordinary notes. The
+application validates a demo minimum of eight password characters and nonblank
+notes. Save accepts the local draft and clears the password; only the accepted
+notes are retained for feedback comparison. Editing again clears stale success.
+Cancel clears both fields, and disabled controls leave Cancel and unlocking
+available. There is no authentication, transport, or persistence. Native state
+owns the editable strings; no serializable credential model is introduced.
 
 ## Markdown and agent reports
 

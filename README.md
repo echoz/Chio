@@ -15,7 +15,8 @@ The APIs follow Swift composition and native SwiftTUI styles.
 The package includes one public library, `Chio`, and the `chio-dashboard`
 executable. Run it to try search, selection, agent creation, inline validation,
 progress, themes, a command palette, and Markdown reports of simulated runs.
-It requires no external services.
+Focused `--choices` and `--text-entry` examples exercise richer form controls.
+They require no external services.
 
 This is an early API to learn from, not a stable release. The initial demo slices
 prove the design direction; Chio's component coverage remains much smaller than
@@ -106,6 +107,44 @@ Save validates the complete selection, including hidden checks; it never silentl
 truncates it. The example keeps its saved summary only for the current process.
 Use `--choices --snapshot` for a noninteractive language-page capture.
 
+### Try text entry
+
+```sh
+COLORTERM=truecolor swift run -c release chio-dashboard --text-entry
+```
+
+Enter a made-up password and some notes. Tab and Shift-Tab move between the
+native controls; Return in Notes inserts a newline, and multiline paste keeps
+its line breaks. Ctrl-S validates the demo's eight-character password minimum
+and required notes, then clears the password and shows acceptance. Nothing is
+authenticated, sent, or persisted. Ctrl-X clears both fields; Ctrl-D locks or
+unlocks editing; Ctrl-T changes theme; Ctrl-Q quits. The example fits 36 × 18.
+Use `--text-entry --snapshot` for a deterministic capture.
+
+The same controls compose directly in an application:
+
+```swift
+VStack {
+    FormField("Password") {
+        SecureField("Password", text: $password)
+    }
+    FormField("Notes") {
+        TextEditor(text: $notes).frame(height: 8)
+    }
+}
+.chioTheme(.default)
+```
+
+`SecureField` inherits `ChioTextFieldStyle`; `ChioTextEditorStyle` surrounds the
+native editor with theme colors and a focus border. SwiftTUI owns masking,
+editing, selection, wrapping, and scrolling. Give the editor a bounded height
+when it should scroll. Native `.onSubmit` handles Return in a password field;
+Return in a multiline editor always edits the text.
+
+Apply `.chioTheme(...)` to customize enabled editor text along with its frame.
+The pinned native editor supplies its own disabled text color and dimming, so
+that inner disabled color is not currently a Chio theme token.
+
 ### Colors over SSH
 
 For a true-color terminal such as Blink, declare that capability on the remote
@@ -127,7 +166,7 @@ the upstream conversion still needs correction for actual 256-color terminals.
 
 ## Design direction
 
-- Apply a theme to native `GroupBox`, `List`, `Table`, `TextField`, `Picker`, `Toggle`, and `ProgressView` styles.
+- Apply a theme to native `GroupBox`, `List`, `Table`, `TextField`, `SecureField`, `TextEditor`, `Picker`, `Toggle`, and `ProgressView` styles.
 - Compose reusable `KeyHint`, `KeyHints`, `StatusBar`, `SearchableList`, `SearchableChecklist`, and `FormField` views.
 - Customize nested semantic colors, spacing, and treatments through `.chioTheme(...)`.
 - Style native command palettes with `ChioPaletteStyle`; apply `.chioTheme(...)`

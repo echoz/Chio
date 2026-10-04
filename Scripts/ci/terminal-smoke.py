@@ -77,7 +77,7 @@ def screen(output):
     return "\n".join("".join(line) for line in cells)
 
 
-def run(binary, choices=False):
+def run(binary, choices=False, text_entry=False):
     master, slave = pty.openpty()
     process = None
     output = bytearray()
@@ -121,15 +121,33 @@ def run(binary, choices=False):
         env = dict(os.environ, TERM="xterm-256color", COLORTERM="truecolor")
         for key in ("NO_COLOR", "CLICOLOR", "CLICOLOR_FORCE", "FORCE_COLOR"):
             env.pop(key, None)
-        process = subprocess.Popen([str(binary), "--choices" if choices else "--paused"], stdin=slave,
+        example = "--text-entry" if text_entry else "--choices" if choices else "--paused"
+        process = subprocess.Popen([str(binary), example], stdin=slave,
                                    stdout=slave, stderr=slave, env=env)
-        until("1 / 2" if choices else "4 of 4 items")
+        until("/ text entry" if text_entry else "1 / 2" if choices else "4 of 4 items")
         modes = termios.tcgetattr(slave)
         assert not modes[3] & (termios.ECHO | termios.ICANON), "Terminal is not in raw input mode"
         assert modes[6][termios.VMIN] == 1 and modes[6][termios.VTIME] == 0, "Unexpected raw read timing"
         assert b"\x1b[?1049h" in output, "Alternate screen was not entered"
 
-        if choices:
+        if text_entry:
+            password = b"ChioDemo482!"  # Synthetic fixture; never use a real credential.
+            send(b"\x13", "Error: Use at least 8")
+            send(password, "•" * len(password))
+            send(b"\t", "Notes")
+            send(b"\x1b[200~FIRST\nSECOND\nLAST\x1b[201~", "LAST")
+            send(b"\x04", "Inputs locked")
+            os.write(master, b"MUSTNOTEDIT")
+            send(b"\x14", "Inputs locked")  # Theme redraw also observes disabled input.
+            assert "MUSTNOTEDIT" not in screen(output), "Disabled input accepted text"
+            send(b"\x04", "^D lock")
+            send(b"\x13", "Accepted")
+            until("password cleared")
+            assert password not in output, "Synthetic password leaked into terminal output"
+            assert "•" not in screen(output), "Password was not cleared on acceptance"
+            send(b"\x18", "Cancelled")
+            assert "FIRST" not in screen(output), "Cancel did not clear notes"
+        elif choices:
             send(b"/rust", "1 of 4 items")
             send(b"\r\r", "2 / 2")
             send(b"\x13", "Error: Choose at least 1")  # Ctrl-S validates.
@@ -164,7 +182,7 @@ def run(binary, choices=False):
             send(b"Smoke Agent", "Smoke Agent")
             send(b"\x1b", "/ agent workspace")
 
-        os.write(master, b"\x11" if choices else b"q")
+        os.write(master, b"\x11" if choices or text_entry else b"q")
         deadline = time.monotonic() + 15
         while process.poll() is None and time.monotonic() < deadline:
             receive()
@@ -174,7 +192,8 @@ def run(binary, choices=False):
         assert process.returncode == 0, f"Dashboard exited with {process.returncode}"
         assert b"\x1b[?1049l" in output, "Alternate screen was not restored"
         assert termios.tcgetattr(slave) == original_modes, "Terminal modes were not restored"
-        print("PASS: searchable choices, hidden checks, validation, save/cancel, clean exit" if choices else
+        print("PASS: secure masking, multiline paste, disabled input, validation, clean exit" if text_entry else
+              "PASS: searchable choices, hidden checks, validation, save/cancel, clean exit" if choices else
               "PASS: raw input, search, palette, report/table, form, focus restoration, clean exit")
     except Exception:
         print("Last terminal screen:\n" + screen(output), file=sys.stderr)
@@ -194,6 +213,8 @@ def run(binary, choices=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("binary", type=Path, help="Path to a built chio-dashboard executable")
-    parser.add_argument("--choices", action="store_true", help="Exercise the focused choice example")
+    examples = parser.add_mutually_exclusive_group()
+    examples.add_argument("--choices", action="store_true", help="Exercise the focused choice example")
+    examples.add_argument("--text-entry", action="store_true", help="Exercise the focused text-entry example")
     arguments = parser.parse_args()
-    run(arguments.binary.resolve(), choices=arguments.choices)
+    run(arguments.binary.resolve(), choices=arguments.choices, text_entry=arguments.text_entry)

@@ -12,13 +12,13 @@ if [[ "$(uname -s)" == Darwin ]]; then
   fi
 fi
 
+mkdir -p .build/ci-results
 swift test --force-resolved-versions --jobs "${SWIFT_BUILD_JOBS:-2}" \
-  --no-parallel ${testing_flags[@]+"${testing_flags[@]}"}
+  --no-parallel --xunit-output .build/ci-results/tests.xml ${testing_flags[@]+"${testing_flags[@]}"}
 swift build --force-resolved-versions --jobs "${SWIFT_BUILD_JOBS:-2}" \
   -c release --product chio-dashboard
 binary="$(swift build -c release --show-bin-path)/chio-dashboard"
 
-mkdir -p .build/ci-results
 for scenario in normal empty no-matches failed completed; do
   "$binary" --snapshot --width 100 --height 30 --scenario "$scenario" \
     > ".build/ci-results/$scenario.txt"
@@ -26,6 +26,9 @@ done
 "$binary" --snapshot --width 36 --height 18 --light \
   > .build/ci-results/compact-light.txt
 "$binary" --choices --snapshot --width 36 --height 18 \
-  > .build/ci-results/choices-compact.txt
+    > .build/ci-results/choices-compact.txt
+"$binary" --text-entry --snapshot --width 36 --height 18 \
+    > .build/ci-results/text-entry-compact.txt
 python3 Scripts/ci/terminal-smoke.py "$binary"
 python3 Scripts/ci/terminal-smoke.py "$binary" --choices
+python3 Scripts/ci/terminal-smoke.py "$binary" --text-entry

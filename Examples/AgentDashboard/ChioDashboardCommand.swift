@@ -24,12 +24,17 @@ struct ChioDashboardCommand {
     @Flag(help: "Run the focused language and capability choice example.")
     var choices = false
 
+    @Flag(help: "Run the focused password and multiline text-entry example.")
+    var textEntry = false
+
     @OptionGroup(title: "SwiftTUI options")
     var swiftTUIOptions: SwiftTUIOptions
 
     @MainActor @ViewBuilder
     private var snapshotView: some View {
-        if choices {
+        if textEntry {
+            TextEntryExampleView(light: light)
+        } else if choices {
             ChoiceExampleView(light: light)
         } else {
             DashboardView(scenario: scenario, light: light, animates: false, paused: paused)
@@ -47,8 +52,11 @@ extension ChioDashboardCommand: AsyncParsableCommand {
         guard (20...240).contains(width), (10...100).contains(height) else {
             throw ValidationError("Use --width 20...240 and --height 10...100.")
         }
-        if choices && (scenario != .normal || paused) {
-            throw ValidationError("--scenario and --paused describe the dashboard simulation; omit them with --choices.")
+        if choices && textEntry {
+            throw ValidationError("Choose one example: --choices or --text-entry.")
+        }
+        if (choices || textEntry) && (scenario != .normal || paused) {
+            throw ValidationError("--scenario and --paused describe the dashboard simulation; omit them with a focused example.")
         }
     }
 
@@ -61,6 +69,8 @@ extension ChioDashboardCommand: AsyncParsableCommand {
                 frameInstant: .zero
             )
             print(frame.rasterSurface.lines.joined(separator: "\n"))
+        } else if textEntry {
+            try await WebHostCLIRunner.run(TextEntryApplication(light: light), configuration: swiftTUIOptions.runtimeConfiguration())
         } else if choices {
             try await WebHostCLIRunner.run(ChoiceApplication(light: light), configuration: swiftTUIOptions.runtimeConfiguration())
         } else {

@@ -35,6 +35,7 @@ jobs:
           path: |
             ci-verification.log
             .build/ci-results/*.txt
+            .build/ci-results/*.xml
 
   linux:
     runs-on: ubuntu-24.04
@@ -57,3 +58,4 @@ jobs:
           path: |
             ci-verification.log
             .build/ci-results/*.txt
+            .build/ci-results/*.xml
