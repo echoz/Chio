@@ -86,11 +86,13 @@ Native `GroupBox`, `List`, `Table`, `Button`, `TextField`, `TextEditor`, `Picker
 semantic roles. The first appearance closely follows Huh's Charm palette and
 Bubbles' selected rows, muted metadata, and compact keyboard help.
 
-Buttons paint their state background across the complete bordered bounds,
-including padding, edges, and corners. Focused or pressed enabled buttons use
-the selected surface with an accent outline (error for destructive actions).
-Unfocused buttons use the ordinary surface; disabled controls retain dimming.
-Native focus-effect suppression also suppresses the focused fill and outline.
+Bordered buttons inherit their enclosing surface and show focus or an enabled
+press with an accent outline (error for destructive actions). Unfocused outlines
+use the ordinary border color; disabled controls retain dimming. Native
+focus-effect suppression also suppresses the focused outline. This matches the
+accent-outline treatment of text inputs without painting a rectangular focus
+fill behind rounded border glyphs: terminal backgrounds cover whole cells and
+cannot follow a glyph's curve. Button labels remain authored native content.
 
 ## Searchable selection
 

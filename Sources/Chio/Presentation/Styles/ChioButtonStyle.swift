@@ -1,6 +1,6 @@
 import SwiftTUIViews
 
-/// A compact bordered action with visible focus and destructive-role colors.
+/// A compact action with an accent focus outline over its enclosing surface.
 public struct ChioButtonStyle {
     public let theme: ChioTheme
 
@@ -19,7 +19,6 @@ extension ChioButtonStyle: ButtonStyle {
             .foregroundStyle(configuration.isEnabled ? theme.colors.foreground : theme.colors.mutedText)
             .border(active ? tone : theme.colors.border,
                     style: theme.treatments.borderStyle, placement: .outset)
-            .background(active ? theme.colors.selectedSurface : theme.colors.surface)
             .opacity(configuration.isEnabled ? 1 : 0.6)
     }
 }

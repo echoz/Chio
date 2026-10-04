@@ -196,12 +196,15 @@ Swift 6.4, with SwiftTUI pinned at
   120 library tests and 64 dashboard/example tests. The additional selected debug
   pass covers 162 tests with the same assertions and deadlines; the three larger
   dashboard workflow suites run in release, as documented below.
-- The button-fill correction passes seven focused tests covering native button
-  focus, form controls, prompts and the feedback example. Its new hosted raster
-  regression checks every button cell in both themes after Tab/Shift-Tab,
-  including destructive, disabled and suppressed-focus states. Button dimensions
-  and native activation remain intact. The release build and feedback terminal
-  workflow also pass; the full suite above was not repeated for this paint change.
+- The outline-only button correction passes seven focused tests covering native
+  button focus, form controls, prompts and the feedback example. Four hosted
+  button cases check that every cell preserves its enclosing surface in both
+  themes, on ordinary and contrasting backgrounds, after Tab/Shift-Tab. They
+  cover destructive, disabled and suppressed-focus states while preserving
+  dimensions and native activation. This supersedes the whole-cell focus fill:
+  a live screenshot showed that rectangular paint extended beyond rounded glyphs.
+  The release build and feedback terminal workflow also pass; the full suite
+  above was not repeated for this paint change.
 - Feedback checks exercise both native prompt kinds, custom colors, disabled and
   destructive actions, confirm/Cancel/Escape, one dismissal callback, exact editor
   focus restoration and resumed editing. The example changes theme, resizes an
