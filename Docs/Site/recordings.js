@@ -9,8 +9,9 @@
     const preview = recording.querySelector(".recording-preview");
     const playButton = recording.querySelector(".play-recording");
     const message = recording.querySelector(".player-message");
+    const launchHadFocus = document.activeElement === playButton;
 
-    function showFallback() {
+    function showFallback(restoreFocus) {
       preview.hidden = false;
       container.hidden = true;
       players.get(recording.id)?.dispose();
@@ -18,6 +19,7 @@
       playButton.textContent = "Retry playback";
       message.textContent = "Playback could not load. You can still download this recording and play it with asciinema.";
       message.hidden = false;
+      if (restoreFocus && !recording.hidden) playButton.focus({ preventScroll: true });
     }
 
     try {
@@ -33,9 +35,10 @@
         cursorMode: "steady",
       });
       players.set(recording.id, player);
-      player.addEventListener("error", showFallback);
+      player.addEventListener("error", () => showFallback(container.contains(document.activeElement)));
+      player.el.focus({ preventScroll: true });
     } catch {
-      showFallback();
+      showFallback(launchHadFocus);
     }
   }
 
