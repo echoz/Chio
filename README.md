@@ -10,6 +10,32 @@ The initial look follows [Huh's Charm palette](https://github.com/charmbracelet/
 and [Bubbles' list and help treatment](https://github.com/charmbracelet/bubbles).
 The APIs follow Swift composition and native SwiftTUI styles.
 
+## What Chio adds
+
+SwiftTUI provides the terminal engine and most underlying UI capabilities:
+rendering, lifecycle, layout, state, input, focus, scrolling, and native controls.
+Chio adds a coordinated design system and selected higher-level interactions,
+so applications can reuse both the appearance and the small behavioral details
+that make a terminal interface feel considered.
+
+| Area | SwiftTUI provides | Chio adds |
+| --- | --- | --- |
+| Themes and controls | Buttons, fields, lists, tables, progress, spinners, dialogs, and toasts | Semantic colors, spacing, borders, and consistent focus, disabled, and status treatments |
+| Searchable collections | Native editing, selection, navigation, and scrolling | Fuzzy filtering, selection reconciliation, retained checklist membership, counts, empty states, and search handoff |
+| Command palettes | Command registration, presentation, and activation | Search ranking, compact rows, selection navigation, and a bounded visible window |
+| Markdown | Native text, tables, and layout; Swift Markdown supplies parsing | Conversion into themed, composable terminal views |
+| Forms and keyboard help | Controls, bindings, focus, and layout primitives | Field headings/help/errors, validation-message visibility, and keyboard hints that wrap as whole hints |
+
+The distinction matters: a Chio-styled spinner still uses SwiftTUI's animation
+and lifecycle, and a Chio-styled dialog keeps SwiftTUI's modal focus behavior.
+Applications can continue composing native views and applying their own styles.
+
+The examples demonstrate complete workflows, but some coordination remains
+application-owned: validation rules, first-invalid-field focus, multi-step
+navigation, and simulated publishing. Chio currently provides form building
+blocks rather than a complete form coordinator. See the
+[coverage map](Docs/Plan.md#component-coverage) for delivered behavior and remaining gaps.
+
 ## Development and stability
 
 Chio is a **personal project built with Codex assistance and human curation**.
@@ -34,6 +60,38 @@ They require no external services.
 The initial demo slices explore the design direction; Chio's component coverage
 remains much smaller than Charm's ecosystem. See the [component coverage map](Docs/Plan.md#component-coverage)
 for delivered scopes, native SwiftTUI foundations, and proposed next slices.
+
+## In action
+
+![Chio's dark dashboard with selectable agents, semantic status colors, progress, and keyboard hints](Docs/Media/dashboard.png)
+
+The local agent dashboard combines native controls with Chio's theme, searchable
+selection, progress styling, and contextual help. [Terminal recording](Docs/Media/dashboard.cast).
+
+<details>
+<summary>Searchable choices and light-theme feedback</summary>
+
+![A searchable checklist with Build and Test checked, native focus on Test, and Deploy marked unavailable](Docs/Media/choices.png)
+
+Checked membership stays distinct from keyboard focus. Filtering can hide a
+checked item without removing it from the application's selection.
+[Terminal recording](Docs/Media/choices.cast).
+
+![Chio's light-theme feedback example with an accent outline around the focused Publish button](Docs/Media/feedback-light.png)
+
+The same semantic theme roles apply to the light palette. Focused buttons use an
+accent outline and preserve the surrounding surface.
+[Terminal recording](Docs/Media/feedback-light.cast).
+
+</details>
+
+These previews render real release-binary terminal output. Font rendering can
+vary between terminals. The accompanying Asciinema-compatible recordings replay
+locally after cloning the repository:
+
+```sh
+asciinema play Docs/Media/choices.cast
+```
 
 ## Try the dashboard
 
