@@ -12,6 +12,18 @@ rendering, layout, input, and focus.
 
 [More screenshots and terminal recordings](Docs/Examples.md#gallery-and-recordings)
 
+## Development and stability
+
+Chio is a **personal project built with Codex assistance and human curation**.
+Codex contributes to implementation, tests, and documentation, while the human
+maintainer guides the project's direction, design, and what to keep.
+
+It is built primarily for personal use and shared for anyone who finds it useful.
+We cannot vouch for its stability or suitability for production use. APIs and
+behavior may change without notice. Automated tests cover specific workflows,
+not every terminal, platform, or integration; evaluate it for your own needs
+before relying on it.
+
 ## Build with Chio
 
 ```swift
@@ -50,12 +62,6 @@ For true-color terminals over SSH, prefix the command with `COLORTERM=truecolor`
 
 Add `--choices`, `--text-entry`, `--feedback`, or `--files` to try a focused example.
 [Example controls and launch options →](Docs/Examples.md)
-
-## Status
-
-Chio is built primarily for personal use, with **Codex assistance and human
-curation**. We cannot vouch for stability or production suitability; APIs and
-behavior may change without notice. Component coverage is still growing.
 
 ## Documentation
 
