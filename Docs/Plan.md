@@ -1,7 +1,9 @@
 # Implementation plan and verification
 
-The delivered slices are a runnable local dashboard, agent creation, Markdown
-run reports, and a command palette using simulated agents. Accepted contracts and
+The delivered proof-of-concept slices are a runnable local dashboard, agent
+creation, Markdown run reports, and a command palette using simulated agents.
+They establish the design direction, not broad parity with Charm's components.
+Accepted contracts and
 ownership live in [Design.md](Design.md); commands and interaction instructions
 live in [the README](../README.md).
 
@@ -43,6 +45,90 @@ live in [the README](../README.md).
   finding was fixed: selection follows the value retained by the application's
   query binding. Hosted tests also caught stale selection and palette reopening;
   synchronous search selection and resolved editor bindings cover those cases.
+
+## Component coverage
+
+Source audit at Chio `424f8e6`, using SwiftTUI revision
+`2d84ac7083993da2ef52e9d3d30255467efb9553`. Charm's current component catalogs were
+checked on 2026-10-03. This is a capability map, not a parity percentage: a basic
+control, its styling, and a complete interaction workflow are different scopes.
+Native API availability below is source evidence, not new Chio runtime evidence.
+The verification sections describe the shipped paths that have actually run.
+
+The reference scope is [Bubbles](https://github.com/charmbracelet/bubbles) for
+interactive components, [Huh](https://github.com/charmbracelet/huh) for forms,
+[Lip Gloss](https://github.com/charmbracelet/lipgloss) for presentation, and
+[Glamour](https://github.com/charmbracelet/glamour) for documents.
+[Charmtone](https://github.com/charmbracelet/x/tree/main/exp/charmtone) supplies
+palette utilities; Chio ships its own semantic theme inspired by Huh rather than
+depending on that Go package. Tabs, dialogs, banners, and command palettes also
+come from Chio's original brief; they are not all standalone Bubbles packages.
+
+### Design and input controls
+
+| Capability | Chio today | Native foundation | Remaining work |
+| --- | --- | --- | --- |
+| Semantic themes | Delivered default/light palettes, tokens, spacing, and treatments | Environment and native style protocols | Broader control coverage; native focus colors and ANSI-256 conversion have upstream limits |
+| Panels | Delivered through `ChioGroupBoxStyle` | `GroupBox` | Use the native name; SwiftTUI `Panel` means action scope, not a visual box |
+| Buttons and toggles | Delivered themed controls; toggle interaction tested | `Button`, `Toggle` | More variants only when a workflow justifies them |
+| Single-line input | Delivered `ChioTextFieldStyle`, search and form editing | `TextField` | No claim of a full enhanced-input suite such as completion/history |
+| Password input | Existing text-field style is inherited by native `SecureField`; no dedicated Chio regression yet | [SecureField][native-secure] uses the same style and masks the rendered value | Validate masking, focus, disabled state, and theme integration; no replacement editor or new secure-field style needed |
+| Multiline input | No Chio editor style or exercised workflow | [TextEditor][native-editor] and `TextEditorStyle.editorContent` preserve native editing/scrolling | Add shell/focus styling and tests; first check inner text paint, which the protected slot sets from native chrome |
+| Compact single choice | Delivered one-row `ChioPickerStyle` with native arrows | `Picker`, `PickerStyle` | This is not a searchable dropdown or a rich option browser |
+| Searchable single choice | Delivered `SearchableList`; can be placed in `FormField` | [List][native-list] plus native editor | Define field-oriented commit/cancel and disabled-choice needs before adding another public type |
+| Multiple choices | No Chio choose-many workflow or tests | Native `List` and `Table` accept `Binding<Set<ID>>` | Compose filtering, checkmarks, counts and validation; define hidden/removed choice semantics without rebuilding selection/focus |
+| Yes/no confirmation field | Styled native toggle is usable | `Toggle`, buttons | A distinct two-choice confirmation treatment, if needed; an action-confirmation dialog is a separate scope |
+| Field help and validation | Delivered `FormField` and `FormValidation` visibility state | Bindings, submission and `FocusState` | Current rules, draft ownership and first-invalid focus remain app-owned |
+| Conditional fields and dynamic choices | Conditional Test suite field demonstrated; native composition permits changing options | Result builders, state, `Picker`/`List` | Reusable asynchronous choice loading, stale-result policy and cross-field workflows are not delivered |
+| Grouped forms and standalone prompts | One application form proves submission/cancellation | Native groups, sections, covers and focus | No Chio `Form`/`Section` DSL, paged wizard, prompt runner or Huh-style accessible prompt mode; add coordination only after concrete workflows |
+
+### Collections, feedback and navigation
+
+| Capability | Chio today | Native foundation | Remaining work |
+| --- | --- | --- | --- |
+| Searchable/selectable list | Delivered fuzzy/substring search, stable single selection, count, activation and two empty messages | [List][native-list] owns navigation and scrolling | No integrated pagination, loading/error/status workflow, multi-selection or demonstrated large-data performance |
+| Tables | Delivered theme style and Markdown table composition; report navigation tested | [Table][native-table] owns grid, sizing, selection and navigation | Border/background paint correction remains unapplied; richer selected/sorted data-table workflows are not validated |
+| Trees | No Chio tree workflow or style | [OutlineGroup][native-outline], `OutlineStyle`, separate `DisclosureGroup` | `OutlineGroup` expands all descendants and paints connectors with native colors; a collapsible tree needs composition, and exact connector color needs upstream support |
+| File picker | No Chio file browser | No dedicated native picker found; lists, fields and scrolling are building blocks | Filesystem loading, navigation, allowed-item policy, errors and selection are genuinely missing reusable behavior |
+| Pagination | No Chio paginator | Native views and input for presentation | Page arithmetic, navigation and compact display; scrolling is not pagination |
+| Scrollable viewport | Used and tested in reports, tables and code blocks | [ScrollView][native-scroll], positions/readers/styles | Keep native scrolling; add a document-reader convenience only for demonstrated reusable UX |
+| Progress/loading bar | Delivered determinate and indeterminate `ChioProgressViewStyle`, including reduced motion | `ProgressView` owns animation phase | Not a dedicated spinner; animated/gradient fill variants are not part of the current Chio scope |
+| Spinner | No Chio spinner style or integration tests | [Spinner][native-spinner], `SpinnerStyle`, presets/stages and native timing | Style and verify the existing primitive; do not add a timer loop |
+| Keyboard hints | Delivered manual `KeyHint` labels and wrapping `KeyHints` | Native key handlers/commands | Shared binding-to-help metadata and compact/expanded help are not delivered; the native registry's `KeyBinding` is not public |
+| Status bar | Delivered composed `StatusBar` | Native layout/text | A footer is not a toast queue or reusable status-message workflow |
+| Empty/status/banner views | Empty messages inside search; semantic statuses in the demo | Native text, layout and theme colors | Extract reusable presentation and actions when useful; no general empty-state/banner component yet |
+| Toasts | No Chio toast styling or exercised workflow | Native [.toast and ToastStyle][native-toast] handle presentation | Pass a Chio style explicitly through the native API; this family is not installed by an environment style modifier |
+| Alerts, confirmation dialogs and sheets | Native covers demonstrated; no Chio prompt style | [Native presentation][native-presentation] and [PromptStyle][native-prompt] | Theme and test actions, dismissal, narrow layout and focus restoration; retain native presentation ownership |
+| Command palette | Delivered `ChioPaletteStyle`, filtering, disabled items and dashboard actions | Native action scopes, command registration and palette presentation | Surrounding palette chrome has an upstream styling limit; this is not a new Chio command system |
+| Tabs | No Chio tab style or tested tabbed application | [TabView][native-tabs] and `TabViewStyle` | Style native selected/focused states and narrow overflow; no replacement tab controller |
+| Timer and stopwatch | No reusable Chio component; demo simulation is not one | [TimelineView][native-timeline] and Swift clocks | Countdown/elapsed-time state, formatting and pause/resume behavior if demanded; keep scheduling native |
+
+### Documents
+
+| Capability | Chio today | Native foundation | Remaining work |
+| --- | --- | --- | --- |
+| Markdown documents | Delivered parsed immutable documents, headings, rich text, lists, quotes, fenced code, rules and tables | Swift Markdown AST becomes native `Text`, layout, `Table`, `ScrollView` | This is a useful subset, not complete Glamour feature equivalence |
+| Syntax highlighting | Code is rendered literally with a language label | Native rich text can carry styled spans | Choose a suitable highlighter only after checking dependency/static-link cost; preserve whitespace and width semantics |
+| Links and images | Destinations/alt text shown; no resource fetching or link activation | Native `Link`/rich text exists | Active links need explicit interaction/opening policy and terminal tests; image rendering is outside the present document scope |
+
+The source of Chio's installed styles is
+[`View+ChioTheme.swift`](../Sources/Chio/Presentation/View+ChioTheme.swift).
+Reusable presentation lives in [`Sources/Chio/Presentation`](../Sources/Chio/Presentation),
+and evidence in [`Tests/ChioTests`](../Tests/ChioTests) plus the dashboard tests.
+Do not infer Chio support for every native control from `.chioTheme(...)` alone.
+
+[native-secure]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/Input/SecureField.swift
+[native-editor]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/Input/TextEditor.swift
+[native-list]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/Collections/List.swift
+[native-table]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/Collections/Table.swift
+[native-outline]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/Collections/OutlineViews.swift
+[native-scroll]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/ScrollView/ScrollView.swift
+[native-spinner]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/Controls/Spinner.swift
+[native-toast]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/Presentation/ToastPresentation.swift
+[native-presentation]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/Presentation/PromptPresentationEntrypoints.swift
+[native-prompt]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/Presentation/PromptStyles.swift
+[native-tabs]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/TabViews/TabView.swift
+[native-timeline]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/Animation/TimelineView.swift
 
 ## Verified on macOS
 
@@ -176,7 +262,7 @@ evident responsiveness regression; they do not include SSH or device latency.
 
 ## Linux and CI
 
-The initial feature slices are delivered. Portability verification adds CI and
+The initial demonstration slices are delivered. Portability verification adds CI and
 repeatable terminal checks without changing the public API or dependency pins.
 
 - Ubuntu 24.04 ARM64, official `swift:6.4.0-noble` container: all 113 tests pass
@@ -310,19 +396,62 @@ Shipping this correction requires choosing a reproducible patched SwiftTUI
 dependency or receiving the fix upstream. Chio's published-source pin remains
 unchanged; a local SwiftPM edit is only integration evidence, not distribution.
 
-## Next decisions after trying the dashboard
+## Proposed next component slices
 
-1. Gather visual and interaction feedback from running the binary at everyday
-   terminal sizes in release mode. Profile typing and selection latency against
-   the baseline above before adding more components.
-2. Resolve upstream Musl compatibility before promising a self-contained Linux
-   executable. Keep the static diagnostic separate from verified glibc support.
-3. Investigate upstream public focus-theme integration and finite collection
-   measurement before scaling the list to large datasets.
-4. Try the Create agent workflow before broadening the form API. Additional field
-   types and grouped forms should follow concrete application needs.
-5. Try reports and horizontally scrolling tables at everyday terminal sizes before
-   adding syntax highlighting, active links, or large-data table behavior.
+The coverage audit is complete; the following order is a proposal for review,
+not implemented behavior or a frozen public API. Broaden reusable component
+coverage before treating the framework as ready for release preparation.
 
-No new products, renderer, general focus manager, or external agent integration
-are required by these next decisions.
+1. **Richer choice fields.** Prove searchable single-choice form composition and
+   a choose-many workflow using native `List` selection. Reuse `SearchableList`
+   and `FormField` where they already fit; choose a new public abstraction only
+   where the combined behavior earns it. Define stable IDs, checked membership
+   versus keyboard focus, filtering that preserves checked hidden items,
+   removed/disabled options, selection limits and validation. With native row
+   focus, Space/Return toggle multi-selection; at container focus, Return routes
+   to activation while Space toggles. Define activation/commit for both routes.
+   A focused example
+   should select multiple capabilities, filter away and back, and show errors.
+   Acceptance: empty/no-match states, externally changed options/bindings, native
+   navigation, theme/resize preservation, and usable narrow layouts. This is the
+   highest-value behavioral gap after the current single-selection slice.
+2. **Complete everyday text entry.** Exercise native `SecureField` under the
+   existing style and add a native `TextEditorStyle` for multiline input. First
+   render a small custom-color editor probe to establish how much of the inner
+   text appearance can be controlled; record an upstream gap if necessary.
+   Acceptance: passwords never appear in captured display/semantic output intended
+   to conceal them, native editing and submission remain intact, multiline paste,
+   wrapping/caret/scrolling work, and disabled/focused states remain readable in
+   both themes. Use synthetic secrets in fixtures; do not invent an editor or
+   promise reveal/mask configuration absent from native public APIs.
+3. **Confirmation and feedback.** Add a coherent prompt treatment and spinner
+   style, followed by native toast styling as the example needs feedback. Prove
+   confirm/cancel, return of focus, disabled/destructive actions, narrow prompts,
+   reduced motion and transient-message lifecycle. Pass toast styles through its
+   explicit native API. Theme limitations in prompt headers remain visible.
+4. **File selection.** Build one reusable file-choice workflow with application
+   bindings and an owned filesystem-loading boundary. Specify files versus
+   directories, filtering, path/symlink policy, loading/errors and confirmation
+   before implementation. Prove navigation, empty/inaccessible directories,
+   stale loads, cancellation and selection with deterministic temporary trees.
+   Native lists, focus, input and scrolling remain responsible for interaction.
+
+Further candidates are shared shortcut/help presentation, tabs and scroll styles,
+expandable trees, page controls, richer grouped forms, and timer/stopwatch
+presentation. Markdown highlighting and active links are separate document
+capabilities with dependency and interaction decisions. These are open coverage
+items, not completed work and not an instruction to build every candidate.
+
+Each family should have a small focused example that a consumer can run directly,
+public usage documentation, relevant model/raster/hosted-input regressions, and a
+release terminal check. Keep the dashboard as an integration example. A component
+counts as delivered only for its documented and exercised scope; inheritance of
+an upstream API or a themed static screenshot is insufficient evidence of all
+interaction behavior. Recheck responsiveness when editing/navigation paths change.
+
+Existing upstream integration work remains separate: table paint correction,
+native focus-theme control, ANSI-256 conversion, and finite collection measurement.
+Keep large-data behavior unclaimed until measured. Resolve Musl support before
+promising static Linux distribution; it does not block ordinary glibc components.
+No new public products, renderer, general focus manager or external agent
+integration are required by this roadmap.

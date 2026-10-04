@@ -5,6 +5,11 @@ SwiftTUI composition. The first slice is an agent dashboard backed by local
 simulated data. The contracts below are accepted design; implementation and
 validation status live in [the plan](Plan.md).
 
+Completing a vertical slice demonstrates a particular end-to-end workflow. It
+does not establish broad component coverage or equivalence with Bubbles, Huh,
+or Glamour. The [coverage map](Plan.md#component-coverage) distinguishes shipped
+Chio behavior, native SwiftTUI capabilities, and remaining product work.
+
 ## Ownership
 
 SwiftTUI owns rendering, terminal lifecycle, layout, state, input, focus, and

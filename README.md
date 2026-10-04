@@ -17,8 +17,10 @@ executable. Run it to try search, selection, agent creation, inline validation,
 progress, themes, a command palette, and Markdown reports of simulated runs.
 It requires no external services.
 
-This is an early API to learn from, not a stable release. Broader forms, syntax
-highlighting, and active Markdown links remain deferred.
+This is an early API to learn from, not a stable release. The initial demo slices
+prove the design direction; Chio's component coverage remains much smaller than
+Charm's ecosystem. See the [component coverage map](Docs/Plan.md#component-coverage)
+for delivered scopes, native SwiftTUI foundations, and proposed next slices.
 
 ## Try the dashboard
 
