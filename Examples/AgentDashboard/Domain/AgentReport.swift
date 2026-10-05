@@ -66,6 +66,22 @@ struct AgentReport {
         swift test
         ```
 
+        Swift fences use the current theme's syntax colors. This view composes native controls; the example stays literal and can scroll horizontally.
+
+        ```swift
+        // A small view, styled by its surrounding theme.
+        struct RunSummary: View {
+            let completed: Double = 0.78
+
+            var body: some View {
+                GroupBox("Build Agent") {
+                    ProgressView(value: completed, total: 1.0)
+                    Text("Preparing a beautiful terminal interface, one small component at a time.")
+                }
+            }
+        }
+        ```
+
         ## Reading the results
 
         1. Review the activity and check statuses above.

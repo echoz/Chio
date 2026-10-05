@@ -21,6 +21,16 @@ let package = Package(
             url: "https://github.com/swiftlang/swift-markdown.git",
             revision: "25cb61d3482054b09ae76ca4f281b1bfe7fe5a43"
         ),
+        // Tree-sitter 0.26.13: the last release with an upstream SwiftPM manifest.
+        .package(
+            url: "https://github.com/tree-sitter/tree-sitter.git",
+            revision: "d97971e24500218865c05ed1febdee2acf41bae1"
+        ),
+        // Swift grammar 0.7.4, including generated C sources (no generator needed).
+        .package(
+            url: "https://github.com/alex-pinkus/tree-sitter-swift.git",
+            revision: "82bb3a533e0801fd2bbaa11dc49676e10bf41948"
+        ),
     ],
     targets: [
         .target(
@@ -28,6 +38,8 @@ let package = Package(
             dependencies: [
                 .product(name: "SwiftTUIViews", package: "swift-tui"),
                 .product(name: "Markdown", package: "swift-markdown"),
+                .product(name: "TreeSitter", package: "tree-sitter"),
+                .product(name: "TreeSitterSwift", package: "tree-sitter-swift"),
             ]
         ),
         .executableTarget(

@@ -5,6 +5,93 @@ import Testing
 
 @MainActor
 struct MarkdownViewRenderTests {
+    @Test("Swift token cells resolve all syntax roles from the current theme",
+          arguments: [ChioTheme.default, .light, .btop,
+                      ChioTheme.default.replacing(syntax: .init(
+                        keyword: .red, type: .blue, string: .green,
+                        number: .yellow, comment: .cyan))])
+    func syntaxColors(theme: ChioTheme) {
+        let source = "```SwIfT additional-info\nlet count: Int = 42\nlet label = \"hello\" // note\n```"
+        let surface = DefaultRenderer().render(
+            MarkdownView(MarkdownDocument(source)).chioTheme(theme),
+            proposal: .init(width: 60, height: 10)
+        ).rasterSurface
+        expectColor(of: "let", in: surface.cells, color: theme.syntax.keyword)
+        expectColor(of: "Int", in: surface.cells, color: theme.syntax.type)
+        expectColor(of: "42", in: surface.cells, color: theme.syntax.number)
+        expectColor(of: "\"hello\"", in: surface.cells, color: theme.syntax.string)
+        expectColor(of: "// note", in: surface.cells, color: theme.syntax.comment)
+        expectColor(of: "count", in: surface.cells, color: theme.colors.foreground)
+        expectColor(of: ":", in: surface.cells, color: theme.colors.foreground)
+        expectColor(of: "=", in: surface.cells, color: theme.colors.foreground)
+    }
+
+    @Test("Plain highlighting overrides Swift tokens without changing literal cell geometry",
+          arguments: ["\n", "\r\n"])
+    func syntaxWhitespace(newline: String) {
+        let code = "  let cafe\u{301} = \"你好 👩‍💻\"\t // note  \n\n    let value = 42\n"
+        let source = ("```swift\n" + code + "```\n").replacingOccurrences(of: "\n", with: newline)
+        let document = MarkdownDocument(source)
+        let automatic = DefaultRenderer().render(
+            MarkdownView(document).chioTheme(.default),
+            proposal: .init(width: 60, height: 12)
+        ).rasterSurface
+        let plain = DefaultRenderer().render(
+            MarkdownView(document).codeHighlighting(.plain).chioTheme(.default),
+            proposal: .init(width: 60, height: 12)
+        ).rasterSurface
+        #expect(automatic.size == plain.size)
+        #expect(automatic.lines == plain.lines)
+        #expect(automatic.cells.map { $0.map(\.character) } == plain.cells.map { $0.map(\.character) })
+        #expect(automatic.cells.map { $0.map(\.spanWidth) } == plain.cells.map { $0.map(\.spanWidth) })
+        #expect(automatic.cells.map { $0.map(\.continuationLeadX) } == plain.cells.map { $0.map(\.continuationLeadX) })
+        expectColor(of: "let", in: automatic.cells, color: ChioTheme.default.syntax.keyword)
+        expectColor(of: "let", in: plain.cells, color: ChioTheme.default.colors.foreground)
+        #expect(automatic.cells.flatMap { $0 }.contains { $0.character == "e\u{301}" })
+        #expect(automatic.cells.flatMap { $0 }.contains { $0.character == "👩‍💻" && $0.spanWidth == 2 })
+        guard let first = automatic.lines.firstIndex(where: { $0.contains("cafe\u{301}") }),
+              let last = automatic.lines.firstIndex(where: { $0.contains("value = 42") }) else {
+            Issue.record("Expected both literal code lines")
+            return
+        }
+        #expect(last == first + 2)
+        #expect(automatic.lines[first + 1].allSatisfy { $0 == " " })
+        #expect(last + 1 < automatic.lines.count)
+        if last + 1 < automatic.lines.count {
+            #expect(automatic.lines[last + 1].allSatisfy { $0 == " " })
+        }
+        let lf = DefaultRenderer().render(
+            MarkdownView(MarkdownDocument("```swift\n" + code + "```\n")).chioTheme(.default),
+            proposal: .init(width: 60, height: 12)
+        ).rasterSurface
+        #expect(automatic.cells == lf.cells)
+    }
+
+    @Test("Unknown and absent fence languages retain plain code", arguments: ["", "unknown"])
+    func plainLanguage(language: String) {
+        let document = MarkdownDocument("```\(language)\nlet value: Int = 42 // note\n```")
+        let automatic = DefaultRenderer().render(MarkdownView(document).chioTheme(.default),
+                                                  proposal: .init(width: 48, height: 8)).rasterSurface
+        let plain = DefaultRenderer().render(MarkdownView(document).codeHighlighting(.plain).chioTheme(.default),
+                                              proposal: .init(width: 48, height: 8)).rasterSurface
+        #expect(automatic.cells == plain.cells)
+        expectColor(of: "let", in: automatic.cells, color: ChioTheme.default.colors.foreground)
+    }
+
+    private func expectColor(of text: String, in rows: [[RasterCell]], color: Color) {
+        let characters = Array(text)
+        for row in rows where row.count >= characters.count {
+            for start in 0...(row.count - characters.count) {
+                let cells = row[start..<(start + characters.count)]
+                if cells.map(\.character) == characters {
+                    #expect(cells.allSatisfy { $0.style?.foregroundColor == color }, "Unexpected color for \(text)")
+                    return
+                }
+            }
+        }
+        Issue.record("Expected visible token \(text)")
+    }
+
     @Test("Rich paragraphs keep native wrapping and combined cell emphasis", arguments: [12, 28])
     func richParagraph(width: Int) {
         let surface = DefaultRenderer().render(

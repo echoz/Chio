@@ -5,25 +5,29 @@ public struct ChioTheme {
     public let colors: Colors
     public let spacing: Spacing
     public let treatments: Treatments
+    public let syntax: SyntaxColors
 
     public init(
         colors: Colors = .init(),
         spacing: Spacing = .init(),
-        treatments: Treatments = .init()
+        treatments: Treatments = .init(),
+        syntax: SyntaxColors = .init()
     ) {
         self.colors = colors
         self.spacing = spacing
         self.treatments = treatments
+        self.syntax = syntax
     }
 
     /// Returns a new theme; omitted components retain their current values.
     public func replacing(
         colors: Colors? = nil,
         spacing: Spacing? = nil,
-        treatments: Treatments? = nil
+        treatments: Treatments? = nil,
+        syntax: SyntaxColors? = nil
     ) -> Self {
         Self(colors: colors ?? self.colors, spacing: spacing ?? self.spacing,
-             treatments: treatments ?? self.treatments)
+             treatments: treatments ?? self.treatments, syntax: syntax ?? self.syntax)
     }
 
     /// A dark palette inspired by Charm's Huh controls and Bubbles lists.
@@ -41,6 +45,12 @@ public struct ChioTheme {
         success: Color(hexRGB: 0x23784E),
         warning: Color(hexRGB: 0x996800),
         error: Color(hexRGB: 0xBE354B)
+    ), syntax: .init(
+        keyword: Color(hexRGB: 0x922368),
+        type: Color(hexRGB: 0x155C83),
+        string: Color(hexRGB: 0x246641),
+        number: Color(hexRGB: 0x825005),
+        comment: Color(hexRGB: 0x615968)
     ))
 
     /// A compact dark palette inspired by btop's instrumentation layouts.
@@ -58,8 +68,52 @@ public struct ChioTheme {
             warning: Color(hexRGB: 0xE5BD72),
             error: Color(hexRGB: 0xE77E88)
         ),
-        spacing: .init(horizontalInset: 1, verticalInset: 0, sectionGap: 0, hintGap: 1)
+        spacing: .init(horizontalInset: 1, verticalInset: 0, sectionGap: 0, hintGap: 1),
+        syntax: .init(
+            keyword: Color(hexRGB: 0xC69ADD),
+            type: Color(hexRGB: 0x55C9D8),
+            string: Color(hexRGB: 0xA8C58C),
+            number: Color(hexRGB: 0xE5BD72),
+            comment: Color(hexRGB: 0xA0ACB6)
+        )
     )
+
+    /// Code token colors, independent of application success, warning, and error status.
+    /// Plain code, punctuation, and operators use the ordinary foreground color.
+    public struct SyntaxColors {
+        public let keyword: Color
+        public let type: Color
+        public let string: Color
+        public let number: Color
+        public let comment: Color
+
+        public init(
+            keyword: Color = Color(hexRGB: 0xF780E2),
+            type: Color = Color(hexRGB: 0x78DCE8),
+            string: Color = Color(hexRGB: 0xA8DAB5),
+            number: Color = Color(hexRGB: 0xE5C07B),
+            comment: Color = Color(hexRGB: 0xB5AABE)
+        ) {
+            self.keyword = keyword
+            self.type = type
+            self.string = string
+            self.number = number
+            self.comment = comment
+        }
+
+        /// Returns a new syntax palette; omitted colors retain their current values.
+        public func replacing(
+            keyword: Color? = nil,
+            type: Color? = nil,
+            string: Color? = nil,
+            number: Color? = nil,
+            comment: Color? = nil
+        ) -> Self {
+            Self(keyword: keyword ?? self.keyword, type: type ?? self.type,
+                 string: string ?? self.string, number: number ?? self.number,
+                 comment: comment ?? self.comment)
+        }
+    }
 
     public struct Colors {
         public let accent: Color
@@ -210,6 +264,11 @@ public struct ChioTheme {
 
 extension ChioTheme: Equatable {}
 extension ChioTheme: Sendable {}
+extension ChioTheme.SyntaxColors: Equatable {}
+extension ChioTheme.SyntaxColors: Hashable {}
+extension ChioTheme.SyntaxColors: Encodable {}
+extension ChioTheme.SyntaxColors: Decodable {}
+extension ChioTheme.SyntaxColors: Sendable {}
 extension ChioTheme.Colors: Equatable {}
 extension ChioTheme.Colors: Hashable {}
 extension ChioTheme.Colors: Encodable {}

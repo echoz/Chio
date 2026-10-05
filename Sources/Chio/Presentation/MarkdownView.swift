@@ -7,11 +7,20 @@ public struct MarkdownView {
     @Environment(\.chioTheme) private var theme
     private let document: MarkdownDocument
     private let links: MarkdownLinks
+    private let highlighting: CodeHighlighting
+
+    public enum CodeHighlighting {
+        /// Highlights supported Swift fences; other code retains plain text.
+        case automatic
+        /// Displays code without token colors, preserving its native scroll view.
+        case plain
+    }
 
     /// Displays readable destinations without creating interactive links.
     public init(_ document: MarkdownDocument) {
         self.document = document
         links = .passive
+        highlighting = .automatic
     }
 
     /// Enables native inline links with an explicit application-owned opening action.
@@ -19,12 +28,28 @@ public struct MarkdownView {
     public init(_ document: MarkdownDocument, openLink: OpenLinkAction) {
         self.document = document
         links = .interactive(openLink)
+        highlighting = .automatic
+    }
+
+    private init(document: MarkdownDocument, links: MarkdownLinks, highlighting: CodeHighlighting) {
+        self.document = document
+        self.links = links
+        self.highlighting = highlighting
+    }
+
+    /// Returns a presentation choice without reparsing the retained document.
+    public func codeHighlighting(_ highlighting: CodeHighlighting) -> Self {
+        Self(document: document, links: links, highlighting: highlighting)
     }
 }
 
+extension MarkdownView.CodeHighlighting: Hashable {}
+extension MarkdownView.CodeHighlighting: Codable {}
+extension MarkdownView.CodeHighlighting: Sendable {}
+
 extension MarkdownView: View {
     public var body: some View {
-        MarkdownBlocks(blocks: document.blocks, theme: theme, links: links)
+        MarkdownBlocks(blocks: document.blocks, theme: theme, links: links, highlighting: highlighting)
             .openLinkAction(links.action)
             .foregroundStyle(theme.colors.foreground)
             .lineLimit(nil)
@@ -55,13 +80,14 @@ private struct MarkdownBlocks {
     let blocks: [MarkdownDocument.Block]
     let theme: ChioTheme
     let links: MarkdownLinks
+    let highlighting: MarkdownView.CodeHighlighting
 }
 
 extension MarkdownBlocks: View {
     var body: some View {
         VStack(alignment: .leading, spacing: theme.spacing.sectionGap) {
             ForEach(blocks.indices, id: \.self) { index in
-                MarkdownBlock(block: blocks[index], theme: theme, links: links)
+                MarkdownBlock(block: blocks[index], theme: theme, links: links, highlighting: highlighting)
             }
         }
         .fixedSize(horizontal: false, vertical: true)
@@ -73,6 +99,29 @@ private struct MarkdownBlock {
     let block: MarkdownDocument.Block
     let theme: ChioTheme
     let links: MarkdownLinks
+    let highlighting: MarkdownView.CodeHighlighting
+
+    private func codeText(_ code: MarkdownCode) -> Text {
+        var interpolation = Text.StringInterpolation(literalCapacity: 0, interpolationCount: code.highlights.count * 2 + 1)
+        var cursor = code.text.startIndex
+        if highlighting == .automatic {
+            for highlight in code.highlights {
+                interpolation.appendInterpolation(Text(verbatim: String(code.text[cursor..<highlight.range.lowerBound])))
+                let color: Color
+                switch highlight.kind {
+                case .keyword: color = theme.syntax.keyword
+                case .type: color = theme.syntax.type
+                case .string: color = theme.syntax.string
+                case .number: color = theme.syntax.number
+                case .comment: color = theme.syntax.comment
+                }
+                interpolation.appendInterpolation(Text(verbatim: String(code.text[highlight.range])).foregroundStyle(color))
+                cursor = highlight.range.upperBound
+            }
+        }
+        interpolation.appendInterpolation(Text(verbatim: String(code.text[cursor...])))
+        return Text(Text.RichContent(stringInterpolation: interpolation))
+    }
 
     private func text(_ spans: [MarkdownDocument.Span], inLink: Bool = false) -> Text {
         var interpolation = Text.StringInterpolation(
@@ -127,7 +176,7 @@ extension MarkdownBlock: View {
                         Text(verbatim: items[index].marker)
                             .foregroundStyle(theme.colors.accent)
                             .fixedSize()
-                        MarkdownBlocks(blocks: items[index].blocks, theme: theme, links: links)
+                        MarkdownBlocks(blocks: items[index].blocks, theme: theme, links: links, highlighting: highlighting)
                     }
                 }
             })
@@ -136,19 +185,19 @@ extension MarkdownBlock: View {
                 // A native leading-edge border vanishes on a one-row quote.
                 // A text marker keeps the quote visible at every block height.
                 Text("│").foregroundStyle(theme.colors.border).fixedSize()
-                MarkdownBlocks(blocks: blocks, theme: theme, links: links)
+                MarkdownBlocks(blocks: blocks, theme: theme, links: links, highlighting: highlighting)
                     .foregroundStyle(theme.colors.secondaryText)
             })
-        case let .code(language, code):
+        case let .code(code):
             return AnyView(VStack(alignment: .leading, spacing: 0) {
-                if !language.isEmpty {
-                    Text(verbatim: language).foregroundStyle(theme.colors.mutedText)
+                if !code.language.isEmpty {
+                    Text(verbatim: code.language).foregroundStyle(theme.colors.mutedText)
                 }
                 ScrollView(.horizontal) {
-                    Text(verbatim: code).fixedSize()
+                    codeText(code).fixedSize()
                 }
                 .scrollIndicators(.hidden, axes: .horizontal)
-                .frame(height: max(1, code.split(separator: "\n", omittingEmptySubsequences: false).count))
+                .frame(height: max(1, code.text.split(separator: "\n", omittingEmptySubsequences: false).count))
             }
             .padding(.horizontal, theme.spacing.horizontalInset)
             .background(theme.colors.selectedSurface))

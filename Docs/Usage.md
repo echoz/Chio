@@ -410,6 +410,42 @@ inline and fenced code, lists, quotes, rules, and aligned tables with native
 horizontal scrolling. Table body cells retain rich text; native headers use plain
 labels with themed colors. Passive links and images show readable labels and destinations;
 HTML is literal. Native table border colors remain an upstream styling limitation.
+
+Swift fences highlight automatically: the first word of the fence information
+must be `swift` (case-insensitive). Unknown and unlabeled code stays plain. Code
+parsing and token classification happen when `MarkdownDocument` is constructed,
+so retain the document through theme and view updates. To read all code in plain
+foreground paint:
+
+```swift
+MarkdownView(document).codeHighlighting(.plain)
+```
+
+The default is `.automatic`. This modifier also works on the interactive-link
+initializer below and retains its opening action. Customize token colors through
+the theme:
+
+```swift
+let theme = ChioTheme.default.replacing(
+    syntax: ChioTheme.default.syntax.replacing(keyword: .cyan, comment: .white)
+)
+MarkdownView(document).chioTheme(theme)
+```
+
+`theme.syntax` has `keyword`, `type`, `string`, `number`, and `comment` roles;
+plain identifiers, punctuation, and operators inherit the enclosing foreground,
+normally `theme.colors.foreground` (secondary text inside a quote).
+Code over 65,536 UTF-8 bytes remains plain. Parsing also has a deterministic
+4,096-progress-checkpoint budget; cancellation displays the whole block plainly.
+This is a work bound at parser callbacks, not a hard time or memory limit. The
+Swift grammar may not recognize every latest language feature. Highlighting keeps
+malformed and partially recognized code literal, and colors a complete string,
+including interpolation, with one role. It retains parsed source text, blank rows,
+and trailing newlines in one native rich `Text` within the existing horizontal
+scroll view. Tab focuses the code; arrows and Home/End navigate its columns. Markdown parsing normalizes
+CRLF to LF, and the pinned native renderer displays tabs as one cell without
+tab-stop expansion.
+
 To enable links, supply SwiftTUI's native action explicitly:
 
 ```swift

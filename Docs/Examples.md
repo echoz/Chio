@@ -50,6 +50,11 @@ these native focus targets to vertical reading. Ctrl-T and Escape remain availab
 while a link owns focus. Links wrap with their surrounding paragraph as the terminal
 narrows; try 36 × 18 with a link focused.
 
+Under **Example workflow**, the Swift `RunSummary` sample shows five syntax colors
+from the current theme. Ctrl-T changes their palette; Tab focuses the code and
+End reveals the long text line. The shell commands above it remain plain. These
+examples are displayed as source and are never executed by the report.
+
 Press `n` while browsing to create an agent. Enter its name, choose a role with
 the arrow keys, and use Space to toggle Start immediately. Test agents also
 require a suite name. Tab and Shift-Tab move between controls. Create or Ctrl-S

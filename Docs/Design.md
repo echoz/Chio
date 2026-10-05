@@ -62,7 +62,7 @@ installed callback and native state identity.
 
 Native `StrokeStyle` is only `Equatable` and `Sendable` in the pinned dependency,
 including state Chio cannot access. `ChioTheme` and `Treatments` retain those
-conformances; Colors and Spacing also support hashing and coding. Do not clone
+conformances; Colors, SyntaxColors, and Spacing also support hashing and coding. Do not clone
 native stroke representation or add lossy coding solely to obtain conformance.
 Parsed Markdown and report snapshots are immutable, hashable, and sendable;
 they have no persistence schema. Native table alignment is not Codable, and
@@ -703,6 +703,44 @@ then arrows or Home/End navigate its columns. Theme changes retain native offset
 and focus. A text marker identifies quotes because the pinned leading-edge border
 disappears on one-row content; this is presentation composition, not cell rendering.
 
+Swift fenced code is highlighted by default. The first whitespace-delimited word
+of the fence information selects the language case-insensitively; only `swift`
+is recognized. Tree-sitter parses code once during `MarkdownDocument`
+construction, retaining private, immutable semantic ranges alongside the
+authoritative parsed code text. Ranges follow extended grapheme boundaries and
+native rich `Text` consumes source slices without reconstructing or formatting
+the code. Unlabeled and unknown languages stay plain. Code exceeding 65,536 UTF-8
+bytes stays plain. A deterministic budget cancels parsing after 4,096 progress
+checkpoints and falls back to the whole plain block; no clock reads are involved.
+The callback runs outside individual scanner operations, so this is not a hard
+wall-time or memory guarantee. Unsafe classification ranges also fall back to
+intact plain code. An iterative native C tree cursor identifies roles; complete
+strings, including interpolation, receive one string color. The Swift grammar
+may not cover every current Swift feature, and malformed or partially recognized
+syntax always retains its literal source.
+
+Document equality and hashing depend on code language and text, using Swift's
+canonical Unicode string semantics. Derived highlight ranges do not affect
+document identity or require bytewise-equal Unicode spellings.
+
+`ChioTheme.syntax` supplies keyword, type, string, number, and comment colors;
+ordinary foreground paint covers identifiers, punctuation, and operators. Syntax
+roles are independent of success/warning/error status colors. The default, light,
+and btop presets supply their own syntax palettes. Callers customize them through
+`theme.replacing(syntax: theme.syntax.replacing(...))`.
+`MarkdownView(document).codeHighlighting(.plain)` explicitly suppresses syntax
+paint; `.automatic` is the default. The modifier also preserves the application
+action supplied to the interactive-link initializer. Theme and paint changes
+reuse the same native code scroll subtree and retained ranges. `ChioTheme.Colors`
+keeps its existing Codable fields; syntax colors are a separate value.
+
+Whitespace preservation refers to the parsed Markdown code string: cmark
+normalizes CRLF line endings to LF. Blank rows and the trailing parsed newline
+remain part of the native text. The pinned native renderer measures tabs as one
+cell rather than expanding tab stops, and Unicode cell widths remain approximate.
+Highlighting preserves these existing layout semantics rather than introducing
+a separate terminal text renderer.
+
 Tables retain parsed cells and column alignments, then compose native `Table`
 and `TableRow` views. SwiftTUI measures column widths in terminal cells and the
 table's natural height. A native horizontal scroll view preserves readable
@@ -734,7 +772,8 @@ including mixed emphasis and wrapped text. Adjacent links remain distinct even
 when their destinations match. Empty destinations keep passive labels; nonempty
 links with empty labels display their destination. Table body links are active;
 plain native headers retain readable labels and destinations. Images remain alt
-text plus source and HTML remains literal. Syntax highlighting remains separate.
+text plus source and HTML remains literal. Fenced-code syntax paint is independent
+of link activation and inline-code styling.
 
 `.chioTheme` installs `ChioLinkStyle` for both standalone and interpolated native
 links. Accent underlines identify enabled links; focused/pressed links add bold
@@ -792,8 +831,18 @@ Swift Markdown 0.9.0 is pinned to revision
 `25cb61d3482054b09ae76ca4f281b1bfe7fe5a43`. Its manifest includes conditional Windows
 unsafe build flags; a revision dependency permits these without changing upstream.
 The parser brings swift-cmark 0.9.0, compiled from source by SwiftPM, with no
-separately installed cmark library. Ubuntu 24.04/glibc builds and execution are
-verified on ARM64 and x86_64 with Swift 6.4.0. Static musl compilation is blocked in the
+separately installed cmark library. Swift-only code highlighting directly uses
+the Tree-sitter 0.26.13 C runtime, pinned to
+`d97971e24500218865c05ed1febdee2acf41bae1`, and generated tree-sitter-swift 0.7.4 C
+grammar, pinned to `82bb3a533e0801fd2bbaa11dc49676e10bf41948`. Both are MIT licensed.
+The two C targets need no SwiftTreeSitter wrapper or runtime grammar generation.
+The grammar manifest copies its unused query bundle; Chio performs no query
+resource I/O and the C-only target has no generated Objective-C/Foundation resource accessor.
+Its dependency evaluation, local cost measurements, and portability limits are
+recorded in [Plan.md](Plan.md#markdown-syntax-highlighting).
+Ubuntu 24.04/glibc builds and execution before this syntax dependency are
+verified on ARM64 and x86_64 with Swift 6.4.0. Fresh Linux verification including
+Tree-sitter remains pending. Static musl compilation is blocked in the
 pinned SwiftTUI dependency; [Plan.md](Plan.md#linux-and-ci) records the evidence.
 
 Native list focus chrome currently resolves through SwiftTUI's own theme;
@@ -816,6 +865,6 @@ work, not a second Chio quantizer or an unconditional true-color override.
 - [Huh themes](https://github.com/charmbracelet/huh/blob/main/theme.go)
 - [Bubbles list](https://github.com/charmbracelet/bubbles/tree/main/list) and [help](https://github.com/charmbracelet/bubbles/tree/main/help)
 
-Charm supplies visual references, not a Go API port. Broader forms, syntax
-highlighting, and further products remain deferred while these
+Charm supplies visual references, not a Go API port. Broader forms, additional
+syntax languages, and further products remain deferred while these
 concrete workflows are refined.

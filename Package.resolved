@@ -1,5 +1,5 @@
 {
-  "originHash" : "7e80cc96bfcf4d6083a558d538613f487b00742c12020b6bc6d7429f7463f442",
+  "originHash" : "9b5cd75148db0b7dcf74418a781fa633a308da085451f1cdbf8c16a7eb4a4443",
   "pins" : [
     {
       "identity" : "swift-argument-parser",
@@ -51,6 +51,22 @@
       "location" : "https://github.com/SwiftTUI/swift-tui.git",
       "state" : {
         "revision" : "2d84ac7083993da2ef52e9d3d30255467efb9553"
+      }
+    },
+    {
+      "identity" : "tree-sitter",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/tree-sitter/tree-sitter.git",
+      "state" : {
+        "revision" : "d97971e24500218865c05ed1febdee2acf41bae1"
+      }
+    },
+    {
+      "identity" : "tree-sitter-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/alex-pinkus/tree-sitter-swift.git",
+      "state" : {
+        "revision" : "82bb3a533e0801fd2bbaa11dc49676e10bf41948"
       }
     }
   ],

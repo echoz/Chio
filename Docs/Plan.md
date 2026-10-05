@@ -248,7 +248,7 @@ come from Chio's original brief; they are not all standalone Bubbles packages.
 | Capability | Chio today | Native foundation | Remaining work |
 | --- | --- | --- | --- |
 | Markdown documents | Delivered parsed immutable documents, headings, rich text, lists, quotes, fenced code, rules and tables | Swift Markdown AST becomes native `Text`, layout, `Table`, `ScrollView` | This is a useful subset, not complete Glamour feature equivalence |
-| Syntax highlighting | Code is rendered literally with a language label | Native rich text can carry styled spans | Choose a suitable highlighter only after checking dependency/static-link cost; preserve whitespace and width semantics |
+| Syntax highlighting | Delivered Swift fenced-code highlighting with retained semantic ranges, theme syntax colors, and an explicit plain override | Direct Tree-sitter C parsing becomes one native rich `Text`; native scrolling remains | Source/layout/focus contracts and local costs verified; fresh Linux/static-link evidence remains pending; other languages stay plain |
 | Links and images | Opt-in native inline links with an application `OpenLinkAction`, grouped rich labels and `ChioLinkStyle`; default documents and image descriptions remain passive | Native `Link`/rich text owns focus, activation, wrapping and clipping | Headers remain plain; traversal reaches visible native targets. Applications own destination policy/effects; image rendering remains outside scope |
 
 The source of Chio's installed styles is
@@ -375,14 +375,16 @@ recording order, resize events and documentation links pass. Browser playback an
 mobile-layout checks remain pending because the host Mac is locked. The player,
 CSS and deployment permissions are unchanged.
 
-The ninth showcase recording demonstrates interactive Markdown in the existing
-report reader: native link focus and local destination feedback, theme change,
-36 × 18 wrapping, return to scrolling and dashboard restoration. The 76 × 30
-release-terminal capture lasts 16.5 seconds and restores terminal modes on exit.
-Its preview was visually inspected; site assembly, nine-card navigation/assets,
-PNG dimensions, recording event order, resize/restoration and documentation links
-pass. Browser playback and mobile-layout checks remain pending because the host
-Mac is locked. The existing player, CSS and deployment permissions are unchanged.
+The ninth showcase recording demonstrates Markdown in the existing report
+reader. Its syntax-highlighting refresh shows Swift token colors, native code
+End/Home scrolling, theme changes that retain horizontal position, link focus
+and local destination feedback, 36 × 18 wrapping, and dashboard restoration.
+The 76 × 30 release-terminal capture lasts 26.5 seconds and restores terminal
+modes on exit. Its preview was visually inspected; site assembly, ten-card
+navigation/assets, PNG dimensions, recording event order, resize/restoration and
+documentation links pass. Browser playback and mobile-layout checks remain pending
+because the host Mac is locked. Player code, CSS and deployment permissions are
+unchanged.
 
 The tenth showcase recording adds compact metrics: manual sample advancement,
 gap/empty modes, native actions, three palettes, 36 × 18 stacking and restoration
@@ -395,6 +397,21 @@ pending because the host Mac is locked; the player, CSS and deployment permissio
 are unchanged.
 
 ## Verified on macOS
+
+Swift syntax highlighting validation covers 375 release checks and 352 selected
+debug checks (one existing case-distinct-filename test is skipped in each
+configuration on this filesystem). Model/raster/hosted regressions cover the five
+syntax roles, custom/default/light/btop colors, malformed and incomplete Swift,
+Unicode grapheme boundaries and canonical document equality, parsed whitespace,
+64 KiB limits, deep input and real parser cancellation. Native horizontal arrows,
+Home/End, focus and offset survive theme, plain-paint and size changes; the link
+action remains attached. Independent review's document-equality finding was fixed
+and passed re-review. The full `Scripts/ci/verify.sh` gate passes: standalone
+release build, seventeen snapshots, and thirteen real terminal workflows with
+clean restoration. The existing Linux scroll-track fixture now observes press
+focus and release separately without changing expected offsets or deadlines.
+This is local macOS evidence; fresh Linux, browser playback and live Blink/SSH
+checks remain separate.
 
 Compact instrumentation validation covers 361 release checks and 338 selected
 debug checks (one existing case-distinct-filename test is skipped in each
@@ -782,6 +799,12 @@ overhead and does not measure SSH transport or Blink display latency.
 The initial demonstration slices are delivered. Portability verification adds CI and
 repeatable terminal checks without changing the public API or dependency pins.
 
+- Linux [run 37367526697](https://github.com/echoz/Chio/actions/runs/37367526697)
+  exposed a track-focus test ordering race: press/release in one input batch could
+  finish before or after native focus revealed the reserved bottom corner.
+  The fixture now observes press at offset (6, 1), then release at (6, 0), before
+  continuing the existing drag and focus assertions. Offsets and deadlines remain
+  exact; this changes test synchronization, not native scrolling behavior.
 - Ubuntu 24.04 ARM64, official `swift:6.4.0-noble` container: all 113 tests pass
   with `--no-parallel` (76 library and 37 dashboard). The debug and release
   dashboard builds pass. The tested release is a dynamically linked glibc ELF
@@ -1110,6 +1133,74 @@ must still demonstrate a missing reusable contract before adding public API.
     including expiry during resize. Its real terminal recording is in the gallery;
     fresh browser playback checks remain pending as recorded above.
 
+### Markdown syntax highlighting
+
+The bounded integration directly uses the [Tree-sitter 0.26.13 C runtime](https://github.com/tree-sitter/tree-sitter/tree/d97971e24500218865c05ed1febdee2acf41bae1)
+at revision `d97971e24500218865c05ed1febdee2acf41bae1` and the generated
+[tree-sitter-swift 0.7.4 C grammar](https://github.com/alex-pinkus/tree-sitter-swift/tree/82bb3a533e0801fd2bbaa11dc49676e10bf41948)
+at revision `82bb3a533e0801fd2bbaa11dc49676e10bf41948`. Parsing stays private to
+`MarkdownDocument` construction; the view consumes retained, immutable token
+ranges and authoritative parsed source. Only a case-insensitive `swift` first
+fence word enables classification. Unknown/unlabeled code and code larger than
+65,536 UTF-8 bytes remain plain. A deterministic 4,096-progress-checkpoint budget
+cancels parsing to a whole-block plain fallback without clock reads. The callback
+runs outside individual scanner operations: this is not a hard wall-time or
+memory guarantee. An iterative C tree cursor selects roles and slices the
+original UTF-8 source at grapheme-safe boundaries, preserving combining
+characters and emoji sequences. Complete strings, including interpolation,
+receive one string role. Malformed and partially recognized nodes retain literal
+source; the grammar may not cover every latest Swift feature. Document equality
+and hashing use language/text with canonical Unicode string semantics, excluding
+derived paint.
+
+Five `ChioTheme.syntax` colors identify keywords, types, strings, numbers, and
+comments. Plain identifiers, punctuation, and operators use ordinary foreground;
+syntax does not convey application status. `.codeHighlighting(.plain)` suppresses
+syntax paint without changing the code scroll subtree or link action. Existing
+`ChioTheme.Colors` Codable fields are unchanged. The report's existing Example
+workflow section includes a Swift fence; the existing Markdown gallery card is
+the demonstration destination.
+
+Both selected dependencies are MIT licensed and expose two C targets. The
+integration needs no SwiftTreeSitter wrapper, JavaScript runtime, Foundation,
+Apple UI dependency, or runtime grammar generation. Source inspection counted
+46 runtime files under `lib/src` (732,213 bytes), a generated grammar parser of
+23,127,367 bytes, and a 36,786-byte scanner. These are source sizes, not binary
+sizes. The grammar's ABI 14 is within the runtime's supported ABI range 13–15.
+Its SwiftPM manifest copies an unused query bundle; Chio loads no queries or
+resources, and a C-only target generates no Objective-C/Foundation resource accessor. The source
+audit does not establish compiled size, link compatibility, build time, or
+runtime cost.
+
+The earlier SwiftSyntax 604.0.0 candidate was rejected: a 128-level nested-array
+input terminated both the Chio path and a minimal direct-parser probe with
+SIGBUS, despite parser nesting limits of 64, 20, and 8. Source inspection found
+recursive lookahead paths outside that configured limit in
+[Lookahead.swift](https://github.com/swiftlang/swift-syntax/blob/050f1a346fbbac0ca2cfb15a95274f7bd1cf0ccf/Sources/SwiftParser/Lookahead.swift)
+and [Types.swift](https://github.com/swiftlang/swift-syntax/blob/050f1a346fbbac0ca2cfb15a95274f7bd1cf0ccf/Sources/SwiftParser/Types.swift#L1052).
+That candidate's recursion limit was insufficient to support the intact plain
+fallback contract. Splash was also considered, but stale maintenance and
+recursion concerns made it less suitable. The direct C integration keeps
+Tree-sitter's runtime and generated grammar private to this Swift-only slice.
+
+Local release probes on macOS ARM64 used an 8,100-byte, 270-line source.
+Thirty document constructions plus hashing averaged 1.40 ms with Swift
+classification and 0.019 ms with a plain language label. Ten fresh native raster
+renders of the retained document averaged 35.7 ms with syntax colors versus
+32.9 ms with plain paint. These are one local sample, not timing guarantees or
+measurements of a hosted frame update. The first build after adding the two C
+targets took 43.2 seconds with existing dependencies cached; a controlled clean
+build comparison was not performed. The ordinary production executable grew from
+49,610,928 to 54,168,848 bytes (about 4.56 MB, 9.2%) on this machine; these are
+unstripped local artifacts, not a cross-platform size guarantee.
+
+The full serial macOS gate passes; [verification](#verified-on-macos) records this
+integration's coverage. Fresh Linux/glibc verification and static-musl linking
+remain unverified. Existing static-musl blockers remain in the pinned SwiftTUI
+dependency; the source audit does not show that adding Tree-sitter resolves or
+worsens those blockers. Native tab-stop expansion and exact Unicode widths remain
+upstream limits; cmark's CRLF-to-LF normalization remains the parser contract.
+
 ### Remaining scope audit
 
 Chio's purpose is an opinionated, declarative presentation and interaction layer.
@@ -1119,7 +1210,7 @@ inventories below remain traceable; they no longer prescribe an execution order.
 
 | Previous item | Recommendation | Scope and extraction bar |
 | --- | --- | --- |
-| 12 — Markdown syntax highlighting | **Keep** | Improve the existing code-block renderer. Preserve source text, whitespace, native scrolling and a plain fallback. Keep tokenizer integration private; evaluate dependencies and static-link/build costs before choosing one. |
+| 12 — Markdown syntax highlighting | **Implemented for Swift; [verification](#verified-on-macos)** | Existing code blocks gain private Tree-sitter classification, theme syntax roles, and a plain fallback. Parsed source, whitespace, native scrolling and focus are retained; [dependency costs and portability limits](#markdown-syntax-highlighting) are documented. |
 | 13 — Active Markdown links | **Implemented; [verification](#verified-on-macos)** | Native inline links with an explicit application `OpenLinkAction`; passive existing initializer, intact rich labels, native focus/wrapping and themed feedback. No Chio browser, URL launcher or automatic fetching. |
 | 14 — btop theme/metrics and 16 — compact panels/meters | **Implemented together** | `ChioTheme.btop`, optional group border titles and measurement progress paint are composed in `--metrics`. Fixed local values, native controls/layout; no metrics service, sampler, scheduler or btop model. |
 | 15 — Sparklines/history graphs | **Implemented** | Passive `Sparkline` over native Canvas: finite readings, nil gaps, automatic/fixed scaling, extrema-preserving narrow reduction and accessible summary. Applications own collection, retention, clocks, units and thresholds; `--metrics` supplies manual samples. |
@@ -1139,8 +1230,9 @@ inventories below remain traceable; they no longer prescribe an execution order.
    underneath; do not add a separate document navigation system.
 3. Delivered one compact btop-inspired composition and a passive history graph
    using native drawing. Applications provide samples and timing. The shared
-   `--metrics` example demonstrates all treatments. Markdown syntax highlighting
-   follows as a separate bounded improvement after its dependency evaluation.
+   `--metrics` example demonstrates all treatments. Swift-only Markdown syntax
+   highlighting is also delivered in the existing report, with dependency costs
+   and source/layout/native-input checks recorded above.
 4. Validate a dense list/detail composition using existing components. Defer a
    general master/detail abstraction until a second use establishes the contract.
 5. Explore the bounded read-only diff, including basic hunk navigation. Review

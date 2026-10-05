@@ -91,16 +91,16 @@ struct MarkdownDocumentTests {
     @Test("Fenced code preserves indentation, blank lines, and literal punctuation")
     func fencedCode() {
         let document = MarkdownDocument("```swift\n  let x = \"--\"\n\n    print(x)\n```\n")
-        #expect(document.blocks == [.code(
+        #expect(document.blocks == [.code(MarkdownCode(
             language: "swift", text: "  let x = \"--\"\n\n    print(x)\n"
-        )])
+        ))])
     }
 
     @Test("Unlabeled fences and indented code share parsed semantics and literal whitespace")
     func unlabeledCode() {
         let fenced = MarkdownDocument("```\nlet x = 1\n\n  end\n```\n")
         let indented = MarkdownDocument("    let x = 1\n\n      end\n")
-        #expect(fenced.blocks == [.code(language: "", text: "let x = 1\n\n  end\n")])
+        #expect(fenced.blocks == [.code(MarkdownCode(language: "", text: "let x = 1\n\n  end\n"))])
         #expect(indented == fenced)
         #expect(Set([fenced, indented]).count == 1)
     }
@@ -174,6 +174,15 @@ struct MarkdownDocumentTests {
         #expect(MarkdownDocument("**same**") == MarkdownDocument("__same__"))
         #expect(MarkdownDocument("same") != MarkdownDocument("**same**"))
         #expect(MarkdownDocument("# Title") != MarkdownDocument("## Title"))
+    }
+
+    @Test("Cached token positions preserve canonical Unicode document equality")
+    func codeEquality() {
+        let composed = MarkdownDocument("```swift\nlet café = 1\n```\n")
+        let decomposed = MarkdownDocument("```swift\nlet cafe\u{301} = 1\n```\n")
+        #expect(composed == decomposed)
+        #expect(Set([composed, decomposed]).count == 1)
+        #expect(composed != MarkdownDocument("```swift\nlet café = 2\n```\n"))
     }
 
     private func paragraphSpans(_ source: String) -> [MarkdownDocument.Span] {

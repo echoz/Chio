@@ -16,7 +16,7 @@ public struct MarkdownDocument {
         case paragraph([Span])
         case list([Item])
         case quote([Block])
-        case code(language: String, text: String)
+        case code(MarkdownCode)
         case table(Table)
         case rule
         case fallback(String)
@@ -117,7 +117,7 @@ private extension MarkdownDocument {
         case let quote as Markdown.BlockQuote:
             return [.quote(blockChildren(of: quote))]
         case let code as Markdown.CodeBlock:
-            return [.code(language: code.language ?? "", text: code.code)]
+            return [.code(MarkdownCode(language: code.language ?? "", text: code.code))]
         case is Markdown.ThematicBreak:
             return [.rule]
         case let html as Markdown.HTMLBlock:
