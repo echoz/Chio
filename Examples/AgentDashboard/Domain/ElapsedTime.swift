@@ -1,6 +1,6 @@
-import SwiftTUIViews
+import SwiftTUI
 
-/// Elapsed time accumulated across explicitly started and paused intervals.
+/// Example-owned elapsed time accumulated across explicitly started and paused intervals.
 ///
 /// The caller supplies instants from the same monotonic clock lifetime, in
 /// chronological order for transitions. Queries do not record observations.
@@ -9,7 +9,7 @@ import SwiftTUIViews
 ///
 /// This value neither reads a clock nor schedules updates. Running anchors are
 /// process-relative, so the value has no persistence representation.
-public struct ElapsedTime {
+struct ElapsedTime {
     private let accumulated: Duration
     private let phase: Phase
 
@@ -19,7 +19,7 @@ public struct ElapsedTime {
     }
 
     /// Starts paused with zero elapsed time.
-    public init() {
+    init() {
         accumulated = .zero
         phase = .paused
     }
@@ -29,14 +29,14 @@ public struct ElapsedTime {
         self.phase = phase
     }
 
-    public var isRunning: Bool {
+    var isRunning: Bool {
         if case .running = phase { return true }
         return false
     }
 
     /// Returns accumulated time plus the current running interval.
     /// An instant earlier than its running anchor contributes zero.
-    public func elapsed(at instant: MonotonicInstant) -> Duration {
+    func elapsed(at instant: MonotonicInstant) -> Duration {
         guard case let .running(since) = phase, instant >= since else {
             return accumulated
         }
@@ -44,20 +44,20 @@ public struct ElapsedTime {
     }
 
     /// Starts another interval, retaining accumulated time. Already running is inert.
-    public func resumed(at instant: MonotonicInstant) -> Self {
+    func resumed(at instant: MonotonicInstant) -> Self {
         guard !isRunning else { return self }
         return Self(accumulated: accumulated, phase: .running(since: instant))
     }
 
     /// Accumulates the current interval and pauses.
     /// Already paused, or an instant earlier than the running anchor, is inert.
-    public func paused(at instant: MonotonicInstant) -> Self {
+    func paused(at instant: MonotonicInstant) -> Self {
         guard case let .running(since) = phase, instant >= since else { return self }
         return Self(accumulated: elapsed(at: instant), phase: .paused)
     }
 
     /// Clears accumulated time and returns to paused.
-    public func resetting() -> Self { Self() }
+    func resetting() -> Self { Self() }
 }
 
 extension ElapsedTime: Hashable {}

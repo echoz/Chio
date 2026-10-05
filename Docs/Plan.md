@@ -5,7 +5,8 @@ creation, Markdown run reports, a command palette using simulated agents,
 a focused searchable-choice form, native password/multiline text entry,
 confirmation with transient feedback, file selection, contextual keyboard help,
 themed native tabs, finite-result pagination, themed native scrolling, and
-expandable disclosure groups, grouped settings forms, and independent stopwatch/countdown controls.
+expandable disclosure groups, grouped settings forms, and duration labels with
+example-owned timekeeping.
 They establish the design direction, not broad parity with Charm's components.
 Accepted contracts and
 ownership live in [Design.md](Design.md); commands and interaction instructions
@@ -169,9 +170,9 @@ live in [the examples guide](Examples.md); component recipes live in
   absence. The [usage guide](Usage.md#file-selection) records the source migration;
   the [value contracts](Design.md#value-contracts) describe the accepted changes.
 
-- `ElapsedTime` accumulates explicit monotonic intervals through immutable
-  pause/resume/reset transitions; `DurationText` supplies integer rounding,
-  compact formatting and themed accessibility labels. The `--timers` example
+- `DurationText` supplies integer rounding, compact formatting and themed
+  accessibility labels. `ElapsedTime` is now an internal example helper, after
+  narrowing the original public timer slice to presentation. The `--timers` example
   uses native scheduling, retains independent clocks and focus through responsive
   layout changes, and handles completion with a current-value check. No clock
   service, event loop or dependency is added.
@@ -231,7 +232,7 @@ come from Chio's original brief; they are not all standalone Bubbles packages.
 | Alerts, confirmation dialogs and sheets | Delivered `ChioPromptStyle` for alerts and confirmation dialogs; native covers demonstrated | [Native presentation][native-presentation] and [PromptStyle][native-prompt] | Native focus and dismissal retained; header paint and arbitrary action wrapping remain native/app concerns; no Chio sheet style |
 | Command palette | Delivered `ChioPaletteStyle`, filtering, disabled items and dashboard actions | Native action scopes, command registration and palette presentation | Surrounding palette chrome has an upstream styling limit; this is not a new Chio command system |
 | Tabs | `ChioTabViewStyle` supplies distinct selection/focus paint and bounded narrow overflow; `--tabs` exercises retained page values | [TabView][native-tabs] and `TabViewStyle` own navigation, selection, routing and dormancy | No per-option disabled state or persistent wheel-driven overflow scroll; native lifecycle limits apply |
-| Timer and stopwatch | `ElapsedTime` explicit-time transitions and themed `DurationText` | [TimelineView][native-timeline] and monotonic instants | Focused stopwatch/countdown example; application owns limits and expiry effects |
+| Duration labels | Themed `DurationText`; timekeeping stays internal to the `--timers` example | Native text, [TimelineView][native-timeline] and monotonic instants | No public stopwatch/countdown state machine; application owns measurement, limits and expiry |
 
 ### Documents
 
@@ -374,7 +375,12 @@ twelve real pseudo-terminal workflows passed. Explicit clock tests cover dispatc
 paused intervals, rapid input, expiry during resize and reset/restart; a separate
 live test proves native timeline advancement. Independent review findings were
 resolved without changing test deadlines. This is local macOS evidence, not a new
-live SSH/device measurement or a completed Linux run for the timer slice.
+live SSH/device measurement. The timer slice at `ac29db9` subsequently passed
+both macOS and Linux [CI](https://github.com/echoz/Chio/actions/runs/37348496712).
+The later move of timekeeping into the example passed all 18 affected tests in
+both debug and release, a standalone release build and the native timer terminal
+workflow. Eight before/after frames match exactly, so the recording was reused.
+The scope and public-access correction received independent read-only review.
 
 
 Swift 6.4, with SwiftTUI pinned at
@@ -959,13 +965,14 @@ Shipping this correction requires choosing a reproducible patched SwiftTUI
 dependency or receiving the fix upstream. Chio's published-source pin remains
 unchanged; a local SwiftPM edit is only integration evidence, not distribution.
 
-## Next component slices
+## Component scope and priorities
 
-The coverage audit is complete and the first eleven slices are implemented.
-Continue the remaining queue in the numbered order below; the btop-inspired
-work follows the previously identified form, timing and document work.
-Public APIs remain open to evidence from focused examples. Broaden reusable component coverage
-before treating the framework as ready for release preparation.
+The first eleven entries below record delivered work, with the timer slice now
+narrowed to public duration labels and internal example timekeeping. They are
+history, not a template for promoting each demonstration into a framework API.
+The remaining-scope audit supersedes the old instruction to implement items
+12–19 in order. Its recommendations are proposals for the user to review; this
+audit does not start the next feature.
 
 1. **Richer choice fields — implemented.** Prove searchable single-choice form composition and
    a choose-many workflow using native `List` selection. Reuse `SearchableList`
@@ -1036,57 +1043,57 @@ before treating the framework as ready for release preparation.
     committed versus edited values, Save/Cancel and compact scrolling. Add a
     reusable abstraction only if composition demonstrates a missing contract.
 
-11. **Timer and stopwatch presentation — implemented.** Immutable `ElapsedTime`
-    and themed `DurationText` compose with native scheduling. The focused `--timers`
+11. **Duration presentation — implemented; timekeeping is example-only.**
+    Public `DurationText` composes with application-owned elapsed-time values and
+    native scheduling. The original public `ElapsedTime` helper has moved into
+    the example target. The focused `--timers`
     example proves independent stopwatch/countdown actions, completion and reset,
     including expiry during resize. Its real terminal recording is in the gallery;
     fresh browser playback checks remain pending as recorded above.
 
-12. **Markdown syntax highlighting — queued.** Evaluate a suitable highlighter
-    and its dependency/static-link costs; retain native text composition,
-    whitespace, width and deterministic rendering.
+### Remaining scope audit
 
-13. **Active Markdown links — queued.** Define link activation and opening policy,
-    preserve native focus/input, and verify terminal behavior without automatic
-    navigation or resource fetching.
+Chio's purpose is an opinionated, declarative presentation and interaction layer.
+A matching item in Charm's catalog, or a demo that could be written, is insufficient
+reason to add a public type. These references retain the old item numbers so the
+inventories below remain traceable; they no longer prescribe an execution order.
 
-14. **btop-inspired theme and compact metrics example — queued.** Apply existing
-    semantic colors, spacing, groups, progress tracks, rows and key hints to a
-    small local example before deciding additional theme tokens.
+| Previous item | Recommendation | Scope and extraction bar |
+| --- | --- | --- |
+| 12 — Markdown syntax highlighting | **Keep** | Improve the existing code-block renderer. Preserve source text, whitespace, native scrolling and a plain fallback. Keep tokenizer integration private; evaluate dependencies and static-link/build costs before choosing one. |
+| 13 — Active Markdown links | **Keep as a bounded later enhancement** | Use native links with explicit application opening policy. Preserve destinations and themed focus; no Chio browser, URL launcher or automatic fetching. Bundle with document polish when a consumer needs activation. |
+| 14 — btop theme/metrics and 16 — compact panels/meters | **Combine into one visual-polish slice** | Start with fixed example values and existing styles. Consider a compact preset, border titles and neutral utilization paint only where they improve actual layouts. No metrics service, system sampler, scheduler or btop-specific model. |
+| 15 — Sparklines/history graphs | **Keep; strongest new component candidate** | Passive single-series presentation over native Canvas adds reusable value. Establish sample/gap validity, scaling, narrow-width reduction and accessible summaries. Applications own collection, retention, clocks, units and thresholds. Prove it in the compact example. |
+| 17 — Dense sorted inbox/detail layout | **Example composition first** | Compose existing lists/tables, tabs, Markdown and adaptive native layouts. Application code owns sort policy, sections, selected IDs and preview placement. Extract only a repeated UI interaction contract; no inbox, sorter or review coordinator API. |
+| 18 — Diff reading | **Keep as a later bounded prototype** | A read-only diff is a meaningful presentation gap, but specialized and costly. Prove gutters, uneven sides, Unicode/wrapping and measured document bounds before committing to a public view/data API. Git/JJ/Sapling ingestion and repository operations stay outside Chio. |
+| 19 — Review navigation and annotations | **Fold navigation proof into 18; drop annotations from the library roadmap** | Use native logical-ID reveal in the example. Notes can compose the existing editor. Search policy, review sessions, note storage, persistence and agent protocols are application concerns, not new Chio subsystems. |
 
-15. **Sparklines and history graphs — queued.** Add passive single-series
-    presentation over native Canvas with explicit sample, scaling and reduction
-    contracts. Applications retain data collection and timing ownership.
+**Recommended sequence for review:**
 
-16. **Compact panel and meter treatments — queued.** Extend existing styles with
-    border titles and inline measurement presentation where the metrics example
-    demonstrates value. Keep utilization meaning distinct from completion.
+1. Fix regressions and prioritize limitations that impair shipped presentation:
+   table border/background paint, focus contrast and narrow layout/input behavior.
+   Resolve changes at their owning layer; a SwiftTUI pin/fork change requires a
+   reproducible dependency decision and integration evidence, not a local patch
+   hidden inside Chio. Performance and Linux portability remain quality work.
+2. Try one compact btop-inspired composition, then add a passive history graph
+   where native primitives alone do not supply the reusable presentation. Keep
+   this one example; do not create a new demo application for every treatment.
+3. Improve Markdown code presentation; add opt-in links when useful to an actual
+   reading workflow, subject to native interaction and dependency findings.
+4. Validate a dense list/detail composition using existing components. Defer a
+   general master/detail abstraction until a second use establishes the contract.
+5. Explore the bounded read-only diff, including basic hunk navigation. Review
+   its scope again before promoting models or behavior into the public library.
 
-17. **Dense sorted collection workflow — queued.** Prove application-owned
-    sorting and stable native selection using existing lists/tables. Use a local
-    gh-dash-inspired inbox with sections, counts and a right/bottom Markdown
-    preview. Verify filter/sort, preview show/hide, empty states and retained
-    selection/query/focus across resizing before adding collection or master/detail
-    APIs. This also covers btop's dense-row direction.
+The coverage map's other gaps—completion/history, async choices, wizards, broader
+file selection, tree adapters, status queues and more themes—remain observations,
+not promised work. Add them only for a concrete consumer need. No further timer,
+stopwatch, monitoring, workflow-engine or annotation subsystem is planned.
 
-18. **Diff reading — queued.** Start with a fixed two-file, three-hunk review
-    example. Define immutable normalized content and logical line/hunk identities;
-    compose old/new gutters, context/additions/removals and wide split/narrow
-    unified rows under one native vertical scroll owner. Verify uneven sides,
-    blank lines, tabs, wide/combining text, wrapping and missing final newlines.
-    Measure the documented changeset sizes before deciding a public `DiffView`.
-    Reuse item 12's highlighting contract; no second highlighter or renderer.
-
-19. **Review navigation and annotations — queued.** Add next/previous hunk and
-    content-match reveal, distinct from filtering the file list. Prove native
-    focus and editor-safe shortcuts, stable logical anchors through layout/theme
-    changes and authoritative application bindings. Begin with read-only notes;
-    a note editor composes existing controls. Persistence, ingestion, VCS actions
-    and agent-sidecar protocols remain application concerns.
-
-Each family should have a small focused example that a consumer can run directly,
-public usage documentation, relevant model/raster/hosted-input regressions, and a
-release terminal check, followed by the [demo-site completion workflow](#demo-site).
+Each selected addition should be proved in a small runnable example (reuse an
+existing example when it fits), with public usage documentation only for actual
+public API, relevant model/raster/hosted-input regressions and a release terminal
+check, followed by the [demo-site completion workflow](#demo-site).
 Keep the dashboard as an integration example. A component
 counts as delivered only for its documented and exercised scope; inheritance of
 an upstream API or a themed static screenshot is insufficient evidence of all
@@ -1124,16 +1131,16 @@ The pin's octant mode currently uses braille coverage, so expose only verified
 glyph treatments. Application code owns sample collection, clocks, retention,
 units and alert thresholds; Chio presents values without reading system metrics.
 
-When the queue reaches item 14, work through this sequence:
+If the combined compact-presentation proposal is selected, bound it as follows:
 
 1. Compose one compact metrics example from existing groups, progress tracks,
    rows and hints, using fixed local values and a btop-inspired theme prototype.
    Compare it with the default palette and resize it before deciding new tokens.
-2. Add a passive single-series history view to that example through an immutable
-   native drawing value. Define missing/invalid values, fixed versus automatic
+2. Evaluate a passive single-series history view in that same example through
+   native drawing. Define missing/invalid values, fixed versus automatic
    scaling and overflow/reduction policy before fixing its public API. Verify
    deterministic output and accessible textual summaries alongside the graph.
-3. Add compact border-title and inline-meter treatments where the example
+3. Extract compact border-title and inline-meter treatments only where the example
    demonstrates value; apply them to existing styles and verify both themes.
 4. Follow with a focused sorted table/list workflow if the example establishes
    a reusable interaction need.
@@ -1161,7 +1168,7 @@ viewer with a continuous multi-file stream, not a general editor.
 | Compact borders, status treatments and dense spacing | Existing theme/style families | Fold into items 14, 16 and 17. Native table border/focus paint limitations remain; do not invent a second table renderer. |
 | File navigation, file headers/stats and note editing | Existing search/list/disclosure, text, forms and native editor | Keep row content passive and editors outside result rows; authored file IDs and notes remain application-owned. |
 | Unified/split diffs, aligned old/new line gutters and context | Meaningful reusable presentation gap | Item 18: normalized immutable input, semantic change styling and native text/scrolling. Added/removed content is not automatically success/error status. One vertical owner keeps split rows aligned without synchronizing independent scroll views. |
-| Hunk navigation, logical review position and content-match reveal | Missing composed review behavior; native ID-based `ScrollViewReader.scrollTo` supplies reveal | Item 19: logical identities and match ranges independent of raw cell offsets, width or wrapping. Scope shortcuts so search/note editors receive ordinary text. |
+| Hunk navigation, logical review position and content-match reveal | Example composition first; native ID-based `ScrollViewReader.scrollTo` supplies reveal | Fold item 19 into the bounded item 18 prototype. Keep logical identities and match ranges independent of raw cells; scope shortcuts so editors receive ordinary text. Extract only demonstrated shared UI behavior. |
 | Syntax-colored code and active links | Existing items 12 and 13 | Reuse those decisions, dependency analysis and native text/link APIs. |
 | GitHub requests/actions, Git/JJ/Sapling, patch ingestion, file watching, shell/editor launch and agent sessions | Application integration | Local fixtures can validate the UI without implementing these systems. Chio does not promise a full Hunk clone. |
 
@@ -1182,8 +1189,9 @@ changeset requires measured allocation/rendering cost and native windowing evide
 source inspection and a small screenshot do not establish virtualization,
 selection/copy, large-document performance or product parity. Scroll edge/cell
 commands target the first scroll view in a reader scope, so preview and diff
-commands need appropriately scoped native readers. Preserve the existing queue
-order; these additions do not replace timing, Markdown or btop work.
+commands need appropriately scoped native readers. This inventory describes
+potential proofs, not a build order or a promise of Hunk feature parity. The
+remaining-scope audit above governs prioritization; annotations are application work.
 
 [native-canvas]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/Canvas.swift
 [native-canvas-grid]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIPrimitives/Draw/CanvasGrid.swift

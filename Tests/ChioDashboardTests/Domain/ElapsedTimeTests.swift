@@ -1,4 +1,4 @@
-import Chio
+@testable import ChioDashboard
 import SwiftTUIViews
 import Testing
 

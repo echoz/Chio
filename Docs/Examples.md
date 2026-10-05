@@ -279,6 +279,8 @@ the upstream conversion still needs correction for actual 256-color terminals.
 COLORTERM=truecolor swift run -c release chio-dashboard --timers
 ```
 
+This demonstrates Chio's `DurationText` presentation. Timekeeping and controls
+are example-owned application code, not a public stopwatch component.
 Run a stopwatch and a 20-second countdown independently. Tab moves between native
 buttons; Return or Space activates them. `s` starts, pauses or resumes the stopwatch,
 `c` does the same for the countdown, and `r` resets both to their paused initial
@@ -288,7 +290,7 @@ and Ctrl-Q quits. These clocks run only in this local process, without alarms or
 background jobs. Both panels and their controls fit 36 × 18.
 
 Use `--timers --snapshot` for a deterministic initial frame.
-See [the timing API](Usage.md#timers-and-stopwatches).
+See [duration labels](Usage.md#duration-labels).
 
 ## Gallery and recordings
 

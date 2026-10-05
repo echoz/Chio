@@ -20,6 +20,15 @@ One SwiftPM package exports the `Chio` library and `chio-dashboard` executable.
 Application content and layout use SwiftTUI directly. No additional renderer,
 state store, or focus manager is part of this design.
 
+A public addition must supply reusable presentation or UI interaction: themes,
+readability, focus/selection feedback, filtering, editing or navigation. An
+example's domain model does not belong in Chio merely because it is immutable,
+testable or useful to that example. Keep clocks, monitoring, sorting policy,
+review state and external operations with the application. Extract shared UI
+behavior only when composition demonstrates a concrete missing contract. The
+coverage inventory records gaps; it is not a commitment to implement every entry.
+Remaining features are proposals for review, not an automatic completion queue.
+
 ## Value contracts
 
 Owned domain values and view configuration have `let` stored properties and pure
@@ -219,20 +228,7 @@ At widths below 88 cells the dashboard stacks its sections; below 26 rows it
 prioritizes the list and essential shortcuts. The full layout is intended for
 100 × 30 or larger, with a usable compact layout at 36 × 18.
 
-## Elapsed time and countdown presentation
-
-`ElapsedTime` is an immutable accumulation of explicitly observed running
-intervals. It starts paused at zero; `resumed(at:)`, `paused(at:)` and `resetting()`
-return replacements. Repeated resume or pause is inert. A query before the running
-anchor contributes no additional time; a pause before that anchor leaves it running.
-Queries do not record observations, so callers supply chronological transition
-instants from the same clock lifetime. Swift `Duration` arithmetic must remain
-representable. Time comes from instants, never from counting rendered ticks.
-
-The value is Hashable and Sendable. It intentionally has no Codable conformance:
-SwiftTUI's `MonotonicInstant` is process-relative and has no portable persistence
-meaning. Applications that need persistence own a separate durable contract rather
-than serializing a live clock anchor. No clock, task, or callback lives in this value.
+## Duration presentation and example-owned timekeeping
 
 `DurationText(elapsed:)` rounds down to whole seconds;
 `DurationText(remaining:)` rounds positive fractions up, so zero is shown only at
@@ -241,15 +237,16 @@ wrap, the theme's accent role, and a spoken accessibility label. Inputs must be
 nonnegative and at most `Duration.seconds(Int64.max)`; the bound is checked before
 extracting components. Integer formatting retains attosecond rounding boundaries.
 
-Applications own countdown limits, remaining-time derivation and expiry effects.
-Compare elapsed with the limit before subtracting. Native `TimelineView` owns
-scheduling and cancellation. Keep the schedule stable across renders and pause it
-when no clock is running; avoid recreating a periodic schedule's default `.now()`
-origin in a body. The focused example uses a one-second native animation schedule,
-with separate stopwatch and countdown values and one explicit application clock
-boundary shared by observations and action dispatch. Countdown expiry pauses its
-value; it triggers no alarm or background operation. Reset returns to paused zero.
-Theme and size changes retain both values above the responsive native layout.
+Chio owns that presentation, while applications own time measurement, pause/resume,
+countdown limits and expiry effects. SwiftTUI owns scheduling and cancellation.
+The `--timers` example retains its internal immutable
+[`ElapsedTime`](../Examples/AgentDashboard/Domain/ElapsedTime.swift) helper and
+native timeline to demonstrate duration labels. Its clock is process-relative,
+so the example helper has no persistence representation. It is not part of the
+Chio product. Native schedules remain stable across renders and pause when idle;
+recreating a periodic schedule with its default current-time origin would restart
+its driver. This narrows the original timer slice: public timekeeping was
+unnecessary framework scope, even though the example and its tests remain useful.
 
 ## Contextual keyboard help
 
