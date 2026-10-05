@@ -90,6 +90,10 @@ struct InboxExampleView {
     }
     private var compact: Bool { terminalSize.height < 26 || terminalSize.width < 88 }
     private var inlinePreview: Bool { !compact && showsPreview }
+    private var queueWidth: Int? {
+        // Two outer insets and the two-cell pane gap leave the usable width.
+        inlinePreview ? max(40, (terminalSize.width - 4) * 2 / 5) : nil
+    }
     private var items: [ReviewItem] {
         ReviewItem.ordered(ReviewItem.examples.filter(queue.contains), by: order)
     }
@@ -216,8 +220,8 @@ extension InboxExampleView: View {
                         .onSearchFocusChange { isSearching = $0 }
                         .onResultKeyPress(perform: handleKey)
                 }
-                .frame(width: inlinePreview ? 40 : nil)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .frame(width: queueWidth)
                 if inlinePreview {
                     GroupBox("Preview") {
                         ScrollView {

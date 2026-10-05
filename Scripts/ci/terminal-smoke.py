@@ -92,6 +92,8 @@ def screen(output):
 
 def run(binary, choices=False, text_entry=False, feedback=False, files=False, keyboard_help=False, tabs=False, pagination=False, viewport=False, tree=False, forms=False, timers=False, metrics=False, inbox=False):
     global WIDTH, HEIGHT
+    if inbox:
+        WIDTH, HEIGHT = 36, 18
     master, slave = pty.openpty()
     process = None
     output = bytearray()
@@ -154,6 +156,24 @@ def run(binary, choices=False, text_entry=False, feedback=False, files=False, ke
 
         if inbox:
             until("12 of 12 items")
+            WIDTH, HEIGHT = 240, 50
+            fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", HEIGHT, WIDTH, 0, 0))
+            process.send_signal(signal.SIGWINCH)
+            until("Preview")
+            # PTY reads can split a rendered row after its heading. Wait for
+            # the right corner before checking the completed pane geometry.
+            deadline = time.monotonic() + 15
+            while time.monotonic() < deadline:
+                heading = next((line for line in screen(output).splitlines() if "╭ Queue" in line and "╭ Preview" in line), "")
+                if heading.rfind("╮") == 238:
+                    break
+                receive()
+            else:
+                raise AssertionError("Wide inbox border never reached the right edge")
+            queue_start, queue_end, preview_start = heading.index("╭"), heading.index("╮"), heading.rindex("╭")
+            assert queue_end - queue_start + 1 == 94, "Queue did not expand after compact launch"
+            assert preview_start - queue_end - 1 == 2, "Unexpected blank gap between inbox panels"
+            assert heading.rindex("╮") == 238, "Preview did not fill the expanded terminal"
             send(b"\x1b[B", "#215 · SwiftTUI")
             send(b"\x13", "Repository")
             until("#215 · SwiftTUI")

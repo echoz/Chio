@@ -95,7 +95,9 @@ Filtering or changing queue selects the first match if the old selection disappe
 An empty result set has no preview and cannot open a reader.
 
 At 88 × 26 and larger, a passive Markdown preview sits beside the dense list.
-Ctrl-P toggles it. Smaller terminals use the whole width for the list. Enter opens
+Both panes expand as the terminal widens, with more space reserved for reading.
+Ctrl-P toggles the preview; hiding it or using a smaller terminal gives the list
+the whole width. Enter opens
 a full-screen reader at any size; from search, the first Enter returns to results
 and the second opens the selected review. In the reader, arrows and Home/End
 scroll, Tab reaches code, and Escape restores the filtered list and native focus.

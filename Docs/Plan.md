@@ -413,8 +413,8 @@ are unchanged.
 
 The eleventh showcase recording adds the inbox: selection, repository ordering,
 preview visibility, batched search/open, native reader Home/End, theme changes,
-36 × 18 resizing, queue changes and empty-result recovery. The 100 × 30 release
-session restores terminal modes on exit. Its published excerpt lasts 21 seconds
+36 × 18 and 240 × 50 resizing, queue changes and empty-result recovery. The
+100 × 30 release session restores terminal modes on exit. Its published excerpt lasts 25 seconds
 and ends on the wide inbox, before shutdown diagnostics. Its preview was
 visually inspected; site assembly, eleven-card navigation/assets, image dimensions,
 event order, resizing/restoration and documentation links pass. Browser playback
@@ -422,6 +422,18 @@ and mobile-layout checks remain pending because the host Mac is locked. Player
 code, CSS and deployment permissions are unchanged.
 
 ## Verified on macOS
+
+The inbox resize correction passes all six focused inbox tests in release and
+debug, including sixteen raster cases across both themes at 36–240 columns.
+The new hosted regression starts at 36 × 18, types a filter, expands to 240 × 50,
+continues typing, hides/restores the preview and shrinks again. Painted borders
+prove a 94-column queue, exactly two cells between panes, and a preview reaching
+the content edge; query, selection and exact editor focus remain intact. The
+standalone release build and updated inbox PTY workflow also pass, including
+compact startup, the expanded geometry and exact terminal-mode restoration.
+Independent source review found no actionable issues. This focused correction
+reuses the broader baseline evidence below; the full local suite was not rerun.
+Fresh Linux CI, browser playback and live-device verification remain separate.
 
 Dense inbox validation covers 385 release checks and 362 selected debug checks
 (one existing case-distinct-filename test is skipped in each configuration on this

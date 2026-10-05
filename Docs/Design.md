@@ -699,7 +699,12 @@ Substring search preserves the chosen order, unlike fuzzy relevance ranking.
 
 One list stays mounted while its optional sibling preview appears or disappears.
 The preview appears at 88 columns and 26 rows or larger unless the user hides it.
-It is passive: native focus and input remain in the controls and list. Enter opens
+The queue takes roughly two fifths of the available pane width, with a 40-column
+minimum, and the preview fills the remainder across a two-cell gap. The fixed
+queue allocation wraps its flexible content so wider terminals grow the painted
+panel rather than adding invisible space beside it. Without a preview the queue
+fills the available width. The same modifier chain is retained through resizing.
+The preview is passive: native focus and input remain in the controls and list. Enter opens
 the complete reader at every size. A narrow or short terminal devotes its space
 to the list; widening an open reader does not dismiss it. Escape restores native
 background focus. The cover and its pending presentation consume background

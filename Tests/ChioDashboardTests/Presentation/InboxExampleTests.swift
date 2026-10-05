@@ -7,10 +7,11 @@ import Testing
 @Suite(.serialized)
 struct InboxExampleTests {
     @Test("Inbox retains native controls and hints at both preview thresholds and compact sizes",
-          arguments: [CellSize(width: 100, height: 30), CellSize(width: 88, height: 26),
+          arguments: [CellSize(width: 240, height: 50), CellSize(width: 160, height: 40),
+                      CellSize(width: 100, height: 30), CellSize(width: 88, height: 26),
                       CellSize(width: 87, height: 26), CellSize(width: 88, height: 25),
                       CellSize(width: 60, height: 22), CellSize(width: 36, height: 18)], [false, true])
-    func layout(size: CellSize, light: Bool) {
+    func layout(size: CellSize, light: Bool) throws {
         let rendered = DefaultRenderer().render(
             InboxExampleView(light: light).environment(\.terminalSize, size),
             proposal: .init(width: size.width, height: size.height)
@@ -28,10 +29,69 @@ struct InboxExampleTests {
         let hasPreview = size.width >= 88 && size.height >= 26
         #expect(text.contains("Preview") == hasPreview)
         #expect(text.contains("^P preview") == hasPreview)
+        if hasPreview {
+            let panels = try #require(inboxPanelGeometry(rendered.rasterSurface.lines))
+            #expect(panels.gap == 2)
+            #expect(panels.previewEnd == size.width - 2)
+            #expect(panels.queueWidth >= (size.width >= 160 ? 60 : 40))
+            #expect(panels.previewWidth > panels.queueWidth)
+        }
         let theme: ChioTheme = light ? .light : .default
         #expect(rendered.rasterSurface.cells.flatMap { $0 }.contains {
             $0.style?.foregroundColor == theme.colors.accent
         })
+    }
+
+    @Test("Opening compact then widening fills adjacent panels and retains live search focus")
+    func compactLaunchAndWideResize() async throws {
+        try await withInboxExample(initialSize: .init(width: 36, height: 18)) { session, surface, recorder in
+            let ready = try await inboxReady(recorder)
+            #expect(!ready.inboxContains("Preview"))
+            session.sendInput(Array("/select".utf8))
+            let editing = try await recorder.wait(after: ready.sequence, description: "compact startup accepts search text") {
+                $0.inboxQuery("select") && $0.inboxEditorFocused && $0.inboxSelected(214)
+            }
+            surface.updateSurfaceSize(.init(width: 240, height: 50))
+            session.requestSurfaceRefresh()
+            let wide = try await recorder.wait(after: editing.sequence, description: "wide terminal restores the preview without replacing search") {
+                $0.raster.size == CellSize(width: 240, height: 50) && $0.inboxContains("Preview")
+                    && $0.inboxQuery("select") && $0.inboxSelected(214)
+                    && $0.focusedIdentity == editing.focusedIdentity
+            }
+            let panels = try #require(inboxPanelGeometry(wide.raster.lines))
+            #expect(panels.queueWidth == 94)
+            #expect(panels.gap == 2)
+            #expect(panels.previewEnd == 238)
+            #expect(wide.raster.lines.contains {
+                $0.contains("›") && $0.contains("Keep selection when search changes")
+            })
+            session.sendInput(Array("ion".utf8))
+            let typed = try await recorder.wait(after: wide.sequence, description: "the expanded search field still accepts input") {
+                $0.inboxQuery("selection") && $0.inboxSelected(214) && $0.focusedIdentity == editing.focusedIdentity
+            }
+            session.send(.key(.character("p"), modifiers: .ctrl))
+            let hidden = try await recorder.wait(after: typed.sequence, description: "hiding preview gives its width back to the same queue") {
+                !$0.inboxContains("Preview") && $0.inboxQuery("selection")
+                    && $0.focusedIdentity == editing.focusedIdentity
+            }
+            let heading = try #require(hidden.raster.lines.first { $0.contains("╭ Queue") })
+            let cells = Array(heading)
+            #expect(cells.firstIndex(of: "╭") == 1)
+            #expect(cells.firstIndex(of: "╮") == 238)
+            session.send(.key(.character("p"), modifiers: .ctrl))
+            let shown = try await recorder.wait(after: hidden.sequence, description: "showing preview restores adjacent panels and retains editor focus") {
+                $0.inboxContains("Preview") && $0.inboxQuery("selection")
+                    && $0.inboxSelected(214) && $0.focusedIdentity == editing.focusedIdentity
+            }
+            #expect(inboxPanelGeometry(shown.raster.lines)?.gap == 2)
+            surface.updateSurfaceSize(.init(width: 36, height: 18))
+            session.requestSurfaceRefresh()
+            _ = try await recorder.wait(after: shown.sequence, description: "shrinking again preserves search and selection") {
+                $0.raster.size == CellSize(width: 36, height: 18) && !$0.inboxContains("Preview")
+                    && $0.inboxQuery("selection") && $0.inboxSelected(214)
+                    && $0.focusedIdentity == editing.focusedIdentity
+            }
+        }
     }
 
     @Test("Sorting, substring filtering, empty activation and queue changes reconcile stable selection")
@@ -205,10 +265,11 @@ extension InboxExampleTestApp: App {
 
 @MainActor
 private func withInboxExample(
+    initialSize: CellSize = .init(width: 100, height: 30),
     perform: @MainActor (HostedSceneSession, HostedRasterSurface, HostedFrameRecorder) async throws -> Void
 ) async throws {
     let recorder = HostedFrameRecorder()
-    let surface = HostedRasterSurface(surfaceSize: .init(width: 100, height: 30), appearance: .fallback,
+    let surface = HostedRasterSurface(surfaceSize: initialSize, appearance: .fallback,
                                       onFrame: { recorder.receive($0) })
     let session = try HostedSceneSession(for: InboxExampleTestApp(), sceneID: "inbox-example-tests", surface: surface)
     let run = Task { try await session.start() }
@@ -222,6 +283,14 @@ private func withInboxExample(
         _ = await run.result
         throw error
     }
+}
+
+private func inboxPanelGeometry(_ lines: [String]) -> (queueWidth: Int, gap: Int, previewWidth: Int, previewEnd: Int)? {
+    guard let heading = lines.first(where: { $0.contains("╭ Queue") && $0.contains("╭ Preview") }) else { return nil }
+    let cells = Array(heading)
+    guard let start = cells.firstIndex(of: "╭"), let end = cells.firstIndex(of: "╮"),
+          let preview = cells.lastIndex(of: "╭"), let previewEnd = cells.lastIndex(of: "╮") else { return nil }
+    return (end - start + 1, preview - end - 1, previewEnd - preview + 1, previewEnd)
 }
 
 @MainActor
