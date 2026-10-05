@@ -152,13 +152,15 @@ struct ChioScrollViewStyleTests {
             })
             let top = track.rect.origin
             let bottom = CellPoint(x: top.x, y: track.rect.maxY - 1)
-            // Acquiring track focus has the same native cross-axis reveal nudge.
-            // Settle that separately so the drag asserts an unchanged other axis.
-            session.send([
-                .mouse(MouseEvent(kind: .down(.primary), location: .cellFallback(top))),
-                .mouse(MouseEvent(kind: .up(.primary), location: .cellFallback(top))),
-            ])
-            let trackFocused = try await recorder.wait(after: resized.sequence, description: "native track focus reveals its reserved column") {
+            // Track focus reveals the reserved column and bottom corner. Observe
+            // that frame before release, which then maps the pointer back to row 0.
+            // Batching both events races release against the one-shot focus reveal.
+            session.send(.mouse(MouseEvent(kind: .down(.primary), location: .cellFallback(top))))
+            let trackPressed = try await recorder.wait(after: resized.sequence, description: "native track focus reveals its reserved corner") {
+                $0.focusedIdentity == track.identity && $0.scrollTestOffset(x: 6, y: 1)
+            }
+            session.send(.mouse(MouseEvent(kind: .up(.primary), location: .cellFallback(top))))
+            let trackFocused = try await recorder.wait(after: trackPressed.sequence, description: "release on the focused track restores its top row") {
                 $0.focusedIdentity == track.identity && $0.scrollTestOffset(x: 6, y: 0)
             }
             session.send([
