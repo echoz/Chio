@@ -177,6 +177,23 @@ closes the menu. Ctrl-T changes theme, Ctrl-Q quits, and `--light` starts light.
 `--tabs --snapshot` captures the initial frame. Everything stays in the current
 process; no files are written or services called.
 
+## Pagination
+
+```sh
+COLORTERM=truecolor swift run -c release chio-dashboard --pagination
+```
+
+Type `build` to filter the local history. Tab moves through the filter, rows-per-page
+picker, native viewport and available page buttons. Return/Space activates a page
+button; Left/Right and Home/End navigate while those buttons have focus. The same
+keys keep their normal meaning in the filter, picker and viewport.
+
+Change the page size from three to five rows to keep the old first visible run
+on the new page. Try a filter with no matches to see the empty state. Ctrl-R resets
+the filter and returns to the first page, Ctrl-T changes theme, and Ctrl-Q quits.
+Resize to 36 × 18 to try the compact layout; the viewport scrolls within a page.
+`--pagination --snapshot` captures the first page. The records are a local simulation.
+
 ## Colors over SSH
 
 For a true-color terminal such as Blink, declare that capability on the remote

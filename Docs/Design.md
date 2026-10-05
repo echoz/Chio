@@ -269,6 +269,39 @@ editing. Theme changes and compact resizing retain the current values. The
 pinned runtime needs a fresh menu frame before subsequent overflow navigation;
 Chio does not replay input across that native transition.
 
+## Pagination
+
+`Pagination` is an immutable count, page size and current page for a finite result
+set. The count is nonnegative, the size is positive, and the zero-based page index
+is nil exactly when the set is empty. These relationships are checked during
+construction, replacement and decoding. Ordinary programmer inputs use
+preconditions; decoding malformed values throws. The value is Hashable, Codable
+and Sendable. Page counts and zero-based item ranges use constant-time arithmetic
+that remains valid through `Int.max`; page options are never materialized.
+
+`selectingPage(at:)` returns nil for an invalid index. First/previous/next/last
+transitions return replacement values and stay at a boundary. Applications choose
+how data changes affect position: `updatingTotalCount(to:)` preserves a valid page
+or clamps to the last remaining page, and `resizingPages(to:)` selects the page
+containing the old first visible item. Empty-to-nonempty updates start at page one.
+Constructing a new value explicitly starts a new result set at its first page.
+Counts describe the application's current data; the value performs no loading.
+
+`PageControl(pagination:)` binds the complete value. It composes native Previous
+and Next buttons, a page summary and an item-range summary. Empty and single-page
+sets have no enabled page actions. Arrows and Home/End are scoped to those native
+buttons, leaving nearby editors and viewports in control of their own keys.
+Each action reads the retained binding again before computing a transition;
+rejected or transformed writes do not create an optimistic local cursor.
+Disabled state, focus, activation, pointer input and layout remain native.
+
+The `--pagination` history example filters 23 local records, resets position when
+the query changes, and preserves the old first item when switching between three
+and five rows per page. Native scrolling reveals rows within the selected page
+in short terminals. Query/count/page updates occur in one application binding
+setter. No asynchronous paging, unknown totals, item selection across pages or
+data-source protocol is introduced.
+
 ## Command palette
 
 `ChioPaletteStyle` styles SwiftTUI's native `paletteSheet`; `.chioTheme` installs
@@ -520,7 +553,7 @@ before cover presentation, dashboard shortcuts are consumed so Enter followed by
 
 | Path | Responsibility |
 | --- | --- |
-| `Sources/Chio/Domain` | Theme values, shortcut descriptions, pure search/membership decisions, validation visibility, file observations, and parsed Markdown |
+| `Sources/Chio/Domain` | Theme values, shortcut descriptions, pure search/membership decisions, pagination, validation visibility, file observations, and parsed Markdown |
 | `Sources/Chio/Execution` | Filesystem loading and confirmation checks |
 | `Sources/Chio/Presentation` | Components and environment integration |
 | `Sources/Chio/Presentation/Styles` | Native SwiftTUI control styles |

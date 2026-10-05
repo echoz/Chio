@@ -79,7 +79,7 @@ def screen(output):
     return "\n".join("".join(line) for line in cells)
 
 
-def run(binary, choices=False, text_entry=False, feedback=False, files=False, keyboard_help=False, tabs=False):
+def run(binary, choices=False, text_entry=False, feedback=False, files=False, keyboard_help=False, tabs=False, pagination=False):
     global WIDTH, HEIGHT
     master, slave = pty.openpty()
     process = None
@@ -125,7 +125,7 @@ def run(binary, choices=False, text_entry=False, feedback=False, files=False, ke
         env = dict(os.environ, TERM="xterm-256color", COLORTERM="truecolor")
         for key in ("NO_COLOR", "CLICOLOR", "CLICOLOR_FORCE", "FORCE_COLOR"):
             env.pop(key, None)
-        example = "--tabs" if tabs else "--keyboard-help" if keyboard_help else "--files" if files else "--feedback" if feedback else "--text-entry" if text_entry else "--choices" if choices else "--paused"
+        example = "--pagination" if pagination else "--tabs" if tabs else "--keyboard-help" if keyboard_help else "--files" if files else "--feedback" if feedback else "--text-entry" if text_entry else "--choices" if choices else "--paused"
         command = [str(binary), example]
         if file_fixture is not None:
             folder = Path(file_fixture.name)
@@ -135,13 +135,24 @@ def run(binary, choices=False, text_entry=False, feedback=False, files=False, ke
             command.extend(["--directory", str(folder)])
         process = subprocess.Popen(command, stdin=slave,
                                    stdout=slave, stderr=slave, env=env)
-        until("Demo runs: 0" if tabs else "Runs: 0" if keyboard_help else "alpha.txt" if files else "Ready to publish" if feedback else "/ text entry" if text_entry else "1 / 2" if choices else "4 of 4 items")
+        until("1–3 of 23" if pagination else "Demo runs: 0" if tabs else "Runs: 0" if keyboard_help else "alpha.txt" if files else "Ready to publish" if feedback else "/ text entry" if text_entry else "1 / 2" if choices else "4 of 4 items")
         modes = termios.tcgetattr(slave)
         assert not modes[3] & (termios.ECHO | termios.ICANON), "Terminal is not in raw input mode"
         assert modes[6][termios.VMIN] == 1 and modes[6][termios.VTIME] == 0, "Unexpected raw read timing"
         assert b"\x1b[?1049h" in output, "Alternate screen was not entered"
 
-        if tabs:
+        if pagination:
+            send(b"build", "1–3 of 6")
+            send(b"\t\t\t\r", "4–6 of 6")
+            until("Build 13")
+            send(b"\x14", "4–6 of 6")
+            WIDTH, HEIGHT = 36, 18
+            fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", HEIGHT, WIDTH, 0, 0))
+            process.send_signal(signal.SIGWINCH)
+            until("^Q quit")
+            until("4–6 of 6")
+            send(b"\x12", "1–3 of 23")  # Ctrl-R explicitly resets the result set.
+        elif tabs:
             send(b"\x1b[C", "Workspace overview")  # Right changes focus, not selection.
             assert "Agent directory" not in screen(output), "Tab focus activated a page"
             send(b"\x1b[H\r", "Workspace overview")
@@ -266,7 +277,7 @@ def run(binary, choices=False, text_entry=False, feedback=False, files=False, ke
             send(b"Smoke Agent", "Smoke Agent")
             send(b"\x1b", "/ agent workspace")
 
-        os.write(master, b"\x11" if choices or text_entry or feedback or files or keyboard_help or tabs else b"q")
+        os.write(master, b"\x11" if choices or text_entry or feedback or files or keyboard_help or tabs or pagination else b"q")
         deadline = time.monotonic() + 15
         while process.poll() is None and time.monotonic() < deadline:
             receive()
@@ -276,7 +287,8 @@ def run(binary, choices=False, text_entry=False, feedback=False, files=False, ke
         assert process.returncode == 0, f"Dashboard exited with {process.returncode}"
         assert b"\x1b[?1049l" in output, "Alternate screen was not restored"
         assert termios.tcgetattr(slave) == original_modes, "Terminal modes were not restored"
-        print("PASS: tab focus/selection, retained counter and draft, native editing, theme, overflow, resize, clean exit" if tabs else
+        print("PASS: history filtering, native page activation, theme, compact resize, reset, clean exit" if pagination else
+              "PASS: tab focus/selection, retained counter and draft, native editing, theme, overflow, resize, clean exit" if tabs else
               "PASS: contextual help, literal search input, focus restoration, guarded actions, theme, resize, clean exit" if keyboard_help else
               "PASS: file filtering, confirmation, reopen/cancel, theme, compact resize, clean exit" if files else
               "PASS: confirmation, cancellation, spinner, toast, destructive reset, clean exit" if feedback else
@@ -310,6 +322,8 @@ if __name__ == "__main__":
     examples.add_argument("--files", action="store_true", help="Exercise filesystem selection in a temporary tree")
     examples.add_argument("--keyboard-help", action="store_true", help="Exercise contextual help and editor-safe opening")
     examples.add_argument("--tabs", action="store_true", help="Exercise tab focus, selection, retained drafts and narrow overflow")
+    examples.add_argument("--pagination", action="store_true", help="Exercise history filtering, page navigation and resizing")
     arguments = parser.parse_args()
     run(arguments.binary.resolve(), choices=arguments.choices, text_entry=arguments.text_entry,
-        feedback=arguments.feedback, files=arguments.files, keyboard_help=arguments.keyboard_help, tabs=arguments.tabs)
+        feedback=arguments.feedback, files=arguments.files, keyboard_help=arguments.keyboard_help, tabs=arguments.tabs,
+        pagination=arguments.pagination)

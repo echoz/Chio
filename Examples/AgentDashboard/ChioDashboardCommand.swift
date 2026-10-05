@@ -40,6 +40,9 @@ struct ChioDashboardCommand {
     @Flag(help: "Run the focused workspace tabs example.")
     var tabs = false
 
+    @Flag(help: "Run the focused paginated history example.")
+    var pagination = false
+
     @Option(help: "Starting folder for --files (defaults to the current working directory).")
     var directory: String?
 
@@ -48,7 +51,9 @@ struct ChioDashboardCommand {
 
     @MainActor @ViewBuilder
     private var snapshotView: some View {
-        if tabs {
+        if pagination {
+            PaginationExampleView(light: light)
+        } else if tabs {
             TabsExampleView(light: light)
         } else if keyboardHelp {
             HelpExampleView(light: light)
@@ -74,10 +79,10 @@ extension ChioDashboardCommand: AsyncParsableCommand {
         guard (20...240).contains(width), (10...100).contains(height) else {
             throw ValidationError("Use --width 20...240 and --height 10...100.")
         }
-        if [choices, textEntry, feedback, files, keyboardHelp, tabs].filter({ $0 }).count > 1 {
-            throw ValidationError("Choose one example: --choices, --text-entry, --feedback, --files, --keyboard-help or --tabs.")
+        if [choices, textEntry, feedback, files, keyboardHelp, tabs, pagination].filter({ $0 }).count > 1 {
+            throw ValidationError("Choose one example: --choices, --text-entry, --feedback, --files, --keyboard-help, --tabs or --pagination.")
         }
-        if (choices || textEntry || feedback || files || keyboardHelp || tabs) && (scenario != .normal || paused) {
+        if (choices || textEntry || feedback || files || keyboardHelp || tabs || pagination) && (scenario != .normal || paused) {
             throw ValidationError("--scenario and --paused describe the dashboard simulation; omit them with a focused example.")
         }
         if directory != nil && !files {
@@ -97,6 +102,8 @@ extension ChioDashboardCommand: AsyncParsableCommand {
                 frameInstant: .zero
             )
             print(frame.rasterSurface.lines.joined(separator: "\n"))
+        } else if pagination {
+            try await WebHostCLIRunner.run(PaginationApplication(light: light), configuration: swiftTUIOptions.runtimeConfiguration())
         } else if tabs {
             try await WebHostCLIRunner.run(TabsApplication(light: light), configuration: swiftTUIOptions.runtimeConfiguration())
         } else if keyboardHelp {

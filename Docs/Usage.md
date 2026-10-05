@@ -124,6 +124,37 @@ survive removing tabs or replacing the tab view's identity.
 The [tabs example](Examples.md#tabs) demonstrates editing, scrolling and native
 focus. See [the design](Design.md#tabs) for the native lifecycle and overflow limits.
 
+## Pagination
+
+Bind an immutable pagination value to native page actions:
+
+```swift
+@State private var pagination = Pagination(totalCount: 23, pageSize: 5)
+
+// In the view body, render items[pagination.itemRange] and then:
+PageControl(pagination: $pagination)
+    .chioTheme(.default)
+```
+
+The control displays the current page and item range. Tab focuses an available
+arrow button; Return/Space activates it. Left/Right and Home/End navigate while
+the page controls are focused. Empty results say “No pages”; empty and single-page
+sets disable both actions.
+
+When the data changes, choose the position policy explicitly:
+
+```swift
+pagination = pagination.updatingTotalCount(to: items.count) // Keep/clamp page.
+pagination = pagination.resizingPages(to: 10) // Keep the old first item in view.
+pagination = Pagination(totalCount: filtered.count, pageSize: 10) // Reset page.
+```
+
+Counts must be nonnegative and page sizes positive. `pageIndex` is zero-based and
+nil for an empty set. `selectingPage(at:)` returns a replacement or nil for an
+invalid page. Give `PageControl` at least 20 columns for ordinary summaries;
+large numbers truncate within the available width. The application owns data and
+loading. See the [history example](Examples.md#pagination) for filtering and sizing.
+
 ## Command palettes
 
 `ChioPaletteStyle` styles SwiftTUI's native command palette. Apply `.chioTheme(...)`
