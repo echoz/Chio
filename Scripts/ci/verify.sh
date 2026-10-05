@@ -49,6 +49,8 @@ done
     > .build/ci-results/tree-compact.txt
 "$binary" --forms --snapshot --width 36 --height 18 \
     > .build/ci-results/forms-compact.txt
+"$binary" --timers --snapshot --width 36 --height 18 \
+    > .build/ci-results/timers-compact.txt
 python3 Scripts/ci/terminal-smoke.py "$binary"
 python3 Scripts/ci/terminal-smoke.py "$binary" --choices
 python3 Scripts/ci/terminal-smoke.py "$binary" --text-entry
@@ -60,3 +62,4 @@ python3 Scripts/ci/terminal-smoke.py "$binary" --pagination
 python3 Scripts/ci/terminal-smoke.py "$binary" --viewport
 python3 Scripts/ci/terminal-smoke.py "$binary" --tree
 python3 Scripts/ci/terminal-smoke.py "$binary" --forms
+python3 Scripts/ci/terminal-smoke.py "$binary" --timers

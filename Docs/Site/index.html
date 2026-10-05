@@ -42,6 +42,7 @@
             <a href="#viewport" data-demo="viewport">Viewport</a>
             <a href="#tree" data-demo="tree">Tree</a>
             <a href="#forms" data-demo="forms">Forms</a>
+            <a href="#timers" data-demo="timers">Timers</a>
           </nav>
           <span class="recording-label"><span aria-hidden="true">●</span> Real terminal recordings</span>
         </div>
@@ -49,7 +50,7 @@
         <article id="dashboard" class="recording" data-cols="100" data-rows="36">
           <div class="recording-heading">
             <h2>An agent workspace</h2>
-            <span class="demo-number" aria-hidden="true">01 / 07</span>
+            <span class="demo-number" aria-hidden="true">01 / 08</span>
           </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/dashboard.png" alt="A dark terminal dashboard with four agents, a selected Build Agent, progress, and keyboard hints." width="1248" height="948">
@@ -66,7 +67,7 @@
         <article id="choices" class="recording" data-cols="76" data-rows="27">
           <div class="recording-heading">
             <h2>A little more choice</h2>
-            <span class="demo-number" aria-hidden="true">02 / 07</span>
+            <span class="demo-number" aria-hidden="true">02 / 08</span>
           </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/choices.png" alt="A searchable capabilities checklist with Build and Test checked and Deploy unavailable." width="960" height="723">
@@ -83,7 +84,7 @@
         <article id="feedback" class="recording" data-cols="76" data-rows="20">
           <div class="recording-heading">
             <h2>Same controls. A lighter mood.</h2>
-            <span class="demo-number" aria-hidden="true">03 / 07</span>
+            <span class="demo-number" aria-hidden="true">03 / 08</span>
           </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/feedback-light.png" alt="The light theme's feedback screen with an accent outline around the focused Publish button." width="960" height="548">
@@ -99,7 +100,7 @@
         <article id="pagination" class="recording" data-cols="76" data-rows="27">
           <div class="recording-heading">
             <h2>A page at a time</h2>
-            <span class="demo-number" aria-hidden="true">04 / 07</span>
+            <span class="demo-number" aria-hidden="true">04 / 08</span>
           </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/pagination.png" alt="A filtered run history with three Build results, native page buttons, and a 4–6 of 6 item summary." width="960" height="723">
@@ -115,7 +116,7 @@
         <article id="viewport" class="recording" data-cols="76" data-rows="27">
           <div class="recording-heading">
             <h2>A little room for a wide view</h2>
-            <span class="demo-number" aria-hidden="true">05 / 07</span>
+            <span class="demo-number" aria-hidden="true">05 / 08</span>
           </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/viewport.png" alt="A dark activity log of forty local events with native scroll indicators, row and column status, and a Back to start button." width="960" height="723">
@@ -131,7 +132,7 @@
         <article id="tree" class="recording" data-cols="76" data-rows="27">
           <div class="recording-heading">
             <h2>One branch at a time</h2>
-            <span class="demo-number" aria-hidden="true">06 / 07</span>
+            <span class="demo-number" aria-hidden="true">06 / 08</span>
           </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/tree.png" alt="A dark example workspace with Sources, Chio, and Presentation expanded into file labels, three collapsed folders, and bulk expansion buttons." width="960" height="723">
@@ -147,7 +148,7 @@
         <article id="forms" class="recording" data-cols="76" data-rows="30">
           <div class="recording-heading">
             <h2>Related settings, one draft</h2>
-            <span class="demo-number" aria-hidden="true">07 / 07</span>
+            <span class="demo-number" aria-hidden="true">07 / 08</span>
           </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/forms.png" alt="A dark grouped settings form with Workspace and Automation sections, a saved-values summary, and Save and Cancel buttons." width="960" height="798">
@@ -158,6 +159,22 @@
           <div class="recording-caption">
             <p>Reveal related timing fields, correct an inline error, and save a local snapshot. Cancel restores the latest saved values; native focus and scrolling keep editing available through theme and size changes. No jobs are started.</p>
             <a class="download" href="recordings/forms.cast" download>Download recording ↓</a>
+          </div>
+        </article>
+        <article id="timers" class="recording" data-cols="76" data-rows="30">
+          <div class="recording-heading">
+            <h2>Every second counts</h2>
+            <span class="demo-number" aria-hidden="true">08 / 08</span>
+          </div>
+          <div class="recording-preview">
+            <img class="recording-image" src="recordings/timers.png" alt="A dark time studio with independent stopwatch and countdown panels, elapsed and remaining time, native pause and reset buttons, and a progress track." width="960" height="798">
+            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play recording</button>
+          </div>
+          <div class="player" aria-label="Timers recording"></div>
+          <p class="player-message" role="status" hidden></p>
+          <div class="recording-caption">
+            <p>Start, pause, resume and reset two independent clocks. The countdown reaches zero while the stopwatch continues, with both values retained through a theme change and a compact terminal.</p>
+            <a class="download" href="recordings/timers.cast" download>Download recording ↓</a>
           </div>
         </article>
         <p class="playback-note">Press play to watch. Pause, seek, or open fullscreen for a closer look.
@@ -180,6 +197,8 @@
 <span aria-hidden="true">$ </span>swift run -c release chio-dashboard --tree</code></pre>
           <p class="command-label">Try grouped settings and inline validation:</p>
           <pre><code><span aria-hidden="true">$ </span>swift run -c release chio-dashboard --forms</code></pre>
+          <p class="command-label">Try the stopwatch and countdown:</p>
+          <pre><code><span aria-hidden="true">$ </span>swift run -c release chio-dashboard --timers</code></pre>
           <a href="https://github.com/echoz/Chio/blob/main/Docs/Examples.md">Launch options and keyboard controls <span aria-hidden="true">↗</span></a>
         </div>
       </section>

@@ -5,7 +5,7 @@ creation, Markdown run reports, a command palette using simulated agents,
 a focused searchable-choice form, native password/multiline text entry,
 confirmation with transient feedback, file selection, contextual keyboard help,
 themed native tabs, finite-result pagination, themed native scrolling, and
-expandable disclosure groups.
+expandable disclosure groups, grouped settings forms, and independent stopwatch/countdown controls.
 They establish the design direction, not broad parity with Charm's components.
 Accepted contracts and
 ownership live in [Design.md](Design.md); commands and interaction instructions
@@ -169,6 +169,13 @@ live in [the examples guide](Examples.md); component recipes live in
   absence. The [usage guide](Usage.md#file-selection) records the source migration;
   the [value contracts](Design.md#value-contracts) describe the accepted changes.
 
+- `ElapsedTime` accumulates explicit monotonic intervals through immutable
+  pause/resume/reset transitions; `DurationText` supplies integer rounding,
+  compact formatting and themed accessibility labels. The `--timers` example
+  uses native scheduling, retains independent clocks and focus through responsive
+  layout changes, and handles completion with a current-value check. No clock
+  service, event loop or dependency is added.
+
 ## Component coverage
 
 Source audit at Chio `424f8e6`, using SwiftTUI revision
@@ -224,7 +231,7 @@ come from Chio's original brief; they are not all standalone Bubbles packages.
 | Alerts, confirmation dialogs and sheets | Delivered `ChioPromptStyle` for alerts and confirmation dialogs; native covers demonstrated | [Native presentation][native-presentation] and [PromptStyle][native-prompt] | Native focus and dismissal retained; header paint and arbitrary action wrapping remain native/app concerns; no Chio sheet style |
 | Command palette | Delivered `ChioPaletteStyle`, filtering, disabled items and dashboard actions | Native action scopes, command registration and palette presentation | Surrounding palette chrome has an upstream styling limit; this is not a new Chio command system |
 | Tabs | `ChioTabViewStyle` supplies distinct selection/focus paint and bounded narrow overflow; `--tabs` exercises retained page values | [TabView][native-tabs] and `TabViewStyle` own navigation, selection, routing and dormancy | No per-option disabled state or persistent wheel-driven overflow scroll; native lifecycle limits apply |
-| Timer and stopwatch | No reusable Chio component; demo simulation is not one | [TimelineView][native-timeline] and Swift clocks | Countdown/elapsed-time state, formatting and pause/resume behavior if demanded; keep scheduling native |
+| Timer and stopwatch | `ElapsedTime` explicit-time transitions and themed `DurationText` | [TimelineView][native-timeline] and monotonic instants | Focused stopwatch/countdown example; application owns limits and expiry effects |
 
 ### Documents
 
@@ -279,7 +286,7 @@ To check an already-built binary's terminal workflow:
 python3 Scripts/ci/terminal-smoke.py .build/release/chio-dashboard
 ```
 
-Add `--choices`, `--text-entry`, `--feedback`, `--files`, `--keyboard-help`, `--tabs`, `--pagination`, `--viewport`, `--tree`, or `--forms` for a focused workflow.
+Add `--choices`, `--text-entry`, `--feedback`, `--files`, `--keyboard-help`, `--tabs`, `--pagination`, `--viewport`, `--tree`, `--forms`, or `--timers` for a focused workflow.
 These check terminal input/output and restoration, not live Blink/SSH rendering
 or latency. `swift test --no-parallel` remains available for a full debug investigation.
 
@@ -350,7 +357,25 @@ event order and local documentation links pass. Fresh browser playback and
 mobile-layout checks remain pending because no browser was available and the
 host Mac was locked. Player code, CSS and deployment permissions are unchanged.
 
+The timer slice adds an eighth recording: a 29-second release session at 76 × 30
+showing independent pause/resume, a light theme, 36 × 18 resize, countdown expiry
+and reset. Its native terminal capture exits cleanly and restores terminal modes.
+The preview was visually inspected; site assembly, all asset paths, dimensions,
+recording order, resize events and documentation links pass. Browser playback and
+mobile-layout checks remain pending because the host Mac is locked. The player,
+CSS and deployment permissions are unchanged.
+
 ## Verified on macOS
+
+Timer validation covers 335 release tests and 313 selected debug tests. The affected
+five-test debug timer suite was rerun after correcting the 50-column layout;
+unaffected debug evidence was retained. The release build, sixteen snapshots and
+twelve real pseudo-terminal workflows passed. Explicit clock tests cover dispatch,
+paused intervals, rapid input, expiry during resize and reset/restart; a separate
+live test proves native timeline advancement. Independent review findings were
+resolved without changing test deadlines. This is local macOS evidence, not a new
+live SSH/device measurement or a completed Linux run for the timer slice.
+
 
 Swift 6.4, with SwiftTUI pinned at
 `2d84ac7083993da2ef52e9d3d30255467efb9553`:
@@ -936,7 +961,7 @@ unchanged; a local SwiftPM edit is only integration evidence, not distribution.
 
 ## Next component slices
 
-The coverage audit is complete and the first ten slices are implemented.
+The coverage audit is complete and the first eleven slices are implemented.
 Continue the remaining queue in the numbered order below; the btop-inspired
 work follows the previously identified form, timing and document work.
 Public APIs remain open to evidence from focused examples. Broaden reusable component coverage
@@ -1011,9 +1036,11 @@ before treating the framework as ready for release preparation.
     committed versus edited values, Save/Cancel and compact scrolling. Add a
     reusable abstraction only if composition demonstrates a missing contract.
 
-11. **Timer and stopwatch presentation — queued.** Define elapsed/countdown
-    values, formatting and pause/resume/reset behavior with explicit time inputs
-    and native scheduling. Keep clock ownership out of immutable values.
+11. **Timer and stopwatch presentation — implemented.** Immutable `ElapsedTime`
+    and themed `DurationText` compose with native scheduling. The focused `--timers`
+    example proves independent stopwatch/countdown actions, completion and reset,
+    including expiry during resize. Its real terminal recording is in the gallery;
+    fresh browser playback checks remain pending as recorded above.
 
 12. **Markdown syntax highlighting — queued.** Evaluate a suitable highlighter
     and its dependency/static-link costs; retain native text composition,

@@ -273,6 +273,23 @@ that process. `NO_COLOR` remains respected; `--force-color` does not select true
 color. This addresses a missing capability declaration on true-color terminals;
 the upstream conversion still needs correction for actual 256-color terminals.
 
+## Timers and stopwatches
+
+```sh
+COLORTERM=truecolor swift run -c release chio-dashboard --timers
+```
+
+Run a stopwatch and a 20-second countdown independently. Tab moves between native
+buttons; Return or Space activates them. `s` starts, pauses or resumes the stopwatch,
+`c` does the same for the countdown, and `r` resets both to their paused initial
+values. Each panel also has its own Reset button. At expiry the countdown stops
+at zero with a Complete status; reset it for another round. Ctrl-T changes theme
+and Ctrl-Q quits. These clocks run only in this local process, without alarms or
+background jobs. Both panels and their controls fit 36 × 18.
+
+Use `--timers --snapshot` for a deterministic initial frame.
+See [the timing API](Usage.md#timers-and-stopwatches).
+
 ## Gallery and recordings
 
 [Watch the recordings in your browser](https://echoz.github.io/Chio/), with pause,
@@ -328,6 +345,14 @@ resize. The hierarchy is authored local example data; it does not read files.
 Conditional fields retain their draft text, related values validate together, and
 Cancel restores the latest saved snapshot. The example starts no background jobs.
 [Watch](https://echoz.github.io/Chio/#forms) · [Download recording](Media/forms.cast).
+
+### Timers and stopwatches
+
+![A themed time studio with independent stopwatch and countdown panels and native pause and reset controls](Media/timers.png)
+
+Pause each clock independently, resume its retained interval, and follow countdown
+expiry through theme and terminal-size changes.
+[Watch](https://echoz.github.io/Chio/#timers) · [Download recording](Media/timers.cast).
 
 These previews render real release-binary terminal output. Font rendering can
 vary between terminals. The accompanying Asciinema-compatible recordings replay

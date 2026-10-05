@@ -361,3 +361,48 @@ HTML is literal. Native table border colors remain an upstream styling limitatio
 See [AgentReport](../Examples/AgentDashboard/Domain/AgentReport.swift) for snapshot
 ownership and [AgentReportView](../Examples/AgentDashboard/Presentation/AgentReportView.swift)
 for the reader.
+
+## Timers and stopwatches
+
+Compose immutable elapsed-time state with native scheduling and actions:
+
+```swift
+@State private var stopwatch = ElapsedTime()
+
+// In a view body:
+TimelineView(.animation(minimumInterval: .seconds(1), paused: !stopwatch.isRunning)) { context in
+    DurationText(elapsed: stopwatch.elapsed(at: context.instant))
+}
+Button(stopwatch.isRunning ? "Pause" : "Resume") {
+    let instant = MonotonicInstant.now()
+    stopwatch = stopwatch.isRunning
+        ? stopwatch.paused(at: instant)
+        : stopwatch.resumed(at: instant)
+}
+Button("Reset") { stopwatch = stopwatch.resetting() }
+```
+
+Apply `.chioTheme(...)` around the composition. `DurationText` uses accent color
+and spoken elapsed/remaining labels. Elapsed fractions round down; remaining
+fractions round up. Formats are `m:ss` and `h:mm:ss`, with hours continuing past 24.
+Its input range is zero through `Duration.seconds(Int64.max)`.
+
+For a countdown, derive presentation from the same elapsed value and an
+application-owned nonnegative limit:
+
+```swift
+let elapsed = countdown.elapsed(at: instant)
+let remaining = elapsed >= limit ? Duration.zero : limit - elapsed
+DurationText(remaining: remaining)
+```
+
+The application decides what expiry means, pauses its native schedule and handles
+any completion effect. Sample the clock at action dispatch rather than using an
+old displayed instant. `ElapsedTime` never samples a clock or counts ticks. Use
+instants from one process/clock lifetime in chronological transition order;
+queries do not retain observations. Repeated pause/resume is inert, and a stale
+pause before the running anchor is ignored. Arithmetic must fit Swift `Duration`.
+The value supports Hashable and Sendable, with no persistence schema for its
+process-local anchor. A saved session needs an application-owned durable model.
+
+[Try the focused example](Examples.md#timers-and-stopwatches).
