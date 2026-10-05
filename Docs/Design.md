@@ -180,8 +180,8 @@ and keyboard hints. This is a focused form example, not a new form coordinator.
 
 ## Composition and layout
 
-`KeyHint` renders one shortcut and explanation; `KeyHints` composes contextual
-help. `StatusBar` presents compact application status. The dashboard combines
+`KeyHint` renders one shortcut and explanation; `KeyHints` arranges compact
+hints in wrapping rows. `StatusBar` presents compact application status. The dashboard combines
 these with searchable agents, details, and native progress.
 
 Narrow terminals must retain usable search and selection, readable status, and
@@ -192,6 +192,39 @@ network calls, credentials, or external service setup.
 At widths below 88 cells the dashboard stacks its sections; below 26 rows it
 prioritizes the list and essential shortcuts. The full layout is intended for
 100 × 30 or larger, with a usable compact layout at 36 × 18.
+
+## Contextual keyboard help
+
+Immutable `ShortcutHint` values hold an authored key label, short action label,
+and optional expanded detail. `ShortcutGroup` preserves the title and ordered
+descriptions, including duplicates. Both synthesize Codable, Hashable and
+Sendable. These are display descriptions: labels such as `↑↓` can describe more
+than one native key. They neither register actions nor parse strings into input.
+The pinned native command registry and its `KeyBinding` are not public.
+
+`KeyHint` and `KeyHints` accept those same values; `KeyboardHelp` presents grouped
+headings, hints and wrapping detail. Empty groups are omitted and an entirely
+empty collection has an explicit message. Applications derive visible descriptions
+from their current context and action availability. Native handlers remain the
+authority for execution; Chio introduces no second command registry.
+
+`KeyboardHelp` is passive content suitable for inline use or native presentation.
+The example uses `.fullScreenCover` with an authored heading, Close button and
+native `ScrollView`. The cover owns modal scope and focus restoration; retain the
+background subtree to preserve its focus identity across dismissal. Input
+handlers on the whole cover reach both Close and the viewport. Handlers placed
+inside a native sheet's content cannot receive keys focused on its outer viewport
+or header; no additional sheet style or custom presentation machinery is needed.
+
+The focused `--keyboard-help` example shares descriptions between the footer and
+expanded help. `?` opens from results or action buttons; within search it remains
+ordinary text. F1 opens the full reference from any control, without deriving a
+context from a potentially pending focus transition. Scope printable shortcuts to native
+control subtrees, never gate ancestor input using the render-driven search-focus
+callback. A retained help context keeps the requested group stable while modal
+focus changes. Pending presentation blocks background actions and consumes an
+immediate Escape, including several keys delivered before the next frame.
+The example only increments a local run count; it performs no agent work.
 
 ## Command palette
 
@@ -444,7 +477,7 @@ before cover presentation, dashboard shortcuts are consumed so Enter followed by
 
 | Path | Responsibility |
 | --- | --- |
-| `Sources/Chio/Domain` | Theme values, pure search/membership decisions, validation visibility, file observations, and parsed Markdown |
+| `Sources/Chio/Domain` | Theme values, shortcut descriptions, pure search/membership decisions, validation visibility, file observations, and parsed Markdown |
 | `Sources/Chio/Execution` | Filesystem loading and confirmation checks |
 | `Sources/Chio/Presentation` | Components and environment integration |
 | `Sources/Chio/Presentation/Styles` | Native SwiftTUI control styles |

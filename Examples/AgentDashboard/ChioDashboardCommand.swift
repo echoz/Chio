@@ -34,6 +34,9 @@ struct ChioDashboardCommand {
     @Flag(help: "Run the focused filesystem file-selection example.")
     var files = false
 
+    @Flag(help: "Run the focused contextual keyboard-help example.")
+    var keyboardHelp = false
+
     @Option(help: "Starting folder for --files (defaults to the current working directory).")
     var directory: String?
 
@@ -42,7 +45,9 @@ struct ChioDashboardCommand {
 
     @MainActor @ViewBuilder
     private var snapshotView: some View {
-        if feedback {
+        if keyboardHelp {
+            HelpExampleView(light: light)
+        } else if feedback {
             FeedbackExampleView(light: light)
         } else if textEntry {
             TextEntryExampleView(light: light)
@@ -64,10 +69,10 @@ extension ChioDashboardCommand: AsyncParsableCommand {
         guard (20...240).contains(width), (10...100).contains(height) else {
             throw ValidationError("Use --width 20...240 and --height 10...100.")
         }
-        if [choices, textEntry, feedback, files].filter({ $0 }).count > 1 {
-            throw ValidationError("Choose one example: --choices, --text-entry, --feedback or --files.")
+        if [choices, textEntry, feedback, files, keyboardHelp].filter({ $0 }).count > 1 {
+            throw ValidationError("Choose one example: --choices, --text-entry, --feedback, --files or --keyboard-help.")
         }
-        if (choices || textEntry || feedback || files) && (scenario != .normal || paused) {
+        if (choices || textEntry || feedback || files || keyboardHelp) && (scenario != .normal || paused) {
             throw ValidationError("--scenario and --paused describe the dashboard simulation; omit them with a focused example.")
         }
         if directory != nil && !files {
@@ -87,6 +92,8 @@ extension ChioDashboardCommand: AsyncParsableCommand {
                 frameInstant: .zero
             )
             print(frame.rasterSurface.lines.joined(separator: "\n"))
+        } else if keyboardHelp {
+            try await WebHostCLIRunner.run(HelpApplication(light: light), configuration: swiftTUIOptions.runtimeConfiguration())
         } else if files {
             let startingDirectory = URL(fileURLWithPath: directory ?? FileManager.default.currentDirectoryPath,
                                         isDirectory: true)

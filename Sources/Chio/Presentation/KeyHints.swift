@@ -11,6 +11,15 @@ public struct KeyHints<Content: View> {
     }
 }
 
+extension KeyHints where Content == ForEach<Range<Int>, Int, KeyHint> {
+    /// Displays ordered descriptors, including repeated descriptions.
+    public init(_ shortcuts: [ShortcutHint]) {
+        self.content = ForEach(shortcuts.indices, id: \.self) { index in
+            KeyHint(shortcuts[index])
+        }
+    }
+}
+
 extension KeyHints: View {
     public var body: some View {
         HintFlowLayout(gap: theme.spacing.hintGap) { content }

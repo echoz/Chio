@@ -4,20 +4,24 @@ import SwiftTUIViews
 @MainActor
 public struct KeyHint {
     @Environment(\.chioTheme) private var theme
-    private let key: String
-    private let label: String
+    private let shortcut: ShortcutHint
 
     public init(_ key: String, _ label: String) {
-        self.key = key
-        self.label = label
+        self.shortcut = ShortcutHint(key, label)
+    }
+
+    /// Displays the key and label; expanded details belong in `KeyboardHelp`.
+    public init(_ shortcut: ShortcutHint) {
+        self.shortcut = shortcut
     }
 }
 
 extension KeyHint: View {
     public var body: some View {
-        HStack(spacing: 1) {
-            Text(key).bold().foregroundStyle(theme.colors.accent)
-            Text(label).foregroundStyle(theme.colors.secondaryText)
-        }
+        var interpolation = Text.StringInterpolation(literalCapacity: 1, interpolationCount: 2)
+        interpolation.appendInterpolation(Text(verbatim: shortcut.key).bold().foregroundStyle(theme.colors.accent))
+        interpolation.appendLiteral(" ")
+        interpolation.appendInterpolation(Text(verbatim: shortcut.label).foregroundStyle(theme.colors.secondaryText))
+        return Text(Text.RichContent(stringInterpolation: interpolation))
     }
 }

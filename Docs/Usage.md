@@ -46,6 +46,46 @@ and `.onResultKeyPress` for application shortcuts that must not consume search
 text. Native row focus chrome currently remains an upstream styling boundary;
 see [the design](Design.md).
 
+## Expanded keyboard help
+
+Share immutable descriptions between a compact footer and grouped help:
+
+```swift
+let navigation = [
+    ShortcutHint("↑↓", "Navigate", detail: "Move through the visible results."),
+    ShortcutHint("/", "Search", detail: "Filter results by name."),
+]
+
+// In the application's view body; showsHelp is application-owned @State.
+content
+    .fullScreenCover(isPresented: $showsHelp) {
+        VStack {
+            Text("Keyboard shortcuts")
+            ScrollView {
+                KeyboardHelp([ShortcutGroup("Navigation", shortcuts: navigation)])
+            }
+            Button("Close") { showsHelp = false }
+        }
+    }
+    .chioTheme(.default)
+
+// The same descriptions, without expanded details:
+StatusBar { KeyHints(navigation) }
+```
+
+Descriptions do not register key bindings. Derive their visibility from your
+application's current context; keep actions in native handlers. `KeyboardHelp`
+supplies content while native containers supply scrolling, dismissal and focus
+restoration. Apply `.chioTheme` outside the presentation declaration and keep the
+presenting controls mounted while help is open. Scope modal key handlers to the
+whole authored cover so they work from both its viewport and its buttons.
+
+For editor-safe `?` handling, use `.onResultKeyPress` on a searchable list and
+scoped `.onKeyPress` on action controls. Avoid an ancestor handler that consumes
+ordinary text. See [HelpExampleView](../Examples/AgentDashboard/Presentation/HelpExampleView.swift)
+for F1 during editing, contextual descriptions, and protection against keys
+arriving before presentation acquires focus.
+
 ## Themes
 
 Theme values are immutable. Use `replacing(...)` to customize colors, spacing,

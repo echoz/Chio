@@ -2,8 +2,8 @@
 
 The delivered proof-of-concept slices are a runnable local dashboard, agent
 creation, Markdown run reports, a command palette using simulated agents,
-a focused searchable-choice form, native password/multiline text entry, and
-confirmation with transient feedback, and file selection.
+a focused searchable-choice form, native password/multiline text entry,
+confirmation with transient feedback, file selection, and contextual keyboard help.
 They establish the design direction, not broad parity with Charm's components.
 Accepted contracts and
 ownership live in [Design.md](Design.md); commands and interaction instructions
@@ -115,6 +115,16 @@ live in [the examples guide](Examples.md); component recipes live in
   `SearchableList` now honors its pending native focus request for that key,
   with editor-focused matching/no-match cases and the original picker regression.
 
+- Keyboard help adds immutable `ShortcutHint` and `ShortcutGroup` descriptions,
+  shared by compact `KeyHints` and grouped `KeyboardHelp`. The focused
+  `--keyboard-help` example demonstrates context, unavailable actions, a native
+  full-screen reader, scrolling and focus restoration. `?` opens only outside
+  search; F1 opens the full reference from any control. Native controls continue
+  to own input; descriptions do not register bindings or execute actions.
+  Independent review identified modal-handler reach and render-lagging F1
+  context; the full-cover handlers and context-independent reference resolve
+  both. Re-review found no remaining actionable issues.
+
 ## Component coverage
 
 Source audit at Chio `424f8e6`, using SwiftTUI revision
@@ -163,7 +173,7 @@ come from Chio's original brief; they are not all standalone Bubbles packages.
 | Scrollable viewport | Used and tested in reports, tables and code blocks | [ScrollView][native-scroll], positions/readers/styles | Keep native scrolling; add a document-reader convenience only for demonstrated reusable UX |
 | Progress/loading bar | Delivered determinate and indeterminate `ChioProgressViewStyle`, including reduced motion | `ProgressView` owns animation phase | Not a dedicated spinner; animated/gradient fill variants are not part of the current Chio scope |
 | Spinner | Delivered `ChioSpinnerStyle` with semantic stage paint and native reduced motion | [Spinner][native-spinner], `SpinnerStyle`, presets/stages and native timing | Native braille cadence and stages; no Chio timer or frame catalog |
-| Keyboard hints | Delivered manual `KeyHint` labels and wrapping `KeyHints` | Native key handlers/commands | Shared binding-to-help metadata and compact/expanded help are not delivered; the native registry's `KeyBinding` is not public |
+| Keyboard hints and help | Shared immutable `ShortcutHint`/`ShortcutGroup` values feed wrapping `KeyHints` and grouped `KeyboardHelp`; focused example proves context, full reference and modal reading | Native key handlers, cover, scrolling and focus restoration | Application selects visible descriptions and registers handlers; no automatic registry extraction (native `KeyBinding` is private) or command execution through descriptions |
 | Status bar | Delivered composed `StatusBar` | Native layout/text | A footer is not a toast queue or reusable status-message workflow |
 | Empty/status/banner views | Empty messages inside search; semantic statuses in the demo | Native text, layout and theme colors | Extract reusable presentation and actions when useful; no general empty-state/banner component yet |
 | Toasts | Delivered explicit `ChioToastStyle` and local completion feedback | Native [.toast and ToastStyle][native-toast] handle presentation | Native expiry and explicit dismissal; no environment toast modifier or app notification queue |
@@ -225,7 +235,7 @@ To check an already-built binary's terminal workflow:
 python3 Scripts/ci/terminal-smoke.py .build/release/chio-dashboard
 ```
 
-Add `--choices`, `--text-entry`, `--feedback`, or `--files` for a focused workflow.
+Add `--choices`, `--text-entry`, `--feedback`, `--files`, or `--keyboard-help` for a focused workflow.
 These check terminal input/output and restoration, not live Blink/SSH rendering
 or latency. `swift test --no-parallel` remains available for a full debug investigation.
 
@@ -269,6 +279,20 @@ Swift 6.4, with SwiftTUI pinned at
 - `swift build --product chio-dashboard` passes.
 - `swift build -c release --product chio-dashboard` also passes. Interactive
   launch instructions use release mode; debug enables extra upstream verification.
+- The keyboard-help candidate completes 235 release tests and 213 selected
+  debug tests: 234 and 212 pass respectively, with the existing case-distinct
+  filename test skipped on this case-insensitive filesystem. Help regressions cover ordered/repeated
+  descriptions and coding, custom colors, Unicode wrapping, ordinary `/?` search
+  text, batched F1 transitions, guarded background actions, native Close/Escape,
+  exact settled focus restoration, query/selection retention, unavailable Run,
+  theme/quit from both modal focus targets, and 36 × 18 Home/End scrolling.
+  The examples render in both themes at 100 × 30, 50 × 30, and 36 × 18.
+  `Scripts/ci/verify.sh` passes, including the production build, ten snapshot
+  captures and all six pseudo-terminal workflows. The new terminal workflow
+  exercises literal search punctuation, F1/contextual help, guarded actions,
+  theme changes, compact resizing and clean terminal restoration.
+  Independent re-review found no remaining actionable issues. No dependency
+  changed; fresh Linux and live Blink/SSH checks for this slice remain pending.
 - The file-selection candidate completes its 218-test release suite with 217
   passing tests (151 library and 66 dashboard/example), and its 196-test selected
   debug suite with 195 passing tests (151 library and 44 example/domain).
@@ -693,7 +717,7 @@ unchanged; a local SwiftPM edit is only integration evidence, not distribution.
 
 ## Next component slices
 
-The coverage audit is complete and the following four approved slices are
+The coverage audit is complete and the following five approved slices are
 implemented. Their public APIs remain
 open to evidence from focused examples. Broaden reusable component coverage
 before treating the framework as ready for release preparation.
@@ -732,7 +756,14 @@ before treating the framework as ready for release preparation.
    stale loads, cancellation and selection with deterministic temporary trees.
    Native lists, focus, input and scrolling remain responsible for interaction.
 
-Further candidates are shared shortcut/help presentation, tabs and scroll styles,
+5. **Contextual keyboard help — implemented.** Share ordered immutable shortcut
+   descriptions between compact hints and grouped detail. Keep description and
+   execution distinct, preserve ordinary text in editors, omit unavailable
+   actions, and use native modal presentation and scrolling. A focused example
+   demonstrates `?` in browsing/actions, F1 for the full reference, native Close
+   and Escape, preserved query/selection/focus, and a compact reader.
+
+Further candidates are tabs and scroll styles,
 expandable trees, page controls, richer grouped forms, and timer/stopwatch
 presentation. Markdown highlighting and active links are separate document
 capabilities with dependency and interaction decisions. These are open coverage

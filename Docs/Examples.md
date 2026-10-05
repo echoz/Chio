@@ -138,6 +138,28 @@ and does not support `--snapshot`.
 
 See [file-selection options](Usage.md#file-selection) for bindings and filtering policies.
 
+## Keyboard help
+
+```sh
+COLORTERM=truecolor swift run -c release chio-dashboard --keyboard-help
+```
+
+Browse with the arrows and press `?` for grouped shortcuts. `/` enters search;
+typing `?` there edits the query. F1 opens the full reference from any control,
+including search. `?` shows the shortcuts for the current browsing/action context.
+Tab focuses the native help viewport or Close button; arrows, Page Up/Down and
+Home/End scroll the viewport.
+Escape closes help and restores the control you were using, retaining the filter
+and selected agent.
+
+Run, Return on a selected agent, or Ctrl-R increments a local counter. An empty
+result set disables Run and omits it from expanded help. Ctrl-T switches theme,
+and Ctrl-Q quits. Try resizing with help open: the example fits 36 × 18.
+`--keyboard-help --snapshot` captures the initial browser state.
+
+See [expanded keyboard help](Usage.md#expanded-keyboard-help) for the shared
+descriptions and native presentation.
+
 ## Colors over SSH
 
 For a true-color terminal such as Blink, declare that capability on the remote

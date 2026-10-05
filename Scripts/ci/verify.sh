@@ -37,8 +37,11 @@ done
     > .build/ci-results/text-entry-compact.txt
 "$binary" --feedback --snapshot --width 36 --height 18 \
     > .build/ci-results/feedback-compact.txt
+"$binary" --keyboard-help --snapshot --width 36 --height 18 \
+    > .build/ci-results/keyboard-help-compact.txt
 python3 Scripts/ci/terminal-smoke.py "$binary"
 python3 Scripts/ci/terminal-smoke.py "$binary" --choices
 python3 Scripts/ci/terminal-smoke.py "$binary" --text-entry
 python3 Scripts/ci/terminal-smoke.py "$binary" --feedback
 python3 Scripts/ci/terminal-smoke.py "$binary" --files
+python3 Scripts/ci/terminal-smoke.py "$binary" --keyboard-help
