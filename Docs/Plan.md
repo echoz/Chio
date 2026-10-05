@@ -6,7 +6,7 @@ a focused searchable-choice form, native password/multiline text entry,
 confirmation with transient feedback, file selection, contextual keyboard help,
 themed native tabs, finite-result pagination, themed native scrolling, and
 expandable disclosure groups, grouped settings forms, and duration labels with
-example-owned timekeeping.
+example-owned timekeeping, and compact instrumentation with passive histories.
 They establish the design direction, not broad parity with Charm's components.
 Accepted contracts and
 ownership live in [Design.md](Design.md); commands and interaction instructions
@@ -19,6 +19,9 @@ live in [the examples guide](Examples.md); component recipes live in
   `chio-dashboard` executable using the SwiftTUI runtime.
 - Semantic theme values, a Charm-inspired default and a light customization,
   plus native GroupBox, List, Table, TextField, Button, Picker, Toggle, and ProgressView styles.
+- A btop-inspired theme preset, optional border titles on native groups, neutral
+  measurement paint on native progress tracks, and a passive `Sparkline` over native
+  Canvas. The `--metrics` composition uses application-owned simulated samples.
 - KeyHint, wrapping KeyHints, StatusBar, and searchable selection with fuzzy or
   substring filtering, stable IDs, result counts, and distinct empty states.
 - Simulated running, completed, failed, paused, and empty states; theme switching;
@@ -237,6 +240,7 @@ come from Chio's original brief; they are not all standalone Bubbles packages.
 | Alerts, confirmation dialogs and sheets | Delivered `ChioPromptStyle` for alerts and confirmation dialogs; native covers demonstrated | [Native presentation][native-presentation] and [PromptStyle][native-prompt] | Native focus and dismissal retained; header paint and arbitrary action wrapping remain native/app concerns; no Chio sheet style |
 | Command palette | Delivered `ChioPaletteStyle`, filtering, disabled items and dashboard actions | Native action scopes, command registration and palette presentation | Surrounding palette chrome has an upstream styling limit; this is not a new Chio command system |
 | Tabs | `ChioTabViewStyle` supplies distinct selection/focus paint and bounded narrow overflow; `--tabs` exercises retained page values | [TabView][native-tabs] and `TabViewStyle` own navigation, selection, routing and dormancy | No per-option disabled state or persistent wheel-driven overflow scroll; native lifecycle limits apply |
+| Passive history | `Sparkline` with automatic/fixed scale, explicit gaps, bounded native drawing and narrow reduction | Native Canvas, CanvasDrawing and braille grid | App owns sample collection/retention/timing, units and thresholds; single series only |
 | Duration labels | Themed `DurationText`; timekeeping stays internal to the `--timers` example | Native text, [TimelineView][native-timeline] and monotonic instants | No public stopwatch/countdown state machine; application owns measurement, limits and expiry |
 
 ### Documents
@@ -292,7 +296,7 @@ To check an already-built binary's terminal workflow:
 python3 Scripts/ci/terminal-smoke.py .build/release/chio-dashboard
 ```
 
-Add `--choices`, `--text-entry`, `--feedback`, `--files`, `--keyboard-help`, `--tabs`, `--pagination`, `--viewport`, `--tree`, `--forms`, or `--timers` for a focused workflow.
+Add `--choices`, `--text-entry`, `--feedback`, `--files`, `--keyboard-help`, `--tabs`, `--pagination`, `--viewport`, `--tree`, `--forms`, `--timers`, or `--metrics` for a focused workflow.
 These check terminal input/output and restoration, not live Blink/SSH rendering
 or latency. `swift test --no-parallel` remains available for a full debug investigation.
 
@@ -380,7 +384,31 @@ PNG dimensions, recording event order, resize/restoration and documentation link
 pass. Browser playback and mobile-layout checks remain pending because the host
 Mac is locked. The existing player, CSS and deployment permissions are unchanged.
 
+The tenth showcase recording adds compact metrics: manual sample advancement,
+gap/empty modes, native actions, three palettes, 36 × 18 stacking and restoration
+to the wide layout. Its 76 × 30 release-terminal capture lasts 21.2 seconds and
+restores terminal modes on exit. The preview is generated from its initial frame
+with a font fallback for braille glyphs and was visually inspected. Site assembly,
+ten-card navigation/assets, image dimensions, event order, resizing/restoration
+and documentation links pass. Browser playback and mobile-layout checks remain
+pending because the host Mac is locked; the player, CSS and deployment permissions
+are unchanged.
+
 ## Verified on macOS
+
+Compact instrumentation validation covers 361 release checks and 338 selected
+debug checks (one existing case-distinct-filename test is skipped in each
+configuration on this filesystem). Native raster/hosted tests cover border-title
+corners and Unicode truncation, passive title controls with enabled content,
+measurement/completion paint, finite extreme/subnormal scaling, gaps within narrow
+columns, spike preservation, empty/constant/single-entry graphs and accessible
+summaries. The example retains values, history mode and native focus through
+three palettes, 36 × 18 resizing and batched input. Independent review's missing
+quantitative accessibility summary was fixed and passed re-review. The full
+`Scripts/ci/verify.sh` run passes: standalone release build, seventeen snapshots
+and thirteen real terminal workflows with clean restoration. No dependency or
+SwiftTUI pin changed. This is local macOS evidence; fresh Linux and live Blink/SSH
+checks remain separate.
 
 Interactive Markdown validation covers 344 release checks and 321 selected debug
 checks (one existing case-distinct-filename test is skipped in each configuration
@@ -394,7 +422,8 @@ new package dependency or SwiftTUI revision is involved. The full
 `Scripts/ci/verify.sh` run passes: standalone release build, sixteen snapshots and
 twelve real terminal workflows, including batched report-link input and terminal
 mode restoration. This is local macOS evidence; remote CI provides separate
-platform evidence.
+platform evidence. Commit `ed59763` subsequently passed both macOS and Linux
+[CI](https://github.com/echoz/Chio/actions/runs/37358932297).
 
 Timer validation covers 335 release tests and 313 selected debug tests. The affected
 five-test debug timer suite was rerun after correcting the 50-column layout;
@@ -1092,8 +1121,8 @@ inventories below remain traceable; they no longer prescribe an execution order.
 | --- | --- | --- |
 | 12 — Markdown syntax highlighting | **Keep** | Improve the existing code-block renderer. Preserve source text, whitespace, native scrolling and a plain fallback. Keep tokenizer integration private; evaluate dependencies and static-link/build costs before choosing one. |
 | 13 — Active Markdown links | **Implemented; [verification](#verified-on-macos)** | Native inline links with an explicit application `OpenLinkAction`; passive existing initializer, intact rich labels, native focus/wrapping and themed feedback. No Chio browser, URL launcher or automatic fetching. |
-| 14 — btop theme/metrics and 16 — compact panels/meters | **Combine into one visual-polish slice** | Start with fixed example values and existing styles. Consider a compact preset, border titles and neutral utilization paint only where they improve actual layouts. No metrics service, system sampler, scheduler or btop-specific model. |
-| 15 — Sparklines/history graphs | **Keep; strongest new component candidate** | Passive single-series presentation over native Canvas adds reusable value. Establish sample/gap validity, scaling, narrow-width reduction and accessible summaries. Applications own collection, retention, clocks, units and thresholds. Prove it in the compact example. |
+| 14 — btop theme/metrics and 16 — compact panels/meters | **Implemented together** | `ChioTheme.btop`, optional group border titles and measurement progress paint are composed in `--metrics`. Fixed local values, native controls/layout; no metrics service, sampler, scheduler or btop model. |
+| 15 — Sparklines/history graphs | **Implemented** | Passive `Sparkline` over native Canvas: finite readings, nil gaps, automatic/fixed scaling, extrema-preserving narrow reduction and accessible summary. Applications own collection, retention, clocks, units and thresholds; `--metrics` supplies manual samples. |
 | 17 — Dense sorted inbox/detail layout | **Example composition first** | Compose existing lists/tables, tabs, Markdown and adaptive native layouts. Application code owns sort policy, sections, selected IDs and preview placement. Extract only a repeated UI interaction contract; no inbox, sorter or review coordinator API. |
 | 18 — Diff reading | **Keep as a later bounded prototype** | A read-only diff is a meaningful presentation gap, but specialized and costly. Prove gutters, uneven sides, Unicode/wrapping and measured document bounds before committing to a public view/data API. Git/JJ/Sapling ingestion and repository operations stay outside Chio. |
 | 19 — Review navigation and annotations | **Fold navigation proof into 18; drop annotations from the library roadmap** | Use native logical-ID reveal in the example. Notes can compose the existing editor. Search policy, review sessions, note storage, persistence and agent protocols are application concerns, not new Chio subsystems. |
@@ -1108,11 +1137,10 @@ inventories below remain traceable; they no longer prescribe an execution order.
 2. Deliver opt-in interactive Markdown links in the existing report reader. Keep
    destination policy and effects with the application, and native text/focus
    underneath; do not add a separate document navigation system.
-3. Try one compact btop-inspired composition and a passive history graph where
-   native primitives alone do not supply reusable presentation. Applications
-   provide samples and timing. Keep this one example; do not create a new demo
-   application for every treatment. Markdown syntax highlighting follows as a
-   separate bounded improvement after its dependency evaluation.
+3. Delivered one compact btop-inspired composition and a passive history graph
+   using native drawing. Applications provide samples and timing. The shared
+   `--metrics` example demonstrates all treatments. Markdown syntax highlighting
+   follows as a separate bounded improvement after its dependency evaluation.
 4. Validate a dense list/detail composition using existing components. Defer a
    general master/detail abstraction until a second use establishes the contract.
 5. Explore the bounded read-only diff, including basic hunk navigation. Review
@@ -1141,18 +1169,18 @@ integration are required by this roadmap.
 
 ### btop-inspired UI inventory
 
-This is a source audit and proposed implementation direction, not delivered
-component coverage. References are btop's [drawing elements](https://github.com/aristocratos/btop/blob/main/src/btop_draw.hpp),
+This source audit informed the delivered compact slice; dense sorting and other
+unmarked ideas remain proposals, not delivered coverage. References are btop's [drawing elements](https://github.com/aristocratos/btop/blob/main/src/btop_draw.hpp),
 [drawing implementation](https://github.com/aristocratos/btop/blob/main/src/btop_draw.cpp)
 and [theme roles](https://github.com/aristocratos/btop/blob/main/src/btop_theme.cpp),
 compared with Chio `3547b83` and the pinned SwiftTUI revision.
 
 | Element | Where it fits | Meaningful work or boundary |
 | --- | --- | --- |
-| Dark palette, density and selection | Existing `ChioTheme` colors, spacing and treatments | Try the same controls with near-black surfaces, legible muted information and stronger borders. Verify focused/disabled states and narrow layouts; public preset naming remains open. |
-| Titles embedded in panel borders | Extend `ChioGroupBoxStyle` through native border/overlay composition | Current headings sit inside the panel. Prototype compact title placement, truncation and background masking before adding a treatment; preserve allocation and pointer bounds. No new `Panel` wrapper. |
-| Labeled utilization meters | Native `ProgressView`, existing progress-style family and authored rows | Reuse fraction/label/track machinery, but distinguish a measurement from task completion: the current style paints 100% as success. Utilization thresholds and units belong to the application; a measurement treatment must preserve that meaning. |
-| Sparklines and history graphs | A small Chio presentation over native [`Canvas`][native-canvas] and `CanvasDrawing` | This is the clearest reusable gap: sample order, scale, empty/constant/single input, finite values and history reduction at narrow widths need explicit contracts. Native [`CanvasGrid`][native-canvas-grid] already packs braille and block samples into terminal cells. |
+| Dark palette, density and selection | Existing `ChioTheme` colors, spacing and treatments | Delivered as `ChioTheme.btop`; compact near-black/cyan semantic roles. It remains independent of group-title and measurement options. |
+| Titles embedded in panel borders | Extend `ChioGroupBoxStyle` through native border/overlay composition | Delivered optional `.border` title placement with one-row truncation, intrinsic masking and passive title semantics. Default `.content` remains; no `Panel` wrapper. |
+| Labeled utilization meters | Native `ProgressView`, existing progress-style family and authored rows | Delivered `.measurement` progress treatment keeps accent at 100%; default `.progress` retains success at completion. Units/thresholds belong to applications; native progress-bar accessibility remains. |
+| Sparklines and history graphs | A small Chio presentation over native [`Canvas`][native-canvas] and `CanvasDrawing` | Delivered `Sparkline` defines sample/gap/scaling/reduction contracts in [Design.md](Design.md#compact-instrumentation). Native [`CanvasGrid`][native-canvas-grid] already packs braille and block samples into terminal cells. |
 | Dense process-like rows and sorting | Existing list/table styles, native selection and authored stacks | Prove an application-owned sort choice and ordered rows with stable selected IDs. The pin has no sortable-header/comparator API; existing native table border/focus paint limits still apply. |
 | Inline shortcut labels | Existing `KeyHint`, `KeyHints`, `ShortcutHint` and `KeyboardHelp` | Reuse their descriptions and native handlers. A bracket/keycap treatment is optional presentation, not a command registry. |
 | Adaptive panel arrangements | Native stacks, geometry, frames, scrolling and `ViewThatFits` | Compose wide/compact layouts in the example. `ViewThatFits` resolves all alternatives, so retained state belongs above them. Draggable split panes would require a separate keyboard/minimum-size contract and are deferred. |
@@ -1164,7 +1192,7 @@ The pin's octant mode currently uses braille coverage, so expose only verified
 glyph treatments. Application code owns sample collection, clocks, retention,
 units and alert thresholds; Chio presents values without reading system metrics.
 
-The accepted combined compact-presentation slice is bounded as follows:
+The accepted combined compact-presentation slice is implemented as above; its original extraction gates were:
 
 1. Compose one compact metrics example from existing groups, progress tracks,
    rows and hints, using fixed local values and a btop-inspired theme prototype.

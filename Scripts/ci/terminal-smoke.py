@@ -90,7 +90,7 @@ def screen(output):
     return "\n".join("".join(line) for line in cells)
 
 
-def run(binary, choices=False, text_entry=False, feedback=False, files=False, keyboard_help=False, tabs=False, pagination=False, viewport=False, tree=False, forms=False, timers=False):
+def run(binary, choices=False, text_entry=False, feedback=False, files=False, keyboard_help=False, tabs=False, pagination=False, viewport=False, tree=False, forms=False, timers=False, metrics=False):
     global WIDTH, HEIGHT
     master, slave = pty.openpty()
     process = None
@@ -136,7 +136,7 @@ def run(binary, choices=False, text_entry=False, feedback=False, files=False, ke
         env = dict(os.environ, TERM="xterm-256color", COLORTERM="truecolor")
         for key in ("NO_COLOR", "CLICOLOR", "CLICOLOR_FORCE", "FORCE_COLOR"):
             env.pop(key, None)
-        example = "--timers" if timers else "--forms" if forms else "--tree" if tree else "--viewport" if viewport else "--pagination" if pagination else "--tabs" if tabs else "--keyboard-help" if keyboard_help else "--files" if files else "--feedback" if feedback else "--text-entry" if text_entry else "--choices" if choices else "--paused"
+        example = "--metrics" if metrics else "--timers" if timers else "--forms" if forms else "--tree" if tree else "--viewport" if viewport else "--pagination" if pagination else "--tabs" if tabs else "--keyboard-help" if keyboard_help else "--files" if files else "--feedback" if feedback else "--text-entry" if text_entry else "--choices" if choices else "--paused"
         command = [str(binary), example]
         if file_fixture is not None:
             folder = Path(file_fixture.name)
@@ -146,13 +146,29 @@ def run(binary, choices=False, text_entry=False, feedback=False, files=False, ke
             command.extend(["--directory", str(folder)])
         process = subprocess.Popen(command, stdin=slave,
                                    stdout=slave, stderr=slave, env=env)
-        until("/ time studio" if timers else "Saved: Chio · manual" if forms else "Expanded folders: 3 / 6" if tree else "Row 2 · Col 2" if viewport else "1–3 of 23" if pagination else "Demo runs: 0" if tabs else "Runs: 0" if keyboard_help else "alpha.txt" if files else "Ready to publish" if feedback else "/ text entry" if text_entry else "1 / 2" if choices else "4 of 4 items")
+        until("/ metrics · simulated" if metrics else "/ time studio" if timers else "Saved: Chio · manual" if forms else "Expanded folders: 3 / 6" if tree else "Row 2 · Col 2" if viewport else "1–3 of 23" if pagination else "Demo runs: 0" if tabs else "Runs: 0" if keyboard_help else "alpha.txt" if files else "Ready to publish" if feedback else "/ text entry" if text_entry else "1 / 2" if choices else "4 of 4 items")
         modes = termios.tcgetattr(slave)
         assert not modes[3] & (termios.ECHO | termios.ICANON), "Terminal is not in raw input mode"
         assert modes[6][termios.VMIN] == 1 and modes[6][termios.VTIME] == 0, "Unexpected raw read timing"
         assert b"\x1b[?1049h" in output, "Alternate screen was not entered"
 
-        if timers:
+        if metrics:
+            until("62%")
+            send(b"\r", "22%")
+            send(b"\t\r", "History: gaps")
+            send(b"g", "History: empty")
+            send(b"n", "28%")
+            send(b"\x14", "History: empty")
+            send(b"\x14", "History: empty")
+            send(b"\x14", "History: empty")
+            WIDTH, HEIGHT = 36, 18
+            fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", HEIGHT, WIDTH, 0, 0))
+            process.send_signal(signal.SIGWINCH)
+            until("^Q quit")
+            until("empty")
+            send(b"\r", "full")  # Native history focus survived theme and resize.
+            send(b"nn\t\r", "42%")
+        elif timers:
             until("0:20")
             send(b"\r", "Running")
             deadline = time.monotonic() + 15
@@ -379,7 +395,7 @@ def run(binary, choices=False, text_entry=False, feedback=False, files=False, ke
             send(b"Smoke Agent", "Smoke Agent")
             send(b"\x1b", "/ agent workspace")
 
-        os.write(master, b"\x11" if choices or text_entry or feedback or files or keyboard_help or tabs or pagination or viewport or tree or forms or timers else b"q")
+        os.write(master, b"\x11" if choices or text_entry or feedback or files or keyboard_help or tabs or pagination or viewport or tree or forms or timers or metrics else b"q")
         deadline = time.monotonic() + 15
         while process.poll() is None and time.monotonic() < deadline:
             receive()
@@ -389,7 +405,8 @@ def run(binary, choices=False, text_entry=False, feedback=False, files=False, ke
         assert process.returncode == 0, f"Dashboard exited with {process.returncode}"
         assert b"\x1b[?1049l" in output, "Alternate screen was not restored"
         assert termios.tcgetattr(slave) == original_modes, "Terminal modes were not restored"
-        print("PASS: native timer actions, live ticks, pause, reset, theme, compact resize, clean exit" if timers else
+        print("PASS: passive history, local samples, native actions, themes, compact resize, clean exit" if metrics else
+              "PASS: native timer actions, live ticks, pause, reset, theme, compact resize, clean exit" if timers else
               "PASS: grouped editing, cross-field validation, save/cancel, theme, compact resize, clean exit" if forms else
               "PASS: nested disclosure, retained expansion, native focus, theme, compact resize, clean exit" if tree else
               "PASS: two-axis scrolling, native focus and reset, theme, compact resize, clean exit" if viewport else
@@ -433,7 +450,8 @@ if __name__ == "__main__":
     examples.add_argument("--tree", action="store_true", help="Exercise nested disclosure, expansion retention and resizing")
     examples.add_argument("--forms", action="store_true", help="Exercise grouped settings, cross-field validation and save/cancel")
     examples.add_argument("--timers", action="store_true", help="Exercise stopwatch, countdown, pause, reset and resizing")
+    examples.add_argument("--metrics", action="store_true", help="Exercise passive graphs, local samples, themes and resizing")
     arguments = parser.parse_args()
     run(arguments.binary.resolve(), choices=arguments.choices, text_entry=arguments.text_entry,
         feedback=arguments.feedback, files=arguments.files, keyboard_help=arguments.keyboard_help, tabs=arguments.tabs,
-        pagination=arguments.pagination, viewport=arguments.viewport, tree=arguments.tree, forms=arguments.forms, timers=arguments.timers)
+        pagination=arguments.pagination, viewport=arguments.viewport, tree=arguments.tree, forms=arguments.forms, timers=arguments.timers, metrics=arguments.metrics)

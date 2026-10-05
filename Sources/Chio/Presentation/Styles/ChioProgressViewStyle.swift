@@ -3,9 +3,19 @@ import SwiftTUIViews
 /// A slim progress track driven by SwiftTUI's determinate value or animation phase.
 public struct ChioProgressViewStyle {
     public let theme: ChioTheme
+    public let treatment: Treatment
 
-    public init(theme: ChioTheme = .default) {
+    public init(theme: ChioTheme = .default, treatment: Treatment = .progress) {
         self.theme = theme
+        self.treatment = treatment
+    }
+
+    public enum Treatment: String {
+        /// Completed tasks use the theme's success color.
+        case progress
+        /// Measurements retain the accent color at every fraction, including 100%.
+        /// Applications own units, thresholds and alert policy.
+        case measurement
     }
 }
 
@@ -30,7 +40,8 @@ extension ChioProgressViewStyle: ProgressViewStyle {
                 let filled = Int((Double(width) * normalized).rounded())
                 HStack(spacing: 0) {
                     Text(String(repeating: theme.treatments.progressFilledGlyph, count: filled))
-                        .foregroundStyle(normalized == 1 ? theme.colors.success : theme.colors.accent)
+                        .foregroundStyle(treatment == .progress && normalized == 1
+                            ? theme.colors.success : theme.colors.accent)
                     Text(String(repeating: theme.treatments.progressEmptyGlyph, count: width - filled))
                         .foregroundStyle(theme.colors.border)
                 }
@@ -53,3 +64,7 @@ extension ChioProgressViewStyle: ProgressViewStyle {
 }
 
 extension ChioProgressViewStyle: Equatable {}
+
+extension ChioProgressViewStyle.Treatment: Hashable {}
+extension ChioProgressViewStyle.Treatment: Codable {}
+extension ChioProgressViewStyle.Treatment: Sendable {}

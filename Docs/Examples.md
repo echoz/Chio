@@ -299,6 +299,24 @@ background jobs. Both panels and their controls fit 36 × 18.
 Use `--timers --snapshot` for a deterministic initial frame.
 See [duration labels](Usage.md#duration-labels).
 
+## Compact metrics
+
+```sh
+COLORTERM=truecolor swift run -c release chio-dashboard --metrics
+```
+
+Compact border titles, measurement tracks and single-series sparklines share the
+btop-inspired palette. Press `n` or activate **Next sample** to advance the local
+24-sample history. Press `g` or activate **History** to cycle through full, missing
+and empty readings. Tab/Shift-Tab moves between native buttons; Return/Space
+activates them. Ctrl-T cycles btop, default and light themes; Ctrl-Q quits.
+
+The application owns the sample sequence and history updates. No clock runs and
+no system metrics are collected. Resize to compare wide and compact layouts.
+Use `--metrics --snapshot` for a deterministic initial frame.
+See [compact metrics and history](Usage.md#compact-metrics-and-history) for the APIs
+and scale, gap and accessibility contracts.
+
 ## Gallery and recordings
 
 [Watch the recordings in your browser](https://echoz.github.io/Chio/), with pause,
@@ -372,6 +390,15 @@ then return to reading. Paragraph wrapping, focused links and persistent feedbac
 share the theme through terminal-size changes. The application chooses what
 activation does; this demo opens no browser and makes no network requests.
 [Watch](https://echoz.github.io/Chio/#markdown) · [Download recording](Media/markdown-links.cast).
+
+### Compact metrics
+
+![Compact instrumentation panels with border titles, utilization tracks, single-series history graphs and native sample controls](Media/metrics.png)
+
+Advance local readings, show missing or empty history, and compare the same compact
+presentation across btop, default and light palettes. Measurement tracks preserve
+their meaning at 100%; the application supplies data and updates.
+[Watch](https://echoz.github.io/Chio/#metrics) · [Download recording](Media/metrics.cast).
 
 These previews render real release-binary terminal output. Font rendering can
 vary between terminals. The accompanying Asciinema-compatible recordings replay

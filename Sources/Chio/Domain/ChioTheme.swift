@@ -43,6 +43,24 @@ public struct ChioTheme {
         error: Color(hexRGB: 0xBE354B)
     ))
 
+    /// A compact dark palette inspired by btop's instrumentation layouts.
+    public static let btop = ChioTheme(
+        colors: .init(
+            accent: Color(hexRGB: 0x55C9D8),
+            heading: Color(hexRGB: 0xA5D9E1),
+            foreground: Color(hexRGB: 0xE5E9ED),
+            secondaryText: Color(hexRGB: 0xB0BBC5),
+            mutedText: Color(hexRGB: 0x84929E),
+            surface: Color(hexRGB: 0x101419),
+            selectedSurface: Color(hexRGB: 0x233440),
+            border: Color(hexRGB: 0x526674),
+            success: Color(hexRGB: 0x77C59B),
+            warning: Color(hexRGB: 0xE5BD72),
+            error: Color(hexRGB: 0xE77E88)
+        ),
+        spacing: .init(horizontalInset: 1, verticalInset: 0, sectionGap: 0, hintGap: 1)
+    )
+
     public struct Colors {
         public let accent: Color
         public let heading: Color

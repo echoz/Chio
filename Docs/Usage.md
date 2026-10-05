@@ -90,6 +90,9 @@ arriving before presentation acquires focus.
 
 ## Themes
 
+Choose `.default`, `.light`, or `.btop`. The btop-inspired preset uses near-black
+surfaces, cyan accents and compact spacing through the same semantic roles.
+
 Theme values are immutable. Use `replacing(...)` to customize colors, spacing,
 or treatments while preserving the original:
 
@@ -100,6 +103,55 @@ let theme = base.replacing(
     spacing: base.spacing.replacing(hintGap: 3)
 )
 ```
+
+## Compact metrics and history
+
+Combine native groups and progress views with a passive history graph:
+
+```swift
+let theme = ChioTheme.btop
+let samples: [Double?] = [0.2, 0.45, nil, 0.55, 0.64]
+
+GroupBox("CPU") {
+    VStack(alignment: .leading, spacing: 0) {
+        ProgressView(value: 0.64, barWidth: 24) {
+            Text("Utilization")
+        } currentValueLabel: {
+            Text("64%")
+        }
+        .progressViewStyle(ChioProgressViewStyle(theme: theme, treatment: .measurement))
+        Sparkline(samples, scale: .fixed(0...1))
+            .frame(width: 24, height: 4)
+    }
+}
+.groupBoxStyle(ChioGroupBoxStyle(theme: theme, titlePlacement: .border))
+.chioTheme(theme)
+```
+
+`.border` puts a display-only title in the top border. Text truncates to one row;
+allocations below five columns hide title paint while keeping its subtree mounted.
+Content controls retain native focus and input. The default `.content` placement
+keeps the heading inside the group. Explicit style options stay independent of
+the palette; pass the current theme when constructing those styles.
+
+`.measurement` keeps a progress track accented even at 100%. The default
+`.progress` treatment paints completion as success. Native `ProgressView` retains
+its progress-bar accessibility role; authored labels supply metric names and units.
+Applications own utilization thresholds and alert meaning.
+
+`Sparkline` draws oldest-to-newest, equally spaced samples through SwiftTUI's
+braille canvas. Supply only finite readings; use `nil` for gaps. Empty and
+all-missing input draw nothing. `.automatic` scales to present values and puts
+constant data at the midpoint; a single-entry series sits at the right edge.
+`.fixed(...)` requires finite, strictly increasing bounds and clips outliers.
+Set a frame to choose the graph's allocation. At narrow widths, each uninterrupted
+run retains its first, last, minimum and maximum readings per drawing column.
+Subcolumn gaps may be visually indistinguishable, but are never bridged by a line.
+The graph supplies an accessible textual summary. Applications own sample
+collection, retention, clocks and units.
+
+See the [compact metrics example](Examples.md#compact-metrics) for local sample
+updates, missing and empty history, theme changes and adaptive composition.
 
 ## Tabs
 

@@ -4,6 +4,31 @@ import SwiftTUIRuntime
 import Testing
 
 struct ChioThemeTests {
+    @Test("The instrumentation preset preserves semantic customization and native treatments")
+    func instrumentationPreset() throws {
+        let base = ChioTheme.btop
+        let copy = base
+        let customized = base.replacing(colors: base.colors.replacing(accent: .red))
+        #expect(base == copy)
+        #expect(base != ChioTheme.default)
+        #expect(base != ChioTheme.light)
+        #expect(customized.colors.accent == .red)
+        #expect(customized.colors.success == base.colors.success)
+        #expect(customized.spacing == base.spacing)
+        #expect(customized.treatments == base.treatments)
+        #expect(base.spacing.sectionGap == 0)
+        #expect(base.treatments == ChioTheme.default.treatments)
+        #expect(base.replacing() == base)
+        let title = ChioGroupBoxStyle.TitlePlacement.border
+        #expect(try JSONDecoder().decode(ChioGroupBoxStyle.TitlePlacement.self,
+                                       from: JSONEncoder().encode(title)) == title)
+        let measurement = ChioProgressViewStyle.Treatment.measurement
+        #expect(try JSONDecoder().decode(ChioProgressViewStyle.Treatment.self,
+                                       from: JSONEncoder().encode(measurement)) == measurement)
+        #expect(ChioGroupBoxStyle().titlePlacement == .content)
+        #expect(ChioProgressViewStyle().treatment == .progress)
+    }
+
     @Test("Successive customization leaves the base palette and unrelated values unchanged")
     func replacementIsolation() {
         let base = ChioTheme.light

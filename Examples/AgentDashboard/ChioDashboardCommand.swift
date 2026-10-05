@@ -55,6 +55,9 @@ struct ChioDashboardCommand {
     @Flag(help: "Run the focused stopwatch and countdown example.")
     var timers = false
 
+    @Flag(help: "Run the compact metrics and passive history example.")
+    var metrics = false
+
     @Option(help: "Starting folder for --files (defaults to the current working directory).")
     var directory: String?
 
@@ -63,7 +66,9 @@ struct ChioDashboardCommand {
 
     @MainActor @ViewBuilder
     private var snapshotView: some View {
-        if timers {
+        if metrics {
+            MetricsExampleView(light: light)
+        } else if timers {
             TimerExampleView(light: light)
         } else if forms {
             GroupedFormExampleView(light: light)
@@ -99,10 +104,10 @@ extension ChioDashboardCommand: AsyncParsableCommand {
         guard (20...240).contains(width), (10...100).contains(height) else {
             throw ValidationError("Use --width 20...240 and --height 10...100.")
         }
-        if [choices, textEntry, feedback, files, keyboardHelp, tabs, pagination, viewport, tree, forms, timers].filter({ $0 }).count > 1 {
-            throw ValidationError("Choose one example: --choices, --text-entry, --feedback, --files, --keyboard-help, --tabs, --pagination, --viewport, --tree, --forms or --timers.")
+        if [choices, textEntry, feedback, files, keyboardHelp, tabs, pagination, viewport, tree, forms, timers, metrics].filter({ $0 }).count > 1 {
+            throw ValidationError("Choose one example: --choices, --text-entry, --feedback, --files, --keyboard-help, --tabs, --pagination, --viewport, --tree, --forms, --timers or --metrics.")
         }
-        if (choices || textEntry || feedback || files || keyboardHelp || tabs || pagination || viewport || tree || forms || timers) && (scenario != .normal || paused) {
+        if (choices || textEntry || feedback || files || keyboardHelp || tabs || pagination || viewport || tree || forms || timers || metrics) && (scenario != .normal || paused) {
             throw ValidationError("--scenario and --paused describe the dashboard simulation; omit them with a focused example.")
         }
         if directory != nil && !files {
@@ -122,6 +127,8 @@ extension ChioDashboardCommand: AsyncParsableCommand {
                 frameInstant: .zero
             )
             print(frame.rasterSurface.lines.joined(separator: "\n"))
+        } else if metrics {
+            try await WebHostCLIRunner.run(MetricsApplication(light: light), configuration: swiftTUIOptions.runtimeConfiguration())
         } else if timers {
             try await WebHostCLIRunner.run(TimersApplication(light: light), configuration: swiftTUIOptions.runtimeConfiguration())
         } else if forms {

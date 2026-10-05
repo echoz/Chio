@@ -96,8 +96,9 @@ only advances simulated application data.
 btop is an additional design reference for compact panels, meters, history graphs
 and dense information layouts. Adapt useful elements through existing Chio styles
 and native composition first. The [component inventory](Plan.md#btop-inspired-ui-inventory)
-separates reusable additions from palette work and application layout; these
-widgets remain proposed until their focused examples are implemented and verified.
+separates reusable additions from palette work and application layout. The
+compact slice now uses a `btop` preset, existing group/progress styles and a
+passive `Sparkline`. Other inventory entries remain proposals.
 
 gh-dash informs dense inbox/detail composition and contextual navigation. Hunk
 informs a review-first diff reader: normalized immutable content, split/unified
@@ -132,6 +133,49 @@ focus-effect suppression also suppresses the focused outline. This matches the
 accent-outline treatment of text inputs without painting a rectangular focus
 fill behind rounded border glyphs: terminal backgrounds cover whole cells and
 cannot follow a glyph's curve. Button labels remain authored native content.
+
+## Compact instrumentation
+
+`ChioTheme.btop` is a near-black/cyan preset using the existing semantic roles,
+spacing and native strokes. It is inspired by btop, without a palette dependency
+or a separate component family. Theme choice does not change interaction policy.
+
+`ChioGroupBoxStyle(titlePlacement: .border)` places a display-only, single-row
+heading over the top border. It truncates to the group's allocation, preserves
+the corner cells, and hides title paint below five columns. Its authored label
+subtree stays mounted across resizing; native focus and hit testing are disabled
+only for that passive label. Content controls remain native and enabled. The
+existing `.content` title placement remains the default. Authored content must
+still obey native sizing; an ancestor may clip an intrinsically oversized group.
+
+`ChioProgressViewStyle(treatment: .measurement)` paints all determinate values
+with the accent, including 100%. The default `.progress` treatment still paints
+completion as success. Both share native fraction/label/indeterminate behavior.
+Units, thresholds and meaning belong to the application. Native accessibility
+still identifies a progress bar with a normalized fraction; this is not a new
+gauge semantic role.
+
+`Sparkline` draws a passive single series through native `Canvas` and braille
+packing. Input slots run oldest to newest, equally spaced. `nil` means a missing
+reading and breaks the line; it is not equivalent to zero or an omitted slot.
+The view's construction boundary rejects nonfinite readings and fixed bounds
+that are nonfinite or not strictly increasing. `Scale` is serializable input
+configuration; validation occurs when it is consumed by the view.
+
+Automatic scaling uses finite extrema; a constant series occupies the midpoint.
+Empty/all-missing series draw nothing. A single-entry series sits on the right;
+a lone finite reading among gaps retains its time slot. Fixed scales clip
+outliers to the endpoints. Overflow-safe normalization handles extreme finite
+bounds. Native drawing coordinates are bounded before lines are submitted.
+
+At narrow widths, retain first/last/minimum/maximum in chronological order for
+each drawing column within each contiguous run. Missing samples disconnect runs
+even within a column; subcolumn gaps cannot always remain visibly distinct. Input
+is scanned per drawing, so applications bound retained histories. Chio owns no
+sampler, timer, monitoring state, units or alert thresholds. Native image semantics
+carry a default textual count/latest/extrema summary; applications can replace
+the label to supply units. The `--metrics` example advances fixed local samples
+manually and composes these pieces in stable native layouts.
 
 ## Searchable selection
 
