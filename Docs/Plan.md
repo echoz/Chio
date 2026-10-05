@@ -335,6 +335,12 @@ determines the category, including direct links and browser history. Selecting
 an example keeps the chooser in view and pauses the previous recording. Both
 groups and all previews remain available without JavaScript. API and ownership
 details stay beneath each recording rather than above the chooser.
+Each recording also owns its launch command and a link to its keyboard controls,
+so both follow the selected example through navigation and direct links without
+additional selection state. The Markdown card launches the dashboard and tells
+the reader to press Enter to open an agent report; feedback starts in the light
+theme shown in its recording. A shared setup note replaces the global command
+catalogue. Script-free pages retain each command beside its own preview.
 The site build gives owned CSS and JavaScript content-hashed filenames and
 rewrites generated HTML references so a new page requests matching assets.
 
@@ -375,7 +381,9 @@ asset boundaries. These website checks do not add Swift or Linux test evidence.
 The compact component/composition navigation passes site assembly, generated
 asset hash/reference checks, JavaScript syntax, HTML structure, category
 membership, all eleven source links and stable recording fragments, local assets,
-image dimensions and recording checks. Independent source review found no
+image dimensions and recording checks. All eleven launch commands and keyboard
+guide anchors match the CLI and examples guide, and each command is nested in
+its matching recording. Independent source review found no
 actionable issues. Script-free preview markup remains available; recording
 captures and player mounting are unchanged. Browser playback, navigation/focus,
 and narrow-layout verification for this revision remain pending because the host

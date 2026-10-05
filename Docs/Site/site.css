@@ -72,15 +72,16 @@ h1 span { color: var(--accent); }
 .example-source { font-size: 13px; }
 .playback-note, .player-message { color: var(--muted); font-size: 12px; line-height: 1.7; }
 .player-message { padding: 0 22px; }
-.try-it { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 40px; margin: 60px 0 38px; }
-.try-it h2 { margin: 10px 0; font-size: 30px; font-weight: 550; letter-spacing: -.03em; }
-.try-it p:not(.eyebrow) { max-width: 350px; font-size: 14px; line-height: 1.7; color: var(--muted); }
-.run-command { min-width: 0; }
-.run-command pre { margin: 0 0 14px; padding: 20px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); overflow-x: auto; font-size: 13px; }
-.run-command code { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; }
-.run-command code span { color: var(--mint); }
-.run-command a { font-size: 13px; color: var(--muted); }
-.run-command .command-label { margin: 18px 0 8px; font-size: 12px; color: var(--muted); }
+.recording-run { margin: 0 22px 20px; min-width: 0; }
+.run-heading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 18px; margin-bottom: 10px; }
+.run-heading h4 { margin: 0; font-size: 13px; font-weight: 550; }
+.run-heading a { font-size: 12px; color: var(--muted); }
+.recording-run pre { margin: 0; padding: 14px 16px; border: 1px solid var(--border); border-radius: 6px; background: var(--background); font-size: 13px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
+.recording-run code, .run-note kbd { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; }
+.run-note { margin: 10px 0 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
+.run-note kbd { color: var(--text); }
+.setup-note { margin: 28px 0; }
+.setup-note p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.8; }
 .project-note { padding: 22px 0; border-top: 1px solid var(--border); }
 .project-note p { max-width: 830px; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.8; }
 .project-note strong { color: var(--text); font-weight: 550; }
@@ -102,7 +103,7 @@ footer span span { padding: 0 8px; }
   .recording-caption { padding: 14px; flex-direction: column; gap: 12px; }
   .recording-details { padding: 0 14px 16px; }
   .recording-ingredients div { grid-template-columns: 1fr; gap: 0; }
-  .try-it { grid-template-columns: 1fr; gap: 12px; margin: 38px 0 30px; }
-  .run-command pre { padding: 16px 12px; font-size: 11px; }
+  .recording-run { margin: 0 14px 16px; }
+  .recording-run pre { padding: 12px; }
   footer { align-items: start; flex-direction: column; gap: 6px; }
 }
