@@ -155,6 +155,36 @@ invalid page. Give `PageControl` at least 20 columns for ordinary summaries;
 large numbers truncate within the available width. The application owns data and
 loading. See the [history example](Examples.md#pagination) for filtering and sizing.
 
+## Scrolling
+
+Native scroll views acquire Chio's muted indicators and accent focus treatment:
+
+```swift
+@State private var position = ScrollCellOffset.zero
+
+// In the view body:
+ScrollView([.horizontal, .vertical], position: $position) {
+    ActivityLog()
+}
+.frame(height: 16)
+.chioTheme(.default)
+```
+
+Give the viewport a finite size along its scrolling axes. Use native
+`.scrollIndicators(.hidden)` to hide tracks, or `.scrollViewStyle(...)` inside
+the theme scope to override the style. Custom theme `mutedText` and `accent`
+colors control idle and focused indicators. Content backgrounds remain authored.
+Focus-effect suppression keeps the indicators muted without disabling scrolling.
+
+The native runtime retains keyboard, wheel, drag and position ownership.
+For a two-axis viewport, Home/End act vertically; focusing its horizontal track
+lets Home/End act horizontally. The [viewport example](Examples.md#scrolling)
+demonstrates this directly. Native Lists and Tables use their own styles.
+The pinned runtime can nudge the position by one cell when focus enters a
+viewport with reserved tracks. Home then Left corrects the initial one-cell
+nudge; Left otherwise moves only one column. This also occurs with SwiftTUI's
+automatic style.
+
 ## Command palettes
 
 `ChioPaletteStyle` styles SwiftTUI's native command palette. Apply `.chioTheme(...)`

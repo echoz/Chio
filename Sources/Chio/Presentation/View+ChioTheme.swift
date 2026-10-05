@@ -21,6 +21,7 @@ extension View {
             .listStyle(ChioListStyle(theme: theme))
             .tableStyle(ChioTableStyle(theme: theme))
             .tabViewStyle(ChioTabViewStyle(theme: theme))
+            .scrollViewStyle(ChioScrollViewStyle(theme: theme))
             .paletteStyle(ChioPaletteStyle(theme: theme))
             .textFieldStyle(ChioTextFieldStyle(theme: theme))
             .textEditorStyle(ChioTextEditorStyle(theme: theme))

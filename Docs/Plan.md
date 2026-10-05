@@ -4,7 +4,7 @@ The delivered proof-of-concept slices are a runnable local dashboard, agent
 creation, Markdown run reports, a command palette using simulated agents,
 a focused searchable-choice form, native password/multiline text entry,
 confirmation with transient feedback, file selection, contextual keyboard help,
-themed native tabs, and finite-result pagination.
+themed native tabs, finite-result pagination, and themed native scrolling.
 They establish the design direction, not broad parity with Charm's components.
 Accepted contracts and
 ownership live in [Design.md](Design.md); commands and interaction instructions
@@ -143,6 +143,11 @@ live in [the examples guide](Examples.md); component recipes live in
   Independent source review found no remaining actionable issues after removing
   a duplicated example label.
 
+- `ChioScrollViewStyle` adds muted idle indicators and accent focus paint through
+  the native presentation hook. Native glyphs, geometry, track reservation,
+  background inheritance and disabled opacity remain intact. The `--viewport`
+  example exercises a wide local log, native positions, reset and compact layout.
+
 ## Component coverage
 
 Source audit at Chio `424f8e6`, using SwiftTUI revision
@@ -188,7 +193,7 @@ come from Chio's original brief; they are not all standalone Bubbles packages.
 | Trees | No Chio tree workflow or style | [OutlineGroup][native-outline], `OutlineStyle`, separate `DisclosureGroup` | `OutlineGroup` expands all descendants and paints connectors with native colors; a collapsible tree needs composition, and exact connector color needs upstream support |
 | File picker | `FilePicker` selects one readable regular file; async listing, folder navigation, fuzzy search, extension/hidden policy, errors/retry and explicit confirmation | Native search, lists, buttons, focus, scrolling and task lifetime | No directory/multiple selection, save panel, root confinement, recursive search or filesystem watching; confirmation does not reserve the file |
 | Pagination | Checked immutable `Pagination` and native-button `PageControl`; `--pagination` demonstrates filtered history and changing page size | Native buttons, bindings, input and focus | Finite known totals; no asynchronous loading, unknown totals or cross-page item selection |
-| Scrollable viewport | Used and tested in reports, tables and code blocks | [ScrollView][native-scroll], positions/readers/styles | Keep native scrolling; add a document-reader convenience only for demonstrated reusable UX |
+| Scrollable viewport | `ChioScrollViewStyle` themes native indicators; focused `--viewport` demonstrates two-axis scrolling and reset | [ScrollView][native-scroll], positions/readers/styles own input, focus and clamping | No new viewport wrapper; Lists/Tables use their own styles; editor descendants do not acquire viewport focus paint |
 | Progress/loading bar | Delivered determinate and indeterminate `ChioProgressViewStyle`, including reduced motion | `ProgressView` owns animation phase | Not a dedicated spinner; animated/gradient fill variants are not part of the current Chio scope |
 | Spinner | Delivered `ChioSpinnerStyle` with semantic stage paint and native reduced motion | [Spinner][native-spinner], `SpinnerStyle`, presets/stages and native timing | Native braille cadence and stages; no Chio timer or frame catalog |
 | Keyboard hints and help | Shared immutable `ShortcutHint`/`ShortcutGroup` values feed wrapping `KeyHints` and grouped `KeyboardHelp`; focused example proves context, full reference and modal reading | Native key handlers, cover, scrolling and focus restoration | Application selects visible descriptions and registers handlers; no automatic registry extraction (native `KeyBinding` is private) or command execution through descriptions |
@@ -253,7 +258,7 @@ To check an already-built binary's terminal workflow:
 python3 Scripts/ci/terminal-smoke.py .build/release/chio-dashboard
 ```
 
-Add `--choices`, `--text-entry`, `--feedback`, `--files`, `--keyboard-help`, `--tabs`, or `--pagination` for a focused workflow.
+Add `--choices`, `--text-entry`, `--feedback`, `--files`, `--keyboard-help`, `--tabs`, `--pagination`, or `--viewport` for a focused workflow.
 These check terminal input/output and restoration, not live Blink/SSH rendering
 or latency. `swift test --no-parallel` remains available for a full debug investigation.
 
@@ -307,6 +312,18 @@ Swift 6.4, with SwiftTUI pinned at
 - `swift build --product chio-dashboard` passes.
 - `swift build -c release --product chio-dashboard` also passes. Interactive
   launch instructions use release mode; debug enables extra upstream verification.
+- The scroll-style candidate completes 283 release tests and 261 selected debug
+  tests: 282 and 260 pass respectively, with the existing case-distinct filename
+  test skipped on this filesystem. New public raster/hosted tests cover both
+  axes, default/light/custom indicator colors, authored backgrounds, hidden and
+  disabled tracks, suppressed focus effects, keyboard input, wheel and track
+  drag, and theme/resize preservation. An Automatic-style baseline reproduces
+  the native one-cell focus-reveal limitation; tests establish the origin with
+  native input and distinguish focus reveal from dragging. Existing editor
+  checks still pass. The full verification script passes, including thirteen
+  snapshots and all nine pseudo-terminal workflows with clean restoration.
+  Independent source review found no remaining issues after correcting the
+  Home/Left guidance. Fresh Linux and live Blink/SSH checks remain pending.
 - The pagination candidate completes 276 release tests and 254 selected debug
   tests: 275 and 253 pass respectively, with the existing case-distinct filename
   test skipped on this case-insensitive filesystem. New tests cover checked
@@ -586,6 +603,12 @@ measured 53 ms median. The process exited with code zero and restored terminal
 modes. These small samples include capture/decoding overhead and exclude SSH and
 Blink display latency; they do not establish large-result-set performance.
 
+The viewport release was sampled locally at 100 × 30 without concurrent builds
+or tests. Six vertical steps measured 120 ms median and six horizontal steps
+137 ms median in the forty-row example. The process exited with code zero and
+restored terminal modes. These include capture/decoding overhead; they do not
+isolate style cost, establish large-log performance or measure SSH/Blink latency.
+
 ## Linux and CI
 
 The initial demonstration slices are delivered. Portability verification adds CI and
@@ -697,6 +720,13 @@ portable; correcting the platform implementation remains upstream work.
 
 ## Remaining boundaries
 
+- Native ScrollView focus reveal includes its reserved indicator tracks in the
+  focused rectangle but compares it to the smaller content viewport. With both
+  axes overflowing, focusing the body can move the offset by one cell in each axis;
+  returning from the reset button can repeat that movement. There is no public
+  reveal-policy control in the pin. Chio retains native geometry and input;
+  hiding tracks, overlaying content or fabricating cursor metadata would change
+  other contracts. The correction belongs in native scroll/focus ownership.
 - Native TabView can publish terminal width during resolution inside an
   unconstrained HStack even when a later fixed frame allocates fewer columns.
   Chio uses native clipping to contain paint and actual overlay geometry to
@@ -794,7 +824,7 @@ unchanged; a local SwiftPM edit is only integration evidence, not distribution.
 
 ## Next component slices
 
-The coverage audit is complete and the following seven slices are
+The coverage audit is complete and the following eight slices are
 implemented. Their public APIs remain
 open to evidence from focused examples. Broaden reusable component coverage
 before treating the framework as ready for release preparation.
@@ -851,8 +881,12 @@ before treating the framework as ready for release preparation.
    page-size anchoring and retained-binding authority. A focused history example
    demonstrates filtering, page navigation, size changes and native scrolling.
 
-Further candidates are scroll styles,
-expandable trees, richer grouped forms, and timer/stopwatch
+8. **Themed scrolling — implemented.** Add semantic indicator paints through
+   native `ScrollViewStyle` while preserving geometry, content surfaces and native
+   input. A focused two-axis activity viewport demonstrates bound positions,
+   focus, reset, theme changes and compact resizing.
+
+Further candidates are expandable trees, richer grouped forms, and timer/stopwatch
 presentation. Markdown highlighting and active links are separate document
 capabilities with dependency and interaction decisions. These are open coverage
 items, not completed work and not an instruction to build every candidate.

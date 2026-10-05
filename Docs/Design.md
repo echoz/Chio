@@ -82,7 +82,7 @@ Component options specify behavior; application composition specifies content.
 
 Changing theme preserves query, stable selection, focus, and entered values.
 Native `GroupBox`, `List`, `Table`, `Button`, `TextField`, `TextEditor`, `Picker`,
-`Toggle`, `TabView`, `ProgressView`, `Spinner`, and native prompt styles share the same
+`Toggle`, `TabView`, `ScrollView`, `ProgressView`, `Spinner`, and native prompt styles share the same
 semantic roles. The first appearance closely follows Huh's Charm palette and
 Bubbles' selected rows, muted metadata, and compact keyboard help.
 
@@ -301,6 +301,31 @@ and five rows per page. Native scrolling reveals rows within the selected page
 in short terminals. Query/count/page updates occur in one application binding
 setter. No asynchronous paging, unknown totals, item selection across pages or
 data-source protocol is introduced.
+
+## Scrolling
+
+`.chioTheme` installs `ChioScrollViewStyle` on native scroll views. Unfocused
+indicators use muted text; a focused viewport accents its visible indicators,
+while focusing an individual track accents only that axis. Suppressing focus
+effects retains muted paint. Native disabled opacity remains unchanged.
+Glyphs, reserved track space, insets and inherited backgrounds retain native
+defaults, so this style does not alter content sizing or cover authored surfaces.
+
+SwiftTUI owns positions, clipping, keyboard navigation, wheel input, track dragging
+and clamping. Indicator visibility remains `.scrollIndicators(_:axes:)` policy.
+The style also reaches the native scroll view inside a text editor; descendant
+editor focus does not imply viewport focus. Native Lists and Tables have their
+own scrolling styles and are unaffected. No viewport wrapper is introduced.
+
+The focused `--viewport` example presents a wide, forty-row local activity log
+with an application-owned native `ScrollCellOffset`. Arrows move both axes;
+Home/End affect the vertical axis when the body owns focus. Tab visits the
+individual indicators and a native reset button; F6 returns to the log. Theme
+changes preserve position, and native geometry handles bounds on resize.
+The pinned runtime includes a viewport's reserved tracks in focus reveal, so
+focusing its body can move the offset one cell on each overflowing axis. Chio
+retains native geometry and records this upstream limitation; it does not replay
+input or invent a cursor anchor to counteract the reveal.
 
 ## Command palette
 

@@ -194,6 +194,28 @@ the filter and returns to the first page, Ctrl-T changes theme, and Ctrl-Q quits
 Resize to 36 × 18 to try the compact layout; the viewport scrolls within a page.
 `--pagination --snapshot` captures the first page. The records are a local simulation.
 
+## Scrolling
+
+```sh
+COLORTERM=truecolor swift run -c release chio-dashboard --viewport
+```
+
+Explore a wide log of forty local events. Arrows scroll vertically and
+horizontally; Home/End jump vertically while the log owns focus. Tab visits the
+vertical and horizontal tracks, then **Back to start**. A focused horizontal
+track uses Home/End to reach the left/right edges. F6 returns focus to the log.
+Wheel and track dragging use SwiftTUI's native pointer support.
+
+Ctrl-T changes theme and Ctrl-Q quits. Try 36 × 18 to see the compact layout;
+the viewport preserves its position through theme changes and native resizing.
+Use `--viewport --snapshot` for a deterministic first frame. This is a local
+scrolling example, not a live log reader.
+The pinned SwiftTUI runtime can nudge both offsets by one cell when the log gains
+focus, including through F6. Immediately after launch, Home then Left corrects
+that initial nudge while keeping log focus. **Back to start** resets both offsets
+from any position, retaining button focus. This is a documented native focus-reveal
+limitation.
+
 ## Colors over SSH
 
 For a true-color terminal such as Blink, declare that capability on the remote
