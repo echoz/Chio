@@ -333,6 +333,11 @@ uses the repository's GitHub Actions Pages source and `github-pages` environment
 pull requests receive no deployment permissions. Recordings and player assets are
 served from the same site, without a CDN or an asciinema account. Keep recordings
 limited to local demo data and check playback before replacing them.
+Published clips should stop on the final complete UI frame, before terminal
+teardown and deferred diagnostic output. Check the entire output stream, including
+the tail, for warnings and logs. Keep full-session exit and terminal-restoration
+verification separate from the published playback excerpt; trimming a clip does
+not resolve or suppress the application's diagnostics.
 
 Completing a visible UI slice includes updating this showcase in the same work:
 capture or refresh a short recording from the verified release binary, update
@@ -388,8 +393,9 @@ The ninth showcase recording demonstrates Markdown in the existing report
 reader. Its syntax-highlighting refresh shows Swift token colors, native code
 End/Home scrolling, theme changes that retain horizontal position, link focus
 and local destination feedback, 36 × 18 wrapping, and dashboard restoration.
-The 76 × 30 release-terminal capture lasts 26.5 seconds and restores terminal
-modes on exit. Its preview was visually inspected; site assembly, ten-card
+The 76 × 30 release-terminal session restores terminal modes on exit. Its
+published excerpt lasts 25.6 seconds and ends on the restored dashboard, before
+shutdown diagnostics. Its preview was visually inspected; site assembly, ten-card
 navigation/assets, PNG dimensions, recording event order, resize/restoration and
 documentation links pass. Browser playback and mobile-layout checks remain pending
 because the host Mac is locked. Player code, CSS and deployment permissions are
@@ -408,7 +414,8 @@ are unchanged.
 The eleventh showcase recording adds the inbox: selection, repository ordering,
 preview visibility, batched search/open, native reader Home/End, theme changes,
 36 × 18 resizing, queue changes and empty-result recovery. The 100 × 30 release
-capture lasts 22 seconds and restores terminal modes on exit. Its preview was
+session restores terminal modes on exit. Its published excerpt lasts 21 seconds
+and ends on the wide inbox, before shutdown diagnostics. Its preview was
 visually inspected; site assembly, eleven-card navigation/assets, image dimensions,
 event order, resizing/restoration and documentation links pass. Browser playback
 and mobile-layout checks remain pending because the host Mac is locked. Player
@@ -1035,8 +1042,14 @@ portable; correcting the platform implementation remains upstream work.
   compare the paused dashboard with `TERM=xterm-256color`, first without
   `COLORTERM`, then with `COLORTERM=truecolor` (and without `NO_COLOR`). The latter
   must preserve authored RGB; an eventual upstream fix should improve the former.
-- Native measurement can report `collection.unboundedRealization` for the four
-  demo rows. Large-dataset performance and virtualization remain unverified.
+- Native ideal-size measurement reports `collection.unboundedRealization` for
+  the small dashboard and inbox lists (up to sixteen rows in the latter).
+  `VStack` probes children with an unspecified height; a flexible maximum frame
+  preserves that proposal, and native List realizes every row to find its ideal
+  size. This is real eager measurement, not evidence that the committed viewport
+  is unbounded. SwiftTUI buffers these warnings and prints them after terminal
+  teardown. No diagnostics are suppressed; large-dataset performance and
+  virtualization through this composition remain unverified.
 - Type-ahead during slash-to-search focus handoff appends to the query until the
   native editor acquires focus. Chio does not implement an editor, event loop,
   layout engine, or focus graph.
