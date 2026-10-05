@@ -81,6 +81,31 @@ Linux verification uses Swift 6.4.0 on Ubuntu 24.04. Ordinary Linux builds use
 glibc and need the Swift runtime libraries; they are not self-contained binaries.
 Static Linux distribution is a [separate compatibility check](Plan.md#static-linux-blocker).
 
+## Review inbox
+
+```sh
+COLORTERM=truecolor swift run -c release chio-dashboard --inbox
+```
+
+Browse sixteen local review fixtures using arrows and `/` to filter by title,
+repository, author or number. The native **Queue** and **Sort order** pickers also
+work with Tab and arrows. Ctrl-G cycles Review, Drafts and All; Ctrl-S switches
+between recent and repository ordering. Sorting retains the selected identity.
+Filtering or changing queue selects the first match if the old selection disappears.
+An empty result set has no preview and cannot open a reader.
+
+At 88 × 26 and larger, a passive Markdown preview sits beside the dense list.
+Ctrl-P toggles it. Smaller terminals use the whole width for the list. Enter opens
+a full-screen reader at any size; from search, the first Enter returns to results
+and the second opens the selected review. In the reader, arrows and Home/End
+scroll, Tab reaches code, and Escape restores the filtered list and native focus.
+Ctrl-T changes theme; Ctrl-Q quits from the inbox. Resizing retains the query and
+selection, and an open reader stays open until dismissed.
+
+These are fixed snapshots, with no GitHub connection, current clock or repository
+operations. Use `--inbox --snapshot --width 36 --height 18` for a compact frame.
+Watch the [inbox recording](https://echoz.github.io/Chio/#inbox).
+
 ## Choice fields
 
 Run the focused two-step form using the same executable:
@@ -386,12 +411,13 @@ Pause each clock independently, resume its retained interval, and follow countdo
 expiry through theme and terminal-size changes.
 [Watch](https://echoz.github.io/Chio/#timers) · [Download recording](Media/timers.cast).
 
-### Markdown links and reports
+### Markdown code, links and reports
 
-![An agent report with inline project docs and outcome links, a table, and local destination feedback in the footer](Media/markdown-links.png)
+![An agent report with themed Swift syntax colors, a horizontally scrollable code block, and local link feedback in the footer](Media/markdown-links.png)
 
-Move through inline links with native focus, activate each destination locally,
-then return to reading. Paragraph wrapping, focused links and persistent feedback
+Read highlighted Swift through theme changes and native horizontal scrolling.
+Move through inline links with native focus and activate each destination locally.
+Paragraph wrapping, focused links and persistent feedback
 share the theme through terminal-size changes. The application chooses what
 activation does; this demo opens no browser and makes no network requests.
 [Watch](https://echoz.github.io/Chio/#markdown) · [Download recording](Media/markdown-links.cast).
@@ -404,6 +430,14 @@ Advance local readings, show missing or empty history, and compare the same comp
 presentation across btop, default and light palettes. Measurement tracks preserve
 their meaning at 100%; the application supplies data and updates.
 [Watch](https://echoz.github.io/Chio/#metrics) · [Download recording](Media/metrics.cast).
+
+### Review inbox
+
+![A dense review queue beside a Markdown preview, with queue and sort controls and keyboard hints](Media/inbox.png)
+
+Sort and filter fixed local reviews, hide the wide preview, and open the full
+reader. Query, selection and native focus survive theme and terminal-size changes.
+[Watch](https://echoz.github.io/Chio/#inbox) · [Download recording](Media/inbox.cast).
 
 These previews render real release-binary terminal output. Font rendering can
 vary between terminals. The accompanying Asciinema-compatible recordings replay

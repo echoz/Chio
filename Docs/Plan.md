@@ -6,7 +6,8 @@ a focused searchable-choice form, native password/multiline text entry,
 confirmation with transient feedback, file selection, contextual keyboard help,
 themed native tabs, finite-result pagination, themed native scrolling, and
 expandable disclosure groups, grouped settings forms, and duration labels with
-example-owned timekeeping, and compact instrumentation with passive histories.
+example-owned timekeeping, compact instrumentation with passive histories,
+and a dense local review inbox with Markdown reading.
 They establish the design direction, not broad parity with Charm's components.
 Accepted contracts and
 ownership live in [Design.md](Design.md); commands and interaction instructions
@@ -185,6 +186,14 @@ live in [the examples guide](Examples.md); component recipes live in
   layout changes, and handles completion with a current-value check. No clock
   service, event loop or dependency is added.
 
+- The `--inbox` example composes existing controls into a dense review workspace:
+  native queue/sort Pickers, substring search, stable-ID selection, a passive wide
+  Markdown preview and native full-screen reading. Sixteen immutable local fixtures
+  keep sorting and search deterministic. A single list survives preview, theme and
+  size changes; application-owned presentation phases let native results focus
+  commit before the cover captures it. Fast Return/Return/Escape and covered-input
+  regressions protect that handoff. No public component or dependency is added.
+
 ## Component coverage
 
 Source audit at Chio `424f8e6`, using SwiftTUI revision
@@ -248,7 +257,7 @@ come from Chio's original brief; they are not all standalone Bubbles packages.
 | Capability | Chio today | Native foundation | Remaining work |
 | --- | --- | --- | --- |
 | Markdown documents | Delivered parsed immutable documents, headings, rich text, lists, quotes, fenced code, rules and tables | Swift Markdown AST becomes native `Text`, layout, `Table`, `ScrollView` | This is a useful subset, not complete Glamour feature equivalence |
-| Syntax highlighting | Delivered Swift fenced-code highlighting with retained semantic ranges, theme syntax colors, and an explicit plain override | Direct Tree-sitter C parsing becomes one native rich `Text`; native scrolling remains | Source/layout/focus contracts and local costs verified; fresh Linux/static-link evidence remains pending; other languages stay plain |
+| Syntax highlighting | Delivered Swift fenced-code highlighting with retained semantic ranges, theme syntax colors, and an explicit plain override | Direct Tree-sitter C parsing becomes one native rich `Text`; native scrolling remains | Source/layout/focus contracts, local costs and Linux/glibc CI verified; static-musl remains blocked; other languages stay plain |
 | Links and images | Opt-in native inline links with an application `OpenLinkAction`, grouped rich labels and `ChioLinkStyle`; default documents and image descriptions remain passive | Native `Link`/rich text owns focus, activation, wrapping and clipping | Headers remain plain; traversal reaches visible native targets. Applications own destination policy/effects; image rendering remains outside scope |
 
 The source of Chio's installed styles is
@@ -296,7 +305,7 @@ To check an already-built binary's terminal workflow:
 python3 Scripts/ci/terminal-smoke.py .build/release/chio-dashboard
 ```
 
-Add `--choices`, `--text-entry`, `--feedback`, `--files`, `--keyboard-help`, `--tabs`, `--pagination`, `--viewport`, `--tree`, `--forms`, `--timers`, or `--metrics` for a focused workflow.
+Add `--choices`, `--text-entry`, `--feedback`, `--files`, `--keyboard-help`, `--tabs`, `--pagination`, `--viewport`, `--tree`, `--forms`, `--timers`, `--metrics`, or `--inbox` for a focused workflow.
 These check terminal input/output and restoration, not live Blink/SSH rendering
 or latency. `swift test --no-parallel` remains available for a full debug investigation.
 
@@ -396,7 +405,37 @@ and documentation links pass. Browser playback and mobile-layout checks remain
 pending because the host Mac is locked; the player, CSS and deployment permissions
 are unchanged.
 
+The eleventh showcase recording adds the inbox: selection, repository ordering,
+preview visibility, batched search/open, native reader Home/End, theme changes,
+36 × 18 resizing, queue changes and empty-result recovery. The 100 × 30 release
+capture lasts 22 seconds and restores terminal modes on exit. Its preview was
+visually inspected; site assembly, eleven-card navigation/assets, image dimensions,
+event order, resizing/restoration and documentation links pass. Browser playback
+and mobile-layout checks remain pending because the host Mac is locked. Player
+code, CSS and deployment permissions are unchanged.
+
 ## Verified on macOS
+
+Dense inbox validation covers 385 release checks and 362 selected debug checks
+(one existing case-distinct-filename test is skipped in each configuration on this
+filesystem). The new model tests cover deterministic ordering, tie breakers,
+search metadata and coding. Twelve raster cases cover both themes and the
+88-column/26-row preview thresholds down to 36 × 18. Hosted tests preserve query,
+selected ID and actual focus through sorting, filtering, queue changes, preview
+visibility, theme and resize. Native reader Home/End, child focus, exact background
+focus restoration, pending-cover isolation and same-batch Escape cancellation pass.
+The full `Scripts/ci/verify.sh` gate passes, including the standalone release build,
+eighteen snapshots and fourteen real terminal workflows with clean restoration.
+Independent source review found no remaining actionable issues. No library API,
+dependency or SwiftTUI pin changed. This is local macOS evidence; fresh inbox
+Linux CI, browser playback and live Blink/SSH checks remain separate.
+
+Isolated release-terminal probes used six Down events and six typed search
+characters at each size. At 100 × 30, median observed frame response was 106 ms
+for selection (105–346 ms range, including the first change) and 52 ms for typing
+(45–104 ms). At 36 × 18, medians were 102 ms for selection (87–104 ms) and 40 ms
+for typing (30–68 ms). These are local input-to-observed-frame samples including
+probe overhead, not SSH measurements, rendering-only timings or guarantees.
 
 Swift syntax highlighting validation covers 375 release checks and 352 selected
 debug checks (one existing case-distinct-filename test is skipped in each
@@ -410,8 +449,10 @@ and passed re-review. The full `Scripts/ci/verify.sh` gate passes: standalone
 release build, seventeen snapshots, and thirteen real terminal workflows with
 clean restoration. The existing Linux scroll-track fixture now observes press
 focus and release separately without changing expected offsets or deadlines.
-This is local macOS evidence; fresh Linux, browser playback and live Blink/SSH
-checks remain separate.
+Commit `4e47001` subsequently passed both macOS and Linux/glibc
+[CI](https://github.com/echoz/Chio/actions/runs/37376092806), including the new
+syntax dependencies and track-focus regression. Browser playback and live
+Blink/SSH checks remain separate.
 
 Compact instrumentation validation covers 361 release checks and 338 selected
 debug checks (one existing case-distinct-filename test is skipped in each
@@ -799,6 +840,11 @@ overhead and does not measure SSH transport or Blink display latency.
 The initial demonstration slices are delivered. Portability verification adds CI and
 repeatable terminal checks without changing the public API or dependency pins.
 
+- Commit `4e47001` passed both macOS and Linux x86_64/glibc in
+  [run 37376092806](https://github.com/echoz/Chio/actions/runs/37376092806), including
+  Swift fenced-code highlighting and the synchronized track-focus regression.
+  This verifies the new C dependencies in the ordinary Linux build; it does not
+  establish static-musl support or coverage of the later inbox example.
 - Linux [run 37367526697](https://github.com/echoz/Chio/actions/runs/37367526697)
   exposed a track-focus test ordering race: press/release in one input batch could
   finish before or after native focus revealed the reserved bottom corner.
@@ -1195,8 +1241,9 @@ build comparison was not performed. The ordinary production executable grew from
 unstripped local artifacts, not a cross-platform size guarantee.
 
 The full serial macOS gate passes; [verification](#verified-on-macos) records this
-integration's coverage. Fresh Linux/glibc verification and static-musl linking
-remain unverified. Existing static-musl blockers remain in the pinned SwiftTUI
+integration's coverage. Linux x86_64/glibc verification including these dependencies
+passed for `4e47001` in [CI](https://github.com/echoz/Chio/actions/runs/37376092806).
+Static-musl linking remains unverified, with existing blockers in the pinned SwiftTUI
 dependency; the source audit does not show that adding Tree-sitter resolves or
 worsens those blockers. Native tab-stop expansion and exact Unicode widths remain
 upstream limits; cmark's CRLF-to-LF normalization remains the parser contract.
@@ -1214,7 +1261,7 @@ inventories below remain traceable; they no longer prescribe an execution order.
 | 13 — Active Markdown links | **Implemented; [verification](#verified-on-macos)** | Native inline links with an explicit application `OpenLinkAction`; passive existing initializer, intact rich labels, native focus/wrapping and themed feedback. No Chio browser, URL launcher or automatic fetching. |
 | 14 — btop theme/metrics and 16 — compact panels/meters | **Implemented together** | `ChioTheme.btop`, optional group border titles and measurement progress paint are composed in `--metrics`. Fixed local values, native controls/layout; no metrics service, sampler, scheduler or btop model. |
 | 15 — Sparklines/history graphs | **Implemented** | Passive `Sparkline` over native Canvas: finite readings, nil gaps, automatic/fixed scaling, extrema-preserving narrow reduction and accessible summary. Applications own collection, retention, clocks, units and thresholds; `--metrics` supplies manual samples. |
-| 17 — Dense sorted inbox/detail layout | **Example composition first** | Compose existing lists/tables, tabs, Markdown and adaptive native layouts. Application code owns sort policy, sections, selected IDs and preview placement. Extract only a repeated UI interaction contract; no inbox, sorter or review coordinator API. |
+| 17 — Dense sorted inbox/detail layout | **Implemented; [verification](#verified-on-macos)** | `--inbox` composes native queue/sort Pickers, substring SearchableList, passive wide Markdown preview, and full-screen reading. Application code owns fixtures, sort policy and stable selection; no new public abstraction. |
 | 18 — Diff reading | **Keep as a later bounded prototype** | A read-only diff is a meaningful presentation gap, but specialized and costly. Prove gutters, uneven sides, Unicode/wrapping and measured document bounds before committing to a public view/data API. Git/JJ/Sapling ingestion and repository operations stay outside Chio. |
 | 19 — Review navigation and annotations | **Fold navigation proof into 18; drop annotations from the library roadmap** | Use native logical-ID reveal in the example. Notes can compose the existing editor. Search policy, review sessions, note storage, persistence and agent protocols are application concerns, not new Chio subsystems. |
 
@@ -1233,8 +1280,9 @@ inventories below remain traceable; they no longer prescribe an execution order.
    `--metrics` example demonstrates all treatments. Swift-only Markdown syntax
    highlighting is also delivered in the existing report, with dependency costs
    and source/layout/native-input checks recorded above.
-4. Validate a dense list/detail composition using existing components. Defer a
-   general master/detail abstraction until a second use establishes the contract.
+4. Delivered a dense list/detail composition using existing components in
+   `--inbox`. A general master/detail abstraction remains deferred until a second
+   use establishes the contract.
 5. Explore the bounded read-only diff, including basic hunk navigation. Review
    its scope again before promoting models or behavior into the public library.
 

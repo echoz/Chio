@@ -90,7 +90,7 @@ def screen(output):
     return "\n".join("".join(line) for line in cells)
 
 
-def run(binary, choices=False, text_entry=False, feedback=False, files=False, keyboard_help=False, tabs=False, pagination=False, viewport=False, tree=False, forms=False, timers=False, metrics=False):
+def run(binary, choices=False, text_entry=False, feedback=False, files=False, keyboard_help=False, tabs=False, pagination=False, viewport=False, tree=False, forms=False, timers=False, metrics=False, inbox=False):
     global WIDTH, HEIGHT
     master, slave = pty.openpty()
     process = None
@@ -136,7 +136,7 @@ def run(binary, choices=False, text_entry=False, feedback=False, files=False, ke
         env = dict(os.environ, TERM="xterm-256color", COLORTERM="truecolor")
         for key in ("NO_COLOR", "CLICOLOR", "CLICOLOR_FORCE", "FORCE_COLOR"):
             env.pop(key, None)
-        example = "--metrics" if metrics else "--timers" if timers else "--forms" if forms else "--tree" if tree else "--viewport" if viewport else "--pagination" if pagination else "--tabs" if tabs else "--keyboard-help" if keyboard_help else "--files" if files else "--feedback" if feedback else "--text-entry" if text_entry else "--choices" if choices else "--paused"
+        example = "--inbox" if inbox else "--metrics" if metrics else "--timers" if timers else "--forms" if forms else "--tree" if tree else "--viewport" if viewport else "--pagination" if pagination else "--tabs" if tabs else "--keyboard-help" if keyboard_help else "--files" if files else "--feedback" if feedback else "--text-entry" if text_entry else "--choices" if choices else "--paused"
         command = [str(binary), example]
         if file_fixture is not None:
             folder = Path(file_fixture.name)
@@ -146,13 +146,33 @@ def run(binary, choices=False, text_entry=False, feedback=False, files=False, ke
             command.extend(["--directory", str(folder)])
         process = subprocess.Popen(command, stdin=slave,
                                    stdout=slave, stderr=slave, env=env)
-        until("/ metrics · simulated" if metrics else "/ time studio" if timers else "Saved: Chio · manual" if forms else "Expanded folders: 3 / 6" if tree else "Row 2 · Col 2" if viewport else "1–3 of 23" if pagination else "Demo runs: 0" if tabs else "Runs: 0" if keyboard_help else "alpha.txt" if files else "Ready to publish" if feedback else "/ text entry" if text_entry else "1 / 2" if choices else "4 of 4 items")
+        until("/ review inbox" if inbox else "/ metrics · simulated" if metrics else "/ time studio" if timers else "Saved: Chio · manual" if forms else "Expanded folders: 3 / 6" if tree else "Row 2 · Col 2" if viewport else "1–3 of 23" if pagination else "Demo runs: 0" if tabs else "Runs: 0" if keyboard_help else "alpha.txt" if files else "Ready to publish" if feedback else "/ text entry" if text_entry else "1 / 2" if choices else "4 of 4 items")
         modes = termios.tcgetattr(slave)
         assert not modes[3] & (termios.ECHO | termios.ICANON), "Terminal is not in raw input mode"
         assert modes[6][termios.VMIN] == 1 and modes[6][termios.VTIME] == 0, "Unexpected raw read timing"
         assert b"\x1b[?1049h" in output, "Alternate screen was not entered"
 
-        if metrics:
+        if inbox:
+            until("12 of 12 items")
+            send(b"\x1b[B", "#215 · SwiftTUI")
+            send(b"\x13", "Repository")
+            until("#215 · SwiftTUI")
+            send(b"/214\r\r", "/ review #214")
+            send(b"\x1b[F", "End of local review.")
+            send(b"\x14", "End of local review.")
+            WIDTH, HEIGHT = 36, 18
+            fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", HEIGHT, WIDTH, 0, 0))
+            process.send_signal(signal.SIGWINCH)
+            until("esc back")
+            send(b"\x1b", "/ review inbox")
+            until("1 of 12 items")
+            send(b"\x1b", "12 of 12 items")
+            send(b"/no-match", "No matches.")
+            send(b"\x1b", "12 of 12 items")
+            send(b"\x07", "4 of 4 items")
+            send(b"\x07", "16 of 16 items")
+            until("^Q quit")
+        elif metrics:
             until("62%")
             send(b"\r", "22%")
             send(b"\t\r", "History: gaps")
@@ -395,7 +415,7 @@ def run(binary, choices=False, text_entry=False, feedback=False, files=False, ke
             send(b"Smoke Agent", "Smoke Agent")
             send(b"\x1b", "/ agent workspace")
 
-        os.write(master, b"\x11" if choices or text_entry or feedback or files or keyboard_help or tabs or pagination or viewport or tree or forms or timers or metrics else b"q")
+        os.write(master, b"\x11" if choices or text_entry or feedback or files or keyboard_help or tabs or pagination or viewport or tree or forms or timers or metrics or inbox else b"q")
         deadline = time.monotonic() + 15
         while process.poll() is None and time.monotonic() < deadline:
             receive()
@@ -405,7 +425,8 @@ def run(binary, choices=False, text_entry=False, feedback=False, files=False, ke
         assert process.returncode == 0, f"Dashboard exited with {process.returncode}"
         assert b"\x1b[?1049l" in output, "Alternate screen was not restored"
         assert termios.tcgetattr(slave) == original_modes, "Terminal modes were not restored"
-        print("PASS: passive history, local samples, native actions, themes, compact resize, clean exit" if metrics else
+        print("PASS: stable review selection, sort, filter, reader, theme, compact resize, clean exit" if inbox else
+              "PASS: passive history, local samples, native actions, themes, compact resize, clean exit" if metrics else
               "PASS: native timer actions, live ticks, pause, reset, theme, compact resize, clean exit" if timers else
               "PASS: grouped editing, cross-field validation, save/cancel, theme, compact resize, clean exit" if forms else
               "PASS: nested disclosure, retained expansion, native focus, theme, compact resize, clean exit" if tree else
@@ -451,7 +472,8 @@ if __name__ == "__main__":
     examples.add_argument("--forms", action="store_true", help="Exercise grouped settings, cross-field validation and save/cancel")
     examples.add_argument("--timers", action="store_true", help="Exercise stopwatch, countdown, pause, reset and resizing")
     examples.add_argument("--metrics", action="store_true", help="Exercise passive graphs, local samples, themes and resizing")
+    examples.add_argument("--inbox", action="store_true", help="Exercise sorted review selection, filtering, preview and compact reading")
     arguments = parser.parse_args()
     run(arguments.binary.resolve(), choices=arguments.choices, text_entry=arguments.text_entry,
         feedback=arguments.feedback, files=arguments.files, keyboard_help=arguments.keyboard_help, tabs=arguments.tabs,
-        pagination=arguments.pagination, viewport=arguments.viewport, tree=arguments.tree, forms=arguments.forms, timers=arguments.timers, metrics=arguments.metrics)
+        pagination=arguments.pagination, viewport=arguments.viewport, tree=arguments.tree, forms=arguments.forms, timers=arguments.timers, metrics=arguments.metrics, inbox=arguments.inbox)

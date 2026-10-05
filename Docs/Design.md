@@ -686,6 +686,45 @@ it does not modify files. Hosted tests and terminal checks use temporary trees.
 The plain `--snapshot` renderer cannot await filesystem work, so this example
 rejects that flag rather than claiming a loaded directory snapshot.
 
+## Dense review inbox
+
+The `--inbox` example composes native Pickers, the existing `SearchableList`,
+`MarkdownView`, group styles, and a native full-screen cover. It uses sixteen
+fixed local review snapshots; there is no GitHub connection or repository action.
+Queue membership and ordering belong to the example. Review includes ready and
+changes-requested items; Drafts contains drafts; All contains every fixture.
+Recent order uses descending authored update time, then ascending identity;
+repository order groups lexicographically before those same tie breakers.
+Substring search preserves the chosen order, unlike fuzzy relevance ranking.
+
+One list stays mounted while its optional sibling preview appears or disappears.
+The preview appears at 88 columns and 26 rows or larger unless the user hides it.
+It is passive: native focus and input remain in the controls and list. Enter opens
+the complete reader at every size. A narrow or short terminal devotes its space
+to the list; widening an open reader does not dismiss it. Escape restores native
+background focus. The cover and its pending presentation consume background
+queue/sort actions. Ordinary printable text remains search input; application
+commands use Ctrl combinations and the same native Picker bindings.
+
+Opening is requested first, then promoted to presented by native `onChange` after
+a background frame commits the requested results focus. This lets the cover
+capture the actual results region for restoration when search and two Returns
+arrive in one input batch. Escape cancels either phase; the lifecycle callback
+reads the current phase so cancellation cannot reopen the reader. This relies on
+the pinned runtime's focus-before-lifecycle ordering, with hosted regressions;
+there is no timer, task yield or additional focus system.
+
+Selection follows stable item identity through sorting. Queue changes immediately
+clear a selection excluded by the new queue; `SearchableList` then selects the
+first remaining query match. An activation arriving before that rendered change
+cannot open an item excluded by the current queue. Empty matches have no preview
+and cannot activate. The selected presentation snapshot composes the original
+`ReviewItem` with its parsed Markdown document, retaining that document until the
+selected ID changes. This derived presentation value shares the existing parsed
+Markdown exception to Codable; the underlying review fixtures remain Codable,
+Hashable and Sendable. There is no new public inbox, sorter, master/detail or
+review-coordinator API. The fixture size does not establish large-data behavior.
+
 ## Markdown and agent reports
 
 `MarkdownDocument(source)` parses once into an immutable, `Hashable`, `Sendable`
@@ -840,9 +879,10 @@ The grammar manifest copies its unused query bundle; Chio performs no query
 resource I/O and the C-only target has no generated Objective-C/Foundation resource accessor.
 Its dependency evaluation, local cost measurements, and portability limits are
 recorded in [Plan.md](Plan.md#markdown-syntax-highlighting).
-Ubuntu 24.04/glibc builds and execution before this syntax dependency are
-verified on ARM64 and x86_64 with Swift 6.4.0. Fresh Linux verification including
-Tree-sitter remains pending. Static musl compilation is blocked in the
+Ubuntu 24.04/glibc builds and execution are verified on ARM64 and x86_64 with
+Swift 6.4.0. Linux x86_64 verification including Tree-sitter passed in
+[CI run 37376092806](https://github.com/echoz/Chio/actions/runs/37376092806).
+Static musl compilation remains blocked in the
 pinned SwiftTUI dependency; [Plan.md](Plan.md#linux-and-ci) records the evidence.
 
 Native list focus chrome currently resolves through SwiftTUI's own theme;
