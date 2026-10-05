@@ -92,7 +92,7 @@ struct GroupedFormExampleView {
         VStack(alignment: .leading, spacing: 1) {
             GroupBox("Workspace") {
                 VStack(alignment: .leading, spacing: 1) {
-                    FormField("Workspace name", description: short ? nil : "Required · up to 32 characters",
+                    FormField("Workspace name", description: short ? "" : "Required · up to 32 characters",
                               error: validation.message(for: .name, in: draft.issues)) {
                         TextField("Workspace name", text: name)
                             .accessibilityLabel("Workspace name")
@@ -103,20 +103,20 @@ struct GroupedFormExampleView {
             }
             GroupBox("Automation") {
                 VStack(alignment: .leading, spacing: 1) {
-                    FormField("Automatic runs", description: short ? nil : "Settings only · no scheduler is started") {
+                    FormField("Automatic runs", description: short ? "" : "Settings only · no scheduler is started") {
                         Toggle("Automatic runs", isOn: automaticRuns)
                             .focused($focus, equals: .automaticRuns)
                     }
                     .id(RunSettingsDraft.Field.automaticRuns)
                     if draft.automaticRuns {
-                        FormField("Interval (minutes)", description: short ? nil : "Whole minutes · 1–60",
+                        FormField("Interval (minutes)", description: short ? "" : "Whole minutes · 1–60",
                                   error: validation.message(for: .interval, in: draft.issues)) {
                             TextField("Interval", text: interval)
                                 .accessibilityLabel("Interval")
                                 .focused($focus, equals: .interval)
                         }
                         .id(RunSettingsDraft.Field.interval)
-                        FormField("Timeout (minutes)", description: short ? nil : "Must be shorter than the interval",
+                        FormField("Timeout (minutes)", description: short ? "" : "Must be shorter than the interval",
                                   error: validation.message(for: .timeout, in: draft.issues)) {
                             TextField("Timeout", text: timeout)
                                 .accessibilityLabel("Timeout")

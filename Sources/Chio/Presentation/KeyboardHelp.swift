@@ -32,8 +32,8 @@ extension KeyboardHelp: View {
                             let shortcut = group.shortcuts[shortcutIndex]
                             VStack(alignment: .leading, spacing: 0) {
                                 KeyHint(shortcut)
-                                if let detail = shortcut.detail {
-                                    Text(detail).foregroundStyle(theme.colors.mutedText)
+                                if !shortcut.detail.isEmpty {
+                                    Text(shortcut.detail).foregroundStyle(theme.colors.mutedText)
                                 }
                             }
                         }

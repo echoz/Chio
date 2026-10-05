@@ -21,9 +21,9 @@ public struct SearchableList<Item: Identifiable, RowContent: View> where Item.ID
     private let rowContent: @MainActor (Item) -> RowContent
     private let prompt: String
     private let filter: SearchFilter
-    private let activation: (@MainActor (Item) -> Void)?
-    private let searchFocusChange: (@MainActor (Bool) -> Void)?
-    private let resultKeyPress: (@MainActor @Sendable (KeyPress) -> KeyPressResult)?
+    private let activation: @MainActor (Item) -> Void
+    private let searchFocusChange: @MainActor (Bool) -> Void
+    private let resultKeyPress: @MainActor @Sendable (KeyPress) -> KeyPressResult
 
     @State private var internalQuery = ""
     @FocusState private var focus: Focus?
@@ -44,9 +44,9 @@ public struct SearchableList<Item: Identifiable, RowContent: View> where Item.ID
         self.searchText = searchText
         self.rowContent = rowContent
         filter = .fuzzy
-        activation = nil
-        searchFocusChange = nil
-        resultKeyPress = nil
+        activation = { _ in }
+        searchFocusChange = { _ in }
+        resultKeyPress = { _ in .ignored }
     }
 
     private init(
@@ -119,7 +119,7 @@ public struct SearchableList<Item: Identifiable, RowContent: View> where Item.ID
                                              filter: filter, searchText: searchText)
         let id = SearchSelection.reconciled(selection.wrappedValue, visibleIDs: current.map(\.id))
         selection.wrappedValue = id
-        if let item = current.first(where: { $0.id == id }) { activation?(item) }
+        if let item = current.first(where: { $0.id == id }) { activation(item) }
     }
 }
 
@@ -162,7 +162,7 @@ extension SearchableList: View {
 
             List(visible, selection: visibleSelection, onActivate: { id in
                 guard let item = visible.first(where: { $0.id == id }) else { return }
-                activation?(item)
+                activation(item)
             }) { item in
                 HStack(alignment: .top, spacing: theme.spacing.horizontalInset) {
                     Text(item.id == selectedID ? theme.treatments.selectionMarker : " ")
@@ -213,7 +213,7 @@ extension SearchableList: View {
                     }
                     return .handled
                 }
-                return resultKeyPress?(press) ?? .ignored
+                return resultKeyPress(press)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
@@ -231,7 +231,7 @@ extension SearchableList: View {
             if selection.wrappedValue != reconciled { selection.wrappedValue = reconciled }
         }
         .onChange(of: focus == .search, initial: true) {
-            searchFocusChange?(focus == .search)
+            searchFocusChange(focus == .search)
         }
     }
 }

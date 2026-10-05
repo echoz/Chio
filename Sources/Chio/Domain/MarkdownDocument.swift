@@ -16,7 +16,7 @@ public struct MarkdownDocument {
         case paragraph([Span])
         case list([Item])
         case quote([Block])
-        case code(language: String?, text: String)
+        case code(language: String, text: String)
         case table(Table)
         case rule
         case fallback(String)
@@ -96,7 +96,7 @@ private extension MarkdownDocument {
         case let quote as Markdown.BlockQuote:
             return [.quote(blockChildren(of: quote))]
         case let code as Markdown.CodeBlock:
-            return [.code(language: code.language, text: code.code)]
+            return [.code(language: code.language ?? "", text: code.code)]
         case is Markdown.ThematicBreak:
             return [.rule]
         case let html as Markdown.HTMLBlock:
@@ -151,11 +151,11 @@ private extension MarkdownDocument {
         case is Markdown.LineBreak:
             return [Span(text: "\n", attributes: attributes)]
         case let link as Markdown.Link:
-            return referenceSpans(of: link, destination: link.destination, attributes: attributes)
+            return referenceSpans(of: link, destination: link.destination ?? "", attributes: attributes)
         case let image as Markdown.Image:
             let label = inlineChildren(of: image, attributes: attributes)
             let readableLabel = label.isEmpty ? [Span(text: "Image", attributes: attributes)] : label
-            return readableLabel + destinationSpan(image.source, attributes: attributes)
+            return readableLabel + destinationSpan(image.source ?? "", attributes: attributes)
         case let html as Markdown.InlineHTML:
             return [Span(text: html.rawHTML, attributes: attributes)]
         default:
@@ -167,7 +167,7 @@ private extension MarkdownDocument {
 
     static func referenceSpans(
         of node: any Markup,
-        destination: String?,
+        destination: String,
         attributes: Attributes
     ) -> [Span] {
         let label = inlineChildren(of: node, attributes: attributes)
@@ -175,8 +175,8 @@ private extension MarkdownDocument {
         return label + destinationSpan(destination, attributes: attributes)
     }
 
-    static func destinationSpan(_ destination: String?, attributes: Attributes) -> [Span] {
-        guard let destination, !destination.isEmpty else { return [] }
+    static func destinationSpan(_ destination: String, attributes: Attributes) -> [Span] {
+        guard !destination.isEmpty else { return [] }
         return [Span(text: " (\(destination))", attributes: attributes)]
     }
 

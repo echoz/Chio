@@ -473,7 +473,6 @@ extension SearchTestView: View {
                            searchText: \.name) {
                 Text($0.name)
             }
-            .filtering(.fuzzy)
             .onActivate { item in
                 activationCount += 1
                 lastActivation = item.id
@@ -484,6 +483,9 @@ extension SearchTestView: View {
                 quitCount += 1
                 return .handled
             }
+            // A later configuration copy must retain every installed callback
+            // and the native query/focus storage exercised by this fixture.
+            .filtering(.fuzzy)
             Text("Q=\(query) S=\(selection ?? "-") F=\(searchFocused ? "s" : "r") A=\(activationCount)")
             Text("Last=\(lastActivation ?? "-") Quit=\(quitCount) Barrier=\(barrier)")
             Text("Theme=\(lightTheme ? "light" : "dark")")

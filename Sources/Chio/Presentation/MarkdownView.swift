@@ -100,7 +100,7 @@ extension MarkdownBlock: View {
             })
         case let .code(language, code):
             return AnyView(VStack(alignment: .leading, spacing: 0) {
-                if let language, !language.isEmpty {
+                if !language.isEmpty {
                     Text(verbatim: language).foregroundStyle(theme.colors.mutedText)
                 }
                 ScrollView(.horizontal) {

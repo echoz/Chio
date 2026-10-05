@@ -36,6 +36,17 @@ restricted value must reject malformed input through the same validation as its
 ordinary constructor; successful round trips alone do not prove this guarantee.
 No validating flags substitute for the value's actual invariants or runtime checks.
 
+Field descriptions and shortcut details use nonoptional strings: empty means no
+supporting text and contributes no text row. Shortcut decoding accepts historical
+missing or null detail as empty; encoding always includes the string. Missing and
+empty details now compare equally. Errors retain optional presence: even an empty
+present message indicates an error and suppresses field help. Selection, native
+state ownership and replacement arguments also retain meaningful absence; omitted
+replacement arguments preserve a value, while empty supplied values clear it.
+Markdown normalizes missing language/destination text at the parser boundary.
+Search callbacks have no-op or ignored defaults; modifier copying retains the
+installed callback and native state identity.
+
 Native `StrokeStyle` is only `Equatable` and `Sendable` in the pinned dependency,
 including state Chio cannot access. `ChioTheme` and `Treatments` retain those
 conformances; Colors and Spacing also support hashing and coding. Do not clone
@@ -211,9 +222,11 @@ prioritizes the list and essential shortcuts. The full layout is intended for
 ## Contextual keyboard help
 
 Immutable `ShortcutHint` values hold an authored key label, short action label,
-and optional expanded detail. `ShortcutGroup` preserves the title and ordered
-descriptions, including duplicates. Both synthesize Codable, Hashable and
-Sendable. These are display descriptions: labels such as `↑↓` can describe more
+and expanded detail, defaulting to an empty string. Empty detail is omitted from
+presentation. `ShortcutGroup` preserves the title and ordered descriptions,
+including duplicates. Both support Codable, Hashable and Sendable; only the
+shortcut decoder needs a custom missing/null-detail default. These are display
+descriptions: labels such as `↑↓` can describe more
 than one native key. They neither register actions nor parse strings into input.
 The pinned native command registry and its `KeyBinding` are not public.
 
@@ -570,9 +583,11 @@ starting location; display and returned paths retain the chosen symlink route.
 Broken links, unreadable entries and special files cannot be confirmed. Entries
 sort directories first, then by case-insensitive name with deterministic ties.
 Dot files and filesystem-hidden entries are hidden unless explicitly enabled.
-A nil extension set allows all regular files; an empty set allows none. Matching
-is case-insensitive against the chosen filename's extension, without a leading
-dot, and directories remain available. Search filters the current folder only.
+`FileExtensionFilter.all` allows all regular files; `.only([])` allows none.
+`.only(["swift", "md"])` restricts extensions, while `.only([""])` includes
+extensionless files. Matching is case-insensitive against the chosen filename's
+extension, without a leading dot; authored sets are retained without trimming or
+repair. Directories remain available. Search filters the current folder only.
 
 Return enters the selected folder or confirms a file; Choose confirms a file.
 Backspace at results and Parent move up; Escape clears search. Cancel and Ctrl-G

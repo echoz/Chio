@@ -393,6 +393,8 @@ extension ChecklistTestView: View {
                 quitCount += 1
                 return .handled
             }
+            // Keep the shortcut and native storage through a later filter copy.
+            .filtering(.fuzzy)
             Text("S=\(selection.isEmpty ? "-" : selection.sorted().joined(separator: ","))")
             Text("Revision=\(revision) Barrier=\(barrier)")
             Text("Theme=\(lightTheme ? "light" : "dark") Quit=\(quitCount)")

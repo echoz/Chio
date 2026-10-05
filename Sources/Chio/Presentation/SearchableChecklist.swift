@@ -17,7 +17,7 @@ public struct SearchableChecklist<Item: Identifiable, RowContent: View> where It
     private let isEnabled: (Item) -> Bool
     private let rowContent: @MainActor (Item) -> RowContent
     private let filter: SearchFilter
-    private let resultKeyPress: (@MainActor @Sendable (KeyPress) -> KeyPressResult)?
+    private let resultKeyPress: @MainActor @Sendable (KeyPress) -> KeyPressResult
 
     @State private var internalQuery = ""
     @State private var resultsRequested = false
@@ -43,7 +43,7 @@ public struct SearchableChecklist<Item: Identifiable, RowContent: View> where It
         self.isEnabled = isEnabled
         self.rowContent = rowContent
         filter = .fuzzy
-        resultKeyPress = nil
+        resultKeyPress = { _ in .ignored }
     }
 
     private init(
@@ -196,7 +196,7 @@ extension SearchableChecklist: View {
             .onKeyPress { press in
                 let carried = carrySearchInput(press, requestResults: request)
                 if carried == .handled { return .handled }
-                return resultKeyPress?(press) ?? .ignored
+                return resultKeyPress(press)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 

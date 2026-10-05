@@ -1,18 +1,19 @@
 import SwiftTUIViews
 
 /// A field heading, native control, and one wrapping helper or error message.
+/// Empty descriptions are omitted; a present error replaces the description.
 /// Keep focus and current validation rules in the application.
 @MainActor
 public struct FormField<Content: View> {
     @Environment(\.chioTheme) private var theme
     private let title: String
-    private let description: String?
+    private let description: String
     private let error: String?
     private let content: Content
 
     public init(
         _ title: String,
-        description: String? = nil,
+        description: String = "",
         error: String? = nil,
         @ViewBuilder content: () -> Content
     ) {
@@ -32,7 +33,7 @@ extension FormField: View {
                 .toggleStyle(ChioToggleStyle(theme: theme, showsLabel: false))
             if let error {
                 Text("Error: \(error)").foregroundStyle(theme.colors.error)
-            } else if let description {
+            } else if !description.isEmpty {
                 Text(description).foregroundStyle(theme.colors.secondaryText)
             }
         }

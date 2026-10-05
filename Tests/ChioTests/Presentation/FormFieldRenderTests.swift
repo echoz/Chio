@@ -5,6 +5,39 @@ import Testing
 
 @MainActor
 struct FormFieldRenderTests {
+    @Test("Default and explicit empty descriptions omit helper rows and semantic text")
+    func emptyDescription() {
+        let omitted = DefaultRenderer().render(
+            FormField("Name") { Text("Value") }.chioTheme(.default),
+            proposal: .init(width: 24, height: nil)
+        )
+        let empty = DefaultRenderer().render(
+            FormField("Name", description: "") { Text("Value") }.chioTheme(.default),
+            proposal: .init(width: 24, height: nil)
+        )
+        #expect(omitted.rasterSurface.size.height == 2)
+        #expect(empty.rasterSurface == omitted.rasterSurface)
+        #expect(omitted.semanticSnapshot.accessibilityNodes.compactMap(\.label) == ["Name", "Value"])
+        #expect(empty.semanticSnapshot.accessibilityNodes.compactMap(\.label) == ["Name", "Value"])
+    }
+
+    @Test("A present empty error still replaces the helper and shows the error marker")
+    func emptyError() {
+        let rendered = DefaultRenderer().render(
+            FormField("Name", description: "Hidden helper", error: "") { Text("Value") }
+                .chioTheme(.default), proposal: .init(width: 24, height: nil)
+        )
+        #expect(rendered.rasterSurface.size.height == 3)
+        #expect(rendered.rasterSurface.lines.contains { $0.contains("Error:") })
+        #expect(!rendered.rasterSurface.lines.contains { $0.contains("Hidden helper") })
+        let labels = rendered.semanticSnapshot.accessibilityNodes.compactMap(\.label)
+        #expect(labels.contains("Error: "))
+        #expect(!labels.contains("Hidden helper"))
+        #expect(rendered.rasterSurface.cells.flatMap { $0 }.contains {
+            $0.character == "E" && $0.style?.foregroundColor == ChioTheme.default.colors.error
+        })
+    }
+
     @Test("Headings and helpers wrap within narrow field widths", arguments: [12, 24])
     func helperTheme(width: Int) {
         var theme = ChioTheme.default

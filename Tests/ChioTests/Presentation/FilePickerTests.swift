@@ -9,7 +9,7 @@ struct FilePickerTests {
     @Test("Browsing and fuzzy filtering preserve the committed binding; extension policy retains folders")
     func browsingAndFiltering() async throws {
         let gate = FilePickerOperationGate()
-        try await withFilePickerScene(gate: gate, allowedExtensions: ["sWiFt"]) { session, _, recorder in
+        try await withFilePickerScene(gate: gate, allowedExtensions: .only(["sWiFt"])) { session, _, recorder in
             _ = try await recorder.wait(description: "first directory read starts") { $0.pickerContains("R=1 V=0") }
             try await gate.finishRead(1, entries: [pickerEntry("Sources", .directory), pickerEntry("Alpha.SWIFT"),
                                                  pickerEntry("Beta.swift"), pickerEntry("Notes.txt")])
@@ -42,10 +42,10 @@ struct FilePickerTests {
         }
     }
 
-    @Test("Nil extension policy permits files; an empty policy retains only directories", arguments: [false, true])
+    @Test("All extensions permits files; an empty restriction retains only directories", arguments: [false, true])
     func unrestrictedAndEmptyExtensionPolicies(emptyPolicy: Bool) async throws {
         let gate = FilePickerOperationGate()
-        try await withFilePickerScene(gate: gate, allowedExtensions: emptyPolicy ? [] : nil) { _, _, recorder in
+        try await withFilePickerScene(gate: gate, allowedExtensions: emptyPolicy ? .only([]) : .all) { _, _, recorder in
             _ = try await recorder.wait(description: "policy directory read") { $0.pickerContains("R=1 V=0") }
             try await gate.finishRead(1, entries: [pickerEntry("Sources", .directory), pickerEntry("Any.data")])
             let listed = try await recorder.wait(description: "policy-filtered directory rows") {
@@ -435,19 +435,19 @@ private struct PickerTestFailure: LocalizedError {
 private struct FilePickerTestApp {
     let directory: URL
     let gate: FilePickerOperationGate?
-    let allowedExtensions: Set<String>?
+    let allowedExtensions: FileExtensionFilter
     let allowsSelection: Bool
     let light: Bool
 
     nonisolated init() {
         directory = pickerRoot
         gate = nil
-        allowedExtensions = nil
+        allowedExtensions = .all
         allowsSelection = true
         light = false
     }
 
-    nonisolated init(directory: URL, gate: FilePickerOperationGate?, allowedExtensions: Set<String>?, allowsSelection: Bool, light: Bool) {
+    nonisolated init(directory: URL, gate: FilePickerOperationGate?, allowedExtensions: FileExtensionFilter, allowsSelection: Bool, light: Bool) {
         self.directory = directory
         self.gate = gate
         self.allowedExtensions = allowedExtensions
@@ -469,7 +469,7 @@ extension FilePickerTestApp: App {
 private struct FilePickerTestView {
     let directory: URL
     let gate: FilePickerOperationGate?
-    let allowedExtensions: Set<String>?
+    let allowedExtensions: FileExtensionFilter
     let allowsSelection: Bool
     let light: Bool
     @State private var selection: URL? = URL(fileURLWithPath: "/previous/old")
@@ -551,7 +551,7 @@ extension FilePickerTestView: View {
 @MainActor
 private func withFilePickerScene(
     directory: URL = pickerRoot, gate: FilePickerOperationGate? = nil,
-    allowedExtensions: Set<String>? = nil, allowsSelection: Bool = true,
+    allowedExtensions: FileExtensionFilter = .all, allowsSelection: Bool = true,
     light: Bool = false, width: Int = 64, height: Int = 20,
     perform: @MainActor (HostedSceneSession, HostedRasterSurface, HostedFrameRecorder) async throws -> Void
 ) async throws {

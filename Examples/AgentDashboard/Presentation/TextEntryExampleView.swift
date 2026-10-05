@@ -104,14 +104,14 @@ extension TextEntryExampleView: View {
                 Text("Local sample · use a made-up password")
                     .foregroundStyle(theme.colors.secondaryText)
             }
-            FormField("Demo password", description: short ? nil : "Made-up value only · at least 8 characters",
+            FormField("Demo password", description: short ? "" : "Made-up value only · at least 8 characters",
                       error: showsValidation ? passwordError : nil) {
                 SecureField("Made-up password", text: $password)
                     .accessibilityLabel("Demo password")
                     .focused($focus, equals: .password)
                     .disabled(inputsDisabled)
             }
-            FormField("Notes", description: short ? nil : "Required · Return inserts a newline",
+            FormField("Notes", description: short ? "" : "Required · Return inserts a newline",
                       error: showsValidation ? notesError : nil) {
                 TextEditor(text: $notes)
                     .accessibilityLabel("Notes")

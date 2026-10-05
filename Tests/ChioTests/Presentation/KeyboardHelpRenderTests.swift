@@ -5,6 +5,25 @@ import Testing
 
 @MainActor
 struct KeyboardHelpRenderTests {
+    @Test("Empty detail adds neither a row nor semantic text")
+    func emptyDetail() {
+        let omitted = DefaultRenderer().render(
+            KeyboardHelp([ShortcutGroup("Actions", shortcuts: [
+                ShortcutHint("q", "Quit"), ShortcutHint("x", "Cancel"),
+            ])]).chioTheme(.default), proposal: .init(width: 32, height: nil)
+        )
+        let empty = DefaultRenderer().render(
+            KeyboardHelp([ShortcutGroup("Actions", shortcuts: [
+                ShortcutHint("q", "Quit", detail: ""), ShortcutHint("x", "Cancel", detail: ""),
+            ])]).chioTheme(.default), proposal: .init(width: 32, height: nil)
+        )
+        #expect(omitted.rasterSurface.size.height == 5)
+        #expect(empty.rasterSurface == omitted.rasterSurface)
+        #expect(empty.rasterSurface.lines.map(trim) == ["Actions", "", "q Quit", "", "x Cancel"])
+        #expect(omitted.semanticSnapshot.accessibilityNodes.compactMap(\.label) == ["Actions", "q Quit", "x Cancel"])
+        #expect(empty.semanticSnapshot.accessibilityNodes.compactMap(\.label) == ["Actions", "q Quit", "x Cancel"])
+    }
+
     @Test("Grouped help uses each palette's semantic colors", arguments: [ChioTheme.default, .light])
     func palettes(theme: ChioTheme) {
         assertColors(theme)

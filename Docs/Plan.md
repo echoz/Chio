@@ -160,6 +160,15 @@ live in [the examples guide](Examples.md); component recipes live in
   Save replaces the local accepted snapshot, and Cancel restores it while
   resetting validation visits. No public form DSL or dependency is added.
 
+- Optionality cleanup gives Markdown language/destination text, field helpers,
+  shortcut details and stored search callbacks one representation for their
+  empty/default behavior. Shortcut decoding accepts old missing/null details;
+  canonical encoding includes a string. `FileExtensionFilter` names unrestricted
+  and restricted policies without conflating all files with no files. Selection,
+  errors, native protocol requirements and replacement arguments retain meaningful
+  absence. The [usage guide](Usage.md#file-selection) records the source migration;
+  the [value contracts](Design.md#value-contracts) describe the accepted changes.
+
 ## Component coverage
 
 Source audit at Chio `424f8e6`, using SwiftTUI revision

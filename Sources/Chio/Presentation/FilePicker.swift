@@ -4,8 +4,8 @@ import SwiftTUIViews
 /// Chooses one existing, readable regular file using native search and focus.
 ///
 /// `selection` changes only after explicit confirmation. Cancellation preserves
-/// its previous value. A nil extension set allows every file; an empty set allows
-/// none. Extensions are matched case-insensitively without a leading dot, and
+/// its previous value. The `.all` extension filter allows every file; `.only([])`
+/// allows none. Extensions are matched case-insensitively without a leading dot, and
 /// directories remain visible for navigation. Symlinks are followed while the
 /// returned URL preserves the chosen path. The starting directory is not a sandbox.
 /// Confirmation rechecks the file but does not open it or reserve its contents.
@@ -13,7 +13,7 @@ import SwiftTUIViews
 public struct FilePicker {
     private let initialDirectory: URL
     private let selection: Binding<URL?>
-    private let allowedExtensions: Set<String>?
+    private let allowedExtensions: FileExtensionFilter
     private let showsHiddenFiles: Bool
     private let confirm: @MainActor (URL) -> Void
     private let cancel: @MainActor () -> Void
@@ -28,7 +28,7 @@ public struct FilePicker {
     public init(
         directory: URL,
         selection: Binding<URL?>,
-        allowedExtensions: Set<String>? = nil,
+        allowedExtensions: FileExtensionFilter = .all,
         showsHiddenFiles: Bool = false,
         onConfirm: @escaping @MainActor (URL) -> Void = { _ in },
         onCancel: @escaping @MainActor () -> Void = {}
@@ -41,7 +41,7 @@ public struct FilePicker {
     init(
         directory: URL,
         selection: Binding<URL?>,
-        allowedExtensions: Set<String>? = nil,
+        allowedExtensions: FileExtensionFilter = .all,
         showsHiddenFiles: Bool = false,
         operations: Operations?,
         onConfirm: @escaping @MainActor (URL) -> Void = { _ in },
@@ -116,8 +116,7 @@ public struct FilePicker {
 
     private func permittedEntries(in phase: Phase) -> [FileEntry] {
         phase.entries.filter { entry in
-            guard entry.kind == .file, let allowedExtensions else { return true }
-            return allowedExtensions.contains { $0.lowercased() == entry.url.pathExtension.lowercased() }
+            entry.kind != .file || allowedExtensions.allows(entry.url.pathExtension)
         }
     }
 

@@ -96,6 +96,24 @@ struct MarkdownDocumentTests {
         )])
     }
 
+    @Test("Unlabeled fences and indented code share parsed semantics and literal whitespace")
+    func unlabeledCode() {
+        let fenced = MarkdownDocument("```\nlet x = 1\n\n  end\n```\n")
+        let indented = MarkdownDocument("    let x = 1\n\n      end\n")
+        #expect(fenced.blocks == [.code(language: "", text: "let x = 1\n\n  end\n")])
+        #expect(indented == fenced)
+        #expect(Set([fenced, indented]).count == 1)
+    }
+
+    @Test("Empty link and image destinations retain labels without empty suffixes")
+    func emptyDestinations() {
+        #expect(paragraphSpans("[Docs]()") == [.init(text: "Docs", attributes: [])])
+        #expect(paragraphSpans("![Chart]()") == [.init(text: "Chart", attributes: [])])
+        #expect(paragraphSpans("![]()") == [.init(text: "Image", attributes: [])])
+        #expect(MarkdownDocument("[Docs](<>)") == MarkdownDocument("[Docs]()"))
+        #expect(MarkdownDocument("![Chart](<>)") == MarkdownDocument("![Chart]()"))
+    }
+
     @Test("Unsupported inline features keep labels, destinations, and literal HTML")
     func inlineFallback() {
         let spans = paragraphSpans("[Docs](https://example.com) ![Chart](plot.png) ~~old~~ <b>raw</b>")

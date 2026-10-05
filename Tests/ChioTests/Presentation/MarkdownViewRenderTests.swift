@@ -113,6 +113,29 @@ struct MarkdownViewRenderTests {
         }
     }
 
+    @Test("Unlabeled fenced and indented code render without a language header", arguments: [false, true])
+    func unlabeledCode(light: Bool) {
+        let theme: ChioTheme = light ? .light : .default
+        let fenced = DefaultRenderer().render(
+            MarkdownView(MarkdownDocument("```\nlet x = 1\n\n  end\n```\n")).chioTheme(theme),
+            proposal: .init(width: 24, height: 12)
+        ).rasterSurface
+        let indented = DefaultRenderer().render(
+            MarkdownView(MarkdownDocument("    let x = 1\n\n      end\n")).chioTheme(theme),
+            proposal: .init(width: 24, height: 12)
+        ).rasterSurface
+        #expect(fenced.cells == indented.cells)
+        #expect(fenced.lines.first?.trimmingCharacters(in: .whitespaces) == "let x = 1")
+        let codeRow = fenced.lines.firstIndex { $0.contains("let x = 1") }
+        let lastRow = fenced.lines.firstIndex { $0.contains("end") }
+        if let codeRow, let lastRow {
+            #expect(lastRow == codeRow + 2)
+            #expect(fenced.lines[codeRow + 1].trimmingCharacters(in: .whitespaces).isEmpty)
+        } else {
+            Issue.record("Expected both unlabeled code lines")
+        }
+    }
+
     @Test("Unsupported features remain readable without link activation")
     func fallback() {
         let rendered = DefaultRenderer().render(
@@ -127,6 +150,18 @@ struct MarkdownViewRenderTests {
         for value in ["Docs (guide.md)", "Chart (plot.png)", "<div>literal</div>"] {
             #expect(text.contains(value))
         }
+        #expect(!rendered.semanticSnapshot.accessibilityNodes.contains { $0.role == .link })
+    }
+
+    @Test("Empty reference destinations render readable labels without empty parentheses")
+    func emptyDestinations() {
+        let rendered = DefaultRenderer().render(
+            MarkdownView(MarkdownDocument("[Docs]() ![Chart]() ![]()")).chioTheme(.default),
+            proposal: .init(width: 40, height: 8)
+        )
+        let text = rendered.rasterSurface.lines.joined(separator: " ")
+        #expect(text.contains("Docs Chart Image"))
+        #expect(!text.contains("()"))
         #expect(!rendered.semanticSnapshot.accessibilityNodes.contains { $0.role == .link })
     }
 }

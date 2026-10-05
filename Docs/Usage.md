@@ -73,8 +73,10 @@ content
 StatusBar { KeyHints(navigation) }
 ```
 
-Descriptions do not register key bindings. Derive their visibility from your
-application's current context; keep actions in native handlers. `KeyboardHelp`
+`detail` defaults to `""`; empty details add no expanded text row. The decoder
+accepts historical missing or null details as empty, and encoding always emits
+the detail string. Descriptions do not register key bindings. Derive their visibility
+from your application's current context; keep actions in native handlers. `KeyboardHelp`
 supplies content while native containers supply scrolling, dismissal and focus
 restoration. Apply `.chioTheme` outside the presentation declaration and keep the
 presenting controls mounted while help is open. Scope modal key handlers to the
@@ -230,6 +232,10 @@ Applications own the validation rules, bindings, and native focus requests. See
 the complete workflow and [AgentDraft](../Examples/AgentDashboard/Domain/AgentDraft.swift)
 for its pure validation rules.
 
+`description` defaults to `""`; empty descriptions add no helper row. Errors retain
+presence: `error: nil` means no visible issue, while a present message takes
+precedence over the description, including an empty message.
+
 For grouped editing, put explicit stacks of `FormField` controls inside native
 `GroupBox` views, with Save/Cancel outside the scrolling fields. Keep conditional
 field values in a parent-owned draft; validate the visible fields against the
@@ -306,7 +312,7 @@ builder when a vertical arrangement fits better.
 
 ```swift
 FilePicker(directory: startingDirectory, selection: $selectedFile,
-           allowedExtensions: ["swift", "md"], onConfirm: { url in
+           allowedExtensions: .only(["swift", "md"]), onConfirm: { url in
     // Use the explicitly confirmed URL.
 }, onCancel: {
     // Dismiss the picker; selectedFile keeps its previous value.
@@ -314,12 +320,19 @@ FilePicker(directory: startingDirectory, selection: $selectedFile,
 .chioTheme(.default)
 ```
 
-Omit `allowedExtensions` to allow every regular file; an empty set allows none.
-Matching ignores case, and folders stay visible for navigation. Hidden files
+Omit `allowedExtensions` or pass `.all` to allow every regular file; `.only([])`
+allows none. `.only([""])` permits extensionless files. Matching ignores case,
+and folders stay visible for navigation. Hidden files
 are off by default; pass `showsHiddenFiles: true` to include them. File and folder
 symlinks work, and the returned URL retains the chosen path. The starting folder
 does not restrict navigation. Confirmation rechecks readability and file kind;
 applications still handle errors when opening the file themselves.
+
+For callers of the earlier optional APIs, replace `allowedExtensions: values`
+with `allowedExtensions: .only(values)`, and replace `nil` with `.all` or omit the
+argument. Pass `optionalDescription ?? ""` or `optionalDetail ?? ""` when adapting
+external optional text to `FormField` or `ShortcutHint`. Selection, errors and
+`replacing(...)` arguments retain their existing optional semantics.
 
 ## Markdown
 
