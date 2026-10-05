@@ -33,31 +33,30 @@
       </section>
 
       <section id="demos" class="demos" aria-label="Terminal recordings">
+        <h2 id="examples-heading" class="visually-hidden">Explore the examples</h2>
         <div class="demo-navigation">
-          <div class="demo-group">
-            <h2 id="components-heading">Components</h2>
-            <p>Focused examples of Chio views and styles for native SwiftTUI controls.</p>
-            <nav aria-labelledby="components-heading">
-              <a href="#choices" data-demo="choices" aria-current="true">Searchable choices</a>
-              <a href="#feedback" data-demo="feedback">Buttons &amp; feedback</a>
-              <a href="#pagination" data-demo="pagination">Pagination</a>
-              <a href="#viewport" data-demo="viewport">Scrolling</a>
-              <a href="#tree" data-demo="tree">Disclosure groups</a>
-              <a href="#forms" data-demo="forms">Form fields</a>
-              <a href="#timers" data-demo="timers">Duration labels</a>
-              <a href="#markdown" data-demo="markdown">Markdown</a>
+          <div class="demo-toolbar">
+            <nav class="demo-categories" aria-label="Example categories">
+              <a href="#choices" data-category="components">Components</a>
+              <a href="#dashboard" data-category="compositions">Compositions</a>
             </nav>
+            <span class="recording-label"><span aria-hidden="true">●</span> Recorded in a real terminal</span>
           </div>
-          <div class="demo-group">
-            <h2 id="compositions-heading">Compositions</h2>
-            <p>Complete example interfaces built from those pieces. Application behavior lives in the example code.</p>
-            <nav aria-labelledby="compositions-heading">
-              <a href="#dashboard" data-demo="dashboard">Dashboard</a>
-              <a href="#metrics" data-demo="metrics">Metrics</a>
-              <a href="#inbox" data-demo="inbox">Review inbox</a>
-            </nav>
-          </div>
-          <span class="recording-label"><span aria-hidden="true">●</span> Real terminal recordings</span>
+          <nav class="demo-options" data-recording-group="components" aria-label="Component examples">
+            <a href="#choices" data-demo="choices">Searchable choices</a>
+            <a href="#feedback" data-demo="feedback">Buttons &amp; feedback</a>
+            <a href="#pagination" data-demo="pagination">Pagination</a>
+            <a href="#viewport" data-demo="viewport">Scrolling</a>
+            <a href="#tree" data-demo="tree">Disclosure groups</a>
+            <a href="#forms" data-demo="forms">Form fields</a>
+            <a href="#timers" data-demo="timers">Duration labels</a>
+            <a href="#markdown" data-demo="markdown">Markdown</a>
+          </nav>
+          <nav class="demo-options" data-recording-group="compositions" aria-label="Composed application examples">
+            <a href="#dashboard" data-demo="dashboard">Dashboard</a>
+            <a href="#metrics" data-demo="metrics">Metrics</a>
+            <a href="#inbox" data-demo="inbox">Review inbox</a>
+          </nav>
         </div>
 
         <article id="choices" class="recording" data-cols="76" data-rows="27">

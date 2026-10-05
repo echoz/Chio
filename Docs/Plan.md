@@ -329,6 +329,15 @@ components. The duration example is labeled **Duration labels** because clocks
 belong to the application. Existing recording fragments, including `#timers`,
 remain stable.
 
+Navigation uses a compact Components/Compositions switch and one horizontally
+scrollable row of examples from the active category. The recording fragment
+determines the category, including direct links and browser history. Selecting
+an example keeps the chooser in view and pauses the previous recording. Both
+groups and all previews remain available without JavaScript. API and ownership
+details stay beneath each recording rather than above the chooser.
+The site build gives owned CSS and JavaScript content-hashed filenames and
+rewrites generated HTML references so a new page requests matching assets.
+
 The Swift package has no new dependency. To preview the same deployable output:
 
 ```sh
@@ -363,12 +372,14 @@ explicit click; the player's NPT-poster seek limitation is documented alongside
 the vendored assets. Independent review covers deployment permissions and static
 asset boundaries. These website checks do not add Swift or Linux test evidence.
 
-The component/composition split passes site assembly, HTML structure, category
+The compact component/composition navigation passes site assembly, generated
+asset hash/reference checks, JavaScript syntax, HTML structure, category
 membership, all eleven source links and stable recording fragments, local assets,
-image dimensions and recording checks. Script-free previews remain available;
-player code and captures are unchanged. Browser playback and narrow-layout
-verification for the revised navigation and details remain pending because the
-host Mac is locked.
+image dimensions and recording checks. Independent source review found no
+actionable issues. Script-free preview markup remains available; recording
+captures and player mounting are unchanged. Browser playback, navigation/focus,
+and narrow-layout verification for this revision remain pending because the host
+Mac is locked. Static checks do not establish those browser behaviors.
 
 The pagination showcase adds a fourth recording from release `0161b26`: a
 20-second, 76 × 27 real-terminal session covering filtering, page navigation,
