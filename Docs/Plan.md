@@ -293,6 +293,14 @@ pull requests receive no deployment permissions. Recordings and player assets ar
 served from the same site, without a CDN or an asciinema account. Keep recordings
 limited to local demo data and check playback before replacing them.
 
+Completing a visible UI slice includes updating this showcase in the same work:
+capture or refresh a short recording from the verified release binary, update
+its preview, caption, launch instructions and examples-guide links, then build
+and check playback and narrow layouts. Commit and deploy the gallery update and
+confirm the published result before calling the slice complete. Reuse unaffected
+recordings; an internal change with no visible example difference needs no new
+capture. Keep the Codex-assisted development and personal-software statement.
+
 Browser checks cover playback, pause, forward/backward seeking, recording
 navigation, and a 390-pixel mobile layout. Missing-recording and script-free
 previews retain screenshots and download links. Playback begins only after an
@@ -309,6 +317,14 @@ recordings, missing-recording focus restoration, and script-free previews and
 downloads. Navigation wraps and command blocks remain within the page at both
 320- and 390-pixel widths. The pinned player and deployment permissions are
 unchanged.
+
+The viewport and tree additions bring the gallery to six recordings, captured
+from verified release `3547b83`. Both start at 76 × 27 and include native input,
+theme switching and a 36 × 18 resize; they last about 18 and 14 seconds. Their
+previews were inspected, and the site build, asset links, image dimensions,
+recording event order, resize events and terminal restoration were checked.
+Player code, CSS and deployment permissions are unchanged. Browser playback and
+mobile-layout checks were not rerun for these two additions and remain pending.
 
 ## Verified on macOS
 
@@ -926,9 +942,14 @@ presentation. Markdown highlighting and active links are separate document
 capabilities with dependency and interaction decisions. These are open coverage
 items, not completed work and not an instruction to build every candidate.
 
+The next proposed exploration combines a btop-inspired theme with useful UI
+elements, integrated into existing Chio styles and components. The inventory
+below identifies the reuse paths and remaining decisions before implementation.
+
 Each family should have a small focused example that a consumer can run directly,
 public usage documentation, relevant model/raster/hosted-input regressions, and a
-release terminal check. Keep the dashboard as an integration example. A component
+release terminal check, followed by the [demo-site completion workflow](#demo-site).
+Keep the dashboard as an integration example. A component
 counts as delivered only for its documented and exercised scope; inheritance of
 an upstream API or a themed static screenshot is insufficient evidence of all
 interaction behavior. Recheck responsiveness when editing/navigation paths change.
@@ -939,3 +960,53 @@ Keep large-data behavior unclaimed until measured. Resolve Musl support before
 promising static Linux distribution; it does not block ordinary glibc components.
 No new public products, renderer, general focus manager or external agent
 integration are required by this roadmap.
+
+### btop-inspired UI inventory
+
+This is a source audit and proposed implementation direction, not delivered
+component coverage. References are btop's [drawing elements](https://github.com/aristocratos/btop/blob/main/src/btop_draw.hpp),
+[drawing implementation](https://github.com/aristocratos/btop/blob/main/src/btop_draw.cpp)
+and [theme roles](https://github.com/aristocratos/btop/blob/main/src/btop_theme.cpp),
+compared with Chio `3547b83` and the pinned SwiftTUI revision.
+
+| Element | Where it fits | Meaningful work or boundary |
+| --- | --- | --- |
+| Dark palette, density and selection | Existing `ChioTheme` colors, spacing and treatments | Try the same controls with near-black surfaces, legible muted information and stronger borders. Verify focused/disabled states and narrow layouts; public preset naming remains open. |
+| Titles embedded in panel borders | Extend `ChioGroupBoxStyle` through native border/overlay composition | Current headings sit inside the panel. Prototype compact title placement, truncation and background masking before adding a treatment; preserve allocation and pointer bounds. No new `Panel` wrapper. |
+| Labeled utilization meters | Native `ProgressView`, existing progress-style family and authored rows | Reuse fraction/label/track machinery, but distinguish a measurement from task completion: the current style paints 100% as success. Utilization thresholds and units belong to the application; a measurement treatment must preserve that meaning. |
+| Sparklines and history graphs | A small Chio presentation over native [`Canvas`][native-canvas] and `CanvasDrawing` | This is the clearest reusable gap: sample order, scale, empty/constant/single input, finite values and history reduction at narrow widths need explicit contracts. Native [`CanvasGrid`][native-canvas-grid] already packs braille and block samples into terminal cells. |
+| Dense process-like rows and sorting | Existing list/table styles, native selection and authored stacks | Prove an application-owned sort choice and ordered rows with stable selected IDs. The pin has no sortable-header/comparator API; existing native table border/focus paint limits still apply. |
+| Inline shortcut labels | Existing `KeyHint`, `KeyHints`, `ShortcutHint` and `KeyboardHelp` | Reuse their descriptions and native handlers. A bracket/keycap treatment is optional presentation, not a command registry. |
+| Adaptive panel arrangements | Native stacks, geometry, frames, scrolling and `ViewThatFits` | Compose wide/compact layouts in the example. `ViewThatFits` resolves all alternatives, so retained state belongs above them. Draggable split panes would require a separate keyboard/minimum-size contract and are deferred. |
+
+The native canvas supports clipping and per-cell paint. Overlapping subcell
+writes still share a terminal cell's foreground/background: the last styled
+write wins. Start with one series; do not promise independently colored overlaps.
+The pin's octant mode currently uses braille coverage, so expose only verified
+glyph treatments. Application code owns sample collection, clocks, retention,
+units and alert thresholds; Chio presents values without reading system metrics.
+
+Suggested order:
+
+1. Compose one compact metrics example from existing groups, progress tracks,
+   rows and hints, using fixed local values and a btop-inspired theme prototype.
+   Compare it with the default palette and resize it before deciding new tokens.
+2. Add a passive single-series history view to that example through an immutable
+   native drawing value. Define missing/invalid values, fixed versus automatic
+   scaling and overflow/reduction policy before fixing its public API. Verify
+   deterministic output and accessible textual summaries alongside the graph.
+3. Add compact border-title and inline-meter treatments where the example
+   demonstrates value; apply them to existing styles and verify both themes.
+4. Follow with a focused sorted table/list workflow if the example establishes
+   a reusable interaction need. Keep grouped forms, Markdown improvements and
+   timer/stopwatch presentation in the remaining queue.
+
+No repository reorganization is justified by this inventory. Extend the existing
+`Presentation/Styles` owners; keep an eventual history view and its private drawing
+together in `Presentation`, with pure data rules in their owning domain value
+only when the invariants require one. Keep the focused example under the existing
+example target. The reusable goal is compact instrumentation across applications,
+not a system monitor or a separate btop component family.
+
+[native-canvas]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/Canvas.swift
+[native-canvas-grid]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIPrimitives/Draw/CanvasGrid.swift

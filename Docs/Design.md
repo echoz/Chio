@@ -69,6 +69,12 @@ owns those responsibilities through state, views, and native layout. Native
 animations and progress timing remain upstream; the example's cancellable task
 only advances simulated application data.
 
+btop is an additional design reference for compact panels, meters, history graphs
+and dense information layouts. Adapt useful elements through existing Chio styles
+and native composition first. The [component inventory](Plan.md#btop-inspired-ui-inventory)
+separates reusable additions from palette work and application layout; these
+widgets remain proposed until their focused examples are implemented and verified.
+
 ## Theme
 
 A concrete theme value contains nested semantic colors, spacing, and visual

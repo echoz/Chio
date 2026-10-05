@@ -288,6 +288,20 @@ Filter local runs, move between pages, and change the page size while keeping th
 previously visible run in the new window. Empty results have no active page.
 [Watch](https://echoz.github.io/Chio/#pagination) · [Download recording](Media/pagination.cast).
 
+### Scrolling and expandable trees
+
+![A themed activity log with native two-axis scrolling and position controls](Media/viewport.png)
+
+Navigate a wide local log, change theme and try a compact terminal. Native
+scrolling owns the position; Chio supplies semantic indicator colors.
+[Watch](https://echoz.github.io/Chio/#viewport) · [Download recording](Media/viewport.cast).
+
+![A themed project tree with nested folders, file labels and bulk expansion actions](Media/tree.png)
+
+Fold nested groups while keeping their expansion choices, then change theme or
+resize. The hierarchy is authored local example data; it does not read files.
+[Watch](https://echoz.github.io/Chio/#tree) · [Download recording](Media/tree.cast).
+
 These previews render real release-binary terminal output. Font rendering can
 vary between terminals. The accompanying Asciinema-compatible recordings replay
 locally after cloning the repository:

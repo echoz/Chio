@@ -63,6 +63,15 @@ For true-color terminals over SSH, prefix the command with `COLORTERM=truecolor`
 Add `--choices`, `--text-entry`, `--feedback`, or `--files` to try a focused example.
 [Example controls and launch options →](Docs/Examples.md)
 
+## Inspiration
+
+- [Charm](https://charm.sh/), especially Lip Gloss, Bubbles, Huh, and Glamour —
+  cohesive themes, expressive controls, forms, and polished terminal typography.
+- [btop++](https://github.com/aristocratos/btop) — compact panels, meters, history
+  graphs, and information-dense layouts; a direction we are now exploring.
+
+Chio adapts these ideas to native SwiftTUI composition and Swift APIs.
+
 ## Documentation
 
 - [API usage](Docs/Usage.md) — themes and component recipes
