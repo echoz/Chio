@@ -4,7 +4,8 @@ The delivered proof-of-concept slices are a runnable local dashboard, agent
 creation, Markdown run reports, a command palette using simulated agents,
 a focused searchable-choice form, native password/multiline text entry,
 confirmation with transient feedback, file selection, contextual keyboard help,
-themed native tabs, finite-result pagination, and themed native scrolling.
+themed native tabs, finite-result pagination, themed native scrolling, and
+expandable disclosure groups.
 They establish the design direction, not broad parity with Charm's components.
 Accepted contracts and
 ownership live in [Design.md](Design.md); commands and interaction instructions
@@ -148,6 +149,11 @@ live in [the examples guide](Examples.md); component recipes live in
   background inheritance and disabled opacity remain intact. The `--viewport`
   example exercises a wide local log, native positions, reset and compact layout.
 
+- `ChioDisclosureGroupStyle` gives native groups compact themed headers and
+  vertical content layout. The `--tree` example composes a local hierarchy with
+  parent-owned expansion choices, bulk actions and empty-branch feedback.
+  Native activation, focus, accessibility and scrolling remain authoritative.
+
 ## Component coverage
 
 Source audit at Chio `424f8e6`, using SwiftTUI revision
@@ -190,7 +196,7 @@ come from Chio's original brief; they are not all standalone Bubbles packages.
 | --- | --- | --- | --- |
 | Searchable/selectable list | Delivered fuzzy/substring search, stable single selection, count, activation and two empty messages | [List][native-list] owns navigation and scrolling | No integrated pagination, loading/error/status workflow, multi-selection or demonstrated large-data performance |
 | Tables | Delivered theme style and Markdown table composition; report navigation tested | [Table][native-table] owns grid, sizing, selection and navigation | Border/background paint correction remains unapplied; richer selected/sorted data-table workflows are not validated |
-| Trees | No Chio tree workflow or style | [OutlineGroup][native-outline], `OutlineStyle`, separate `DisclosureGroup` | `OutlineGroup` expands all descendants and paints connectors with native colors; a collapsible tree needs composition, and exact connector color needs upstream support |
+| Trees and expandable groups | `ChioDisclosureGroupStyle` themes native headers/content; `--tree` demonstrates nested expansion, retained choices, bulk actions and empty branches | Native `DisclosureGroup` owns activation/focus; [OutlineGroup][native-outline] separately renders all descendants | No general tree data adapter, file selection or tree-specific arrow routing; arbitrary collapsed child state is not archived; OutlineGroup connector paint remains native |
 | File picker | `FilePicker` selects one readable regular file; async listing, folder navigation, fuzzy search, extension/hidden policy, errors/retry and explicit confirmation | Native search, lists, buttons, focus, scrolling and task lifetime | No directory/multiple selection, save panel, root confinement, recursive search or filesystem watching; confirmation does not reserve the file |
 | Pagination | Checked immutable `Pagination` and native-button `PageControl`; `--pagination` demonstrates filtered history and changing page size | Native buttons, bindings, input and focus | Finite known totals; no asynchronous loading, unknown totals or cross-page item selection |
 | Scrollable viewport | `ChioScrollViewStyle` themes native indicators; focused `--viewport` demonstrates two-axis scrolling and reset | [ScrollView][native-scroll], positions/readers/styles own input, focus and clamping | No new viewport wrapper; Lists/Tables use their own styles; editor descendants do not acquire viewport focus paint |
@@ -258,7 +264,7 @@ To check an already-built binary's terminal workflow:
 python3 Scripts/ci/terminal-smoke.py .build/release/chio-dashboard
 ```
 
-Add `--choices`, `--text-entry`, `--feedback`, `--files`, `--keyboard-help`, `--tabs`, `--pagination`, or `--viewport` for a focused workflow.
+Add `--choices`, `--text-entry`, `--feedback`, `--files`, `--keyboard-help`, `--tabs`, `--pagination`, `--viewport`, or `--tree` for a focused workflow.
 These check terminal input/output and restoration, not live Blink/SSH rendering
 or latency. `swift test --no-parallel` remains available for a full debug investigation.
 
@@ -312,6 +318,18 @@ Swift 6.4, with SwiftTUI pinned at
 - `swift build --product chio-dashboard` passes.
 - `swift build -c release --product chio-dashboard` also passes. Interactive
   launch instructions use release mode; debug enables extra upstream verification.
+- The disclosure/tree candidate completes 291 release tests and 269 selected
+  debug tests: 290 and 268 pass respectively, with the existing case-distinct
+  filename test skipped on this filesystem. Public raster/hosted checks cover
+  default/light/custom colors, narrow headers, inherited backgrounds, disabled
+  groups, suppressed focus effects, rejected expansion writes, native header and
+  content pointer routing, and vertically laid-out captured siblings. The tree
+  example covers retained nested expansion, bulk actions, empty branches and
+  theme/resize preservation. The full verification script passes, including the
+  production build, fourteen snapshot captures and all ten pseudo-terminal
+  workflows with clean restoration. Independent source re-review found no
+  remaining actionable findings. Fresh Linux and live Blink/SSH checks remain
+  pending.
 - The scroll-style candidate completes 283 release tests and 261 selected debug
   tests: 282 and 260 pass respectively, with the existing case-distinct filename
   test skipped on this filesystem. New public raster/hosted tests cover both
@@ -609,6 +627,12 @@ or tests. Six vertical steps measured 120 ms median and six horizontal steps
 restored terminal modes. These include capture/decoding overhead; they do not
 isolate style cost, establish large-log performance or measure SSH/Blink latency.
 
+The tree release was sampled locally at 100 × 30 without concurrent builds or
+tests. Closing Sources measured 59 ms median and reopening it measured 65 ms
+median, with six inputs each. The process exited with code zero and restored
+terminal modes. These small samples include capture/decoding overhead; they do
+not establish large-tree performance or measure SSH/Blink latency.
+
 ## Linux and CI
 
 The initial demonstration slices are delivered. Portability verification adds CI and
@@ -720,6 +744,11 @@ portable; correcting the platform implementation remains upstream work.
 
 ## Remaining boundaries
 
+- Native disclosure focus bounds include expanded content, while its pointer
+  trigger covers only the header. Geometric arrow navigation and native scroll
+  reveal can therefore consider an entire branch. Tab/Shift-Tab and Return/Space
+  are the documented example controls. Collapsed content has no native omission
+  archive; keep values that must survive collapse in a parent owner.
 - Native ScrollView focus reveal includes its reserved indicator tracks in the
   focused rectangle but compares it to the smaller content viewport. With both
   axes overflowing, focusing the body can move the offset by one cell in each axis;
@@ -824,7 +853,7 @@ unchanged; a local SwiftPM edit is only integration evidence, not distribution.
 
 ## Next component slices
 
-The coverage audit is complete and the following eight slices are
+The coverage audit is complete and the following nine slices are
 implemented. Their public APIs remain
 open to evidence from focused examples. Broaden reusable component coverage
 before treating the framework as ready for release preparation.
@@ -886,7 +915,13 @@ before treating the framework as ready for release preparation.
    input. A focused two-axis activity viewport demonstrates bound positions,
    focus, reset, theme changes and compact resizing.
 
-Further candidates are expandable trees, richer grouped forms, and timer/stopwatch
+9. **Expandable disclosure — implemented.** Style native group headers, focus
+   and vertically arranged content. Compose a local project hierarchy with
+   application-owned branch expansion, native activation, bulk actions and an
+   empty branch. Preserve values outside omitted content; do not add a tree
+   engine or claim conventional tree-specific arrow navigation.
+
+Further candidates are richer grouped forms and timer/stopwatch
 presentation. Markdown highlighting and active links are separate document
 capabilities with dependency and interaction decisions. These are open coverage
 items, not completed work and not an instruction to build every candidate.

@@ -185,6 +185,32 @@ viewport with reserved tracks. Home then Left corrects the initial one-cell
 nudge; Left otherwise moves only one column. This also occurs with SwiftTUI's
 automatic style.
 
+## Expandable groups
+
+Style native disclosure groups through the theme:
+
+```swift
+@State private var expanded = false
+
+// In the view body:
+DisclosureGroup("Details", isExpanded: $expanded) {
+    Text("Build settings and notes go here.")
+}
+.chioTheme(.default)
+```
+
+Nest groups to build a hierarchy, or disclose ordinary controls and help text.
+The theme supplies a compact header, focus highlight and indentation. Native
+Tab/Shift-Tab moves focus; Return/Space or clicking the header toggles expansion.
+Clicks on content leave the parent open. Theme colors customize this treatment,
+and a nearer `.disclosureGroupStyle(...)` can override it.
+
+Keep bindings for values that must survive collapse in an owner outside the
+group. SwiftTUI removes collapsed content; it does not archive arbitrary child
+state. Native arrows move focus geometrically, without tree-specific expand/
+collapse commands. See the [project-tree example](Examples.md#expandable-tree)
+for parent-owned expansion choices and native scrolling.
+
 ## Command palettes
 
 `ChioPaletteStyle` styles SwiftTUI's native command palette. Apply `.chioTheme(...)`

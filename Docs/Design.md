@@ -82,8 +82,9 @@ Component options specify behavior; application composition specifies content.
 
 Changing theme preserves query, stable selection, focus, and entered values.
 Native `GroupBox`, `List`, `Table`, `Button`, `TextField`, `TextEditor`, `Picker`,
-`Toggle`, `TabView`, `ScrollView`, `ProgressView`, `Spinner`, and native prompt styles share the same
-semantic roles. The first appearance closely follows Huh's Charm palette and
+`Toggle`, `TabView`, `ScrollView`, `DisclosureGroup`, `ProgressView`, `Spinner`,
+and native prompt styles share the same semantic roles. The first appearance
+closely follows Huh's Charm palette and
 Bubbles' selected rows, muted metadata, and compact keyboard help.
 
 Bordered buttons inherit their enclosing surface and show focus or an enabled
@@ -326,6 +327,36 @@ The pinned runtime includes a viewport's reserved tracks in focus reveal, so
 focusing its body can move the offset one cell on each overflowing axis. Chio
 retains native geometry and records this upstream limitation; it does not replay
 input or invent a cursor anchor to counteract the reveal.
+
+## Expandable groups and trees
+
+`.chioTheme` installs `ChioDisclosureGroupStyle` on native `DisclosureGroup`.
+A compact header combines a focus rail, an expansion triangle and the authored
+label. Expanded triangles use accent paint; collapsed triangles are muted.
+Focus and enabled press use the selected surface across the header. Idle rows
+inherit their enclosing background, suppressed focus removes the highlight,
+and disabled headers retain native-style dimming. Content is placed once,
+indented four cells to align with the label. Direct children form a vertical
+column; authored stacks retain their own layout and styles.
+
+The style installs the native trigger route once around the header, so clicking
+disclosed content does not collapse its parent. SwiftTUI owns the expansion
+binding, enabled state, accessibility and keyboard activation. Tab/Shift-Tab
+move focus and Return/Space toggle the focused group. Arrows retain native
+geometric focus navigation; there is no new tree-specific key dispatcher.
+
+The `--tree` example composes nested groups over application-owned stable branch
+IDs. Closing a parent leaves its children's expansion choices intact; bulk
+Collapse all deliberately clears every choice. Its count includes expanded
+descendants hidden by a collapsed parent. Files are passive labels, and an empty
+branch has an explicit message. This is a local authored hierarchy, not a
+filesystem browser or a new public tree data model.
+
+Values that must survive collapse belong outside the disclosed content. Native
+disclosure does not archive arbitrary omitted child-local state. Native focus
+bounds include expanded content, so focus reveal can consider the whole branch
+rather than just its header. `OutlineGroup` remains a separate always-expanded
+native outline with its own connector styling; this slice does not replace it.
 
 ## Command palette
 

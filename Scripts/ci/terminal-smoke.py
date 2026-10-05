@@ -79,7 +79,7 @@ def screen(output):
     return "\n".join("".join(line) for line in cells)
 
 
-def run(binary, choices=False, text_entry=False, feedback=False, files=False, keyboard_help=False, tabs=False, pagination=False, viewport=False):
+def run(binary, choices=False, text_entry=False, feedback=False, files=False, keyboard_help=False, tabs=False, pagination=False, viewport=False, tree=False):
     global WIDTH, HEIGHT
     master, slave = pty.openpty()
     process = None
@@ -125,7 +125,7 @@ def run(binary, choices=False, text_entry=False, feedback=False, files=False, ke
         env = dict(os.environ, TERM="xterm-256color", COLORTERM="truecolor")
         for key in ("NO_COLOR", "CLICOLOR", "CLICOLOR_FORCE", "FORCE_COLOR"):
             env.pop(key, None)
-        example = "--viewport" if viewport else "--pagination" if pagination else "--tabs" if tabs else "--keyboard-help" if keyboard_help else "--files" if files else "--feedback" if feedback else "--text-entry" if text_entry else "--choices" if choices else "--paused"
+        example = "--tree" if tree else "--viewport" if viewport else "--pagination" if pagination else "--tabs" if tabs else "--keyboard-help" if keyboard_help else "--files" if files else "--feedback" if feedback else "--text-entry" if text_entry else "--choices" if choices else "--paused"
         command = [str(binary), example]
         if file_fixture is not None:
             folder = Path(file_fixture.name)
@@ -135,13 +135,28 @@ def run(binary, choices=False, text_entry=False, feedback=False, files=False, ke
             command.extend(["--directory", str(folder)])
         process = subprocess.Popen(command, stdin=slave,
                                    stdout=slave, stderr=slave, env=env)
-        until("Row 2 · Col 2" if viewport else "1–3 of 23" if pagination else "Demo runs: 0" if tabs else "Runs: 0" if keyboard_help else "alpha.txt" if files else "Ready to publish" if feedback else "/ text entry" if text_entry else "1 / 2" if choices else "4 of 4 items")
+        until("Expanded folders: 3 / 6" if tree else "Row 2 · Col 2" if viewport else "1–3 of 23" if pagination else "Demo runs: 0" if tabs else "Runs: 0" if keyboard_help else "alpha.txt" if files else "Ready to publish" if feedback else "/ text entry" if text_entry else "1 / 2" if choices else "4 of 4 items")
         modes = termios.tcgetattr(slave)
         assert not modes[3] & (termios.ECHO | termios.ICANON), "Terminal is not in raw input mode"
         assert modes[6][termios.VMIN] == 1 and modes[6][termios.VTIME] == 0, "Unexpected raw read timing"
         assert b"\x1b[?1049h" in output, "Alternate screen was not entered"
 
-        if viewport:
+        if tree:
+            send(b"\r", "Expanded folders: 2 / 6")
+            assert "SearchableList.swift" not in screen(output), "Collapsed parent still shows children"
+            send(b" ", "Expanded folders: 3 / 6")
+            until("SearchableList.swift")
+            send(b"\t\t ", "Expanded folders: 2 / 6")
+            assert "SearchableList.swift" not in screen(output), "Collapsed child still shows content"
+            send(b"\x14", "Expanded folders: 2 / 6")
+            WIDTH, HEIGHT = 36, 18
+            fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", HEIGHT, WIDTH, 0, 0))
+            process.send_signal(signal.SIGWINCH)
+            until("Expanded folders: 2 / 6")
+            until("^Q quit")
+            send(b" ", "Expanded folders: 3 / 6")
+            until("SearchableList.swift")
+        elif viewport:
             send(b"\x1b[H\x1b[D", "Row 1 · Col 1")
             send(b"\x1b[B\x1b[B\x1b[C", "Row 3 · Col 2")
             send(b"\x14", "Row 3 · Col 2")
@@ -293,7 +308,7 @@ def run(binary, choices=False, text_entry=False, feedback=False, files=False, ke
             send(b"Smoke Agent", "Smoke Agent")
             send(b"\x1b", "/ agent workspace")
 
-        os.write(master, b"\x11" if choices or text_entry or feedback or files or keyboard_help or tabs or pagination or viewport else b"q")
+        os.write(master, b"\x11" if choices or text_entry or feedback or files or keyboard_help or tabs or pagination or viewport or tree else b"q")
         deadline = time.monotonic() + 15
         while process.poll() is None and time.monotonic() < deadline:
             receive()
@@ -303,7 +318,8 @@ def run(binary, choices=False, text_entry=False, feedback=False, files=False, ke
         assert process.returncode == 0, f"Dashboard exited with {process.returncode}"
         assert b"\x1b[?1049l" in output, "Alternate screen was not restored"
         assert termios.tcgetattr(slave) == original_modes, "Terminal modes were not restored"
-        print("PASS: two-axis scrolling, native focus and reset, theme, compact resize, clean exit" if viewport else
+        print("PASS: nested disclosure, retained expansion, native focus, theme, compact resize, clean exit" if tree else
+              "PASS: two-axis scrolling, native focus and reset, theme, compact resize, clean exit" if viewport else
               "PASS: history filtering, native page activation, theme, compact resize, reset, clean exit" if pagination else
               "PASS: tab focus/selection, retained counter and draft, native editing, theme, overflow, resize, clean exit" if tabs else
               "PASS: contextual help, literal search input, focus restoration, guarded actions, theme, resize, clean exit" if keyboard_help else
@@ -341,7 +357,8 @@ if __name__ == "__main__":
     examples.add_argument("--tabs", action="store_true", help="Exercise tab focus, selection, retained drafts and narrow overflow")
     examples.add_argument("--pagination", action="store_true", help="Exercise history filtering, page navigation and resizing")
     examples.add_argument("--viewport", action="store_true", help="Exercise two-axis scrolling, focus and resizing")
+    examples.add_argument("--tree", action="store_true", help="Exercise nested disclosure, expansion retention and resizing")
     arguments = parser.parse_args()
     run(arguments.binary.resolve(), choices=arguments.choices, text_entry=arguments.text_entry,
         feedback=arguments.feedback, files=arguments.files, keyboard_help=arguments.keyboard_help, tabs=arguments.tabs,
-        pagination=arguments.pagination, viewport=arguments.viewport)
+        pagination=arguments.pagination, viewport=arguments.viewport, tree=arguments.tree)

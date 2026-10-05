@@ -45,6 +45,8 @@ done
     > .build/ci-results/pagination-compact.txt
 "$binary" --viewport --snapshot --width 36 --height 18 \
     > .build/ci-results/viewport-compact.txt
+"$binary" --tree --snapshot --width 36 --height 18 \
+    > .build/ci-results/tree-compact.txt
 python3 Scripts/ci/terminal-smoke.py "$binary"
 python3 Scripts/ci/terminal-smoke.py "$binary" --choices
 python3 Scripts/ci/terminal-smoke.py "$binary" --text-entry
@@ -54,3 +56,4 @@ python3 Scripts/ci/terminal-smoke.py "$binary" --keyboard-help
 python3 Scripts/ci/terminal-smoke.py "$binary" --tabs
 python3 Scripts/ci/terminal-smoke.py "$binary" --pagination
 python3 Scripts/ci/terminal-smoke.py "$binary" --viewport
+python3 Scripts/ci/terminal-smoke.py "$binary" --tree

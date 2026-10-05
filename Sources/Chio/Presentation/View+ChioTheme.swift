@@ -18,6 +18,7 @@ extension View {
     public func chioTheme(_ theme: ChioTheme) -> some View {
         environment(\.chioTheme, theme)
             .groupBoxStyle(ChioGroupBoxStyle(theme: theme))
+            .disclosureGroupStyle(ChioDisclosureGroupStyle(theme: theme))
             .listStyle(ChioListStyle(theme: theme))
             .tableStyle(ChioTableStyle(theme: theme))
             .tabViewStyle(ChioTabViewStyle(theme: theme))

@@ -216,6 +216,25 @@ that initial nudge while keeping log focus. **Back to start** resets both offset
 from any position, retaining button focus. This is a documented native focus-reveal
 limitation.
 
+## Expandable tree
+
+```sh
+COLORTERM=truecolor swift run -c release chio-dashboard --tree
+```
+
+Tab/Shift-Tab moves between native folder groups, the viewport and the two bulk
+actions. Return/Space or a click on a folder header expands or collapses it.
+Closing Sources and reopening it restores its nested expansion choices; the
+count includes those remembered descendants. **Collapse all** clears every
+choice, while **Expand all** opens all six folders. Notes demonstrates an empty
+branch. File names are passive labels in a local example; no filesystem is read.
+
+Ctrl-T changes theme and Ctrl-Q quits. Resize to 36 × 18 to try the compact
+layout. The native viewport scrolls when needed; focused expanded groups have
+native focus bounds that include their contents, not just the header. Arrows
+retain geometric focus navigation rather than conventional tree expand/collapse
+commands. Use `--tree --snapshot` to capture the initial hierarchy.
+
 ## Colors over SSH
 
 For a true-color terminal such as Blink, declare that capability on the remote
