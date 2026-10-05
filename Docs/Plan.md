@@ -154,6 +154,12 @@ live in [the examples guide](Examples.md); component recipes live in
   parent-owned expansion choices, bulk actions and empty-branch feedback.
   Native activation, focus, accessibility and scrolling remain authoritative.
 
+- The `--forms` example composes native groups, text fields, a toggle and
+  scrolling with existing `FormField`/`FormValidation`. One immutable editable
+  snapshot retains hidden raw input; ordered rules validate related values.
+  Save replaces the local accepted snapshot, and Cancel restores it while
+  resetting validation visits. No public form DSL or dependency is added.
+
 ## Component coverage
 
 Source audit at Chio `424f8e6`, using SwiftTUI revision
@@ -188,7 +194,7 @@ come from Chio's original brief; they are not all standalone Bubbles packages.
 | Yes/no confirmation field | Styled native toggle is usable | `Toggle`, buttons | A distinct two-choice confirmation treatment, if needed; an action-confirmation dialog is a separate scope |
 | Field help and validation | Delivered `FormField` and `FormValidation` visibility state | Bindings, submission and `FocusState` | Current rules, draft ownership and first-invalid focus remain app-owned |
 | Conditional fields and dynamic choices | Conditional Test suite field demonstrated; native composition permits changing options | Result builders, state, `Picker`/`List` | Reusable asynchronous choice loading, stale-result policy and cross-field workflows are not delivered |
-| Grouped forms and standalone prompts | One application form proves submission/cancellation | Native groups, sections, covers and focus | No Chio `Form`/`Section` DSL, paged wizard, prompt runner or Huh-style accessible prompt mode; add coordination only after concrete workflows |
+| Grouped forms and standalone prompts | Agent creation plus grouped local settings compose conditional fields, related validation and Save/Cancel | Native groups, controls, scrolling and focus | No Chio `Form`/`Section` DSL, paged wizard, prompt runner or Huh-style accessible prompt mode; composition covers the demonstrated workflows |
 
 ### Collections, feedback and navigation
 
@@ -264,7 +270,7 @@ To check an already-built binary's terminal workflow:
 python3 Scripts/ci/terminal-smoke.py .build/release/chio-dashboard
 ```
 
-Add `--choices`, `--text-entry`, `--feedback`, `--files`, `--keyboard-help`, `--tabs`, `--pagination`, `--viewport`, or `--tree` for a focused workflow.
+Add `--choices`, `--text-entry`, `--feedback`, `--files`, `--keyboard-help`, `--tabs`, `--pagination`, `--viewport`, `--tree`, or `--forms` for a focused workflow.
 These check terminal input/output and restoration, not live Blink/SSH rendering
 or latency. `swift test --no-parallel` remains available for a full debug investigation.
 
@@ -326,6 +332,15 @@ recording event order, resize events and terminal restoration were checked.
 Player code, CSS and deployment permissions are unchanged. Browser playback and
 mobile-layout checks were not rerun for these two additions and remain pending.
 
+The grouped-form slice adds a seventh recording from its verified release
+candidate: a 19-second session beginning at 76 × 30, with conditional fields,
+related validation, Save/Cancel, theme switching and a 36 × 18 resize. The real
+terminal capture exits cleanly and restores terminal modes. Its preview was
+visually inspected; site build, navigation/assets, image dimensions, recording
+event order and local documentation links pass. Fresh browser playback and
+mobile-layout checks remain pending because no browser was available and the
+host Mac was locked. Player code, CSS and deployment permissions are unchanged.
+
 ## Verified on macOS
 
 Swift 6.4, with SwiftTUI pinned at
@@ -334,6 +349,17 @@ Swift 6.4, with SwiftTUI pinned at
 - `swift build --product chio-dashboard` passes.
 - `swift build -c release --product chio-dashboard` also passes. Interactive
   launch instructions use release mode; debug enables extra upstream verification.
+- The grouped-form candidate completes 303 release tests and 281 selected debug
+  tests: 302 and 280 pass respectively, with the existing case-distinct filename
+  test skipped in each mode on this filesystem. New model/raster/hosted checks
+  cover raw draft replacement and codecs, ordered cross-field rules, hidden
+  input retention, batched editing, native Save/Cancel, theme changes and 36 × 18
+  resizing. Regressions reproduced and fixed Cancel-induced validation visits
+  and a focused error hidden by compact resize. Independent source re-review
+  found no remaining actionable findings. The full verification script passes,
+  including the production build, fifteen snapshots and all eleven terminal
+  workflows with clean exit and terminal-mode restoration. Fresh Linux and live
+  Blink/SSH checks remain pending.
 - The disclosure/tree candidate completes 291 release tests and 269 selected
   debug tests: 290 and 268 pass respectively, with the existing case-distinct
   filename test skipped on this filesystem. Public raster/hosted checks cover
@@ -649,6 +675,11 @@ median, with six inputs each. The process exited with code zero and restored
 terminal modes. These small samples include capture/decoding overhead; they do
 not establish large-tree performance or measure SSH/Blink latency.
 
+The grouped-form release was sampled locally at 100 × 30 without concurrent
+builds or tests. Six name-field keystrokes measured 59 ms median. The process
+exited with code zero and restored terminal modes. This includes capture/decoding
+overhead and does not measure SSH transport or Blink display latency.
+
 ## Linux and CI
 
 The initial demonstration slices are delivered. Portability verification adds CI and
@@ -869,9 +900,10 @@ unchanged; a local SwiftPM edit is only integration evidence, not distribution.
 
 ## Next component slices
 
-The coverage audit is complete and the following nine slices are
-implemented. Their public APIs remain
-open to evidence from focused examples. Broaden reusable component coverage
+The coverage audit is complete and the first ten slices are implemented.
+Continue the remaining queue in the numbered order below; the btop-inspired
+work follows the previously identified form, timing and document work.
+Public APIs remain open to evidence from focused examples. Broaden reusable component coverage
 before treating the framework as ready for release preparation.
 
 1. **Richer choice fields — implemented.** Prove searchable single-choice form composition and
@@ -937,14 +969,39 @@ before treating the framework as ready for release preparation.
    empty branch. Preserve values outside omitted content; do not add a tree
    engine or claim conventional tree-specific arrow navigation.
 
-Further candidates are richer grouped forms and timer/stopwatch
-presentation. Markdown highlighting and active links are separate document
-capabilities with dependency and interaction decisions. These are open coverage
-items, not completed work and not an instruction to build every candidate.
+10. **Richer grouped forms — implemented.** Compose related native controls with
+    existing groups, `FormField` and `FormValidation`. A local settings example
+    proves conditional fields, cross-field validation, first-invalid focus,
+    committed versus edited values, Save/Cancel and compact scrolling. Add a
+    reusable abstraction only if composition demonstrates a missing contract.
 
-The next proposed exploration combines a btop-inspired theme with useful UI
-elements, integrated into existing Chio styles and components. The inventory
-below identifies the reuse paths and remaining decisions before implementation.
+11. **Timer and stopwatch presentation — queued.** Define elapsed/countdown
+    values, formatting and pause/resume/reset behavior with explicit time inputs
+    and native scheduling. Keep clock ownership out of immutable values.
+
+12. **Markdown syntax highlighting — queued.** Evaluate a suitable highlighter
+    and its dependency/static-link costs; retain native text composition,
+    whitespace, width and deterministic rendering.
+
+13. **Active Markdown links — queued.** Define link activation and opening policy,
+    preserve native focus/input, and verify terminal behavior without automatic
+    navigation or resource fetching.
+
+14. **btop-inspired theme and compact metrics example — queued.** Apply existing
+    semantic colors, spacing, groups, progress tracks, rows and key hints to a
+    small local example before deciding additional theme tokens.
+
+15. **Sparklines and history graphs — queued.** Add passive single-series
+    presentation over native Canvas with explicit sample, scaling and reduction
+    contracts. Applications retain data collection and timing ownership.
+
+16. **Compact panel and meter treatments — queued.** Extend existing styles with
+    border titles and inline measurement presentation where the metrics example
+    demonstrates value. Keep utilization meaning distinct from completion.
+
+17. **Dense sorted collection workflow — queued.** Prove application-owned
+    sorting and stable native selection using existing lists/tables before
+    expanding reusable collection APIs. The btop inventory below records limits.
 
 Each family should have a small focused example that a consumer can run directly,
 public usage documentation, relevant model/raster/hosted-input regressions, and a
@@ -986,7 +1043,7 @@ The pin's octant mode currently uses braille coverage, so expose only verified
 glyph treatments. Application code owns sample collection, clocks, retention,
 units and alert thresholds; Chio presents values without reading system metrics.
 
-Suggested order:
+When the queue reaches item 14, work through this sequence:
 
 1. Compose one compact metrics example from existing groups, progress tracks,
    rows and hints, using fixed local values and a btop-inspired theme prototype.
@@ -998,8 +1055,7 @@ Suggested order:
 3. Add compact border-title and inline-meter treatments where the example
    demonstrates value; apply them to existing styles and verify both themes.
 4. Follow with a focused sorted table/list workflow if the example establishes
-   a reusable interaction need. Keep grouped forms, Markdown improvements and
-   timer/stopwatch presentation in the remaining queue.
+   a reusable interaction need.
 
 No repository reorganization is justified by this inventory. Extend the existing
 `Presentation/Styles` owners; keep an eventual history view and its private drawing

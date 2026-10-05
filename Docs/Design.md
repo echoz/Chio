@@ -451,6 +451,26 @@ has rendered. Native editing resumes when the cover owns focus. This is a narrow
 transition adapter, not general replay of arbitrary navigation across unrendered
 controls.
 
+The focused `--forms` example groups local run settings with native `GroupBox`
+and explicit field stacks. Existing `FormField` and `FormValidation` provide the
+presentation and error visibility. Save/Cancel and keyboard hints stay outside
+the native scrolling area. Ordinary focus reveal remains native; first-invalid
+focus also reveals the field heading and inline error through `ScrollViewReader`,
+including after a terminal resize.
+No additional public form container or coordinator is required.
+
+One parent-owned immutable draft retains workspace name, the automatic-runs
+choice and raw interval/timeout input. Hidden numeric input remains unfinished
+draft data and is excluded from validation. Visible values must be whole minutes
+in 1...60, and timeout must be shorter than interval. Current ordered issues are
+recomputed from both fields. Save validates the current draft before atomically
+replacing the local saved snapshot; rejected saves leave that snapshot intact.
+Cancel restores the last successful snapshot, resets visibility and focuses the
+name. That focus restoration does not count as visiting the abandoned field;
+ordinary navigation resumes blur validation and clears the Cancel notice.
+Bindings read current retained storage, including during input batches.
+The example starts no scheduler and writes no settings file.
+
 ## Password and multiline input
 
 Native `SecureField` uses the existing `ChioTextFieldStyle`; no password wrapper

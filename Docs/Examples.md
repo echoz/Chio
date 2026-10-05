@@ -235,6 +235,25 @@ native focus bounds that include their contents, not just the header. Arrows
 retain geometric focus navigation rather than conventional tree expand/collapse
 commands. Use `--tree --snapshot` to capture the initial hierarchy.
 
+## Grouped forms
+
+```sh
+COLORTERM=truecolor swift run -c release chio-dashboard --forms
+```
+
+Edit the workspace name, then enable **Automatic runs** to reveal interval and
+timeout fields. Use Tab/Shift-Tab for native focus and Space/Return to toggle.
+Both durations require whole minutes from 1 to 60; timeout must be shorter than
+the interval. Hiding these fields keeps their text and excludes their rules from
+manual-mode validation.
+
+**Save**, Ctrl-S, or Return in a text field validates the current draft and
+focuses the first invalid field. **Cancel** or Ctrl-X restores the latest saved
+values and clears errors. Saving is local to this example: no jobs start and no
+settings are written to disk. Ctrl-T changes theme; Ctrl-Q quits. Try 36 × 18 to
+see the native viewport reveal focused fields while actions remain available.
+Use `--forms --snapshot` for a deterministic initial frame.
+
 ## Colors over SSH
 
 For a true-color terminal such as Blink, declare that capability on the remote
@@ -301,6 +320,14 @@ scrolling owns the position; Chio supplies semantic indicator colors.
 Fold nested groups while keeping their expansion choices, then change theme or
 resize. The hierarchy is authored local example data; it does not read files.
 [Watch](https://echoz.github.io/Chio/#tree) · [Download recording](Media/tree.cast).
+
+### Grouped settings
+
+![A themed settings form with Workspace and Automation groups, a saved-values summary, and Save and Cancel actions](Media/forms.png)
+
+Conditional fields retain their draft text, related values validate together, and
+Cancel restores the latest saved snapshot. The example starts no background jobs.
+[Watch](https://echoz.github.io/Chio/#forms) · [Download recording](Media/forms.cast).
 
 These previews render real release-binary terminal output. Font rendering can
 vary between terminals. The accompanying Asciinema-compatible recordings replay

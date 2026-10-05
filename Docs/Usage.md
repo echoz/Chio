@@ -230,6 +230,14 @@ Applications own the validation rules, bindings, and native focus requests. See
 the complete workflow and [AgentDraft](../Examples/AgentDashboard/Domain/AgentDraft.swift)
 for its pure validation rules.
 
+For grouped editing, put explicit stacks of `FormField` controls inside native
+`GroupBox` views, with Save/Cancel outside the scrolling fields. Keep conditional
+field values in a parent-owned draft; validate the visible fields against the
+current draft, including relationships between fields. Replace the saved snapshot
+only on successful validation, and restore that snapshot on Cancel. The
+[grouped settings example](Examples.md#grouped-forms) demonstrates these choices
+without introducing a form coordinator or a separate focus system.
+
 ## Multiple choices
 
 For multiple choices, bind a set of stable IDs:
