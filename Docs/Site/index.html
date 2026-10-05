@@ -34,43 +34,36 @@
 
       <section id="demos" class="demos" aria-label="Terminal recordings">
         <div class="demo-navigation">
-          <nav aria-label="Choose a recording">
-            <a href="#dashboard" data-demo="dashboard" aria-current="true">Dashboard</a>
-            <a href="#choices" data-demo="choices">Choices</a>
-            <a href="#feedback" data-demo="feedback">Feedback</a>
-            <a href="#pagination" data-demo="pagination">Pagination</a>
-            <a href="#viewport" data-demo="viewport">Viewport</a>
-            <a href="#tree" data-demo="tree">Tree</a>
-            <a href="#forms" data-demo="forms">Forms</a>
-            <a href="#timers" data-demo="timers">Timers</a>
-            <a href="#markdown" data-demo="markdown">Markdown</a>
-            <a href="#metrics" data-demo="metrics">Metrics</a>
-            <a href="#inbox" data-demo="inbox">Inbox</a>
-          </nav>
+          <div class="demo-group">
+            <h2 id="components-heading">Components</h2>
+            <p>Focused examples of Chio views and styles for native SwiftTUI controls.</p>
+            <nav aria-labelledby="components-heading">
+              <a href="#choices" data-demo="choices" aria-current="true">Searchable choices</a>
+              <a href="#feedback" data-demo="feedback">Buttons &amp; feedback</a>
+              <a href="#pagination" data-demo="pagination">Pagination</a>
+              <a href="#viewport" data-demo="viewport">Scrolling</a>
+              <a href="#tree" data-demo="tree">Disclosure groups</a>
+              <a href="#forms" data-demo="forms">Form fields</a>
+              <a href="#timers" data-demo="timers">Duration labels</a>
+              <a href="#markdown" data-demo="markdown">Markdown</a>
+            </nav>
+          </div>
+          <div class="demo-group">
+            <h2 id="compositions-heading">Compositions</h2>
+            <p>Complete example interfaces built from those pieces. Application behavior lives in the example code.</p>
+            <nav aria-labelledby="compositions-heading">
+              <a href="#dashboard" data-demo="dashboard">Dashboard</a>
+              <a href="#metrics" data-demo="metrics">Metrics</a>
+              <a href="#inbox" data-demo="inbox">Review inbox</a>
+            </nav>
+          </div>
           <span class="recording-label"><span aria-hidden="true">●</span> Real terminal recordings</span>
         </div>
 
-        <article id="dashboard" class="recording" data-cols="100" data-rows="36">
-          <div class="recording-heading">
-            <h2>An agent workspace</h2>
-            <span class="demo-number" aria-hidden="true">01 / 11</span>
-          </div>
-          <div class="recording-preview">
-            <img class="recording-image" src="recordings/dashboard.png" alt="A dark terminal dashboard with four agents, a selected Build Agent, progress, and keyboard hints." width="1248" height="948">
-            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play recording</button>
-          </div>
-          <div class="player" aria-label="Dashboard recording"></div>
-          <p class="player-message" role="status" hidden></p>
-          <div class="recording-caption">
-            <p>Searchable selection, semantic status colors, and an application that feels like one coherent interface.</p>
-            <a class="download" href="recordings/dashboard.cast" download>Download recording ↓</a>
-          </div>
-        </article>
-
         <article id="choices" class="recording" data-cols="76" data-rows="27">
           <div class="recording-heading">
-            <h2>A little more choice</h2>
-            <span class="demo-number" aria-hidden="true">02 / 11</span>
+            <h3>A little more choice</h3>
+            <span class="recording-kind">Component example</span>
           </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/choices.png" alt="A searchable capabilities checklist with Build and Test checked and Deploy unavailable." width="960" height="723">
@@ -82,12 +75,20 @@
             <p>Keyboard focus and checked choices have distinct jobs. Filtering keeps the choices you already made.</p>
             <a class="download" href="recordings/choices.cast" download>Download recording ↓</a>
           </div>
+          <div class="recording-details">
+            <dl class="recording-ingredients">
+              <div><dt>Chio</dt><dd><code>SearchableList</code>, <code>SearchableChecklist</code>, <code>FormField</code></dd></div>
+              <div><dt>SwiftTUI</dt><dd><code>List</code>, <code>Button</code> and native focus.</dd></div>
+              <div><dt>Example code</dt><dd>Choice limits, validation rules, and the two-step workflow.</dd></div>
+            </dl>
+            <a class="example-source" href="https://github.com/echoz/Chio/blob/main/Examples/AgentDashboard/Presentation/ChoiceExampleView.swift">View example source <span aria-hidden="true">↗</span></a>
+          </div>
         </article>
 
         <article id="feedback" class="recording" data-cols="76" data-rows="20">
           <div class="recording-heading">
-            <h2>Same controls. A lighter mood.</h2>
-            <span class="demo-number" aria-hidden="true">03 / 11</span>
+            <h3>Same controls. A lighter mood.</h3>
+            <span class="recording-kind">Component example</span>
           </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/feedback-light.png" alt="The light theme's feedback screen with an accent outline around the focused Publish button." width="960" height="548">
@@ -99,11 +100,20 @@
             <p>Shared theme roles carry through buttons, focus, confirmation, and feedback. Your application supplies the meaning.</p>
             <a class="download" href="recordings/feedback-light.cast" download>Download recording ↓</a>
           </div>
+          <div class="recording-details">
+            <dl class="recording-ingredients">
+              <div><dt>Chio</dt><dd><code>ChioButtonStyle</code>, <code>ChioPromptStyle</code>, <code>ChioSpinnerStyle</code>, <code>ChioToastStyle</code></dd></div>
+              <div><dt>SwiftTUI</dt><dd><code>Button</code>, <code>Spinner</code>, dialogs, and toast presentation.</dd></div>
+              <div><dt>Example code</dt><dd>Simulated publishing and completion feedback; nothing is sent.</dd></div>
+            </dl>
+            <a class="example-source" href="https://github.com/echoz/Chio/blob/main/Examples/AgentDashboard/Presentation/FeedbackExampleView.swift">View example source <span aria-hidden="true">↗</span></a>
+          </div>
         </article>
+
         <article id="pagination" class="recording" data-cols="76" data-rows="27">
           <div class="recording-heading">
-            <h2>A page at a time</h2>
-            <span class="demo-number" aria-hidden="true">04 / 11</span>
+            <h3>A page at a time</h3>
+            <span class="recording-kind">Component example</span>
           </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/pagination.png" alt="A filtered run history with three Build results, native page buttons, and a 4–6 of 6 item summary." width="960" height="723">
@@ -115,11 +125,20 @@
             <p>Filter local run history, change rows per page, and navigate finite results with native controls. Empty results and theme changes stay part of the same workflow.</p>
             <a class="download" href="recordings/pagination.cast" download>Download recording ↓</a>
           </div>
+          <div class="recording-details">
+            <dl class="recording-ingredients">
+              <div><dt>Chio</dt><dd><code>Pagination</code>, <code>PageControl</code></dd></div>
+              <div><dt>SwiftTUI</dt><dd><code>Picker</code>, <code>ScrollView</code> and native buttons.</dd></div>
+              <div><dt>Example code</dt><dd>Local run history, filtering, and page-size choices.</dd></div>
+            </dl>
+            <a class="example-source" href="https://github.com/echoz/Chio/blob/main/Examples/AgentDashboard/Presentation/PaginationExampleView.swift">View example source <span aria-hidden="true">↗</span></a>
+          </div>
         </article>
+
         <article id="viewport" class="recording" data-cols="76" data-rows="27">
           <div class="recording-heading">
-            <h2>A little room for a wide view</h2>
-            <span class="demo-number" aria-hidden="true">05 / 11</span>
+            <h3>A little room for a wide view</h3>
+            <span class="recording-kind">Component example</span>
           </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/viewport.png" alt="A dark activity log of forty local events with native scroll indicators, row and column status, and a Back to start button." width="960" height="723">
@@ -131,11 +150,20 @@
             <p>Explore a wide local event log with native scrolling on both axes. Semantic indicators share the theme, and the position stays with you through a lighter palette and a compact terminal.</p>
             <a class="download" href="recordings/viewport.cast" download>Download recording ↓</a>
           </div>
+          <div class="recording-details">
+            <dl class="recording-ingredients">
+              <div><dt>Chio</dt><dd><code>ChioScrollViewStyle</code></dd></div>
+              <div><dt>SwiftTUI</dt><dd><code>ScrollView</code>, <code>ScrollCellOffset</code> for scrolling and position.</dd></div>
+              <div><dt>Example code</dt><dd>Event log content and the back-to-start action.</dd></div>
+            </dl>
+            <a class="example-source" href="https://github.com/echoz/Chio/blob/main/Examples/AgentDashboard/Presentation/ViewportExampleView.swift">View example source <span aria-hidden="true">↗</span></a>
+          </div>
         </article>
+
         <article id="tree" class="recording" data-cols="76" data-rows="27">
           <div class="recording-heading">
-            <h2>One branch at a time</h2>
-            <span class="demo-number" aria-hidden="true">06 / 11</span>
+            <h3>One branch at a time</h3>
+            <span class="recording-kind">Component example</span>
           </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/tree.png" alt="A dark example workspace with Sources, Chio, and Presentation expanded into file labels, three collapsed folders, and bulk expansion buttons." width="960" height="723">
@@ -147,11 +175,20 @@
             <p>Native disclosure groups reveal a local example hierarchy. Fold a parent and reopen it to find the nested expansion choices remembered by the application, then change theme and terminal size.</p>
             <a class="download" href="recordings/tree.cast" download>Download recording ↓</a>
           </div>
+          <div class="recording-details">
+            <dl class="recording-ingredients">
+              <div><dt>Chio</dt><dd><code>ChioDisclosureGroupStyle</code></dd></div>
+              <div><dt>SwiftTUI</dt><dd><code>DisclosureGroup</code>, <code>ScrollView</code></dd></div>
+              <div><dt>Example code</dt><dd>The folder hierarchy and remembered expansion choices.</dd></div>
+            </dl>
+            <a class="example-source" href="https://github.com/echoz/Chio/blob/main/Examples/AgentDashboard/Presentation/TreeExampleView.swift">View example source <span aria-hidden="true">↗</span></a>
+          </div>
         </article>
+
         <article id="forms" class="recording" data-cols="76" data-rows="30">
           <div class="recording-heading">
-            <h2>Related settings, one draft</h2>
-            <span class="demo-number" aria-hidden="true">07 / 11</span>
+            <h3>Related settings, one draft</h3>
+            <span class="recording-kind">Component example</span>
           </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/forms.png" alt="A dark grouped settings form with Workspace and Automation sections, a saved-values summary, and Save and Cancel buttons." width="960" height="798">
@@ -163,27 +200,45 @@
             <p>Reveal related timing fields, correct an inline error, and save a local snapshot. Cancel restores the latest saved values; native focus and scrolling keep editing available through theme and size changes. No jobs are started.</p>
             <a class="download" href="recordings/forms.cast" download>Download recording ↓</a>
           </div>
+          <div class="recording-details">
+            <dl class="recording-ingredients">
+              <div><dt>Chio</dt><dd><code>FormField</code>, <code>FormValidation</code></dd></div>
+              <div><dt>SwiftTUI</dt><dd><code>TextField</code>, <code>Toggle</code> and native focus.</dd></div>
+              <div><dt>Example code</dt><dd>Draft values, validation rules, conditional fields, and save/cancel behavior.</dd></div>
+            </dl>
+            <a class="example-source" href="https://github.com/echoz/Chio/blob/main/Examples/AgentDashboard/Presentation/GroupedFormExampleView.swift">View example source <span aria-hidden="true">↗</span></a>
+          </div>
         </article>
+
         <article id="timers" class="recording" data-cols="76" data-rows="30">
           <div class="recording-heading">
-            <h2>Every second counts</h2>
-            <span class="demo-number" aria-hidden="true">08 / 11</span>
+            <h3>Elapsed and remaining time</h3>
+            <span class="recording-kind">Component example</span>
           </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/timers.png" alt="A dark time studio with independent stopwatch and countdown panels, elapsed and remaining time, native pause and reset buttons, and a progress track." width="960" height="798">
             <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play recording</button>
           </div>
-          <div class="player" aria-label="Timers recording"></div>
+          <div class="player" aria-label="Duration labels recording"></div>
           <p class="player-message" role="status" hidden></p>
           <div class="recording-caption">
             <p>Chio formats elapsed and remaining time; this example supplies its own clock state and controls. Pause, resume and reset both clocks, then follow countdown expiry through a theme change and a compact terminal.</p>
             <a class="download" href="recordings/timers.cast" download>Download recording ↓</a>
           </div>
+          <div class="recording-details">
+            <dl class="recording-ingredients">
+              <div><dt>Chio</dt><dd><code>DurationText</code> for elapsed and remaining time.</dd></div>
+              <div><dt>SwiftTUI</dt><dd><code>TimelineView</code>, <code>ProgressView</code>, <code>Button</code></dd></div>
+              <div><dt>Example code</dt><dd>Clock state, pause/resume, reset, and countdown expiry.</dd></div>
+            </dl>
+            <a class="example-source" href="https://github.com/echoz/Chio/blob/main/Examples/AgentDashboard/Presentation/TimerExampleView.swift">View example source <span aria-hidden="true">↗</span></a>
+          </div>
         </article>
+
         <article id="markdown" class="recording" data-cols="76" data-rows="30">
           <div class="recording-heading">
-            <h2>Read the code, follow the thread</h2>
-            <span class="demo-number" aria-hidden="true">09 / 11</span>
+            <h3>Read the code, follow the thread</h3>
+            <span class="recording-kind">Component example</span>
           </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/markdown-links.png" alt="A Swift code block in an agent report, with themed keywords, types, strings, numbers, and comments above local link feedback." width="960" height="798">
@@ -195,11 +250,45 @@
             <p>Swift code keeps its spacing and native horizontal scrolling, with token colors from the theme. Inline links retain native focus and wrapping; the application reports destinations locally. Follow both through light and dark themes and a compact terminal.</p>
             <a class="download" href="recordings/markdown-links.cast" download>Download recording ↓</a>
           </div>
+          <div class="recording-details">
+            <dl class="recording-ingredients">
+              <div><dt>Chio</dt><dd><code>MarkdownDocument</code>, <code>MarkdownView</code>, <code>ChioLinkStyle</code></dd></div>
+              <div><dt>SwiftTUI</dt><dd><code>ScrollView</code>, <code>OpenLinkAction</code> and native inline links.</dd></div>
+              <div><dt>Example code</dt><dd>Report content and local link feedback. Open a report from the dashboard to try it.</dd></div>
+            </dl>
+            <a class="example-source" href="https://github.com/echoz/Chio/blob/main/Examples/AgentDashboard/Presentation/AgentReportView.swift">View example source <span aria-hidden="true">↗</span></a>
+          </div>
         </article>
+
+        <article id="dashboard" class="recording" data-cols="100" data-rows="36">
+          <div class="recording-heading">
+            <h3>An agent workspace</h3>
+            <span class="recording-kind">Composition</span>
+          </div>
+          <div class="recording-preview">
+            <img class="recording-image" src="recordings/dashboard.png" alt="A dark terminal dashboard with four agents, a selected Build Agent, progress, and keyboard hints." width="1248" height="948">
+            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play recording</button>
+          </div>
+          <div class="player" aria-label="Dashboard recording"></div>
+          <p class="player-message" role="status" hidden></p>
+          <div class="recording-caption">
+            <p>Searchable selection, semantic status colors, and an application that feels like one coherent interface.</p>
+            <a class="download" href="recordings/dashboard.cast" download>Download recording ↓</a>
+          </div>
+          <div class="recording-details">
+            <dl class="recording-ingredients">
+              <div><dt>Chio</dt><dd><code>SearchableList</code>, <code>StatusBar</code>, <code>KeyHints</code> and themed control styles.</dd></div>
+              <div><dt>SwiftTUI</dt><dd><code>GroupBox</code>, <code>ProgressView</code>, layout, and focus.</dd></div>
+              <div><dt>Example code</dt><dd>Agent simulation, run actions, reports, and responsive screen composition.</dd></div>
+            </dl>
+            <a class="example-source" href="https://github.com/echoz/Chio/blob/main/Examples/AgentDashboard/Presentation/DashboardView.swift">View example source <span aria-hidden="true">↗</span></a>
+          </div>
+        </article>
+
         <article id="metrics" class="recording" data-cols="76" data-rows="30">
           <div class="recording-heading">
-            <h2>A compact view of the readings</h2>
-            <span class="demo-number" aria-hidden="true">10 / 11</span>
+            <h3>A compact view of the readings</h3>
+            <span class="recording-kind">Composition</span>
           </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/metrics.png" alt="Compact dark instrumentation panels with border titles, utilization tracks, single-series history graphs, and native Next sample and History buttons." width="960" height="798">
@@ -211,11 +300,20 @@
             <p>Advance local samples, show missing or empty history, and compare compact border titles and measurement tracks across three palettes. Chio presents the readings; the application owns the data and updates.</p>
             <a class="download" href="recordings/metrics.cast" download>Download recording ↓</a>
           </div>
+          <div class="recording-details">
+            <dl class="recording-ingredients">
+              <div><dt>Chio</dt><dd><code>Sparkline</code>, <code>ChioTheme.btop</code>, <code>ChioGroupBoxStyle</code>, <code>ChioProgressViewStyle</code></dd></div>
+              <div><dt>SwiftTUI</dt><dd><code>GroupBox</code>, <code>ProgressView</code>, <code>Button</code></dd></div>
+              <div><dt>Example code</dt><dd>Fixed sample data, manual updates, and the compact instrument layout.</dd></div>
+            </dl>
+            <a class="example-source" href="https://github.com/echoz/Chio/blob/main/Examples/AgentDashboard/Presentation/MetricsExampleView.swift">View example source <span aria-hidden="true">↗</span></a>
+          </div>
         </article>
+
         <article id="inbox" class="recording" data-cols="100" data-rows="30">
           <div class="recording-heading">
-            <h2>A little space to review</h2>
-            <span class="demo-number" aria-hidden="true">11 / 11</span>
+            <h3>A little space to review</h3>
+            <span class="recording-kind">Composition</span>
           </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/inbox.png" alt="A dense review queue beside a Markdown preview, with search, queue and sort controls, selected review metadata, and keyboard hints." width="1248" height="798">
@@ -226,6 +324,14 @@
           <div class="recording-caption">
             <p>Sort and filter a local review queue while selection stays attached to its identity. The queue and preview grow together as the terminal widens; Enter opens the full reader at any width. Native controls and existing Chio components carry the whole example.</p>
             <a class="download" href="recordings/inbox.cast" download>Download recording ↓</a>
+          </div>
+          <div class="recording-details">
+            <dl class="recording-ingredients">
+              <div><dt>Chio</dt><dd><code>SearchableList</code>, <code>MarkdownView</code>, <code>StatusBar</code>, <code>ChioGroupBoxStyle</code></dd></div>
+              <div><dt>SwiftTUI</dt><dd><code>Picker</code>, <code>ScrollView</code>, layout, and full-screen presentation.</dd></div>
+              <div><dt>Example code</dt><dd>Review fixtures, queue membership, sorting, selection, and reader flow.</dd></div>
+            </dl>
+            <a class="example-source" href="https://github.com/echoz/Chio/blob/main/Examples/AgentDashboard/Presentation/InboxExampleView.swift">View example source <span aria-hidden="true">↗</span></a>
           </div>
         </article>
         <p class="playback-note">Press play to watch. Pause, seek, or open fullscreen for a closer look.
@@ -248,7 +354,7 @@
 <span aria-hidden="true">$ </span>swift run -c release chio-dashboard --tree</code></pre>
           <p class="command-label">Try grouped settings and inline validation:</p>
           <pre><code><span aria-hidden="true">$ </span>swift run -c release chio-dashboard --forms</code></pre>
-          <p class="command-label">Try the stopwatch and countdown:</p>
+          <p class="command-label">Try duration labels with example-owned clocks:</p>
           <pre><code><span aria-hidden="true">$ </span>swift run -c release chio-dashboard --timers</code></pre>
           <p class="command-label">Explore compact metrics and history:</p>
           <pre><code><span aria-hidden="true">$ </span>swift run -c release chio-dashboard --metrics</code></pre>

@@ -355,6 +355,11 @@ and scale, gap and accessibility contracts.
 seeking, and fullscreen playback. These are recorded examples; run the binary to
 interact with the controls yourself.
 
+The gallery groups focused views and native control styles under **Components**.
+The dashboard, metrics, and inbox are **Compositions** of those building blocks.
+Each recording lists the Chio APIs, native SwiftTUI controls, and application-owned
+behavior it uses, with a link to its example source.
+
 ![Chio's dark dashboard with selectable agents, semantic status colors, progress, and keyboard hints](Media/dashboard.png)
 
 The local agent dashboard combines native controls with Chio's theme, searchable

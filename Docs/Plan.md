@@ -320,6 +320,15 @@ remain separate from ordinary Linux support.
 The [GitHub Pages showcase](https://echoz.github.io/Chio/) plays recordings from
 `Docs/Media` with a pinned, locally served asciinema player. Site source lives in
 `Docs/Site`; its vendored assets retain their upstream Apache 2.0 license.
+The gallery separates **Components** (focused Chio views and native control
+styles) from **Compositions** (the dashboard, metrics, and review inbox).
+Components appear first, with searchable choices as the default. Each recording
+identifies its Chio APIs, native SwiftTUI building blocks, application-owned
+behavior, and example source. Compositions are examples, not additional public
+components. The duration example is labeled **Duration labels** because clocks
+belong to the application. Existing recording fragments, including `#timers`,
+remain stable.
+
 The Swift package has no new dependency. To preview the same deployable output:
 
 ```sh
@@ -353,6 +362,13 @@ previews retain screenshots and download links. Playback begins only after an
 explicit click; the player's NPT-poster seek limitation is documented alongside
 the vendored assets. Independent review covers deployment permissions and static
 asset boundaries. These website checks do not add Swift or Linux test evidence.
+
+The component/composition split passes site assembly, HTML structure, category
+membership, all eleven source links and stable recording fragments, local assets,
+image dimensions and recording checks. Script-free previews remain available;
+player code and captures are unchanged. Browser playback and narrow-layout
+verification for the revised navigation and details remain pending because the
+host Mac is locked.
 
 The pagination showcase adds a fourth recording from release `0161b26`: a
 20-second, 76 × 27 real-terminal session covering filtering, page navigation,
