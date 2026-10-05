@@ -368,6 +368,12 @@ def run(binary, choices=False, text_entry=False, feedback=False, files=False, ke
             send(b"report", "Open agent report")
             send(b"\r", "/ agent report")
             until("Table example")
+            send(b"\t\r", "Link: Docs/Design.md")
+            send(b"\t\r", "Link: #outcome")
+            send(b"\t", "Table example")  # Both inline links precede the table viewport.
+            send(b"\x1b[Z\x1b[Z\x1b[Z\x1b[F", "End of report.")  # Return to vertical reading.
+            until("Link: #outcome")
+            send(b"\x1b[H", "Table example")
             send(b"\x1b", "/ agent workspace")
             send(b"n", "/ create agent")
             send(b"Smoke Agent", "Smoke Agent")
@@ -394,7 +400,7 @@ def run(binary, choices=False, text_entry=False, feedback=False, files=False, ke
               "PASS: confirmation, cancellation, spinner, toast, destructive reset, clean exit" if feedback else
               "PASS: secure masking, multiline paste, disabled input, validation, clean exit" if text_entry else
               "PASS: searchable choices, hidden checks, validation, save/cancel, clean exit" if choices else
-              "PASS: raw input, search, palette, report/table, form, focus restoration, clean exit")
+              "PASS: raw input, search, palette, report links/table, form, focus restoration, clean exit")
     except Exception:
         print("Last terminal screen:\n" + screen(output), file=sys.stderr)
         raise

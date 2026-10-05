@@ -6,7 +6,7 @@ struct MarkdownDocumentTests {
     func heading(level: Int) {
         let document = MarkdownDocument(String(repeating: "#", count: level) + " Title")
         #expect(document.blocks == [.heading(level: level, spans: [
-            .init(text: "Title", attributes: []),
+            .text("Title", []),
         ])])
     }
 
@@ -19,22 +19,22 @@ struct MarkdownDocumentTests {
     @Test("Nested inline emphasis accumulates without changing readable content")
     func inlineAttributes() {
         let spans = paragraphSpans("***both*** and **strong** and *emphasis* and `code`")
-        #expect(spans.map(\.text).joined() == "both and strong and emphasis and code")
-        #expect(spans.first { $0.text == "both" }?.attributes == [.strong, .emphasis])
-        #expect(spans.first { $0.text == "strong" }?.attributes == [.strong])
-        #expect(spans.first { $0.text == "emphasis" }?.attributes == [.emphasis])
-        #expect(spans.first { $0.text == "code" }?.attributes == [.code])
+        #expect(spans.map(\.plainText).joined() == "both and strong and emphasis and code")
+        #expect(spans.contains(.text("both", [.strong, .emphasis])))
+        #expect(spans.contains(.text("strong", [.strong])))
+        #expect(spans.contains(.text("emphasis", [.emphasis])))
+        #expect(spans.contains(.text("code", [.code])))
     }
 
     @Test("Soft breaks join prose and authored hard breaks retain a newline")
     func lineBreaks() {
-        #expect(paragraphSpans("first\nsecond  \nthird").map(\.text).joined() == "first second\nthird")
+        #expect(paragraphSpans("first\nsecond  \nthird").map(\.plainText).joined() == "first second\nthird")
     }
 
     @Test("Technical punctuation remains literal")
     func punctuation() {
         let source = "\"straight\" 'quotes' -- flags --- dashes"
-        #expect(paragraphSpans(source).map(\.text).joined() == source)
+        #expect(paragraphSpans(source).map(\.plainText).joined() == source)
     }
 
     @Test("Ordered starts, nested lists, and task markers remain distinct")
@@ -54,9 +54,9 @@ struct MarkdownDocumentTests {
         }
         #expect(items.map(\.marker) == ["7.", "8."])
         #expect(items[0].blocks == [
-            .paragraph([.init(text: "seven", attributes: [])]),
+            .paragraph([.text("seven", [])]),
             .list([.init(marker: "•", blocks: [
-                .paragraph([.init(text: "nested", attributes: [])]),
+                .paragraph([.text("nested", [])]),
             ])]),
         ])
         guard case let .list(tasks) = try #require(document.blocks.last) else {
@@ -74,8 +74,8 @@ struct MarkdownDocumentTests {
             return
         }
         #expect(items[0].blocks == [
-            .paragraph([.init(text: "first", attributes: [])]),
-            .paragraph([.init(text: "second", attributes: [])]),
+            .paragraph([.text("first", [])]),
+            .paragraph([.text("second", [])]),
         ])
     }
 
@@ -83,8 +83,8 @@ struct MarkdownDocumentTests {
     func quote() {
         let document = MarkdownDocument("> **quoted**\n>\n> > inner")
         #expect(document.blocks == [.quote([
-            .paragraph([.init(text: "quoted", attributes: [.strong])]),
-            .quote([.paragraph([.init(text: "inner", attributes: [])])]),
+            .paragraph([.text("quoted", [.strong])]),
+            .quote([.paragraph([.text("inner", [])])]),
         ])])
     }
 
@@ -107,9 +107,9 @@ struct MarkdownDocumentTests {
 
     @Test("Empty link and image destinations retain labels without empty suffixes")
     func emptyDestinations() {
-        #expect(paragraphSpans("[Docs]()") == [.init(text: "Docs", attributes: [])])
-        #expect(paragraphSpans("![Chart]()") == [.init(text: "Chart", attributes: [])])
-        #expect(paragraphSpans("![]()") == [.init(text: "Image", attributes: [])])
+        #expect(paragraphSpans("[Docs]()") == [.text("Docs", [])])
+        #expect(paragraphSpans("![Chart]()") == [.text("Chart", [])])
+        #expect(paragraphSpans("![]()") == [.text("Image", [])])
         #expect(MarkdownDocument("[Docs](<>)") == MarkdownDocument("[Docs]()"))
         #expect(MarkdownDocument("![Chart](<>)") == MarkdownDocument("![Chart]()"))
     }
@@ -117,15 +117,33 @@ struct MarkdownDocumentTests {
     @Test("Unsupported inline features keep labels, destinations, and literal HTML")
     func inlineFallback() {
         let spans = paragraphSpans("[Docs](https://example.com) ![Chart](plot.png) ~~old~~ <b>raw</b>")
-        #expect(spans.map(\.text).joined()
+        #expect(spans.map(\.plainText).joined()
             == "Docs (https://example.com) Chart (plot.png) old <b>raw</b>")
-        #expect(paragraphSpans("<https://example.com>").map(\.text).joined() == "https://example.com")
+        #expect(paragraphSpans("<https://example.com>").map(\.plainText).joined() == "https://example.com")
     }
 
     @Test("HTML blocks stay literal")
     func blockFallback() {
         let html = MarkdownDocument("<div>raw</div>\n")
         #expect(html.blocks == [.fallback("<div>raw</div>\n")])
+    }
+
+    @Test("Each authored link keeps one complete styled label and its original destination")
+    func links() {
+        let spans = paragraphSpans("[**bold** *soft* `code`](../guide.md#intro)[again](../guide.md#intro)")
+        #expect(spans == [
+            .link(label: [.text("bold", [.strong]), .text(" ", []), .text("soft", [.emphasis]),
+                          .text(" ", []), .text("code", [.code])],
+                  destination: "../guide.md#intro", attributes: []),
+            .link(label: [.text("again", [])], destination: "../guide.md#intro", attributes: []),
+        ])
+        #expect(paragraphSpans("[](chio:detail%20one)") == [
+            .link(label: [.text("chio:detail%20one", [])], destination: "chio:detail%20one", attributes: []),
+        ])
+        #expect(paragraphSpans("**[jump](#details)**") == [
+            .link(label: [.text("jump", [.strong])], destination: "#details", attributes: [.strong]),
+        ])
+        #expect(MarkdownDocument("[Docs](guide.md)") != MarkdownDocument("Docs (guide.md)"))
     }
 
     @Test("Tables retain headers, rich cells, empty cells, and column alignments")
@@ -140,13 +158,13 @@ struct MarkdownDocumentTests {
             Issue.record("Expected a table")
             return
         }
-        #expect(table.headers.map { $0.map(\.text).joined() } == ["Name", "State", "Time", "Note"])
+        #expect(table.headers.map { $0.map(\.plainText).joined() } == ["Name", "State", "Time", "Note"])
         #expect(table.alignments == [.leading, .center, .trailing, .leading])
         #expect(table.rows.count == 2)
         #expect(table.rows.allSatisfy { $0.count == 4 })
-        #expect(table.headers[0] == [.init(text: "Name", attributes: [.strong])])
-        #expect(table.rows[0][0] == [.init(text: "swift test", attributes: [.code])])
-        #expect(table.rows[0][1] == [.init(text: "Passed", attributes: [.strong])])
+        #expect(table.headers[0] == [.text("Name", [.strong])])
+        #expect(table.rows[0][0] == [.text("swift test", [.code])])
+        #expect(table.rows[0][1] == [.text("Passed", [.strong])])
         #expect(table.rows[0][3].isEmpty)
         #expect(table.rows[1][3].isEmpty)
     }

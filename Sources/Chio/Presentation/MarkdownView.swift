@@ -6,18 +6,47 @@ import SwiftTUIViews
 public struct MarkdownView {
     @Environment(\.chioTheme) private var theme
     private let document: MarkdownDocument
+    private let links: MarkdownLinks
 
+    /// Displays readable destinations without creating interactive links.
     public init(_ document: MarkdownDocument) {
         self.document = document
+        links = .passive
+    }
+
+    /// Enables native inline links with an explicit application-owned opening action.
+    /// The action receives the authored destination, including relative paths and fragments.
+    public init(_ document: MarkdownDocument, openLink: OpenLinkAction) {
+        self.document = document
+        links = .interactive(openLink)
     }
 }
 
 extension MarkdownView: View {
     public var body: some View {
-        MarkdownBlocks(blocks: document.blocks, theme: theme)
+        MarkdownBlocks(blocks: document.blocks, theme: theme, links: links)
+            .openLinkAction(links.action)
             .foregroundStyle(theme.colors.foreground)
             .lineLimit(nil)
             .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+private enum MarkdownLinks {
+    case passive
+    case interactive(OpenLinkAction)
+
+    var isInteractive: Bool {
+        if case .interactive = self { return true }
+        return false
+    }
+
+    @MainActor
+    var action: OpenLinkAction {
+        switch self {
+        case .passive: OpenLinkAction { _ in false }
+        case let .interactive(action): action
+        }
     }
 }
 
@@ -25,13 +54,14 @@ extension MarkdownView: View {
 private struct MarkdownBlocks {
     let blocks: [MarkdownDocument.Block]
     let theme: ChioTheme
+    let links: MarkdownLinks
 }
 
 extension MarkdownBlocks: View {
     var body: some View {
         VStack(alignment: .leading, spacing: theme.spacing.sectionGap) {
             ForEach(blocks.indices, id: \.self) { index in
-                MarkdownBlock(block: blocks[index], theme: theme)
+                MarkdownBlock(block: blocks[index], theme: theme, links: links)
             }
         }
         .fixedSize(horizontal: false, vertical: true)
@@ -42,21 +72,32 @@ extension MarkdownBlocks: View {
 private struct MarkdownBlock {
     let block: MarkdownDocument.Block
     let theme: ChioTheme
+    let links: MarkdownLinks
 
-    private func text(_ spans: [MarkdownDocument.Span]) -> Text {
+    private func text(_ spans: [MarkdownDocument.Span], inLink: Bool = false) -> Text {
         var interpolation = Text.StringInterpolation(
             literalCapacity: 0,
             interpolationCount: spans.count
         )
         for span in spans {
-            var fragment = Text(verbatim: span.text)
-            if span.attributes.contains(.strong) { fragment = fragment.bold() }
-            if span.attributes.contains(.emphasis) { fragment = fragment.italic() }
-            if span.attributes.contains(.code) {
-                fragment = fragment.foregroundStyle(theme.colors.accent)
-                    .cellBackground(theme.colors.selectedSurface)
+            switch span {
+            case let .text(value, attributes):
+                var fragment = Text(verbatim: value)
+                if attributes.contains(.strong) { fragment = fragment.bold() }
+                if attributes.contains(.emphasis) { fragment = fragment.italic() }
+                // An active link's style owns its paint, including focus feedback.
+                if attributes.contains(.code) && !inLink {
+                    fragment = fragment.foregroundStyle(theme.colors.accent)
+                        .cellBackground(theme.colors.selectedSurface)
+                }
+                interpolation.appendInterpolation(fragment)
+            case let .link(label, destination, _):
+                if links.isInteractive {
+                    interpolation.appendInterpolation(Link(text(label, inLink: true), destination: destination))
+                } else {
+                    interpolation.appendInterpolation(text(span.passiveSpans))
+                }
             }
-            interpolation.appendInterpolation(fragment)
         }
         return Text(Text.RichContent(stringInterpolation: interpolation))
     }
@@ -64,7 +105,7 @@ private struct MarkdownBlock {
     private func columns(_ table: MarkdownDocument.Table) -> [TableColumn] {
         table.headers.enumerated().map { index, spans in
             // Native headers accept labels; body cells retain their rich Text runs.
-            TableColumn(spans.map(\.text).joined(), alignment: table.alignments[index])
+            TableColumn(spans.map(\.plainText).joined(), alignment: table.alignments[index])
         }
     }
 }
@@ -86,7 +127,7 @@ extension MarkdownBlock: View {
                         Text(verbatim: items[index].marker)
                             .foregroundStyle(theme.colors.accent)
                             .fixedSize()
-                        MarkdownBlocks(blocks: items[index].blocks, theme: theme)
+                        MarkdownBlocks(blocks: items[index].blocks, theme: theme, links: links)
                     }
                 }
             })
@@ -95,7 +136,7 @@ extension MarkdownBlock: View {
                 // A native leading-edge border vanishes on a one-row quote.
                 // A text marker keeps the quote visible at every block height.
                 Text("│").foregroundStyle(theme.colors.border).fixedSize()
-                MarkdownBlocks(blocks: blocks, theme: theme)
+                MarkdownBlocks(blocks: blocks, theme: theme, links: links)
                     .foregroundStyle(theme.colors.secondaryText)
             })
         case let .code(language, code):

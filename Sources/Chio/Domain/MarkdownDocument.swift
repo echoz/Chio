@@ -27,9 +27,30 @@ public struct MarkdownDocument {
         let blocks: [Block]
     }
 
-    struct Span {
-        let text: String
-        let attributes: Attributes
+    indirect enum Span {
+        case text(String, Attributes)
+        case link(label: [Span], destination: LinkDestination, attributes: Attributes)
+
+        /// Readable fallback for passive documents and native plain-text headers.
+        var plainText: String {
+            switch self {
+            case let .text(value, _): return value
+            case let .link(label, destination, _):
+                let text = label.map(\.plainText).joined()
+                return text == destination.rawValue ? text : "\(text) (\(destination.rawValue))"
+            }
+        }
+
+        /// Removes activation while preserving readable text and inline styles.
+        var passiveSpans: [Span] {
+            switch self {
+            case .text: return [self]
+            case let .link(label, destination, attributes):
+                let suffix: [Span] = label.map(\.plainText).joined() == destination.rawValue
+                    ? [] : [.text(" (\(destination.rawValue))", attributes)]
+                return label.flatMap(\.passiveSpans) + suffix
+            }
+        }
     }
 
     struct Table {
@@ -139,29 +160,30 @@ private extension MarkdownDocument {
     static func spans(from node: any Markup, attributes: Attributes) -> [Span] {
         switch node {
         case let text as Markdown.Text:
-            return [Span(text: text.string, attributes: attributes)]
+            return [.text(text.string, attributes)]
         case is Markdown.Strong:
             return inlineChildren(of: node, attributes: attributes.union(.strong))
         case is Markdown.Emphasis:
             return inlineChildren(of: node, attributes: attributes.union(.emphasis))
         case let code as Markdown.InlineCode:
-            return [Span(text: code.code, attributes: attributes.union(.code))]
+            return [.text(code.code, attributes.union(.code))]
         case is Markdown.SoftBreak:
-            return [Span(text: " ", attributes: attributes)]
+            return [.text(" ", attributes)]
         case is Markdown.LineBreak:
-            return [Span(text: "\n", attributes: attributes)]
+            return [.text("\n", attributes)]
         case let link as Markdown.Link:
             return referenceSpans(of: link, destination: link.destination ?? "", attributes: attributes)
         case let image as Markdown.Image:
-            let label = inlineChildren(of: image, attributes: attributes)
-            let readableLabel = label.isEmpty ? [Span(text: "Image", attributes: attributes)] : label
+            // Markdown permits links inside alt text; an image fallback is passive.
+            let label = inlineChildren(of: image, attributes: attributes).flatMap(\.passiveSpans)
+            let readableLabel = label.isEmpty ? [Span.text("Image", attributes)] : label
             return readableLabel + destinationSpan(image.source ?? "", attributes: attributes)
         case let html as Markdown.InlineHTML:
-            return [Span(text: html.rawHTML, attributes: attributes)]
+            return [.text(html.rawHTML, attributes)]
         default:
             // Strikethrough and future inline containers retain their readable descendants.
             if !node.isEmpty { return inlineChildren(of: node, attributes: attributes) }
-            return [Span(text: node.format(), attributes: attributes)]
+            return [.text(node.format(), attributes)]
         }
     }
 
@@ -171,13 +193,17 @@ private extension MarkdownDocument {
         attributes: Attributes
     ) -> [Span] {
         let label = inlineChildren(of: node, attributes: attributes)
-        if label.map(\.text).joined() == destination { return label }
-        return label + destinationSpan(destination, attributes: attributes)
+        guard !destination.isEmpty else { return label }
+        // Keep the complete label under one link, including mixed inline styles.
+        // A destination-only link still needs a visible, focusable label.
+        let readableLabel = label.map(\.plainText).joined().isEmpty
+            ? [.text(destination, attributes)] : label
+        return [.link(label: readableLabel, destination: LinkDestination(destination), attributes: attributes)]
     }
 
     static func destinationSpan(_ destination: String, attributes: Attributes) -> [Span] {
         guard !destination.isEmpty else { return [] }
-        return [Span(text: " (\(destination))", attributes: attributes)]
+        return [.text(" (\(destination))", attributes)]
     }
 
 }

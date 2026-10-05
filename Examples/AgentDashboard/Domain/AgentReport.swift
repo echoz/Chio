@@ -33,6 +33,8 @@ struct AgentReport {
 
         **\(agent.phase.label)** · \(escape(agent.summary))
 
+        Read the [project docs](Docs/Design.md) or review the [outcome](#outcome).
+
         > Local simulation. This report is a snapshot; no external commands or services were used.
 
         ## Table example
@@ -45,7 +47,7 @@ struct AgentReport {
         | Compile | **Passed** | 12.8 s |
         | `swift test` | **Passed** | 3.2 s |
 
-        Tab focuses the table; left/right scroll it on narrow screens. Shift-Tab returns to the report.
+        Tab moves through links to the table; left/right scroll it on narrow screens. Shift-Tab returns through links to the report.
 
         ## Activity
 

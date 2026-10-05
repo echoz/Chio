@@ -356,8 +356,33 @@ struct ReportView: View {
 The first Markdown slice supports headings, paragraphs, strong/emphasized text,
 inline and fenced code, lists, quotes, rules, and aligned tables with native
 horizontal scrolling. Table body cells retain rich text; native headers use plain
-labels with themed colors. Links and images show readable labels and destinations;
+labels with themed colors. Passive links and images show readable labels and destinations;
 HTML is literal. Native table border colors remain an upstream styling limitation.
+To enable links, supply SwiftTUI's native action explicitly:
+
+```swift
+MarkdownView(document, openLink: OpenLinkAction { destination in
+    selectedDestination = destination.rawValue
+    return true // The application handled this destination.
+})
+```
+
+Here `selectedDestination` is application state. The callback can route to another
+view, show a destination, or apply the app's opening policy. Return `false` to
+leave a destination unhandled; Chio does not then invoke an outer/system opener.
+Relative paths and fragments are delivered unchanged. Rendering never invokes
+the action, and the original initializer remains passive.
+
+Use Tab/Shift-Tab and Return/Space for native link navigation and activation.
+Traversal reaches visible native focus targets; focus the containing scroll view
+and scroll to reveal links farther down a document or across a wide table.
+Rich labels wrap with surrounding prose and remain one focus stop. Empty
+Markdown destinations stay passive. Table body links can activate; native table
+headers keep their plain readable fallback. `.disabled(true)` suppresses native
+link interaction. `.chioTheme` also styles ordinary SwiftTUI `Link` values;
+use a nearer `.linkStyle(...)` to customize their presentation. Active Markdown
+code labels inherit link paint so focus remains visible.
+
 See [AgentReport](../Examples/AgentDashboard/Domain/AgentReport.swift) for snapshot
 ownership and [AgentReportView](../Examples/AgentDashboard/Presentation/AgentReportView.swift)
 for the reader.

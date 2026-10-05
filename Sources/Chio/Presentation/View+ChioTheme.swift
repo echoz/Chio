@@ -30,6 +30,7 @@ extension View {
             .spinnerStyle(ChioSpinnerStyle(theme: theme))
             .promptStyle(ChioPromptStyle(theme: theme))
             .buttonStyle(ChioButtonStyle(theme: theme))
+            .linkStyle(ChioLinkStyle(theme: theme))
             .pickerStyle(ChioPickerStyle(theme: theme))
             .toggleStyle(ChioToggleStyle(theme: theme))
             .foregroundStyle(theme.colors.foreground)

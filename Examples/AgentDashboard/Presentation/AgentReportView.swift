@@ -7,6 +7,7 @@ struct AgentReportView {
     @Binding var isLight: Bool
     let close: @MainActor @Sendable () -> Void
     @FocusState private var isReading: Bool
+    @State private var lastLinkDestination = ""
 
     private var theme: ChioTheme { isLight ? .light : .default }
 }
@@ -21,16 +22,23 @@ extension AgentReportView: View {
                 Text("snapshot").foregroundStyle(theme.colors.mutedText)
             }
             ScrollView {
-                MarkdownView(report.document)
+                MarkdownView(report.document, openLink: OpenLinkAction { destination in
+                    lastLinkDestination = destination.rawValue
+                    return true
+                })
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .focused($isReading)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
             StatusBar {
+                Text(lastLinkDestination.isEmpty ? "Links stay in this demo." : "Link: \(lastLinkDestination)")
+                    .foregroundStyle(theme.colors.secondaryText)
                 KeyHints {
                     KeyHint("↑↓", "scroll")
                     KeyHint("home/end", "jump")
+                    KeyHint("tab", "focus")
+                    KeyHint("enter", "link")
                     KeyHint("esc", "back")
                     KeyHint("^T", "theme")
                 }
@@ -41,7 +49,10 @@ extension AgentReportView: View {
         .frame(maxWidth: 84, maxHeight: .infinity, alignment: .topLeading)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .chioTheme(theme)
-        .onAppear { isReading = true }
+        .onAppear {
+            lastLinkDestination = ""
+            isReading = true
+        }
         .onKeyPress(.escape) { _ in
             close()
             return .handled

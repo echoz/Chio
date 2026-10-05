@@ -37,11 +37,18 @@ the same search and focus; actions requiring selection are disabled when absent.
 
 Reports capture the run at the moment you open them. Use arrows or Home/End to
 scroll, Ctrl-T to change theme, and Escape to return to the same selection and
-filter. Reopen for the latest run state. Tab can focus a code block, where left
-and right scroll long lines. The reports demonstrate headings, rich text, lists,
-quotes, code, and tables. The **Table example** near the top shows aligned columns
-and illustrative timings. Tab focuses it; left/right scroll on narrow screens,
-and Shift-Tab returns to vertical reading.
+filter. Reopen for the latest run state. The reports demonstrate headings, rich
+text, lists, quotes, code, and tables. Tab first focuses **project docs**, then
+**outcome** in the paragraph near the top. Enter reports the exact destination in
+the persistent footer; activation stays local, without opening a browser or making
+a network request. Reopening clears this feedback.
+
+Continue with Tab to focus the **Table example**, which shows aligned columns and
+illustrative timings; left/right scroll it on narrow screens. Later, Tab can focus
+a code block, where left/right scroll long lines. Shift-Tab moves backward through
+these native focus targets to vertical reading. Ctrl-T and Escape remain available
+while a link owns focus. Links wrap with their surrounding paragraph as the terminal
+narrows; try 36 × 18 with a link focused.
 
 Press `n` while browsing to create an agent. Enter its name, choose a role with
 the arrow keys, and use Space to toggle Start immediately. Test agents also
@@ -355,6 +362,16 @@ Cancel restores the latest saved snapshot. The example starts no background jobs
 Pause each clock independently, resume its retained interval, and follow countdown
 expiry through theme and terminal-size changes.
 [Watch](https://echoz.github.io/Chio/#timers) · [Download recording](Media/timers.cast).
+
+### Markdown links and reports
+
+![An agent report with inline project docs and outcome links, a table, and local destination feedback in the footer](Media/markdown-links.png)
+
+Move through inline links with native focus, activate each destination locally,
+then return to reading. Paragraph wrapping, focused links and persistent feedback
+share the theme through terminal-size changes. The application chooses what
+activation does; this demo opens no browser and makes no network requests.
+[Watch](https://echoz.github.io/Chio/#markdown) · [Download recording](Media/markdown-links.cast).
 
 These previews render real release-binary terminal output. Font rendering can
 vary between terminals. The accompanying Asciinema-compatible recordings replay

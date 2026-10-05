@@ -5,6 +5,89 @@ import Testing
 @MainActor
 @Suite(.serialized)
 struct AgentReportInteractionTests {
+    @Test("Native report links dispatch locally, retain focus through theme and resize, and return to reading")
+    func localLinkActivation() async throws {
+        try await withReportScene { session, surface, recorder in
+            let dashboard = try await filterDocs(session, recorder)
+            let top = try await openReport(session, recorder)
+            #expect(top.containsReportText("Links stay in this demo."))
+            session.send(.key(.tab))
+            let docs = try await recorder.wait(after: top.sequence, description: "Tab focuses the inline project docs link") {
+                $0.isReport && $0.focusesReportInlineLink(0, label: "project docs")
+            }
+            session.send(.key(.return))
+            let dispatched = try await recorder.wait(after: docs.sequence, description: "Enter reports the exact local documentation destination") {
+                $0.isReport && $0.containsReportText("Link: Docs/Design.md")
+            }
+            #expect(dispatched.focusedIdentity == docs.focusedIdentity)
+            session.send(.key(.tab))
+            let outcome = try await recorder.wait(after: dispatched.sequence, description: "Tab focuses the next link in the same paragraph") {
+                $0.isReport && $0.focusesReportInlineLink(1, label: "outcome")
+            }
+            #expect(outcome.focusedIdentity != docs.focusedIdentity)
+            session.send(.key(.return))
+            let fragment = try await recorder.wait(after: outcome.sequence, description: "Enter reports the fragment without navigating the report") {
+                $0.isReport && $0.containsReportText("Link: #outcome")
+            }
+            #expect(fragment.focusedIdentity == outcome.focusedIdentity)
+            #expect(fragment.containsReportText("project docs"))
+
+            session.send(.key(.tab))
+            let table = try await recorder.wait(after: fragment.sequence, description: "Tab after both links reaches the horizontal table scroll view") {
+                $0.isReport && $0.hasReadingFocus && $0.focusedIdentity != top.focusedIdentity
+            }
+            session.send(.key(.tab, modifiers: .shift))
+            let backToOutcome = try await recorder.wait(after: table.sequence, description: "Shift-Tab returns from the table to the outcome link") {
+                $0.focusedIdentity == outcome.focusedIdentity
+            }
+            session.send(.key(.tab, modifiers: .shift))
+            let backToDocs = try await recorder.wait(after: backToOutcome.sequence, description: "Shift-Tab returns to the project docs link") {
+                $0.focusedIdentity == docs.focusedIdentity
+            }
+            session.send(.key(.tab, modifiers: .shift))
+            let reading = try await recorder.wait(after: backToDocs.sequence, description: "Shift-Tab restores the exact vertical reading focus") {
+                $0.isReport && $0.hasReadingFocus && $0.focusedIdentity == top.focusedIdentity
+            }
+            session.send(.key(.end))
+            let bottom = try await recorder.wait(after: reading.sequence, description: "restored reading focus reaches the end and keeps destination feedback") {
+                $0.isReport && $0.containsReportText("End of report.") && $0.containsReportText("Link: #outcome")
+            }
+            session.send(.key(.home))
+            let home = try await recorder.wait(after: bottom.sequence, description: "Home returns to the top before refocusing a link") {
+                $0.isReport && $0.containsReportText("Docs Agent") && $0.hasReadingFocus
+            }
+            session.send(.key(.tab))
+            let focused = try await recorder.wait(after: home.sequence, description: "project docs link receives focus again") {
+                $0.focusedIdentity == docs.focusedIdentity
+            }
+            session.send(.key(.character("t"), modifiers: .ctrl))
+            let themed = try await recorder.wait(after: focused.sequence, description: "Ctrl-T changes theme with a native link focused") {
+                $0.isReport && $0.raster.cells != focused.raster.cells && $0.containsReportText("Link: #outcome")
+            }
+            #expect(themed.focusedIdentity == focused.focusedIdentity)
+            surface.updateSurfaceSize(.init(width: 36, height: 18))
+            session.requestSurfaceRefresh()
+            let narrow = try await recorder.wait(after: themed.sequence, description: "compact report keeps focused link, persistent feedback, and navigation hints") {
+                $0.isReport && $0.raster.size == CellSize(width: 36, height: 18)
+            }
+            #expect(narrow.focusedIdentity == focused.focusedIdentity)
+            #expect(narrow.focusesReportInlineLink(0, label: "project docs"))
+            #expect(narrow.containsReportText("project docs"))
+            #expect(narrow.containsReportText("Link: #outcome"))
+            #expect(narrow.hasReportChrome)
+            #expect(narrow.containsReportText("tab focus"))
+            #expect(narrow.containsReportText("enter link"))
+            session.send(.key(.escape))
+            let restored = try await recorder.wait(after: narrow.sequence, description: "Escape from a focused link restores filtered dashboard focus") {
+                $0.isReportDashboard && $0.hasReportSelectedRow("Docs Agent")
+            }
+            #expect(restored.focusedIdentity == dashboard.focusedIdentity)
+            let reopened = try await openReport(session, recorder)
+            #expect(reopened.containsReportText("Links stay in this demo."))
+            #expect(!reopened.containsReportText("Link: #outcome"))
+        }
+    }
+
     @Test("Completed reports scroll natively and keep their reading position through theme and resize")
     func readingThemeAndResize() async throws {
         try await withReportScene { session, surface, recorder in
@@ -206,6 +289,13 @@ private extension SemanticHostFrame {
         guard let focusedIdentity else { return false }
         return semantics.accessibilityNodes.contains {
             $0.identity == focusedIdentity && $0.role == role && (label == nil || $0.label == label)
+        }
+    }
+    func focusesReportInlineLink(_ index: Int, label: String) -> Bool {
+        guard let focusedIdentity,
+              focusedIdentity.description.contains("InlineLink[\(index)]") else { return false }
+        return containsReportText(label) && semantics.focusRegions.contains {
+            $0.identity == focusedIdentity && $0.focusInteractions == .activate
         }
     }
 }

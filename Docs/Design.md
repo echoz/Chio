@@ -27,7 +27,11 @@ testable or useful to that example. Keep clocks, monitoring, sorting policy,
 review state and external operations with the application. Extract shared UI
 behavior only when composition demonstrates a concrete missing contract. The
 coverage inventory records gaps; it is not a commitment to implement every entry.
-Remaining features are proposals for review, not an automatic completion queue.
+Prefer composable extensions to SwiftTUI and the difficult reusable presentation
+or interaction pieces that enable many interfaces. A showcase application is a
+way to validate those pieces, not the framework's product model. The accepted
+remaining scope and priorities live in the plan; catalog coverage alone never
+creates an automatic completion queue.
 
 ## Value contracts
 
@@ -115,7 +119,7 @@ spacing and single-printable-cell glyph preconditions.
 Component options specify behavior; application composition specifies content.
 
 Changing theme preserves query, stable selection, focus, and entered values.
-Native `GroupBox`, `List`, `Table`, `Button`, `TextField`, `TextEditor`, `Picker`,
+Native `GroupBox`, `List`, `Table`, `Button`, `Link`, `TextField`, `TextEditor`, `Picker`,
 `Toggle`, `TabView`, `ScrollView`, `DisclosureGroup`, `ProgressView`, `Spinner`,
 and native prompt styles share the same semantic roles. The first appearance
 closely follows Huh's Charm palette and
@@ -670,9 +674,34 @@ remain upstream colors. Markdown body rows use the public `listRowBackground`
 modifier for Chio's surface color, retaining contrast in both themes. Keep the
 native chrome limitation visible rather than drawing a replacement table.
 
-Links display their destinations, images display alt text and source, and HTML
-remains literal. No resource is fetched, no command is executed, and links are
-not active. Syntax highlighting and active links remain deferred.
+`MarkdownView(document)` keeps links passive and displays their destinations.
+The overload `MarkdownView(document, openLink: OpenLinkAction { ... })` opts into
+native inline links and scopes the explicitly supplied application action. It
+never falls back to the runtime's system opener when that action returns false.
+Chio neither opens a browser nor resolves/fetches destinations; applications own
+scheme policy, relative paths, fragment navigation, external effects and feedback.
+The native `LinkDestination` carries the parsed destination without further URL
+rewriting. Document equality now preserves link structure: a link and plain text
+that resembles its passive fallback no longer compare equal. There is no persisted
+Markdown schema to migrate.
+
+Each Markdown link retains one complete styled label and one native focus stop,
+including mixed emphasis and wrapped text. Adjacent links remain distinct even
+when their destinations match. Empty destinations keep passive labels; nonempty
+links with empty labels display their destination. Table body links are active;
+plain native headers retain readable labels and destinations. Images remain alt
+text plus source and HTML remains literal. Syntax highlighting remains separate.
+
+`.chioTheme` installs `ChioLinkStyle` for both standalone and interpolated native
+links. Accent underlines identify enabled links; focused/pressed links add bold
+text and a selected surface. Disabled links are dim and native input suppresses
+their activation/focus stops. Focus-effect suppression keeps keyboard activation
+but removes its focused paint. Within active Markdown link labels, link paint
+takes precedence over inline-code paint so code-only links keep visible focus;
+authored strong/emphasis remains. Native text still owns wrapping and hit regions.
+Native traversal reaches visible focus regions; the containing scroll view
+reveals links farther down a document or across a wide table. No Chio focus
+manager or link-opening service is introduced.
 
 Enter on dashboard results opens a native full-screen report for the selected
 agent. The report captures the current agent value and parsed document once; a
@@ -744,5 +773,5 @@ work, not a second Chio quantizer or an unconditional true-color override.
 - [Bubbles list](https://github.com/charmbracelet/bubbles/tree/main/list) and [help](https://github.com/charmbracelet/bubbles/tree/main/help)
 
 Charm supplies visual references, not a Go API port. Broader forms, syntax
-highlighting, active links, and further products remain deferred while these
+highlighting, and further products remain deferred while these
 concrete workflows are refined.

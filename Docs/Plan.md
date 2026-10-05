@@ -44,6 +44,11 @@ live in [the examples guide](Examples.md); component recipes live in
 - Native Markdown tables replace the text fallback, preserving column alignment,
   rich body cells, and native width/height measurement. The report includes a
   visible table example; horizontal scrolling keeps wide tables readable.
+- Opt-in interactive Markdown links retain one native focus target per rich label
+  and pass the destination to an explicit application `OpenLinkAction`. Passive
+  documents retain readable destinations. `ChioLinkStyle` also themes ordinary
+  native links. Report feedback stays local; table body links can activate while
+  headers remain plain. The image-alt review finding has a regression test.
 - ChioPaletteStyle for native command palettes, with fuzzy filtering, stable
   selection, disabled commands, compact rows, and theme-driven presentation.
   Ctrl-K opens the dashboard menu; native dismissal precedes report/form launch.
@@ -240,7 +245,7 @@ come from Chio's original brief; they are not all standalone Bubbles packages.
 | --- | --- | --- | --- |
 | Markdown documents | Delivered parsed immutable documents, headings, rich text, lists, quotes, fenced code, rules and tables | Swift Markdown AST becomes native `Text`, layout, `Table`, `ScrollView` | This is a useful subset, not complete Glamour feature equivalence |
 | Syntax highlighting | Code is rendered literally with a language label | Native rich text can carry styled spans | Choose a suitable highlighter only after checking dependency/static-link cost; preserve whitespace and width semantics |
-| Links and images | Destinations/alt text shown; no resource fetching or link activation | Native `Link`/rich text exists | Active links need explicit interaction/opening policy and terminal tests; image rendering is outside the present document scope |
+| Links and images | Opt-in native inline links with an application `OpenLinkAction`, grouped rich labels and `ChioLinkStyle`; default documents and image descriptions remain passive | Native `Link`/rich text owns focus, activation, wrapping and clipping | Headers remain plain; traversal reaches visible native targets. Applications own destination policy/effects; image rendering remains outside scope |
 
 The source of Chio's installed styles is
 [`View+ChioTheme.swift`](../Sources/Chio/Presentation/View+ChioTheme.swift).
@@ -366,7 +371,30 @@ recording order, resize events and documentation links pass. Browser playback an
 mobile-layout checks remain pending because the host Mac is locked. The player,
 CSS and deployment permissions are unchanged.
 
+The ninth showcase recording demonstrates interactive Markdown in the existing
+report reader: native link focus and local destination feedback, theme change,
+36 × 18 wrapping, return to scrolling and dashboard restoration. The 76 × 30
+release-terminal capture lasts 16.5 seconds and restores terminal modes on exit.
+Its preview was visually inspected; site assembly, nine-card navigation/assets,
+PNG dimensions, recording event order, resize/restoration and documentation links
+pass. Browser playback and mobile-layout checks remain pending because the host
+Mac is locked. The existing player, CSS and deployment permissions are unchanged.
+
 ## Verified on macOS
+
+Interactive Markdown validation covers 344 release checks and 321 selected debug
+checks (one existing case-distinct-filename test is skipped in each configuration
+on this filesystem). Model/raster/hosted regressions cover complete styled labels,
+adjacent links, relative and custom destinations, passive fallbacks, nested image
+alt text, disabled content, focus-effect suppression, rejected opening actions,
+theme/resize identity, table-body activation after horizontal scrolling and the
+report's local feedback/return journey. Independent read-only review found the
+image-alt activation gap; the fix and enabled regression passed re-review. No
+new package dependency or SwiftTUI revision is involved. The full
+`Scripts/ci/verify.sh` run passes: standalone release build, sixteen snapshots and
+twelve real terminal workflows, including batched report-link input and terminal
+mode restoration. This is local macOS evidence; remote CI provides separate
+platform evidence.
 
 Timer validation covers 335 release tests and 313 selected debug tests. The affected
 five-test debug timer suite was rerun after correcting the 50-column layout;
@@ -971,8 +999,10 @@ The first eleven entries below record delivered work, with the timer slice now
 narrowed to public duration labels and internal example timekeeping. They are
 history, not a template for promoting each demonstration into a framework API.
 The remaining-scope audit supersedes the old instruction to implement items
-12–19 in order. Its recommendations are proposals for the user to review; this
-audit does not start the next feature.
+12–19 in order. The user accepted the narrowed scope below, selected interactive
+Markdown links next, and confirmed compact btop-inspired composition and passive
+sparklines with application-supplied samples and timing. Examples and prototypes
+must still demonstrate a missing reusable contract before adding public API.
 
 1. **Richer choice fields — implemented.** Prove searchable single-choice form composition and
    a choose-many workflow using native `List` selection. Reuse `SearchableList`
@@ -1061,25 +1091,28 @@ inventories below remain traceable; they no longer prescribe an execution order.
 | Previous item | Recommendation | Scope and extraction bar |
 | --- | --- | --- |
 | 12 — Markdown syntax highlighting | **Keep** | Improve the existing code-block renderer. Preserve source text, whitespace, native scrolling and a plain fallback. Keep tokenizer integration private; evaluate dependencies and static-link/build costs before choosing one. |
-| 13 — Active Markdown links | **Keep as a bounded later enhancement** | Use native links with explicit application opening policy. Preserve destinations and themed focus; no Chio browser, URL launcher or automatic fetching. Bundle with document polish when a consumer needs activation. |
+| 13 — Active Markdown links | **Implemented; [verification](#verified-on-macos)** | Native inline links with an explicit application `OpenLinkAction`; passive existing initializer, intact rich labels, native focus/wrapping and themed feedback. No Chio browser, URL launcher or automatic fetching. |
 | 14 — btop theme/metrics and 16 — compact panels/meters | **Combine into one visual-polish slice** | Start with fixed example values and existing styles. Consider a compact preset, border titles and neutral utilization paint only where they improve actual layouts. No metrics service, system sampler, scheduler or btop-specific model. |
 | 15 — Sparklines/history graphs | **Keep; strongest new component candidate** | Passive single-series presentation over native Canvas adds reusable value. Establish sample/gap validity, scaling, narrow-width reduction and accessible summaries. Applications own collection, retention, clocks, units and thresholds. Prove it in the compact example. |
 | 17 — Dense sorted inbox/detail layout | **Example composition first** | Compose existing lists/tables, tabs, Markdown and adaptive native layouts. Application code owns sort policy, sections, selected IDs and preview placement. Extract only a repeated UI interaction contract; no inbox, sorter or review coordinator API. |
 | 18 — Diff reading | **Keep as a later bounded prototype** | A read-only diff is a meaningful presentation gap, but specialized and costly. Prove gutters, uneven sides, Unicode/wrapping and measured document bounds before committing to a public view/data API. Git/JJ/Sapling ingestion and repository operations stay outside Chio. |
 | 19 — Review navigation and annotations | **Fold navigation proof into 18; drop annotations from the library roadmap** | Use native logical-ID reveal in the example. Notes can compose the existing editor. Search policy, review sessions, note storage, persistence and agent protocols are application concerns, not new Chio subsystems. |
 
-**Recommended sequence for review:**
+**Accepted direction and working sequence:**
 
 1. Fix regressions and prioritize limitations that impair shipped presentation:
    table border/background paint, focus contrast and narrow layout/input behavior.
    Resolve changes at their owning layer; a SwiftTUI pin/fork change requires a
    reproducible dependency decision and integration evidence, not a local patch
    hidden inside Chio. Performance and Linux portability remain quality work.
-2. Try one compact btop-inspired composition, then add a passive history graph
-   where native primitives alone do not supply the reusable presentation. Keep
-   this one example; do not create a new demo application for every treatment.
-3. Improve Markdown code presentation; add opt-in links when useful to an actual
-   reading workflow, subject to native interaction and dependency findings.
+2. Deliver opt-in interactive Markdown links in the existing report reader. Keep
+   destination policy and effects with the application, and native text/focus
+   underneath; do not add a separate document navigation system.
+3. Try one compact btop-inspired composition and a passive history graph where
+   native primitives alone do not supply reusable presentation. Applications
+   provide samples and timing. Keep this one example; do not create a new demo
+   application for every treatment. Markdown syntax highlighting follows as a
+   separate bounded improvement after its dependency evaluation.
 4. Validate a dense list/detail composition using existing components. Defer a
    general master/detail abstraction until a second use establishes the contract.
 5. Explore the bounded read-only diff, including basic hunk navigation. Review
@@ -1131,7 +1164,7 @@ The pin's octant mode currently uses braille coverage, so expose only verified
 glyph treatments. Application code owns sample collection, clocks, retention,
 units and alert thresholds; Chio presents values without reading system metrics.
 
-If the combined compact-presentation proposal is selected, bound it as follows:
+The accepted combined compact-presentation slice is bounded as follows:
 
 1. Compose one compact metrics example from existing groups, progress tracks,
    rows and hints, using fixed local values and a btop-inspired theme prototype.
