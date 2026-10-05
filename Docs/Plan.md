@@ -756,6 +756,33 @@ repeatable terminal checks without changing the public API or dependency pins.
   predates the feedback slice; its hosted regression passed, so the PTY failure
   remains open rather than being described as a fully green Linux run.
 
+### Linux viewport startup regression
+
+Three consecutive Linux jobs on `3547b83`, `711be15` and `37f86fe` failed the
+same debug viewport workflow before its first recorder frame, around eight
+seconds into the unchanged five-second wait. The latest was
+[run 37331309999](https://github.com/echoz/Chio/actions/runs/37331309999); other
+focused examples, including grouped forms, passed. These were hosted-test
+failures after successful compilation, not the separate musl build blocker.
+
+The example composed forty eager rows, each with five text views and multiple
+layout wrappers. Native startup focus reveal repeats evaluation, while debug
+soundness verification adds measurement/placement work. Rows now use one native
+rich `Text` each, preserving the same fixed fixture columns and styled fragments.
+The native renderer, input/focus behavior, dependency pin, CI selection and
+five-second deadlines are unchanged. Raster regressions assert columns, colors,
+agent emphasis, complete semantic row labels and the 96 × 40 scroll extent;
+unexpected hosted-session errors are reported rather than discarded.
+
+A local Swift 6.4 Linux x86_64 run under Rosetta failed the unchanged workflow at
+F6 focus restoration after about 35 seconds; it did not reproduce CI's exact
+initial-frame failure. With the lighter rows, all three focused tests pass and
+the full workflow completes in about nine seconds. The same focused tests pass
+on macOS, with the workflow around five seconds. This comparison supports the
+render-work hypothesis; it is not an SSH measurement or proof of arbitrary
+large-log performance. The full hosted CI gate remains the platform acceptance
+check, separate from these targeted local observations.
+
 ### Static Linux blocker
 
 An actual ARM64 release cross-build using the official Swift 6.4.0 compiler and
@@ -1000,8 +1027,26 @@ before treating the framework as ready for release preparation.
     demonstrates value. Keep utilization meaning distinct from completion.
 
 17. **Dense sorted collection workflow — queued.** Prove application-owned
-    sorting and stable native selection using existing lists/tables before
-    expanding reusable collection APIs. The btop inventory below records limits.
+    sorting and stable native selection using existing lists/tables. Use a local
+    gh-dash-inspired inbox with sections, counts and a right/bottom Markdown
+    preview. Verify filter/sort, preview show/hide, empty states and retained
+    selection/query/focus across resizing before adding collection or master/detail
+    APIs. This also covers btop's dense-row direction.
+
+18. **Diff reading — queued.** Start with a fixed two-file, three-hunk review
+    example. Define immutable normalized content and logical line/hunk identities;
+    compose old/new gutters, context/additions/removals and wide split/narrow
+    unified rows under one native vertical scroll owner. Verify uneven sides,
+    blank lines, tabs, wide/combining text, wrapping and missing final newlines.
+    Measure the documented changeset sizes before deciding a public `DiffView`.
+    Reuse item 12's highlighting contract; no second highlighter or renderer.
+
+19. **Review navigation and annotations — queued.** Add next/previous hunk and
+    content-match reveal, distinct from filtering the file list. Prove native
+    focus and editor-safe shortcuts, stable logical anchors through layout/theme
+    changes and authoritative application bindings. Begin with read-only notes;
+    a note editor composes existing controls. Persistence, ingestion, VCS actions
+    and agent-sidecar protocols remain application concerns.
 
 Each family should have a small focused example that a consumer can run directly,
 public usage documentation, relevant model/raster/hosted-input regressions, and a
@@ -1063,6 +1108,46 @@ together in `Presentation`, with pure data rules in their owning domain value
 only when the invariants require one. Keep the focused example under the existing
 example target. The reusable goal is compact instrumentation across applications,
 not a system monitor or a separate btop component family.
+
+### gh-dash and Hunk UI inventory
+
+Official product documentation was inspected on 2026-10-05 and compared with
+Chio `37f86fe` and pinned SwiftTUI `2d84ac7083993da2ef52e9d3d30255467efb9553`.
+This is a capability/design audit, not a runtime comparison or a pinned audit of
+those products' implementations. [gh-dash](https://www.gh-dash.dev/) is a GitHub
+inbox/dashboard. [Hunk](https://www.hunk.dev/) is a review-first terminal diff
+viewer with a continuous multi-file stream, not a general editor.
+
+| Pattern | Reuse or gap | Proposed proof |
+| --- | --- | --- |
+| Sections/counts, dense rows, selection, status labels, help and preview tabs | Compose native tabs/lists/tables, existing `SearchableList`, hints/help, status bar and Markdown | Item 17's local inbox; application owns filtering, sorting and stable IDs. No new badge or panel type solely to restyle Text/GroupBox. |
+| Right/bottom preview and show/hide | Native stacks, geometry and parent-owned state | Preserve query/selection and intended focus during layout changes. Keep state above `ViewThatFits`, which resolves all alternatives. A draggable splitter needs a separate keyboard/minimum-size contract and is deferred. |
+| Compact borders, status treatments and dense spacing | Existing theme/style families | Fold into items 14, 16 and 17. Native table border/focus paint limitations remain; do not invent a second table renderer. |
+| File navigation, file headers/stats and note editing | Existing search/list/disclosure, text, forms and native editor | Keep row content passive and editors outside result rows; authored file IDs and notes remain application-owned. |
+| Unified/split diffs, aligned old/new line gutters and context | Meaningful reusable presentation gap | Item 18: normalized immutable input, semantic change styling and native text/scrolling. Added/removed content is not automatically success/error status. One vertical owner keeps split rows aligned without synchronizing independent scroll views. |
+| Hunk navigation, logical review position and content-match reveal | Missing composed review behavior; native ID-based `ScrollViewReader.scrollTo` supplies reveal | Item 19: logical identities and match ranges independent of raw cell offsets, width or wrapping. Scope shortcuts so search/note editors receive ordinary text. |
+| Syntax-colored code and active links | Existing items 12 and 13 | Reuse those decisions, dependency analysis and native text/link APIs. |
+| GitHub requests/actions, Git/JJ/Sapling, patch ingestion, file watching, shell/editor launch and agent sessions | Application integration | Local fixtures can validate the UI without implementing these systems. Chio does not promise a full Hunk clone. |
+
+Source references: gh-dash's [responsive preview defaults](https://www.gh-dash.dev/configuration/defaults/),
+[preview navigation](https://www.gh-dash.dev/getting-started/keybindings/preview/)
+and [theme roles](https://www.gh-dash.dev/configuration/theme/); Hunk's
+[renderer-component boundary](https://www.hunk.dev/docs/reference/opentui-components/),
+[layout options](https://www.hunk.dev/docs/configure/layout-and-display/),
+[keyboard/search behavior](https://www.hunk.dev/docs/start/keyboard-and-mouse/)
+and [comments/annotations](https://www.hunk.dev/docs/agents/comments-and-annotations/).
+Hunk's TypeScript/OpenTUI components are design evidence, not Swift dependencies.
+
+The fixed review example should establish behavior before the public data/view
+API. Use raster/semantic checks and native hosted input for both widths, uneven
+changes, empty/binary/rename summaries, long text and stable anchors. Define how
+unsupported input is represented rather than manufacturing source lines. A large
+changeset requires measured allocation/rendering cost and native windowing evidence;
+source inspection and a small screenshot do not establish virtualization,
+selection/copy, large-document performance or product parity. Scroll edge/cell
+commands target the first scroll view in a reader scope, so preview and diff
+commands need appropriately scoped native readers. Preserve the existing queue
+order; these additions do not replace timing, Markdown or btop work.
 
 [native-canvas]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/Canvas.swift
 [native-canvas-grid]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIPrimitives/Draw/CanvasGrid.swift

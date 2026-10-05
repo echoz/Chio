@@ -27,14 +27,17 @@ struct ViewportExampleView {
     private func event(_ index: Int) -> some View {
         let agent = ["Build", "Review", "Test", "Docs"][(index - 1) % 4]
         let detail = ["Compiled the workspace", "Reviewed the changes", "Ran the test suite", "Published local documentation"][(index - 1) % 4]
-        return HStack(spacing: 2) {
-            Text("\(index < 10 ? "0" : "")\(index)").foregroundStyle(theme.colors.mutedText)
-            Text("✓").foregroundStyle(theme.colors.success)
-            Text("\(agent) agent").bold().frame(width: 12, alignment: .leading)
-            Text(detail).frame(width: 58, alignment: .leading)
-            Text("run \(1000 + index)").foregroundStyle(theme.colors.secondaryText)
-        }
-        .frame(width: 96, alignment: .leading)
+        let number = Text("\(index < 10 ? "0" : "")\(index)").foregroundStyle(theme.colors.mutedText)
+        let marker = Text("✓").foregroundStyle(theme.colors.success)
+        let agentName = "\(agent) agent"
+        let name = Text(verbatim: agentName).bold()
+        let run = Text("run \(1000 + index)").foregroundStyle(theme.colors.secondaryText)
+        // These fixed ASCII fixtures need columns, not independently laid-out controls.
+        // Plain padding keeps emphasis on the agent name and preserves columns 7, 21 and 81.
+        let agentPadding = String(repeating: " ", count: 14 - agentName.count)
+        let detailPadding = String(repeating: " ", count: 60 - detail.count)
+        return Text("\(number)  \(marker)  \(name)\(agentPadding)\(detail)\(detailPadding)\(run)")
+            .frame(width: 96, alignment: .leading)
     }
 }
 

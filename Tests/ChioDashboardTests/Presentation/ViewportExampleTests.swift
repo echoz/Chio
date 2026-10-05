@@ -24,6 +24,35 @@ struct ViewportExampleTests {
         #expect(rendered.semanticSnapshot.scrollRoutes.count == 1)
     }
 
+    @Test("Passive log rows retain fixed columns, semantic emphasis and full scroll extent",
+          arguments: [false, true])
+    func eventColumns(light: Bool) throws {
+        let size = CellSize(width: 100, height: 30)
+        let rendered = DefaultRenderer().render(
+            ViewportExampleView(light: light).environment(\.terminalSize, size),
+            proposal: .init(width: size.width, height: size.height), frameInstant: .zero
+        )
+        let y = try #require(rendered.rasterSurface.lines.firstIndex { $0.contains("01  ✓  Build agent") })
+        let row = rendered.rasterSurface.cells[y]
+        let x = try #require(row.firstIndex { $0.character == "0" })
+        let theme: ChioTheme = light ? .light : .default
+        #expect(String(row[x..<(x + 2)].map(\.character)) == "01")
+        #expect(row[x + 4].character == "✓")
+        #expect(String(row[(x + 7)..<(x + 18)].map(\.character)) == "Build agent")
+        #expect(String(row[(x + 21)..<(x + 43)].map(\.character)) == "Compiled the workspace")
+        #expect(String(row[(x + 81)..<(x + 83)].map(\.character)) == "ru")
+        #expect(row[x].style?.foregroundColor == theme.colors.mutedText)
+        #expect(row[x + 4].style?.foregroundColor == theme.colors.success)
+        #expect(row[x + 7].style?.emphasis.contains(.bold) == true)
+        #expect(row[x + 21].style?.emphasis.contains(.bold) != true)
+        #expect(row[x + 81].style?.foregroundColor == theme.colors.secondaryText)
+        let route = try #require(rendered.semanticSnapshot.scrollRoutes.first)
+        #expect(route.contentBounds.size.width == 96 && route.contentBounds.size.height == 40)
+        #expect(rendered.semanticSnapshot.accessibilityNodes.contains {
+            $0.label?.hasPrefix("01  ✓  Build agent") == true && $0.label?.hasSuffix("run 1001") == true
+        })
+    }
+
     @Test("Native scrolling survives theme and resize, with focus and reset handled by native controls")
     func viewportWorkflow() async throws {
         let recorder = HostedFrameRecorder()
@@ -80,7 +109,9 @@ struct ViewportExampleTests {
             #expect(try await run.value == .inputEnded)
         } catch {
             session.stop()
-            _ = await run.result
+            if case .failure(let runError) = await run.result {
+                Issue.record("Hosted viewport failed: \(runError)")
+            }
             throw error
         }
     }

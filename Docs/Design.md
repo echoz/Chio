@@ -75,6 +75,14 @@ and native composition first. The [component inventory](Plan.md#btop-inspired-ui
 separates reusable additions from palette work and application layout; these
 widgets remain proposed until their focused examples are implemented and verified.
 
+gh-dash informs dense inbox/detail composition and contextual navigation. Hunk
+informs a review-first diff reader: normalized immutable content, split/unified
+presentation and logical hunk navigation. These are references for planned local
+UI slices, not delivered product parity. Reuse native views and existing themes
+before extracting a new component. GitHub/VCS commands, authentication, file
+watching and agent protocols belong to applications. See the
+[gh-dash/Hunk inventory](Plan.md#gh-dash-and-hunk-ui-inventory) for the gaps.
+
 ## Theme
 
 A concrete theme value contains nested semantic colors, spacing, and visual
@@ -329,6 +337,10 @@ with an application-owned native `ScrollCellOffset`. Arrows move both axes;
 Home/End affect the vertical axis when the body owns focus. Tab visits the
 individual indicators and a native reset button; F6 returns to the log. Theme
 changes preserve position, and native geometry handles bounds on resize.
+Each passive fixture row is one native rich `Text`, with its fixed ASCII columns
+and fragment styling composed before layout. This avoids repeatedly resolving
+five independent text/layout subtrees per row during native debug verification;
+it is an example optimization, not a generic table formatter or renderer.
 The pinned runtime includes a viewport's reserved tracks in focus reveal, so
 focusing its body can move the offset one cell on each overflowing axis. Chio
 retains native geometry and records this upstream limitation; it does not replay
