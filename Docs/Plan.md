@@ -289,6 +289,16 @@ explicit click; the player's NPT-poster seek limitation is documented alongside
 the vendored assets. Independent review covers deployment permissions and static
 asset boundaries. These website checks do not add Swift or Linux test evidence.
 
+The pagination showcase adds a fourth recording from release `0161b26`: a
+20-second, 76 × 27 real-terminal session covering filtering, page navigation,
+page-size changes, theme changes and empty results. Its preview comes from the
+same release binary. The site build includes both assets; browser checks verify
+the deep link, playback/pause, forward/backward seeking, pausing when switching
+recordings, missing-recording focus restoration, and script-free previews and
+downloads. Navigation wraps and command blocks remain within the page at both
+320- and 390-pixel widths. The pinned player and deployment permissions are
+unchanged.
+
 ## Verified on macOS
 
 Swift 6.4, with SwiftTUI pinned at

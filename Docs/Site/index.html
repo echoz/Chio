@@ -38,6 +38,7 @@
             <a href="#dashboard" data-demo="dashboard" aria-current="true">Dashboard</a>
             <a href="#choices" data-demo="choices">Choices</a>
             <a href="#feedback" data-demo="feedback">Feedback</a>
+            <a href="#pagination" data-demo="pagination">Pagination</a>
           </nav>
           <span class="recording-label"><span aria-hidden="true">●</span> Real terminal recordings</span>
         </div>
@@ -45,7 +46,7 @@
         <article id="dashboard" class="recording" data-cols="100" data-rows="36">
           <div class="recording-heading">
             <h2>An agent workspace</h2>
-            <span class="demo-number" aria-hidden="true">01 / 03</span>
+            <span class="demo-number" aria-hidden="true">01 / 04</span>
           </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/dashboard.png" alt="A dark terminal dashboard with four agents, a selected Build Agent, progress, and keyboard hints." width="1248" height="948">
@@ -62,7 +63,7 @@
         <article id="choices" class="recording" data-cols="76" data-rows="27">
           <div class="recording-heading">
             <h2>A little more choice</h2>
-            <span class="demo-number" aria-hidden="true">02 / 03</span>
+            <span class="demo-number" aria-hidden="true">02 / 04</span>
           </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/choices.png" alt="A searchable capabilities checklist with Build and Test checked and Deploy unavailable." width="960" height="723">
@@ -79,7 +80,7 @@
         <article id="feedback" class="recording" data-cols="76" data-rows="20">
           <div class="recording-heading">
             <h2>Same controls. A lighter mood.</h2>
-            <span class="demo-number" aria-hidden="true">03 / 03</span>
+            <span class="demo-number" aria-hidden="true">03 / 04</span>
           </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/feedback-light.png" alt="The light theme's feedback screen with an accent outline around the focused Publish button." width="960" height="548">
@@ -90,6 +91,22 @@
           <div class="recording-caption">
             <p>Shared theme roles carry through buttons, focus, confirmation, and feedback. Your application supplies the meaning.</p>
             <a class="download" href="recordings/feedback-light.cast" download>Download recording ↓</a>
+          </div>
+        </article>
+        <article id="pagination" class="recording" data-cols="76" data-rows="27">
+          <div class="recording-heading">
+            <h2>A page at a time</h2>
+            <span class="demo-number" aria-hidden="true">04 / 04</span>
+          </div>
+          <div class="recording-preview">
+            <img class="recording-image" src="recordings/pagination.png" alt="A filtered run history with three Build results, native page buttons, and a 4–6 of 6 item summary." width="960" height="723">
+            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play recording</button>
+          </div>
+          <div class="player" aria-label="Pagination recording"></div>
+          <p class="player-message" role="status" hidden></p>
+          <div class="recording-caption">
+            <p>Filter local run history, change rows per page, and navigate finite results with native controls. Empty results and theme changes stay part of the same workflow.</p>
+            <a class="download" href="recordings/pagination.cast" download>Download recording ↓</a>
           </div>
         </article>
         <p class="playback-note">Press play to watch. Pause, seek, or open fullscreen for a closer look.
@@ -105,6 +122,8 @@
         </div>
         <div class="run-command">
           <pre><code><span aria-hidden="true">$ </span>swift run -c release chio-dashboard</code></pre>
+          <p class="command-label">Open the run history example directly:</p>
+          <pre><code><span aria-hidden="true">$ </span>swift run -c release chio-dashboard --pagination</code></pre>
           <a href="https://github.com/echoz/Chio/blob/main/Docs/Examples.md">Launch options and keyboard controls <span aria-hidden="true">↗</span></a>
         </div>
       </section>

@@ -239,6 +239,14 @@ The same semantic theme roles apply to the light palette. Focused buttons use an
 accent outline and preserve the surrounding surface.
 [Watch](https://echoz.github.io/Chio/#feedback) · [Download recording](Media/feedback-light.cast).
 
+### Paginated history
+
+![A themed run history with a search field, page navigation, and item counts](Media/pagination.png)
+
+Filter local runs, move between pages, and change the page size while keeping the
+previously visible run in the new window. Empty results have no active page.
+[Watch](https://echoz.github.io/Chio/#pagination) · [Download recording](Media/pagination.cast).
+
 These previews render real release-binary terminal output. Font rendering can
 vary between terminals. The accompanying Asciinema-compatible recordings replay
 locally after cloning the repository:
