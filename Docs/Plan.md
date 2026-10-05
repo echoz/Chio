@@ -3,7 +3,8 @@
 The delivered proof-of-concept slices are a runnable local dashboard, agent
 creation, Markdown run reports, a command palette using simulated agents,
 a focused searchable-choice form, native password/multiline text entry,
-confirmation with transient feedback, file selection, and contextual keyboard help.
+confirmation with transient feedback, file selection, contextual keyboard help,
+and themed native tabs.
 They establish the design direction, not broad parity with Charm's components.
 Accepted contracts and
 ownership live in [Design.md](Design.md); commands and interaction instructions
@@ -125,6 +126,15 @@ live in [the examples guide](Examples.md); component recipes live in
   context; the full-cover handlers and context-independent reference resolve
   both. Re-review found no remaining actionable issues.
 
+- Themed tabs add `ChioTabViewStyle` through the existing theme modifier. Native
+  selection, focus, keyboard/pointer routing and dormant content remain upstream.
+  A two-row strip distinguishes selected and focused tabs, and a bounded More
+  menu reveals hidden options. The focused `--tabs` workspace demonstrates a
+  retained counter, search, notes, scrolling and settings. Independent review
+  found a tiny-width border overhang; the geometry bound now omits menu paint
+  below three columns, with a neighboring-content regression. Re-review found
+  no remaining source findings.
+
 ## Component coverage
 
 Source audit at Chio `424f8e6`, using SwiftTUI revision
@@ -179,7 +189,7 @@ come from Chio's original brief; they are not all standalone Bubbles packages.
 | Toasts | Delivered explicit `ChioToastStyle` and local completion feedback | Native [.toast and ToastStyle][native-toast] handle presentation | Native expiry and explicit dismissal; no environment toast modifier or app notification queue |
 | Alerts, confirmation dialogs and sheets | Delivered `ChioPromptStyle` for alerts and confirmation dialogs; native covers demonstrated | [Native presentation][native-presentation] and [PromptStyle][native-prompt] | Native focus and dismissal retained; header paint and arbitrary action wrapping remain native/app concerns; no Chio sheet style |
 | Command palette | Delivered `ChioPaletteStyle`, filtering, disabled items and dashboard actions | Native action scopes, command registration and palette presentation | Surrounding palette chrome has an upstream styling limit; this is not a new Chio command system |
-| Tabs | No Chio tab style or tested tabbed application | [TabView][native-tabs] and `TabViewStyle` | Style native selected/focused states and narrow overflow; no replacement tab controller |
+| Tabs | `ChioTabViewStyle` supplies distinct selection/focus paint and bounded narrow overflow; `--tabs` exercises retained page values | [TabView][native-tabs] and `TabViewStyle` own navigation, selection, routing and dormancy | No per-option disabled state or persistent wheel-driven overflow scroll; native lifecycle limits apply |
 | Timer and stopwatch | No reusable Chio component; demo simulation is not one | [TimelineView][native-timeline] and Swift clocks | Countdown/elapsed-time state, formatting and pause/resume behavior if demanded; keep scheduling native |
 
 ### Documents
@@ -235,7 +245,7 @@ To check an already-built binary's terminal workflow:
 python3 Scripts/ci/terminal-smoke.py .build/release/chio-dashboard
 ```
 
-Add `--choices`, `--text-entry`, `--feedback`, `--files`, or `--keyboard-help` for a focused workflow.
+Add `--choices`, `--text-entry`, `--feedback`, `--files`, `--keyboard-help`, or `--tabs` for a focused workflow.
 These check terminal input/output and restoration, not live Blink/SSH rendering
 or latency. `swift test --no-parallel` remains available for a full debug investigation.
 
@@ -279,6 +289,21 @@ Swift 6.4, with SwiftTUI pinned at
 - `swift build --product chio-dashboard` passes.
 - `swift build -c release --product chio-dashboard` also passes. Interactive
   launch instructions use release mode; debug enables extra upstream verification.
+- The tabs candidate completes 251 release tests and 229 selected debug tests:
+  250 and 228 pass respectively, with the existing case-distinct filename test
+  skipped on this case-insensitive filesystem. New public raster/hosted coverage
+  exercises both themes, custom focus/selection colors, Unicode cell widths,
+  disabled/empty/single tabs, suppressed focus paint, a long menu in an eight-row
+  allocation, and paint containment at zero through two columns. Workspace tests
+  exercise native keyboard and pointer selection, retained counter/search/draft/
+  toggle values, native editing and scrolling, theme/resize preservation, and
+  overflow cancellation/reopening. Focus tests await the native list's arrival
+  and synchronized strip hints; a first content frame does not prove settled
+  focus. The full verification script passes, including the production build,
+  eleven snapshots and all seven pseudo-terminal workflows with terminal modes
+  restored on exit. Independent source re-review found no further actionable
+  findings; the nested width-publication boundary is recorded below. No dependency
+  changed; fresh Linux and live Blink/SSH checks for this slice remain pending.
 - The keyboard-help candidate completes 235 release tests and 213 selected
   debug tests: 234 and 212 pass respectively, with the existing case-distinct
   filename test skipped on this case-insensitive filesystem. Help regressions cover ordered/repeated
@@ -516,6 +541,12 @@ filtered terminal layouts were inspected; the process exited with code zero and
 restored terminal modes. These small local samples include capture/decoding
 overhead and exclude SSH/Blink latency; they do not establish large-folder performance.
 
+The tabs release was sampled locally at 100 × 30 without concurrent builds or
+tests. Six page activations measured 82 ms median, and six characters typed into
+Notes measured 24 ms median. The process exited with code zero and restored
+terminal modes. These small samples include capture/decoding overhead and do not
+measure SSH transport or Blink display latency.
+
 ## Linux and CI
 
 The initial demonstration slices are delivered. Portability verification adds CI and
@@ -627,6 +658,13 @@ portable; correcting the platform implementation remains upstream work.
 
 ## Remaining boundaries
 
+- Native TabView can publish terminal width during resolution inside an
+  unconstrained HStack even when a later fixed frame allocates fewer columns.
+  Chio uses native clipping to contain paint and actual overlay geometry to
+  bound the menu, but cannot revise native overflow partitioning after layout;
+  clipping also leaves upstream pointer regions unchanged.
+  The full-window tabs example covers resizing; arbitrary nested tab strips
+  require an upstream proposal-publication correction.
 - The public API is experimental. Keep the SwiftTUI revision pinned while its
   style and focus contracts evolve; dependency upgrades need the hosted tests.
 - The full-window choice example reads public `terminalSize` for its responsive
@@ -717,7 +755,7 @@ unchanged; a local SwiftPM edit is only integration evidence, not distribution.
 
 ## Next component slices
 
-The coverage audit is complete and the following five approved slices are
+The coverage audit is complete and the following six slices are
 implemented. Their public APIs remain
 open to evidence from focused examples. Broaden reusable component coverage
 before treating the framework as ready for release preparation.
@@ -763,7 +801,13 @@ before treating the framework as ready for release preparation.
    demonstrates `?` in browsing/actions, F1 for the full reference, native Close
    and Escape, preserved query/selection/focus, and a compact reader.
 
-Further candidates are tabs and scroll styles,
+6. **Themed tabs — implemented.** Style native `TabView` selection and focus,
+   measure labels in terminal cells, and provide bounded overflow at narrow
+   widths. A focused workspace example exercises retained page values, editing,
+   native focus, theme changes and resizing. Keep native selection, input,
+   pointer routes, scrolling and dormancy; no additional tab controller.
+
+Further candidates are scroll styles,
 expandable trees, page controls, richer grouped forms, and timer/stopwatch
 presentation. Markdown highlighting and active links are separate document
 capabilities with dependency and interaction decisions. These are open coverage

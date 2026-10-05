@@ -20,6 +20,7 @@ extension View {
             .groupBoxStyle(ChioGroupBoxStyle(theme: theme))
             .listStyle(ChioListStyle(theme: theme))
             .tableStyle(ChioTableStyle(theme: theme))
+            .tabViewStyle(ChioTabViewStyle(theme: theme))
             .paletteStyle(ChioPaletteStyle(theme: theme))
             .textFieldStyle(ChioTextFieldStyle(theme: theme))
             .textEditorStyle(ChioTextEditorStyle(theme: theme))

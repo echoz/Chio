@@ -99,6 +99,31 @@ let theme = base.replacing(
 )
 ```
 
+## Tabs
+
+Use SwiftTUI's tab declarations with stable values; the theme supplies their style:
+
+```swift
+// selection is application-owned @State.
+TabView(selection: $selection) {
+    Tab("Overview", value: "overview") { OverviewView() }
+    Tab("Notes", value: "notes") { NotesView() }
+    Tab("Activity", badge: "4", value: "activity") { ActivityView() }
+}
+.chioTheme(.default)
+```
+
+Accent text and the rule show selection; a filled label shows keyboard focus.
+Arrows choose a tab, Return or Space opens it, and Tab enters its controls.
+Narrow layouts expose trailing tabs through More. Give the tab view a bounded
+height with room for its content; the overflow menu needs at least three columns
+and five rows including the strip and border. Stable native tab values retain
+value state when switching away and back. Keep durable data in an application owner if it must
+survive removing tabs or replacing the tab view's identity.
+
+The [tabs example](Examples.md#tabs) demonstrates editing, scrolling and native
+focus. See [the design](Design.md#tabs) for the native lifecycle and overflow limits.
+
 ## Command palettes
 
 `ChioPaletteStyle` styles SwiftTUI's native command palette. Apply `.chioTheme(...)`

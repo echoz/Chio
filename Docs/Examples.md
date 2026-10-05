@@ -160,6 +160,23 @@ and Ctrl-Q quits. Try resizing with help open: the example fits 36 × 18.
 See [expanded keyboard help](Usage.md#expanded-keyboard-help) for the shared
 descriptions and native presentation.
 
+## Tabs
+
+```sh
+COLORTERM=truecolor swift run -c release chio-dashboard --tabs
+```
+
+Left/Right chooses a tab; Return or Space opens it. Tab moves into its controls,
+and F6 returns to the tab strip. Run the Overview counter, type in Notes, switch
+away and back: both retain their values. Agents offers filtering, Activity is a
+native scroll view, and Settings contains a local toggle.
+
+Resize to 36 × 18 to try More: choose a hidden tab with the arrows, open the menu
+with Down or Return, then use Up/Down and Return to activate an entry. Escape
+closes the menu. Ctrl-T changes theme, Ctrl-Q quits, and `--light` starts light.
+`--tabs --snapshot` captures the initial frame. Everything stays in the current
+process; no files are written or services called.
+
 ## Colors over SSH
 
 For a true-color terminal such as Blink, declare that capability on the remote

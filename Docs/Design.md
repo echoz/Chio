@@ -82,7 +82,7 @@ Component options specify behavior; application composition specifies content.
 
 Changing theme preserves query, stable selection, focus, and entered values.
 Native `GroupBox`, `List`, `Table`, `Button`, `TextField`, `TextEditor`, `Picker`,
-`Toggle`, `ProgressView`, `Spinner`, and native prompt styles share the same
+`Toggle`, `TabView`, `ProgressView`, `Spinner`, and native prompt styles share the same
 semantic roles. The first appearance closely follows Huh's Charm palette and
 Bubbles' selected rows, muted metadata, and compact keyboard help.
 
@@ -225,6 +225,49 @@ callback. A retained help context keeps the requested group stable while modal
 focus changes. Pending presentation blocks background actions and consumes an
 immediate Escape, including several keys delivered before the next frame.
 The example only increments a local run count; it performs no agent work.
+
+## Tabs
+
+`.chioTheme` installs `ChioTabViewStyle` on native `TabView` and `Tab` declarations.
+Chio provides a compact two-row strip: accent text and a persistent rule mark
+selection, while a surface fill marks keyboard focus. Focus-effect suppression
+removes that fill without removing selection. Structured native titles, details
+and badges use terminal-cell measurement; narrow strips move trailing options
+into a More menu. The whole control respects native disabled state.
+
+SwiftTUI owns the selected binding, cursor, routes and content lifecycle. Left/Right
+and Home/End move the strip cursor; Return or Space activates it. Down opens
+overflow, Up/Down move there, and Escape closes it. Tab/Shift-Tab leave the strip
+through ordinary focus navigation. Chio registers no replacement input handlers.
+The bounded menu uses native scrolling, revealing the raw native cursor even
+when focus paint is suppressed. Its offset is derived, not independently owned;
+wheel-driven menu scrolling is not a persistent interaction. An overlay-only
+geometry reader bounds the menu to the allocated tab view, without wrapping the
+authored content. At least three columns and five rows are needed for a bordered
+menu with one option; smaller allocations omit the menu paint. Provide enough
+space for the content as well.
+
+SwiftTUI publishes the strip's available width during resolution. In an
+unconstrained `HStack`, a later `.frame(width:)` can allocate less than that
+published width, so the native visible/overflow partition can still reflect the
+terminal width. Native clipping contains paint, but does not clip hit-test regions
+or choose a new partition. Pointer routes can consequently extend beyond the
+visible strip in that composition. The workspace example is verified at the
+documented sizes; arbitrary nested layouts remain an upstream sizing boundary.
+Keyboard selection still follows the native tags.
+
+Stable native tab values preserve dormant value state across switching. The
+example exercises a counter and editor draft; this is not a promise to retain
+arbitrary live resource handles or tasks. Removing a tab or replacing its owning
+identity resets native retained state. Invalid selection falls back to the first
+live tab without rewriting the application's binding. Empty tabs remain an inert
+native focus target; native tabs do not expose per-option disabled state.
+
+The focused `--tabs` example keeps five sections in one native tab view. F6 asks
+native focus to return to the strip from an editor, preserving ordinary arrow
+editing. Theme changes and compact resizing retain the current values. The
+pinned runtime needs a fresh menu frame before subsequent overflow navigation;
+Chio does not replay input across that native transition.
 
 ## Command palette
 
