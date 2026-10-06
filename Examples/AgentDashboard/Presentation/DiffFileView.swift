@@ -29,19 +29,14 @@ struct DiffFileView {
     private func gutter(_ number: Int?) -> some View {
         Text(number.map(String.init) ?? "")
             .foregroundStyle(theme.colors.mutedText)
-            .frame(width: gutterWidth, height: 1, alignment: .trailing)
+            .frame(width: gutterWidth, alignment: .trailing)
     }
 
-    private func source(_ text: String, marker: String) -> some View {
+    private func ink(for marker: String) -> Color {
         // Change ink is independent of success/error status. Palette decisions
         // remain in this prototype until a public diff style earns its contract.
-        let ink = marker == "+" ? theme.syntax.string
+        marker == "+" ? theme.syntax.string
             : marker == "−" ? theme.colors.accent : theme.colors.foreground
-        return HStack(spacing: 1) {
-            Text(marker).foregroundStyle(ink).frame(width: 1, height: 1)
-            Text(verbatim: text).fixedSize().foregroundStyle(ink)
-        }
-        .frame(height: 1, alignment: .leading)
     }
 
     private func unifiedRow(_ row: DiffFile.UnifiedRow) -> some View {
@@ -57,15 +52,18 @@ struct DiffFileView {
         return HStack(spacing: 1) {
             gutter(old?.number)
             gutter(new?.number)
-            source(text, marker: marker)
+            Text(marker).foregroundStyle(ink(for: marker))
+            Text(verbatim: text).fixedSize().foregroundStyle(ink(for: marker))
         }
         .frame(width: contentWidth, height: 1, alignment: .leading)
     }
 
     private func pane(_ line: DiffFile.Line?, marker: String) -> some View {
-        HStack(spacing: 1) {
+        let displayedMarker = line == nil ? " " : marker
+        return HStack(spacing: 1) {
             gutter(line?.number)
-            source(line?.text ?? "", marker: line == nil ? " " : marker)
+            Text(displayedMarker).foregroundStyle(ink(for: displayedMarker))
+            Text(verbatim: line?.text ?? "").fixedSize().foregroundStyle(ink(for: displayedMarker))
         }
         .frame(width: paneWidth, height: 1, alignment: .leading)
     }
@@ -85,7 +83,6 @@ struct DiffFileView {
             Text("│").foregroundStyle(theme.colors.border)
             pane(new, marker: changed ? "+" : " ")
         }
-        .frame(height: 1)
     }
 
     private var summary: String {

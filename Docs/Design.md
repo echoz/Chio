@@ -754,6 +754,9 @@ diff style justifies new semantic roles. Below 92 columns, unified rows preserve
 readable source space; widening restores the requested layout. Native anchors
 reveal a retained logical hunk after navigation, file changes or relayout. Manual
 scrolling does not change that explicit target. Theme changes preserve the offset.
+Rows keep gutters, markers and literal text in a single native horizontal stack
+per line or split pane. Avoid redundant nested stacks and one-cell frames in
+this eager reader; they multiply native resolution and debug verification work.
 
 This prototype deliberately leaves lines unwrapped. The pinned native word-wrap
 implementation can remove whitespace at boundaries and insert continuation marks,

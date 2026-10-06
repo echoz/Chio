@@ -324,7 +324,12 @@ private func withDiffExample(
     let surface = HostedRasterSurface(surfaceSize: initialSize, appearance: .fallback,
                                       onFrame: { recorder.receive($0) })
     let app = DiffExampleTestApp(initialFile: initialFile, split: split)
-    let session = try HostedSceneSession(for: app, sceneID: "diff-example-tests", surface: surface)
+    let session = try HostedSceneSession(
+        for: app, sceneID: "diff-example-tests", surface: surface,
+        runtimeIssueSink: RuntimeIssueSink { issue in
+            Issue.record("Unexpected diff runtime issue: \(issue)")
+        }
+    )
     let run = Task { try await session.start() }
     defer { session.stop() }
     do {

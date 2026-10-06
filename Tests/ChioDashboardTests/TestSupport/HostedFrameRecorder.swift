@@ -6,8 +6,15 @@ final class HostedFrameRecorder {
     private var latest: SemanticHostFrame?
     private var pending: PendingWait?
     private var deadline: Task<Void, Never>?
+    private let started = ContinuousClock.now
+    private var recentFrames: [String] = []
 
     func receive(_ frame: SemanticHostFrame) {
+        let routes = frame.semantics.scrollRoutes.map {
+            "offset=\($0.contentOffset), viewport=\($0.viewportRect.size), content=\($0.contentBounds.size)"
+        }.joined(separator: "; ")
+        recentFrames.append("#\(frame.sequence) at \(started.duration(to: .now)): \(routes)")
+        if recentFrames.count > 8 { recentFrames.removeFirst() }
         latest = frame
         guard let pending, pending.matches(frame) else { return }
         self.pending = nil
@@ -35,6 +42,7 @@ final class HostedFrameRecorder {
                 let focusedNode = self.latest?.semantics.accessibilityNodes.first { $0.identity == focus }
                 pending.continuation.resume(throwing: FrameTimeout(
                     expectation: description,
+                    frames: recentFrames.joined(separator: "\n"),
                     focus: "\(String(describing: focusedNode?.role)) / \(focusedNode?.label ?? "unlabeled") / \(String(describing: focus))",
                     raster: self.latest?.raster.lines.joined(separator: "\n") ?? "No frame received"
                 ))
@@ -49,8 +57,11 @@ final class HostedFrameRecorder {
 
     private struct FrameTimeout: Error, CustomStringConvertible {
         let expectation: String
+        let frames: String
         let focus: String
         let raster: String
-        var description: String { "Timed out waiting for \(expectation). Focus: \(focus). Raster:\n\(raster)" }
+        var description: String {
+            "Timed out waiting for \(expectation). Focus: \(focus). Recent frames:\n\(frames)\nRaster:\n\(raster)"
+        }
     }
 }
