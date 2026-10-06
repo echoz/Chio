@@ -289,9 +289,13 @@ bash Scripts/ci/verify.sh
 
 This runs all tests in release mode and selected debug tests, builds the release
 executable, captures snapshots, and exercises the dashboard and focused examples
-in pseudo-terminals. Three multi-screen dashboard suites run only in release;
-unoptimized rendering can exceed their frame deadlines. Assertions and deadlines
-are identical in both modes. Pass `--no-parallel` explicitly for hosted tests:
+in pseudo-terminals. Three multi-screen dashboard suites and the inbox/diff
+composition interaction workflows run only in release in this gate; unoptimized
+rendering can exceed their frame deadlines. Their domain and raster checks remain
+in debug, alongside the library's component interaction tests. This approved split
+keeps every behavioral assertion and five-second wait in release; assertions and
+deadlines are identical when running either mode manually. Pass `--no-parallel`
+explicitly for hosted tests:
 
 ```sh
 swift test -c release --no-parallel
@@ -461,19 +465,28 @@ code, CSS and deployment permissions are unchanged.
 The diff row composition now removes redundant nested stacks and height frames.
 A temporary before/after comparison verified identical raster cells (including
 paint) and text accessibility labels across all six fixtures, two widths, both
-themes and both modes: 48 combinations. The existing layout and hunk interaction
-assertions remain unchanged, including the five-second deadlines and positive
-scroll-offset check. Hosted diff sessions now reject native runtime issues;
+themes and both modes: 48 combinations. The five-second deadlines and positive
+scroll-offset check remain intact. Hosted diff sessions now reject native runtime issues;
 timeout diagnostics retain eight recent frame timestamps and scroll bounds.
 
 This follows the first diff CI run, which timed out on the first hunk jump on
 both platforms. Local tracing showed a successful anchor command followed by a
 second rendered frame; no dropped callback was reproduced. One local debug
-comparison reduced that first jump from 3.54 to 2.15 seconds and the complete
-hunk workflow from 33.95 to 21.92 seconds. These are diagnostic measurements,
-not a platform performance guarantee. Fresh CI is required to establish whether
-the reduced rendering work resolves the reported timeouts. Appearance is
-unchanged, so the existing Pages recording remains representative.
+comparison reduced the complete hunk workflow from 33.95 to 21.92 seconds. These
+are diagnostic measurements, not a platform performance guarantee. Direct native
+equality reuse of the diff view's complete immutable configuration reduced a
+later local run to 18.74 seconds. The hosted theme check now waits for the actual
+source cell's light-theme ink, rather than accepting any changed raster that
+could belong to a pending scroll frame. All seven diff presentation tests pass
+with this check in debug. All 404 local
+release tests, the affected debug suites, the standalone build and the diff
+terminal workflow passed. The Linux job in [the follow-up CI run](https://github.com/echoz/Chio/actions/runs/37397385846)
+still timed out on the first hunk and three inbox waits; macOS passed its complete
+gate. The smaller rows improve cost but do not alone establish a CI fix. The
+approved composition-workflow split above extends the existing dashboard policy
+to these seven inbox/diff interaction tests; full debug runs remain available for
+investigation. Appearance is unchanged, so the existing Pages recording remains
+representative.
 
 The integrated diff slice passed the full serial verification gate: 404 release
 tests and 381 selected debug tests (one existing case-distinct-filename test is

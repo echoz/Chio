@@ -14,10 +14,13 @@ fi
 
 mkdir -p .build/ci-results
 # Keep debug checks for library controls, domain values, raster layouts, and the
-# focused examples. Run the dashboard's multi-screen workflows in release below:
+# focused examples. Run dashboard, inbox and diff compositions in release below:
 # their five-second waits are not benchmarks of unoptimized rendering.
+release_only_workflows='CreateAgentTests|DashboardPaletteTests|AgentReportInteractionTests'
+release_only_workflows+='|DiffExampleTests/(hunkWorkflow|longSourceAndFiles)'
+release_only_workflows+='|InboxExampleTests/(compactLaunchAndWideResize|filteringAndQueues|presentationAndReader|pendingReaderIsolation|pendingReaderCancellation)'
 swift test --force-resolved-versions --jobs "${SWIFT_BUILD_JOBS:-2}" \
-  --no-parallel --skip 'CreateAgentTests|DashboardPaletteTests|AgentReportInteractionTests' \
+  --no-parallel --skip "$release_only_workflows" \
   --xunit-output .build/ci-results/debug.xml ${testing_flags[@]+"${testing_flags[@]}"}
 swift test -c release --force-resolved-versions --jobs "${SWIFT_BUILD_JOBS:-2}" \
   --no-parallel --xunit-output .build/ci-results/release-all.xml ${testing_flags[@]+"${testing_flags[@]}"}

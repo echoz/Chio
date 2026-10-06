@@ -131,3 +131,12 @@ extension DiffFileView: View {
 
 extension DiffFileView.HunkAnchor: Hashable {}
 extension DiffFileView.HunkAnchor: Sendable {}
+
+// SwiftTUI validates environment dependencies before reusing an equal view.
+extension DiffFileView: @MainActor Equatable {
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.file == rhs.file && lhs.split == rhs.split
+            && lhs.minimumWidth == rhs.minimumWidth && lhs.sourceWidth == rhs.sourceWidth
+            && lhs.activeHunk == rhs.activeHunk
+    }
+}

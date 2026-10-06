@@ -1,5 +1,6 @@
 @testable import ChioDashboard
 import Chio
+import Foundation
 import SwiftTUIRuntime
 import Testing
 
@@ -181,9 +182,14 @@ struct DiffExampleTests {
                 $0.diffReaderFocused && $0.diffContains("Unified · hunk 3/3") && $0.diffContains("@@ -79,6 +84,4 @@")
             }
             session.send(.key(.character("t"), modifiers: .ctrl))
-            let themed = try await recorder.wait(after: unified.sequence, description: "theme changes paint while retaining native focus and hunk") {
-                $0.diffContains("Unified · hunk 3/3") && $0.diffContains("@@ -79,6 +84,4 @@")
-                    && $0.focusedIdentity == unified.focusedIdentity && $0.raster.cells != unified.raster.cells
+            let themed = try await recorder.wait(after: unified.sequence, description: "light theme repaints source while retaining native focus and hunk") {
+                guard let row = $0.raster.lines.firstIndex(where: { $0.contains("names.forEach(welcome)") }),
+                      let range = $0.raster.lines[row].range(of: "names.forEach(welcome)") else { return false }
+                // This fixture's prefix is ASCII, so string and cell columns coincide.
+                let column = $0.raster.lines[row].distance(from: $0.raster.lines[row].startIndex, to: range.lowerBound)
+                return $0.diffContains("Unified · hunk 3/3") && $0.diffContains("@@ -79,6 +84,4 @@")
+                    && $0.focusedIdentity == unified.focusedIdentity
+                    && $0.raster.cells[row][column].style?.foregroundColor == ChioTheme.light.syntax.string
             }
             surface.updateSurfaceSize(.init(width: 36, height: 18))
             session.requestSurfaceRefresh()
