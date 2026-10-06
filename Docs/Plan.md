@@ -322,9 +322,9 @@ renderer, focus system or hidden dependency patch.
 
 ### Proposed connected table grid correction
 
-Two historical patches are retained and **not applied to the default build**:
-[SwiftTUI table paints](../Patches/SwiftTUI-table-style-paints.patch) against the
-pinned native revision, and [Chio connected grid](../Patches/Chio-connected-table-grid.patch)
+Two historical patches are archived in `v0.1.0` and **not applied to the default build**:
+[SwiftTUI table paints](https://github.com/echoz/Chio/blob/v0.1.0/Patches/SwiftTUI-table-style-paints.patch) against the
+pinned native revision, and [Chio connected grid](https://github.com/echoz/Chio/blob/v0.1.0/Patches/Chio-connected-table-grid.patch)
 against `b47280b`. The combined preview passed local Chio tests and terminal paint
 checks, but full upstream gates and API-inventory regeneration were not run.
 Shipping it needs an upstream fix or an explicit reproducible dependency decision
@@ -347,12 +347,13 @@ launch/forwarding options. PTY evidence verifies authored RGB with
 appearance. `--force-color` alone does not select true color.
 
 Separately, the pinned indexed-color quantizer rounds onto a uniform cube and
-ignores the grayscale ramp, washing out dark colors. Retained
-[native conversion](../Patches/SwiftTUI-ansi256-quantization.patch),
-[consumer regression](../Patches/Chio-ansi256-emission.patch) and
-[upstream preparation](../Patches/SwiftTUI-ansi256-upstream.md) are unapplied
-experiments. Focused probes passed, but full native gates did not run; no upstream
-PR was published. Detailed algorithms, compatibility exceptions and evidence
+ignores the grayscale ramp, washing out dark colors. The
+[native conversion](https://github.com/echoz/Chio/blob/v0.1.0/Patches/SwiftTUI-ansi256-quantization.patch),
+[consumer regression](https://github.com/echoz/Chio/blob/v0.1.0/Patches/Chio-ansi256-emission.patch) and
+[upstream preparation](https://github.com/echoz/Chio/blob/v0.1.0/Patches/SwiftTUI-ansi256-upstream.md)
+are unapplied experiments archived in `v0.1.0`. Focused probes passed, but full
+native gates did not run; no upstream PR was published. Detailed algorithms,
+compatibility exceptions and evidence
 remain in the [shelved investigation](https://github.com/echoz/Chio/blob/v0.1.0/Docs/Plan.md#proposed-ansi-256-conversion-correction).
 Reopening it requires a new dependency decision, not another automatic roadmap task.
 

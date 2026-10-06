@@ -4,3 +4,12 @@
 *.xcodeproj/
 *.xcworkspace/
 Snapshots/Actual/
+
+# Local environment values; keep shareable example files trackable.
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Local build and diagnostic output.
+*.log
