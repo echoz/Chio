@@ -462,6 +462,17 @@ code, CSS and deployment permissions are unchanged.
 
 ## Verified on macOS
 
+The final diff-rendering and approved workflow-split candidate `634dc5e` passes
+the full local serial gate: 374 selected debug tests, the full 404-test release
+suite, the standalone release build, 20 snapshots and all 15 terminal workflows.
+One existing case-distinct-filename test is skipped in each configuration on this
+filesystem. [CI for the same source revision](https://github.com/echoz/Chio/actions/runs/37400886839)
+passes on both platforms: macOS repeats the 374/404-test coverage, and Linux
+passes 373 selected debug tests and all 403 release tests. Both jobs also pass
+the standalone build, 20 snapshot captures and all 15 terminal workflows. This
+verifies the approved split on macOS and glibc Linux; it does not establish full
+debug composition performance or Static Linux SDK support.
+
 The diff row composition now removes redundant nested stacks and height frames.
 A temporary before/after comparison verified identical raster cells (including
 paint) and text accessibility labels across all six fixtures, two widths, both
@@ -478,9 +489,9 @@ equality reuse of the diff view's complete immutable configuration reduced a
 later local run to 18.74 seconds. The hosted theme check now waits for the actual
 source cell's light-theme ink, rather than accepting any changed raster that
 could belong to a pending scroll frame. All seven diff presentation tests pass
-with this check in debug. All 404 local
-release tests, the affected debug suites, the standalone build and the diff
-terminal workflow passed. The Linux job in [the follow-up CI run](https://github.com/echoz/Chio/actions/runs/37397385846)
+with this check in debug. At `42a60d0`, all 404 local release tests, the affected
+debug suites, the standalone build and the diff terminal workflow passed.
+The Linux job in [the follow-up CI run](https://github.com/echoz/Chio/actions/runs/37397385846)
 still timed out on the first hunk and three inbox waits; macOS passed its complete
 gate. The smaller rows improve cost but do not alone establish a CI fix. The
 approved composition-workflow split above extends the existing dashboard policy
@@ -956,6 +967,13 @@ overhead and does not measure SSH transport or Blink display latency.
 
 The initial demonstration slices are delivered. Portability verification adds CI and
 repeatable terminal checks without changing the public API or dependency pins.
+
+Current source revision `634dc5e` passes both macOS and Linux x86_64/glibc in
+[run 37400886839](https://github.com/echoz/Chio/actions/runs/37400886839), including
+the inbox and diff release interactions and all terminal workflows. Exact counts
+and the approved debug/release split are [recorded above](#verified-on-macos).
+The failures below are historical investigations; this run passes those exercised
+workflows without extending their deadlines. Static Linux remains separate.
 
 - Commit `4e47001` passed both macOS and Linux x86_64/glibc in
   [run 37376092806](https://github.com/echoz/Chio/actions/runs/37376092806), including
