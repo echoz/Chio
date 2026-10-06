@@ -1,283 +1,114 @@
-# Implementation plan and verification
+# Chio plan and verification
 
-The delivered proof-of-concept slices are a runnable local dashboard, agent
-creation, Markdown run reports, a command palette using simulated agents,
-a focused searchable-choice form, native password/multiline text entry,
-confirmation with transient feedback, file selection, contextual keyboard help,
-themed native tabs, finite-result pagination, themed native scrolling, and
-expandable disclosure groups, grouped settings forms, and duration labels with
-example-owned timekeeping, compact instrumentation with passive histories,
-and a dense local review inbox with Markdown reading.
-They establish the design direction, not broad parity with Charm's components.
-Accepted contracts and
-ownership live in [Design.md](Design.md); commands and interaction instructions
-live in [the examples guide](Examples.md); component recipes live in
-[API usage](Usage.md).
+This document records the shipped scope, verification policy and remaining
+boundaries. [Design](Design.md) owns accepted architecture and behavior;
+[Usage](Usage.md) owns API recipes; [Examples](Examples.md) owns launch commands
+and controls. Earlier investigations and per-slice results remain in the
+[v0.1.0 development record](https://github.com/echoz/Chio/blob/v0.1.0/Docs/Plan.md)
+and Git history.
 
-## Delivered slices
+## Current release
 
-- One `Chio` library depending on the published `SwiftTUIViews` product; one
-  `chio-dashboard` executable using the SwiftTUI runtime.
-- Semantic theme values, a Charm-inspired default and a light customization,
-  plus native GroupBox, List, Table, TextField, Button, Picker, Toggle, and ProgressView styles.
-- A btop-inspired theme preset, optional border titles on native groups, neutral
-  measurement paint on native progress tracks, and a passive `Sparkline` over native
-  Canvas. The `--metrics` composition uses application-owned simulated samples.
-- KeyHint, wrapping KeyHints, StatusBar, and searchable selection with fuzzy or
-  substring filtering, stable IDs, result counts, and distinct empty states.
-- Simulated running, completed, failed, paused, and empty states; theme switching;
-  responsive layout and deterministic plain-text snapshot scenarios.
-- Independent read-only review completed. Its focus/activation and snapshot-flag
-  findings were fixed and verified before the initial commit.
-- Create agent screen with native text entry, role selection, a conditional Test
-  suite field, and Start immediately toggle. Creation adds and reveals the selected
-  agent; cancellation restores the dashboard's query, selection, and native focus.
-- Reusable FormField help/error presentation and FormValidation visibility state.
-  Application-owned rules run at submission and the draft-to-agent boundary;
-  failed submission focuses and reveals the first invalid field.
-- Independent read-only form review completed. Its new-row visibility, narrow
-  error visibility, and batched-submission findings were fixed and verified.
-- Immutable MarkdownDocument values parsed with Swift Markdown 0.9.0, rendered
-  by MarkdownView as themed native views. The slice includes headings, rich
-  paragraphs, lists, quotes, code, rules, and readable unsupported-node fallbacks.
-- Enter opens a selected agent's snapshot report. Native scrolling, persistent
-  navigation hints, theme switching, and Escape restoration complete the reader.
-  Creating and running a new agent leads to its own report without external services.
-- Independent read-only Markdown review identified a one-row quote marker gap;
-  a composed text marker fixes it. No private renderer or focus API is required.
-- Native Markdown tables replace the text fallback, preserving column alignment,
-  rich body cells, and native width/height measurement. The report includes a
-  visible table example; horizontal scrolling keeps wide tables readable.
-- Opt-in interactive Markdown links retain one native focus target per rich label
-  and pass the destination to an explicit application `OpenLinkAction`. Passive
-  documents retain readable destinations. `ChioLinkStyle` also themes ordinary
-  native links. Report feedback stays local; table body links can activate while
-  headers remain plain. The image-alt review finding has a regression test.
-- ChioPaletteStyle for native command palettes, with fuzzy filtering, stable
-  selection, disabled commands, compact rows, and theme-driven presentation.
-  Ctrl-K opens the dashboard menu; native dismissal precedes report/form launch.
-- Independent read-only palette review completed. Its rejected-query-write
-  finding was fixed: selection follows the value retained by the application's
-  query binding. Hosted tests also caught stale selection and palette reopening;
-  synchronous search selection and resolved editor bindings cover those cases.
-- Global and repository guidance audit completed before expanding component
-  coverage. Markdown now reuses native column alignment, test fixtures use
-  dedicated conformance extensions, and dashboard suites share a frame recorder.
-  Independent review found no remaining issues in those corrections; that cleanup
-  preserved native ownership, application-owned validation, and public APIs.
-  The full serial suite (113 tests), release build, six snapshot captures, and
-  terminal smoke check passed on macOS after the cleanup.
-- Immutable domain and view-configuration values now use replacement operations.
-  Theme customization uses `replacing(...)`; validation uses `recordingExit(from:)`
-  and `submitting(_:)`, whose returned visibility state is assigned by the app.
-  These replace the initial mutable APIs. Native control bindings update immutable
-  drafts from their current bound value; simulation returns replacement agents.
-  Running progress is restricted to finite `0..<1`, including through decoding.
-  Hashing and coding are synthesized where their contracts fit, with the native
-  type and snapshot exceptions recorded in [Design.md](Design.md#value-contracts).
-  Independent review found no actionable issues. The full serial suite passes
-  134 tests, including rejection paths and unchanged-original checks; native
-  form/search/palette input and focus regressions retain their assertions.
-  The release build, six snapshot captures, and real pseudo-terminal smoke check
-  also pass on macOS for this refactor.
-- Richer choice fields add `SearchableChecklist` with native multi-selection,
-  explicit checks, search, counts, disabled-choice enforcement, and preserved
-  hidden/removed membership. The `--choices` two-step example reuses
-  `SearchableList` and `FormField` for language choice, then demonstrates
-  app-owned one-through-three validation, current availability, and save/cancel.
-  Independent review's repeated-activation and stale-success findings were fixed
-  with scoped transitions, typed feedback, and hosted regressions; re-review
-  found no remaining actionable issues.
-  The integrated macOS run passes 158 tests, an optimized build, seven snapshot
-  captures, and real pseudo-terminal workflows for both the dashboard and choices.
-  Both workflows restore terminal modes and exit cleanly.
-- Everyday text entry adds `ChioTextEditorStyle` and exercises native
-  `SecureField` through the existing text-field style. The focused `--text-entry`
-  example demonstrates masked editing, multiline notes, local validation,
-  password clearing, cancel, and disabled input. Independent read-only review
-  found no actionable issues. A full macOS run passed 169 tests; after making
-  the empty editor fill its bounded viewport, all 12 text-entry checks passed
-  again, including the new viewport regression. This covered 170
-  tests at that slice (108 library and 62 dashboard/example), with existing assertions intact.
-  The optimized build and all three real pseudo-terminal workflows pass, with
-  exact terminal-mode restoration. Eight snapshot captures include the compact
-  text-entry example; the full-size empty editor was also inspected.
+[Chio 0.1.0](https://github.com/echoz/Chio/releases/tag/v0.1.0) is the first
+experimental source release, tagged at
+`1bcc08ce23747c8c8b1121e3add3c37951f7b09e`. The agreed feature sequence is complete,
+including the bounded diff prototype, theme previews and showcase verification.
+This establishes the delivered workflows, not complete Charm feature parity or
+production stability. Chio remains personal software built with Codex assistance
+and human curation, under the MIT license.
 
-- Confirmation and feedback add `ChioPromptStyle`, `ChioSpinnerStyle`, and
-  explicit `ChioToastStyle`, plus the runnable `--feedback` publish/reset example.
-  Native APIs retain modal focus, dismissal, timing, reduced motion and toast
-  expiry. The independent review's state-binding ownership and clipped-header
-  findings were fixed and covered by public hosted/raster regressions.
-  The integrated macOS checks pass all 184 release tests, 162 selected debug
-  tests, the production release build, nine snapshot captures and all four
-  pseudo-terminal workflows, including clean terminal restoration. New Linux
-  verification remains pending; the prior CI limitation is recorded below.
+The package requires Swift 6.4+, with macOS 15+ or Linux. All four direct
+dependencies are revision-pinned. Consumers must therefore use a revision
+requirement for Chio: `from: "0.1.0"` and `exact: "0.1.0"` are unsupported by the
+current dependency graph. The release notes contain the tested installation
+snippet using the immutable release SHA. A separate macOS consumer resolved,
+compiled, linked and ran with the same dependency pins as the release.
+Version-based consumption needs a separate dependency change and consumer checks.
 
-- File selection adds `FilePicker`, composing native search, list navigation,
-  buttons and loading feedback around an actor-owned filesystem boundary.
-  `--files` demonstrates folder navigation, fuzzy filtering, explicit file
-  confirmation, reopening and cancellation. The binding changes only after
-  the chosen file passes a fresh kind/readability check. Extension and hidden
-  file policies are explicit; symlinks preserve their chosen lexical paths.
-  Independent review's path-normalization and batched-edit/confirmation findings
-  were fixed; re-review found no remaining actionable issues. The accepted
-  cancellation and stale-result contracts live in [Design.md](Design.md#file-selection).
-  Release testing also exposed a search-to-results handoff gap: a second Return
-  could reach the editor before native focus moved and never activate the result.
-  `SearchableList` now honors its pending native focus request for that key,
-  with editor-focused matching/no-match cases and the original picker regression.
-
-- Keyboard help adds immutable `ShortcutHint` and `ShortcutGroup` descriptions,
-  shared by compact `KeyHints` and grouped `KeyboardHelp`. The focused
-  `--keyboard-help` example demonstrates context, unavailable actions, a native
-  full-screen reader, scrolling and focus restoration. `?` opens only outside
-  search; F1 opens the full reference from any control. Native controls continue
-  to own input; descriptions do not register bindings or execute actions.
-  Independent review identified modal-handler reach and render-lagging F1
-  context; the full-cover handlers and context-independent reference resolve
-  both. Re-review found no remaining actionable issues.
-
-- Themed tabs add `ChioTabViewStyle` through the existing theme modifier. Native
-  selection, focus, keyboard/pointer routing and dormant content remain upstream.
-  A two-row strip distinguishes selected and focused tabs, and a bounded More
-  menu reveals hidden options. The focused `--tabs` workspace demonstrates a
-  retained counter, search, notes, scrolling and settings. Independent review
-  found a tiny-width border overhang; the geometry bound now omits menu paint
-  below three columns, with a neighboring-content regression. Re-review found
-  no remaining source findings.
-- Pagination adds an immutable checked `Pagination` value and `PageControl`
-  composed from themed native buttons. Count changes preserve or clamp the page;
-  size changes retain the old first item in the new window. The focused
-  `--pagination` example filters local history, changes page size, scrolls within
-  a page and handles empty results. Actions read the application's retained
-  binding, including rejected/transformed writes and fast input batches.
-  Independent source review found no remaining actionable issues after removing
-  a duplicated example label.
-
-- `ChioScrollViewStyle` adds muted idle indicators and accent focus paint through
-  the native presentation hook. Native glyphs, geometry, track reservation,
-  background inheritance and disabled opacity remain intact. The `--viewport`
-  example exercises a wide local log, native positions, reset and compact layout.
-
-- `ChioDisclosureGroupStyle` gives native groups compact themed headers and
-  vertical content layout. The `--tree` example composes a local hierarchy with
-  parent-owned expansion choices, bulk actions and empty-branch feedback.
-  Native activation, focus, accessibility and scrolling remain authoritative.
-
-- The `--forms` example composes native groups, text fields, a toggle and
-  scrolling with existing `FormField`/`FormValidation`. One immutable editable
-  snapshot retains hidden raw input; ordered rules validate related values.
-  Save replaces the local accepted snapshot, and Cancel restores it while
-  resetting validation visits. No public form DSL or dependency is added.
-
-- Optionality cleanup gives Markdown language/destination text, field helpers,
-  shortcut details and stored search callbacks one representation for their
-  empty/default behavior. Shortcut decoding accepts old missing/null details;
-  canonical encoding includes a string. `FileExtensionFilter` names unrestricted
-  and restricted policies without conflating all files with no files. Selection,
-  errors, native protocol requirements and replacement arguments retain meaningful
-  absence. The [usage guide](Usage.md#file-selection) records the source migration;
-  the [value contracts](Design.md#value-contracts) describe the accepted changes.
-
-- `DurationText` supplies integer rounding, compact formatting and themed
-  accessibility labels. `ElapsedTime` is now an internal example helper, after
-  narrowing the original public timer slice to presentation. The `--timers` example
-  uses native scheduling, retains independent clocks and focus through responsive
-  layout changes, and handles completion with a current-value check. No clock
-  service, event loop or dependency is added.
-
-- The `--inbox` example composes existing controls into a dense review workspace:
-  native queue/sort Pickers, substring search, stable-ID selection, a passive wide
-  Markdown preview and native full-screen reading. Sixteen immutable local fixtures
-  keep sorting and search deterministic. A single list survives preview, theme and
-  size changes; application-owned presentation phases let native results focus
-  commit before the cover captures it. Fast Return/Return/Escape and covered-input
-  regressions protect that handoff. No public component or dependency is added.
+No prebuilt binaries or fully static Linux executable are published.
 
 ## Component coverage
 
-Source audit at Chio `424f8e6`, using SwiftTUI revision
-`2d84ac7083993da2ef52e9d3d30255467efb9553`. Charm's current component catalogs were
-checked on 2026-10-03. This is a capability map, not a parity percentage: a basic
-control, its styling, and a complete interaction workflow are different scopes.
-Native API availability below is source evidence, not new Chio runtime evidence.
-The verification sections describe the shipped paths that have actually run.
+The following describes Chio 0.1.0 with SwiftTUI pinned at
+`2d84ac7083993da2ef52e9d3d30255467efb9553`. Native controls own layout, state,
+input, focus and scrolling. A styled control, a reusable interaction and an
+example application are different scopes.
 
-The reference scope is [Bubbles](https://github.com/charmbracelet/bubbles) for
-interactive components, [Huh](https://github.com/charmbracelet/huh) for forms,
-[Lip Gloss](https://github.com/charmbracelet/lipgloss) for presentation, and
-[Glamour](https://github.com/charmbracelet/glamour) for documents.
-[Charmtone](https://github.com/charmbracelet/x/tree/main/exp/charmtone) supplies
-palette utilities; Chio ships its own semantic theme inspired by Huh rather than
-depending on that Go package. Tabs, dialogs, banners, and command palettes also
-come from Chio's original brief; they are not all standalone Bubbles packages.
+| Area | Delivered | Boundary |
+| --- | --- | --- |
+| Design system | Default, light and btop themes; semantic colors, spacing and treatments | Native focus/chrome and limited-color conversion have remaining limits |
+| Groups and everyday controls | Styles for native groups, buttons, toggles, pickers, text fields, secure fields and multiline editors | No replacement controls, completion/history system or password-reveal API |
+| Search and choices | `SearchableList`, `SearchableChecklist`, fuzzy/substring filtering, stable selection, checked membership, counts and empty messages | No bulk/range selection, async choice workflow or large-data performance claim |
+| Forms | `FormField`, `FormValidation`, conditional and grouped examples with Save/Cancel | Applications own drafts, rules, first-invalid focus and submission; no form DSL, wizard or prompt runner |
+| File selection | Async directory listing, search, extension/hidden-file policies, errors/retry and explicit confirmation of one readable regular file | No directory/multiple selection, save panel, root confinement or filesystem watching; confirmation does not reserve a file |
+| Help and commands | `KeyHint`, wrapping `KeyHints`, `KeyboardHelp`, `StatusBar` and native command-palette styling | Descriptions do not register or execute commands; no notification/status queue |
+| Feedback | Native progress, spinner, alert/confirmation and explicit toast styles | Native timing, presentation and dismissal; no Chio scheduler or general banner component |
+| Navigation | Native tab, scroll and disclosure styles; checked `Pagination` and `PageControl` | Pagination requires finite totals; no tree adapter, tree-specific arrow routing or separate viewport engine |
+| Tables | Themed native tables and Markdown table composition | Border/background chrome remains native; selected/sorted data-table workflows are not broadly validated |
+| Markdown | Immutable parsed documents; headings, rich text, lists, quotes, code, rules and tables | Useful subset; unsupported content has readable fallbacks, not full Glamour equivalence |
+| Code and links | Swift syntax highlighting, plain override, opt-in native links and `ChioLinkStyle` | Other languages stay plain; applications own destination policy/effects; no image renderer |
+| Instrumentation | Passive `Sparkline`, border titles and measurement progress paint | One series; applications provide samples, retention, timing, units and thresholds |
+| Duration display | `DurationText` | Timekeeping and expiry remain application-owned; no public stopwatch/countdown engine |
 
-### Design and input controls
-
-| Capability | Chio today | Native foundation | Remaining work |
-| --- | --- | --- | --- |
-| Semantic themes | Delivered default/light/btop palettes, tokens, spacing, and treatments | Environment and native style protocols | Broader control coverage; native focus colors and ANSI-256 conversion have upstream limits |
-| Panels | Delivered through `ChioGroupBoxStyle` | `GroupBox` | Use the native name; SwiftTUI `Panel` means action scope, not a visual box |
-| Buttons and toggles | Delivered themed controls; toggle interaction tested | `Button`, `Toggle` | More variants only when a workflow justifies them |
-| Single-line input | Delivered `ChioTextFieldStyle`, search and form editing | `TextField` | No claim of a full enhanced-input suite such as completion/history |
-| Password input | Native `SecureField` inherits Chio's text-field style; raster/semantic concealment, editing, submission and disabled behavior exercised | [SecureField][native-secure] projects masked text before styling | No reveal/mask configuration; application-authored metadata must not echo the password |
-| Multiline input | `ChioTextEditorStyle` frames the native editor; paste, selection, wrapped caret movement, scroll reveal and theme/resize exercised | [TextEditor][native-editor] and `TextEditorStyle.editorContent` preserve native editing/scrolling | Disabled inner text color remains native placeholder paint; no completion/history/editor replacement |
-| Compact single choice | Delivered one-row `ChioPickerStyle` with native arrows | `Picker`, `PickerStyle` | This is not a searchable dropdown or a rich option browser |
-| Searchable single choice | `SearchableList` composed in `FormField`; `--choices` proves candidate/Next/Save/Cancel | [List][native-list] plus native editor | No separate single-choice wrapper or disabled-single-choice policy yet |
-| Multiple choices | `SearchableChecklist`, visible checks/counts, retained hidden/removed IDs, disabled membership gate; app-owned limits and validation in `--choices` | Native `List` and `Table` accept `Binding<Set<ID>>` | No bulk select, range select, or pre-render source-freshness guarantee; source/eligibility inputs update with rendered views |
-| Yes/no confirmation field | Styled native toggle is usable | `Toggle`, buttons | A distinct two-choice confirmation treatment, if needed; an action-confirmation dialog is a separate scope |
-| Field help and validation | Delivered `FormField` and `FormValidation` visibility state | Bindings, submission and `FocusState` | Current rules, draft ownership and first-invalid focus remain app-owned |
-| Conditional fields and dynamic choices | Conditional Test suite field demonstrated; native composition permits changing options | Result builders, state, `Picker`/`List` | Reusable asynchronous choice loading, stale-result policy and cross-field workflows are not delivered |
-| Grouped forms and standalone prompts | Agent creation plus grouped local settings compose conditional fields, related validation and Save/Cancel | Native groups, controls, scrolling and focus | No Chio `Form`/`Section` DSL, paged wizard, prompt runner or Huh-style accessible prompt mode; composition covers the demonstrated workflows |
-
-### Collections, feedback and navigation
-
-| Capability | Chio today | Native foundation | Remaining work |
-| --- | --- | --- | --- |
-| Searchable/selectable list | Delivered fuzzy/substring search, stable single selection, count, activation and two empty messages | [List][native-list] owns navigation and scrolling | No integrated pagination, loading/error/status workflow, multi-selection or demonstrated large-data performance |
-| Tables | Delivered theme style and Markdown table composition; report navigation tested | [Table][native-table] owns grid, sizing, selection and navigation | Border/background paint correction remains unapplied; richer selected/sorted data-table workflows are not validated |
-| Trees and expandable groups | `ChioDisclosureGroupStyle` themes native headers/content; `--tree` demonstrates nested expansion, retained choices, bulk actions and empty branches | Native `DisclosureGroup` owns activation/focus; [OutlineGroup][native-outline] separately renders all descendants | No general tree data adapter, file selection or tree-specific arrow routing; arbitrary collapsed child state is not archived; OutlineGroup connector paint remains native |
-| File picker | `FilePicker` selects one readable regular file; async listing, folder navigation, fuzzy search, extension/hidden policy, errors/retry and explicit confirmation | Native search, lists, buttons, focus, scrolling and task lifetime | No directory/multiple selection, save panel, root confinement, recursive search or filesystem watching; confirmation does not reserve the file |
-| Pagination | Checked immutable `Pagination` and native-button `PageControl`; `--pagination` demonstrates filtered history and changing page size | Native buttons, bindings, input and focus | Finite known totals; no asynchronous loading, unknown totals or cross-page item selection |
-| Scrollable viewport | `ChioScrollViewStyle` themes native indicators; focused `--viewport` demonstrates two-axis scrolling and reset | [ScrollView][native-scroll], positions/readers/styles own input, focus and clamping | No new viewport wrapper; Lists/Tables use their own styles; editor descendants do not acquire viewport focus paint |
-| Progress/loading bar | Delivered determinate and indeterminate `ChioProgressViewStyle`, including reduced motion | `ProgressView` owns animation phase | Not a dedicated spinner; animated/gradient fill variants are not part of the current Chio scope |
-| Spinner | Delivered `ChioSpinnerStyle` with semantic stage paint and native reduced motion | [Spinner][native-spinner], `SpinnerStyle`, presets/stages and native timing | Native braille cadence and stages; no Chio timer or frame catalog |
-| Keyboard hints and help | Shared immutable `ShortcutHint`/`ShortcutGroup` values feed wrapping `KeyHints` and grouped `KeyboardHelp`; focused example proves context, full reference and modal reading | Native key handlers, cover, scrolling and focus restoration | Application selects visible descriptions and registers handlers; no automatic registry extraction (native `KeyBinding` is private) or command execution through descriptions |
-| Status bar | Delivered composed `StatusBar` | Native layout/text | A footer is not a toast queue or reusable status-message workflow |
-| Empty/status/banner views | Empty messages inside search; semantic statuses in the demo | Native text, layout and theme colors | Extract reusable presentation and actions when useful; no general empty-state/banner component yet |
-| Toasts | Delivered explicit `ChioToastStyle` and local completion feedback | Native [.toast and ToastStyle][native-toast] handle presentation | Native expiry and explicit dismissal; no environment toast modifier or app notification queue |
-| Alerts, confirmation dialogs and sheets | Delivered `ChioPromptStyle` for alerts and confirmation dialogs; native covers demonstrated | [Native presentation][native-presentation] and [PromptStyle][native-prompt] | Native focus and dismissal retained; header paint and arbitrary action wrapping remain native/app concerns; no Chio sheet style |
-| Command palette | Delivered `ChioPaletteStyle`, filtering, disabled items and dashboard actions | Native action scopes, command registration and palette presentation | Surrounding palette chrome has an upstream styling limit; this is not a new Chio command system |
-| Tabs | `ChioTabViewStyle` supplies distinct selection/focus paint and bounded narrow overflow; `--tabs` exercises retained page values | [TabView][native-tabs] and `TabViewStyle` own navigation, selection, routing and dormancy | No per-option disabled state or persistent wheel-driven overflow scroll; native lifecycle limits apply |
-| Passive history | `Sparkline` with automatic/fixed scale, explicit gaps, bounded native drawing and narrow reduction | Native Canvas, CanvasDrawing and braille grid | App owns sample collection/retention/timing, units and thresholds; single series only |
-| Duration labels | Themed `DurationText`; timekeeping stays internal to the `--timers` example | Native text, [TimelineView][native-timeline] and monotonic instants | No public stopwatch/countdown state machine; application owns measurement, limits and expiry |
-
-### Documents
-
-| Capability | Chio today | Native foundation | Remaining work |
-| --- | --- | --- | --- |
-| Markdown documents | Delivered parsed immutable documents, headings, rich text, lists, quotes, fenced code, rules and tables | Swift Markdown AST becomes native `Text`, layout, `Table`, `ScrollView` | This is a useful subset, not complete Glamour feature equivalence |
-| Syntax highlighting | Delivered Swift fenced-code highlighting with retained semantic ranges, theme syntax colors, and an explicit plain override | Direct Tree-sitter C parsing becomes one native rich `Text`; native scrolling remains | Source/layout/focus contracts, local costs and Linux/glibc CI verified; static-musl remains blocked; other languages stay plain |
-| Links and images | Opt-in native inline links with an application `OpenLinkAction`, grouped rich labels and `ChioLinkStyle`; default documents and image descriptions remain passive | Native `Link`/rich text owns focus, activation, wrapping and clipping | Headers remain plain; traversal reaches visible native targets. Applications own destination policy/effects; image rendering remains outside scope |
-
-The source of Chio's installed styles is
+Installed styles are defined by
 [`View+ChioTheme.swift`](../Sources/Chio/Presentation/View+ChioTheme.swift).
-Reusable presentation lives in [`Sources/Chio/Presentation`](../Sources/Chio/Presentation),
-and evidence in [`Tests/ChioTests`](../Tests/ChioTests) plus the dashboard tests.
-Do not infer Chio support for every native control from `.chioTheme(...)` alone.
+Do not infer support for every native control from `.chioTheme(...)` alone.
+Behavioral contracts are in [Design](Design.md); component and example coverage
+lives in [ChioTests](../Tests/ChioTests) and
+[ChioDashboardTests](../Tests/ChioDashboardTests).
 
-[native-secure]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/Input/SecureField.swift
-[native-editor]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/Input/TextEditor.swift
-[native-list]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/Collections/List.swift
-[native-table]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/Collections/Table.swift
-[native-outline]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/Collections/OutlineViews.swift
-[native-scroll]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/ScrollView/ScrollView.swift
-[native-spinner]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/Controls/Spinner.swift
-[native-toast]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/Presentation/ToastPresentation.swift
-[native-presentation]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/Presentation/PromptPresentationEntrypoints.swift
-[native-prompt]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/Presentation/PromptStyles.swift
-[native-tabs]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/TabViews/TabView.swift
-[native-timeline]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/Animation/TimelineView.swift
+The dashboard, creation/report flow, grouped forms, metrics and review inbox are
+compositions of these pieces. Application simulation, sorting and review state
+remain in the example target. The diff reader proves bounded read-only
+unified/split presentation and hunk navigation; it is not a public diff API,
+editor, VCS integration or large-document solution.
+
+## Remaining scope audit
+
+There is no committed follow-on component queue. A real application using Chio
+is the recommended next validation step. Further hardening and a stable release
+are possible directions, not approved numbered phases or completion promises.
+
+Prioritize demonstrated regressions in shipped behavior: focus, selection,
+editing, narrow layout, presentation, responsiveness and supported-platform
+execution. Resolve defects at their owning layer. Changing the SwiftTUI pin or
+shipping a fork requires a reproducible dependency decision and native/Chio
+integration evidence; an ignored local patch is not a distribution strategy.
+
+Public additions require a concrete consumer need and reusable UX value:
+
+- Promote the diff prototype only after resolving source wrapping, large-input
+  behavior and split-width policy with real usage evidence.
+- Extract a general list/detail layout only if another consumer establishes a
+  shared contract.
+- Completion/history, async choices, wizards, broader file selection, tree
+  adapters, status queues and more themes remain possible gaps, not tasks.
+- Keep monitoring, clocks, workflow engines, annotations, persistence, external
+  services and repository operations with applications.
+
+Prove an accepted addition in a small runnable example, document actual public
+APIs, retain relevant model/raster/hosted regressions, and run a release terminal
+workflow. Visible changes also follow the [showcase workflow](#demo-site).
+
+### btop-inspired UI inventory
+
+The accepted btop-inspired work is delivered: a compact palette, optional border
+headings, measurement meters and a passive history graph in `--metrics`.
+Applications own sampling and interpretation. Dense sorting is demonstrated by
+`--inbox`; it does not establish sortable table headers. Draggable split panes,
+multiple graph series and additional glyph modes remain unproved. The original
+[inventory](https://github.com/echoz/Chio/blob/v0.1.0/Docs/Plan.md#btop-inspired-ui-inventory)
+records the reference audit and extraction rationale.
+
+### gh-dash and Hunk UI inventory
+
+The delivered inbox exercises dense collections, sorting, preview visibility and
+reader focus through existing primitives. The diff prototype adds immutable local
+fixtures, aligned gutters, explicit summaries and logical hunk navigation.
+Neither promises product parity. GitHub requests, Git/JJ/Sapling ingestion,
+editor launching, note storage and agent sessions are application concerns.
+The original [reference audit](https://github.com/echoz/Chio/blob/v0.1.0/Docs/Plan.md#gh-dash-and-hunk-ui-inventory)
+remains historical design evidence, not a build order.
 
 ## Running checks
 
@@ -287,1423 +118,258 @@ With Swift 6.4 and Python 3 installed, run from the repository root:
 bash Scripts/ci/verify.sh
 ```
 
-This runs all tests in release mode and selected debug tests, builds the release
-executable, captures snapshots, and exercises the dashboard and focused examples
-in pseudo-terminals. Three multi-screen dashboard suites and the inbox/diff
-composition interaction workflows run only in release in this gate; unoptimized
-rendering can exceed their frame deadlines. Their domain and raster checks remain
-in debug, alongside the library's component interaction tests. This approved split
-keeps every behavioral assertion and five-second wait in release; assertions and
-deadlines are identical when running either mode manually. Pass `--no-parallel`
-explicitly for hosted tests:
+The gate serializes builds and hosted tests. It runs all tests in release,
+selected tests in debug, a standalone release build, 20 plain-text snapshots and
+15 real pseudo-terminal workflows. Snapshot files are inspection artifacts;
+Swift tests assert the rendering contracts.
+
+The approved debug/release split keeps library controls, domain values, raster
+layouts and focused examples in debug. `CreateAgentTests`, `DashboardPaletteTests`,
+`AgentReportInteractionTests` and the selected inbox/diff composition interactions
+listed in the script run only in release, because unoptimized rendering can
+exceed their frame deadlines. Their assertions and five-second waits are
+unchanged. This does not establish full debug composition performance or cover
+those workflows' debug-only native checks.
+
+For a full debug investigation or a release-only suite, keep hosted tests serial:
 
 ```sh
+swift test --no-parallel
 swift test -c release --no-parallel
 ```
 
-See [macOS toolchain findings](#macos-toolchain-findings) if Testing macros are
-not discovered or the linker warns about nonexistent Command Line Tools paths.
-To check an already-built binary's terminal workflow:
+To exercise an already-built binary:
 
 ```sh
 python3 Scripts/ci/terminal-smoke.py .build/release/chio-dashboard
 ```
 
-Add `--choices`, `--text-entry`, `--feedback`, `--files`, `--keyboard-help`, `--tabs`, `--pagination`, `--viewport`, `--tree`, `--forms`, `--timers`, `--metrics`, `--inbox`, or `--diff` for a focused workflow.
-These check terminal input/output and restoration, not live Blink/SSH rendering
-or latency. `swift test --no-parallel` remains available for a full debug investigation.
+Pass an example flag such as `--choices`, `--inbox` or `--diff` for its workflow;
+[verify.sh](../Scripts/ci/verify.sh) is the complete list. Terminal checks cover
+input/output, raw mode, cursor/alternate-screen restoration and exact original
+terminal attributes. They do not prove live SSH latency or every emulator's
+appearance. Recheck responsiveness when editing or navigation paths change.
 
-[CI](../.github/workflows/ci.yml) runs on pushes to `main` and pull requests on
-macOS and Linux, retaining verification logs and snapshots. The manual
-[Static Linux workflow](../.github/workflows/static-linux.yml) checks musl builds
-against the same dependency pins; [current blockers](#static-linux-blocker)
-remain separate from ordinary Linux support.
+Dependency upgrades also require a paused dashboard comparison (`--paused`) under
+`TERM=xterm-256color`, first without `COLORTERM`, then with `COLORTERM=truecolor`,
+both without `NO_COLOR`. The indexed run exercises the actual terminal palette;
+the true-color run must preserve authored RGB.
 
 ### Demo site
 
-The [GitHub Pages showcase](https://echoz.github.io/Chio/) plays recordings from
-`Docs/Media` with a pinned, locally served asciinema player. Site source lives in
-`Docs/Site`; its vendored assets retain their upstream Apache 2.0 license.
-The gallery separates **Components** (focused Chio views and native control
-styles) from **Compositions** (the dashboard, metrics, review inbox, and diff prototype).
-Components appear first, with searchable choices as the default. Each recording
-identifies its Chio APIs, native SwiftTUI building blocks, application-owned
-behavior, and example source. Compositions are examples, not additional public
-components. The duration example is labeled **Duration labels** because clocks
-belong to the application. Existing recording fragments, including `#timers`,
-remain stable.
+The [showcase](https://echoz.github.io/Chio/) serves twelve recordings and 36
+three-theme previews from `Docs/Media`, using the pinned local asciinema player
+in `Docs/Site`. Its upstream license remains with the vendored assets. Components
+and compositions stay separate; each card identifies Chio APIs, native controls,
+application-owned behavior, source, launch command and keyboard guide.
 
-Navigation uses a compact Components/Compositions switch and one horizontally
-scrollable row of examples from the active category. The recording fragment
-determines the category, including direct links and browser history. Selecting
-an example keeps the chooser in view and pauses the previous recording. Both
-groups and all previews remain available without JavaScript. API and ownership
-details stay beneath each recording rather than above the chooser.
-Each recording also owns its launch command and a link to its keyboard controls,
-so both follow the selected example through navigation and direct links without
-additional selection state. The Markdown card launches the dashboard and tells
-the reader to press Enter to open an agent report; feedback starts in the light
-theme shown in its recording. A shared setup note replaces the global command
-catalogue. Script-free pages retain each command beside its own preview.
-Each enhanced card also offers default, light and btop **static previews** from
-real terminal output. Selecting a theme pauses playback, shows that preview and
-adds the corresponding `--theme` to its launch command. The choice is retained
-per example during navigation. Original recordings keep their recorded themes;
-the controls identify that distinction and can resume the recording or return
-to the selected static preview. Missing theme images fall back to the original
-preview with an explicit message. Without JavaScript, original previews,
-commands and downloads remain available.
-The site build gives owned CSS and JavaScript content-hashed filenames and
-rewrites generated HTML references so a new page requests matching assets.
+Each example retains its selected static-preview theme during navigation. The
+command follows that choice; original recordings retain their recorded themes.
+Playback is explicit, pauses when leaving a recording, and can return to the
+selected preview. Fragment links/history, script-free previews/downloads and
+missing-asset fallbacks remain supported. The build gives owned CSS/JavaScript
+content-hashed names. The player's NPT-poster limitation is recorded alongside
+the vendored assets.
 
-The Swift package has no new dependency. To preview the same deployable output:
+Preview the deployable output locally:
 
 ```sh
 bash Scripts/docs/build-site.sh
 python3 -m http.server 8000 --bind 127.0.0.1 --directory .build/site
 ```
 
-Open `http://127.0.0.1:8000`. The [Pages workflow](../.github/workflows/pages.yml)
-builds on relevant pull requests and deploys relevant `main` changes. Deployment
-uses the repository's GitHub Actions Pages source and `github-pages` environment;
-pull requests receive no deployment permissions. Recordings and player assets are
-served from the same site, without a CDN or an asciinema account. Keep recordings
-limited to local demo data and check playback before replacing them.
-Published clips should stop on the final complete UI frame, before terminal
-teardown and deferred diagnostic output. Check the entire output stream, including
-the tail, for warnings and logs. Keep full-session exit and terminal-restoration
-verification separate from the published playback excerpt; trimming a clip does
-not resolve or suppress the application's diagnostics.
+The [Pages workflow](../.github/workflows/pages.yml) builds relevant pull requests
+and deploys relevant `main` changes. Pull requests receive no deployment
+permissions; assets are served from the site without a CDN or asciinema account.
 
-Completing a visible UI slice includes updating this showcase in the same work:
-capture or refresh a short recording from the verified release binary, update
-its preview, caption, launch instructions and examples-guide links, then build
-and check playback and narrow layouts. Commit and deploy the gallery update and
-confirm the published result before calling the slice complete. Reuse unaffected
-recordings; an internal change with no visible example difference needs no new
-capture. Keep the Codex-assisted development and personal-software statement.
+Completing a visible example change includes updating the showcase:
 
-Browser checks cover playback, pause, forward/backward seeking, recording
-navigation, and a 390-pixel mobile layout. Missing-recording and script-free
-previews retain screenshots and download links. Playback begins only after an
-explicit click; the player's NPT-poster seek limitation is documented alongside
-the vendored assets. Independent review covers deployment permissions and static
-asset boundaries. These website checks do not add Swift or Linux test evidence.
+1. Capture the affected recording/previews from the verified release binary,
+   using only local demo data. Reuse unaffected captures.
+2. End published clips on the final complete UI frame, before teardown or logs.
+   Inspect the full session separately for diagnostics, clean exit and terminal
+   restoration; trimming a recording does not fix or suppress runtime warnings.
+3. Update captions, matching commands and guide/source links. Preserve the
+   Codex-assisted development and personal-software statement.
+4. Check site assembly, assets/links, playback, pause, forward/backward seeking,
+   navigation, focus, a 390-pixel layout and missing-asset/script-free fallbacks.
+5. Commit, deploy and verify the published result before declaring the slice
+   complete. An internal change with no visible difference needs no new capture.
 
-Theme comparison verification on 2026-10-05 covers 36 previews from the verified
-release executable: twelve examples in each built-in theme, with the same initial
-application state and explicit true-color capture environment. All captures
-restore terminal modes exactly and exit successfully; representative images were
-visually inspected. Choices, dashboard, Markdown and inbox each emit the known
-`collection.unboundedRealization` warning once per theme after terminal
-restoration. Full-session evidence retains those twelve warnings; the selected
-frames contain no diagnostics. Preview capture does not fix that upstream limit.
+## Release verification
 
-Real headless Chromium checks pass for all 36 images and matching commands, all
-twelve original recordings and their final UI frames, pause/resume, forward/backward
-seeking, retained theme choices through navigation/history, focus restoration,
-390-pixel layout, missing-image recovery, a superseded failed-image request and
-script-free fallback. The playback button sits beside the selector so it does not
-obscure the image. Independent source review found no actionable issues. These
-checks supersede the pending browser checks recorded below for the current gallery;
-they do not establish live Blink/SSH behavior.
+The following evidence applies to release commit `1bcc08c`. It replaces the
+per-slice pending-check notes in the historical plan. It is evidence for that
+revision and the exercised boundaries, not a stability guarantee.
 
-The 2026-10-05 completion audit removed terminal teardown from six older published
-clips: forms, metrics, pagination, timers, tree and viewport. Every byte before
-teardown is preserved; a non-painting style reset at the original end time keeps
-the final pause and duration. Initial previews and the other six clips are
-unchanged. Independent byte-level review, site assembly, all twelve recording
-structures, local assets, contextual commands and guide links pass. No clip now
-contains an alternate-screen exit or runtime diagnostic output. Full-session
-restoration evidence remains separate from these edited playback excerpts.
-Browser playback and 390-pixel layout checks are still pending: the host Mac
-remained locked when verification was attempted. No Swift source changed.
+<a id="verified-on-macos"></a>
 
-The compact component/composition navigation passes site assembly, generated
-asset hash/reference checks, JavaScript syntax, HTML structure, category
-membership, all twelve source links and stable recording fragments, local assets,
-image dimensions and recording checks. All twelve launch commands and keyboard
-guide anchors match the CLI and examples guide, and each command is nested in
-its matching recording. Independent source review found no
-actionable issues. Script-free preview markup remains available; recording
-captures and player mounting are unchanged. Browser playback, navigation/focus,
-and narrow-layout verification for this revision remain pending because the host
-Mac is locked. Static checks do not establish those browser behaviors.
+### Platform verification
 
-The pagination showcase adds a fourth recording from release `0161b26`: a
-20-second, 76 × 27 real-terminal session covering filtering, page navigation,
-page-size changes, theme changes and empty results. Its preview comes from the
-same release binary. The site build includes both assets; browser checks verify
-the deep link, playback/pause, forward/backward seeking, pausing when switching
-recordings, missing-recording focus restoration, and script-free previews and
-downloads. Navigation wraps and command blocks remain within the page at both
-320- and 390-pixel widths. The pinned player and deployment permissions are
-unchanged.
+[CI run 37416306113](https://github.com/echoz/Chio/actions/runs/37416306113)
+passes on both platforms:
 
-The viewport and tree additions bring the gallery to six recordings, captured
-from verified release `3547b83`. Both start at 76 × 27 and include native input,
-theme switching and a 36 × 18 resize; they last about 18 and 14 seconds. Their
-previews were inspected, and the site build, asset links, image dimensions,
-recording event order, resize events and terminal restoration were checked.
-Player code, CSS and deployment permissions are unchanged. Browser playback and
-mobile-layout checks were not rerun for these two additions and remain pending.
+| Platform | Reported selected debug tests | Reported release tests | Additional checks |
+| --- | ---: | ---: | --- |
+| macOS / Xcode 27 | 377 | 407 | Standalone release build, 20 snapshots, all 15 terminal workflows |
+| Ubuntu 24.04 x86_64 / Swift 6.4.0 / glibc | 376 | 406 | Standalone release build, 20 snapshots, all 15 terminal workflows |
 
-The grouped-form slice adds a seventh recording from its verified release
-candidate: a 19-second session beginning at 76 × 30, with conditional fields,
-related validation, Save/Cancel, theme switching and a 36 × 18 resize. The real
-terminal capture exits cleanly and restores terminal modes. Its preview was
-visually inspected; site build, navigation/assets, image dimensions, recording
-event order and local documentation links pass. Fresh browser playback and
-mobile-layout checks remain pending because no browser was available and the
-host Mac was locked. Player code, CSS and deployment permissions are unchanged.
+Each configuration records one skipped test: case-distinct filenames on the Mac's
+case-insensitive filesystem; removal of file-read permission in the Linux
+container. CI artifacts contain each platform's logs, two test XML reports and
+20 snapshots. The full local macOS gate also passed; a separate consumer build
+verified the revision-based installation path before publication.
 
-The timer slice adds an eighth recording: a 29-second release session at 76 × 30
-showing independent pause/resume, a light theme, 36 × 18 resize, countdown expiry
-and reset. Its native terminal capture exits cleanly and restores terminal modes.
-The preview was visually inspected; site assembly, all asset paths, dimensions,
-recording order, resize events and documentation links pass. Browser playback and
-mobile-layout checks remain pending because the host Mac is locked. The player,
-CSS and deployment permissions are unchanged.
+Model checks cover immutable replacements, validation/decoding, filtering and
+identity. Public raster and hosted sessions cover theme paint, compact layouts,
+editing, selection, focus, scrolling, presentation, cancellation, retained-binding
+authority and batched input. Theme-comparison checks cover all three palettes
+and preserve the CLI startup defaults and `--light` alias.
 
-The ninth showcase recording demonstrates Markdown in the existing report
-reader. Its syntax-highlighting refresh shows Swift token colors, native code
-End/Home scrolling, theme changes that retain horizontal position, link focus
-and local destination feedback, 36 × 18 wrapping, and dashboard restoration.
-The 76 × 30 release-terminal session restores terminal modes on exit. Its
-published excerpt lasts 25.6 seconds and ends on the restored dashboard, before
-shutdown diagnostics. Its preview was visually inspected; site assembly, ten-card
-navigation/assets, PNG dimensions, recording event order, resize/restoration and
-documentation links pass. Browser playback and mobile-layout checks remain pending
-because the host Mac is locked. Player code, CSS and deployment permissions are
-unchanged.
+### Showcase verification
 
-The tenth showcase recording adds compact metrics: manual sample advancement,
-gap/empty modes, native actions, three palettes, 36 × 18 stacking and restoration
-to the wide layout. Its 76 × 30 release-terminal capture lasts 21.2 seconds and
-restores terminal modes on exit. The preview is generated from its initial frame
-with a font fallback for braille glyphs and was visually inspected. Site assembly,
-ten-card navigation/assets, image dimensions, event order, resizing/restoration
-and documentation links pass. Browser playback and mobile-layout checks remain
-pending because the host Mac is locked; the player, CSS and deployment permissions
-are unchanged.
+[Pages run 37416306124](https://github.com/echoz/Chio/actions/runs/37416306124)
+deployed the release's gallery. Published HTML, all 36 theme PNGs, all twelve
+recordings and referenced CSS/JavaScript/favicon assets matched the local build
+byte-for-byte. Headless Chromium passed theme/command synchronization, playback
+and final frames, pause/resume, seeking, navigation/history, focus restoration,
+390-pixel layout, missing/stale-image recovery and script-free fallback. A
+published-page mobile check also passed theme changes and actual playback.
 
-The eleventh showcase recording adds the inbox: selection, repository ordering,
-preview visibility, batched search/open, native reader Home/End, theme changes,
-36 × 18 and 240 × 50 resizing, queue changes and empty-result recovery. The
-100 × 30 release session restores terminal modes on exit. Its published excerpt lasts 25 seconds
-and ends on the wide inbox, before shutdown diagnostics. Its preview was
-visually inspected; site assembly, eleven-card navigation/assets, image dimensions,
-event order, resizing/restoration and documentation links pass. Browser playback
-and mobile-layout checks remain pending because the host Mac is locked. Player
-code, CSS and deployment permissions are unchanged.
-
-## Verified on macOS
-
-Theme comparison adds an internal three-choice example value, `--theme`, and a
-shared cycle through default, light and btop. The current candidate passes 377
-selected debug tests (with the corrected help-cycle assertion rerun), all 407
-release tests, the standalone release build, 20 snapshots and all 15 terminal
-workflows. One existing case-distinct-filename test is skipped in each
-configuration on this filesystem. CLI checks cover every example's explicit
-choice, preserved startup defaults, the light alias and invalid/conflicting
-arguments. Public raster tests now exercise all three palettes; hosted workflows
-retain native focus, editing and selection during theme changes. The change adds
-no public library API, dependency or terminal capability override.
-
-The final diff-rendering and approved workflow-split candidate `634dc5e` passes
-the full local serial gate: 374 selected debug tests, the full 404-test release
-suite, the standalone release build, 20 snapshots and all 15 terminal workflows.
-One existing case-distinct-filename test is skipped in each configuration on this
-filesystem. [CI for the same source revision](https://github.com/echoz/Chio/actions/runs/37400886839)
-passes on both platforms: macOS repeats the 374/404-test coverage, and Linux
-passes 373 selected debug tests and all 403 release tests. Both jobs also pass
-the standalone build, 20 snapshot captures and all 15 terminal workflows. This
-verifies the approved split on macOS and glibc Linux; it does not establish full
-debug composition performance or Static Linux SDK support.
-
-The diff row composition now removes redundant nested stacks and height frames.
-A temporary before/after comparison verified identical raster cells (including
-paint) and text accessibility labels across all six fixtures, two widths, both
-themes and both modes: 48 combinations. The five-second deadlines and positive
-scroll-offset check remain intact. Hosted diff sessions now reject native runtime issues;
-timeout diagnostics retain eight recent frame timestamps and scroll bounds.
-
-This follows the first diff CI run, which timed out on the first hunk jump on
-both platforms. Local tracing showed a successful anchor command followed by a
-second rendered frame; no dropped callback was reproduced. One local debug
-comparison reduced the complete hunk workflow from 33.95 to 21.92 seconds. These
-are diagnostic measurements, not a platform performance guarantee. Direct native
-equality reuse of the diff view's complete immutable configuration reduced a
-later local run to 18.74 seconds. The hosted theme check now waits for the actual
-source cell's light-theme ink, rather than accepting any changed raster that
-could belong to a pending scroll frame. All seven diff presentation tests pass
-with this check in debug. At `42a60d0`, all 404 local release tests, the affected
-debug suites, the standalone build and the diff terminal workflow passed.
-The Linux job in [the follow-up CI run](https://github.com/echoz/Chio/actions/runs/37397385846)
-still timed out on the first hunk and three inbox waits; macOS passed its complete
-gate. The smaller rows improve cost but do not alone establish a CI fix. The
-approved composition-workflow split above extends the existing dashboard policy
-to these seven inbox/diff interaction tests; full debug runs remain available for
-investigation. Appearance is unchanged, so the existing Pages recording remains
-representative.
-
-The integrated diff slice passed the full serial verification gate: 404 release
-tests and 381 selected debug tests (one existing case-distinct-filename test is
-skipped in each configuration on this filesystem), the standalone release build,
-twenty snapshots and fifteen terminal workflows. Eighteen new tests cover checked
-construction/decoding, independent gutters, uneven and blank lines, raw Unicode
-and whitespace labels, native width measurement, explicit summaries and horizontal
-bounds. Ten raster cases cover both themes at 36, 91, 92, 100 and 160 columns.
-Hosted input retains native focus and logical hunk targets across mode, theme,
-file and size changes, including batched shortcuts and the narrow-mode fallback.
-Independent source review found no remaining production issues. This is local
-macOS evidence; fresh Linux CI and live-device behavior remain separate.
-
-The final picker metadata cleanup and corrected Ctrl-S byte in the existing
-inbox isolation test were rechecked with all 24 diff/inbox tests in both debug
-and release, plus the standalone build. Raster checks reject runtime diagnostics;
-the diff terminal workflow also checks the complete output after restoration.
-The three-hunk source fixture has 26 unified rows or 21 paired source rows before
-headers and spacing. This bounded eager layout is not a large-document claim.
-
-Five fresh-process release snapshots per size took a median 77.6 ms at 36 × 18
-(range 75.9–89.2 ms) and 101.8 ms at 100 × 30 (100.2–105.0 ms). These timings
-include process startup and view construction; they do not measure interaction,
-SSH latency or large-patch throughput.
-
-The final release recording lasts 26 seconds and demonstrates hunk jumps, both
-layouts, theme and 36 × 18 resizing, and empty/rename/binary summaries. The full
-capture exits cleanly, restores terminal modes and emits no runtime warnings;
-the published clip ends on a complete UI frame before teardown. Its preview was
-visually inspected. Site assembly, all twelve navigation entries, contextual
-commands, links, image dimensions, hashed assets and recording event checks pass.
-Browser playback and mobile layout remain unverified because the host Mac is
-locked; player code and CSS are unchanged.
-
-The inbox resize correction passes all six focused inbox tests in release and
-debug, including sixteen raster cases across both themes at 36–240 columns.
-The new hosted regression starts at 36 × 18, types a filter, expands to 240 × 50,
-continues typing, hides/restores the preview and shrinks again. Painted borders
-prove a 94-column queue, exactly two cells between panes, and a preview reaching
-the content edge; query, selection and exact editor focus remain intact. The
-standalone release build and updated inbox PTY workflow also pass, including
-compact startup, the expanded geometry and exact terminal-mode restoration.
-Independent source review found no actionable issues. This focused correction
-reuses the broader baseline evidence below; the full local suite was not rerun.
-Fresh Linux CI, browser playback and live-device verification remain separate.
-
-Dense inbox validation covers 385 release checks and 362 selected debug checks
-(one existing case-distinct-filename test is skipped in each configuration on this
-filesystem). The new model tests cover deterministic ordering, tie breakers,
-search metadata and coding. Twelve raster cases cover both themes and the
-88-column/26-row preview thresholds down to 36 × 18. Hosted tests preserve query,
-selected ID and actual focus through sorting, filtering, queue changes, preview
-visibility, theme and resize. Native reader Home/End, child focus, exact background
-focus restoration, pending-cover isolation and same-batch Escape cancellation pass.
-The full `Scripts/ci/verify.sh` gate passes, including the standalone release build,
-eighteen snapshots and fourteen real terminal workflows with clean restoration.
-Independent source review found no remaining actionable issues. No library API,
-dependency or SwiftTUI pin changed. This is local macOS evidence; fresh inbox
-Linux CI, browser playback and live Blink/SSH checks remain separate.
-
-Isolated release-terminal probes used six Down events and six typed search
-characters at each size. At 100 × 30, median observed frame response was 106 ms
-for selection (105–346 ms range, including the first change) and 52 ms for typing
-(45–104 ms). At 36 × 18, medians were 102 ms for selection (87–104 ms) and 40 ms
-for typing (30–68 ms). These are local input-to-observed-frame samples including
-probe overhead, not SSH measurements, rendering-only timings or guarantees.
-
-Swift syntax highlighting validation covers 375 release checks and 352 selected
-debug checks (one existing case-distinct-filename test is skipped in each
-configuration on this filesystem). Model/raster/hosted regressions cover the five
-syntax roles, custom/default/light/btop colors, malformed and incomplete Swift,
-Unicode grapheme boundaries and canonical document equality, parsed whitespace,
-64 KiB limits, deep input and real parser cancellation. Native horizontal arrows,
-Home/End, focus and offset survive theme, plain-paint and size changes; the link
-action remains attached. Independent review's document-equality finding was fixed
-and passed re-review. The full `Scripts/ci/verify.sh` gate passes: standalone
-release build, seventeen snapshots, and thirteen real terminal workflows with
-clean restoration. The existing Linux scroll-track fixture now observes press
-focus and release separately without changing expected offsets or deadlines.
-Commit `4e47001` subsequently passed both macOS and Linux/glibc
-[CI](https://github.com/echoz/Chio/actions/runs/37376092806), including the new
-syntax dependencies and track-focus regression. Browser playback and live
-Blink/SSH checks remain separate.
-
-Compact instrumentation validation covers 361 release checks and 338 selected
-debug checks (one existing case-distinct-filename test is skipped in each
-configuration on this filesystem). Native raster/hosted tests cover border-title
-corners and Unicode truncation, passive title controls with enabled content,
-measurement/completion paint, finite extreme/subnormal scaling, gaps within narrow
-columns, spike preservation, empty/constant/single-entry graphs and accessible
-summaries. The example retains values, history mode and native focus through
-three palettes, 36 × 18 resizing and batched input. Independent review's missing
-quantitative accessibility summary was fixed and passed re-review. The full
-`Scripts/ci/verify.sh` run passes: standalone release build, seventeen snapshots
-and thirteen real terminal workflows with clean restoration. No dependency or
-SwiftTUI pin changed. This is local macOS evidence; fresh Linux and live Blink/SSH
-checks remain separate.
-
-Interactive Markdown validation covers 344 release checks and 321 selected debug
-checks (one existing case-distinct-filename test is skipped in each configuration
-on this filesystem). Model/raster/hosted regressions cover complete styled labels,
-adjacent links, relative and custom destinations, passive fallbacks, nested image
-alt text, disabled content, focus-effect suppression, rejected opening actions,
-theme/resize identity, table-body activation after horizontal scrolling and the
-report's local feedback/return journey. Independent read-only review found the
-image-alt activation gap; the fix and enabled regression passed re-review. No
-new package dependency or SwiftTUI revision is involved. The full
-`Scripts/ci/verify.sh` run passes: standalone release build, sixteen snapshots and
-twelve real terminal workflows, including batched report-link input and terminal
-mode restoration. This is local macOS evidence; remote CI provides separate
-platform evidence. Commit `ed59763` subsequently passed both macOS and Linux
-[CI](https://github.com/echoz/Chio/actions/runs/37358932297).
-
-Timer validation covers 335 release tests and 313 selected debug tests. The affected
-five-test debug timer suite was rerun after correcting the 50-column layout;
-unaffected debug evidence was retained. The release build, sixteen snapshots and
-twelve real pseudo-terminal workflows passed. Explicit clock tests cover dispatch,
-paused intervals, rapid input, expiry during resize and reset/restart; a separate
-live test proves native timeline advancement. Independent review findings were
-resolved without changing test deadlines. This is local macOS evidence, not a new
-live SSH/device measurement. The timer slice at `ac29db9` subsequently passed
-both macOS and Linux [CI](https://github.com/echoz/Chio/actions/runs/37348496712).
-The later move of timekeeping into the example passed all 18 affected tests in
-both debug and release, a standalone release build and the native timer terminal
-workflow. Eight before/after frames match exactly, so the recording was reused.
-The scope and public-access correction received independent read-only review.
-
-
-Swift 6.4, with SwiftTUI pinned at
-`2d84ac7083993da2ef52e9d3d30255467efb9553`:
-
-- `swift build --product chio-dashboard` passes.
-- `swift build -c release --product chio-dashboard` also passes. Interactive
-  launch instructions use release mode; debug enables extra upstream verification.
-- The grouped-form candidate completes 303 release tests and 281 selected debug
-  tests: 302 and 280 pass respectively, with the existing case-distinct filename
-  test skipped in each mode on this filesystem. New model/raster/hosted checks
-  cover raw draft replacement and codecs, ordered cross-field rules, hidden
-  input retention, batched editing, native Save/Cancel, theme changes and 36 × 18
-  resizing. Regressions reproduced and fixed Cancel-induced validation visits
-  and a focused error hidden by compact resize. Independent source re-review
-  found no remaining actionable findings. The full verification script passes,
-  including the production build, fifteen snapshots and all eleven terminal
-  workflows with clean exit and terminal-mode restoration. Fresh Linux and live
-  Blink/SSH checks remain pending.
-- The disclosure/tree candidate completes 291 release tests and 269 selected
-  debug tests: 290 and 268 pass respectively, with the existing case-distinct
-  filename test skipped on this filesystem. Public raster/hosted checks cover
-  default/light/custom colors, narrow headers, inherited backgrounds, disabled
-  groups, suppressed focus effects, rejected expansion writes, native header and
-  content pointer routing, and vertically laid-out captured siblings. The tree
-  example covers retained nested expansion, bulk actions, empty branches and
-  theme/resize preservation. The full verification script passes, including the
-  production build, fourteen snapshot captures and all ten pseudo-terminal
-  workflows with clean restoration. Independent source re-review found no
-  remaining actionable findings. Fresh Linux and live Blink/SSH checks remain
-  pending.
-- The scroll-style candidate completes 283 release tests and 261 selected debug
-  tests: 282 and 260 pass respectively, with the existing case-distinct filename
-  test skipped on this filesystem. New public raster/hosted tests cover both
-  axes, default/light/custom indicator colors, authored backgrounds, hidden and
-  disabled tracks, suppressed focus effects, keyboard input, wheel and track
-  drag, and theme/resize preservation. An Automatic-style baseline reproduces
-  the native one-cell focus-reveal limitation; tests establish the origin with
-  native input and distinguish focus reveal from dragging. Existing editor
-  checks still pass. The full verification script passes, including thirteen
-  snapshots and all nine pseudo-terminal workflows with clean restoration.
-  Independent source review found no remaining issues after correcting the
-  Home/Left guidance. Fresh Linux and live Blink/SSH checks remain pending.
-- The pagination candidate completes 276 release tests and 254 selected debug
-  tests: 275 and 253 pass respectively, with the existing case-distinct filename
-  test skipped on this case-insensitive filesystem. New tests cover checked
-  construction/decoding, empty and partial pages, count/size changes and
-  `Int.max` arithmetic. Public raster and hosted tests cover compact/custom-theme
-  rendering, native activation and focus recovery at disabled boundaries,
-  editor key scoping, fast navigation batches, authoritative rejected/transformed
-  binding writes, external count changes and theme/resize preservation. The
-  history example exercises filtering, empty results, reset and page-size
-  anchoring at the documented sizes. The full verification script passes,
-  including the production build, twelve snapshot captures and all eight
-  pseudo-terminal workflows with terminal modes restored on exit.
-  Independent source re-review found no
-  remaining actionable findings. No dependency changed; fresh Linux and live
-  Blink/SSH checks for this slice remain pending.
-- The tabs candidate completes 251 release tests and 229 selected debug tests:
-  250 and 228 pass respectively, with the existing case-distinct filename test
-  skipped on this case-insensitive filesystem. New public raster/hosted coverage
-  exercises both themes, custom focus/selection colors, Unicode cell widths,
-  disabled/empty/single tabs, suppressed focus paint, a long menu in an eight-row
-  allocation, and paint containment at zero through two columns. Workspace tests
-  exercise native keyboard and pointer selection, retained counter/search/draft/
-  toggle values, native editing and scrolling, theme/resize preservation, and
-  overflow cancellation/reopening. Focus tests await the native list's arrival
-  and synchronized strip hints; a first content frame does not prove settled
-  focus. The full verification script passes, including the production build,
-  eleven snapshots and all seven pseudo-terminal workflows with terminal modes
-  restored on exit. Independent source re-review found no further actionable
-  findings; the nested width-publication boundary is recorded below. No dependency
-  changed; fresh Linux and live Blink/SSH checks for this slice remain pending.
-- The keyboard-help candidate completes 235 release tests and 213 selected
-  debug tests: 234 and 212 pass respectively, with the existing case-distinct
-  filename test skipped on this case-insensitive filesystem. Help regressions cover ordered/repeated
-  descriptions and coding, custom colors, Unicode wrapping, ordinary `/?` search
-  text, batched F1 transitions, guarded background actions, native Close/Escape,
-  exact settled focus restoration, query/selection retention, unavailable Run,
-  theme/quit from both modal focus targets, and 36 × 18 Home/End scrolling.
-  The examples render in both themes at 100 × 30, 50 × 30, and 36 × 18.
-  `Scripts/ci/verify.sh` passes, including the production build, ten snapshot
-  captures and all six pseudo-terminal workflows. The new terminal workflow
-  exercises literal search punctuation, F1/contextual help, guarded actions,
-  theme changes, compact resizing and clean terminal restoration.
-  Independent re-review found no remaining actionable issues. No dependency
-  changed; fresh Linux and live Blink/SSH checks for this slice remain pending.
-- The file-selection candidate completes its 218-test release suite with 217
-  passing tests (151 library and 66 dashboard/example), and its 196-test selected
-  debug suite with 195 passing tests (151 library and 44 example/domain).
-  Each run skips the case-distinct filename ordering test on this Mac's
-  case-insensitive filesystem; permission and hidden-flag tests run and pass.
-  Temporary-tree tests cover sorting, hidden/extension policy, lexical URLs,
-  file/folder links, broken and cyclic links, permissions, special files, and
-  deletion or type changes before confirmation. Controlled delayed operations
-  prove rejection of the exercised stale read/validation completions after
-  navigation, editing, cancellation and reopening. These are bounded schedules,
-  not proof of every interleaving. Hosted examples cover real folder navigation,
-  explicit confirmation, retained choices on cancel, theme and 36 × 18 resizing.
-  The search handoff regression passes in both build configurations, retaining
-  exact-once activation and no-match rejection assertions.
-  `Scripts/ci/verify.sh` completes successfully, including the separate production
-  build, nine snapshot captures and five pseudo-terminal workflows. The new
-  terminal workflow filters and confirms a temporary file, changes theme, resizes
-  to 36 × 18, reopens and cancels while retaining the chosen file, and restores
-  terminal attributes on exit. Fresh Linux and live Blink/SSH verification for
-  this slice remain pending; no dependency or static-link requirement changed.
-- The feedback slice passed all 184 Swift Testing tests in release with explicit `--no-parallel`:
-  120 library tests and 64 dashboard/example tests. The additional selected debug
-  pass covers 162 tests with the same assertions and deadlines; the three larger
-  dashboard workflow suites run in release, as documented below.
-- The outline-only button correction passes seven focused tests covering native
-  button focus, form controls, prompts and the feedback example. Four hosted
-  button cases check that every cell preserves its enclosing surface in both
-  themes, on ordinary and contrasting backgrounds, after Tab/Shift-Tab. They
-  cover destructive, disabled and suppressed-focus states while preserving
-  dimensions and native activation. This supersedes the whole-cell focus fill:
-  a live screenshot showed that rectangular paint extended beyond rounded glyphs.
-  The release build and feedback terminal workflow also pass; the full suite
-  above was not repeated for this paint change.
-- Feedback checks exercise both native prompt kinds, custom colors, disabled and
-  destructive actions, confirm/Cancel/Escape, one dismissal callback, exact editor
-  focus restoration and resumed editing. The example changes theme, resizes an
-  open prompt to 36 × 18, publishes, observes toast expiry and resets the result.
-  Spinner raster checks cover stages and reduced-motion frames; toast tests cover
-  all native tones, both themes, explicit and timed dismissal, editing beneath
-  feedback, theme changes and resize. Timed lifecycle checks use bounded real
-  hosted sessions, not a virtual clock or a proof of every scheduling interleaving.
-- The combined concurrent dashboard run hit frame-deadline failures across form,
-  report, and palette suites. The serial run passes with the same assertions and
-  deadlines; concurrent hosted-suite execution remains unverified. Use the
-  explicit serial command under [Running checks](#running-checks) on this toolchain.
-- Pure tests cover fuzzy ranking, Unicode matching, stable selection, and
-  deterministic simulation transitions. Immutable replacements preserve originals
-  and unrelated fields; progress construction and decoding reject invalid fractions,
-  spacing decoding rejects malformed values, and isolated exit tests retain
-  constructor/replacement preconditions for theme spacing and glyphs.
-- Choice tests cover native focus versus checked membership, Space/Return,
-  filtered hidden checks, disabled and removed IDs, reordered/empty sources,
-  rejected/transformed bindings, internal query retention, scroll reveal, and
-  batched search handoff. A focused follow-up also starts on a native row, removes
-  all options, and verifies recovery to search without losing checked IDs.
-  The full form covers minimum/maximum/current-availability
-  validation, successful and rejected Save, Back/Cancel, repeated activation,
-  and continued native editing through theme and 36 × 18 resize. Raster cases
-  exercise both themes at 100 × 30, 50 × 30, and 36 × 18.
-- Text-entry tests verify enabled custom-color editor paint and visible disabled
-  content in both themes. Synthetic password values stay out of rendered and
-  semantic snapshots, including every hosted frame; secure nodes expose neither
-  a control value nor text-query metadata. Native typing, deletion, secure paste
-  filtering and Return submission remain intact. Multiline tests retain exact
-  pasted line breaks, selection replacement, wrapped caret geometry, scroll
-  reveal, and the editor's single Tab stop through theme/resize. Example tests
-  cover first-invalid focus, password clearing, stale acceptance, locked controls,
-  cancellation, and both themes at 100 × 30, 50 × 30, and 36 × 18.
-- Public terminal-cell rendering checks cover theme colors, progress, wrapping
-  by cell width, empty states, and complete layouts at 100 × 30, 100 × 26,
-  100 × 24, 50 × 30, and 36 × 18.
-- Public hosted-session tests cover Enter/Escape, arrows, Tab/Shift-Tab, internal
-  and external query ownership, theme/resize preservation, and raw input batches
-  `/q`, `/q\r\r`, `/zzz\r\r`, and `/\t` without intermediate frame waits.
-- Form tests cover validation timing, conditional fields and native navigation,
-  first-invalid focus and visible errors at 36 × 18, draft/focus retention through
-  theme and resize, creation, duplicate submission, and cancellation restoration.
-  Raw opening batches include `nq`, `n\t`, `nRelease\r\r`, repeated Ctrl-S after
-  `nRelease`, and invalid `n\r`. Cell renders cover both themes at 100 × 30,
-  50 × 30, and 36 × 18 with persistent actions and keyboard help.
-- Markdown model/raster tests cover rich wrapping, Unicode, nested lists and
-  quotes, literal punctuation, code whitespace, and readable fallbacks. Hosted
-  code tests verify horizontal End/Home and theme-preserved offset and focus.
-  Report tests cover vertical navigation, theme/resize retention, filtered-list
-  focus restoration, created-agent runs, immutable snapshots, and raw Enter-q
-  during presentation. Report chrome remains visible in both themes at
-  100 × 30, 50 × 30, and 36 × 18. Independent review reports no remaining findings.
-- Table tests cover parsed alignments, empty cells, header-only content, body
-  emphasis/code, Unicode cell alignment, narrow clipping, following prose, and
-  native table semantics. Both Chio themes and customized header colors are
-  verified; native border-color limitations are recorded below. The strengthened
-  hosted navigation regression passes in a focused rerun: Tab moves from the
-  vertical reader to the table, End/Home scroll columns, theme/resize retain
-  focus, and Shift-Tab returns to the reader so Down scrolls vertically.
-- Palette tests cover customized colors in both themes, long-list selection
-  visibility, current-query activation from batched input, disabled actions,
-  empty results, initial type-ahead, resize, theme switching, and reopening.
-  Report/form actions preserve exact native focus and filtering from both search
-  and results. Filtering commits the application selection before palette actions;
-  a rejected external query write cannot change selection for an unchanged query.
-- A real macOS pseudo-terminal smoke check covers launch, search text that
-  includes `q`, Escape, theme switching, simulated failure, running to completion,
-  empty-data toggling, and normal exit with terminal restoration.
-  A temporary local web-host preview was also visually inspected; it is separate
-  evidence from terminal execution.
-- A second real pseudo-terminal check covers opening Create agent, invalid
-  submission, Name entry, native role arrows, the conditional Test suite field,
-  Start immediately toggling, and successful creation. The new agent and suite
-  appear in the dashboard, the footer remains visible, and `q` exits with code
-  zero and restores the alternate screen. This checks terminal output and input,
-  not the user's Blink device; the new form was not inspected in a browser.
-- The report slice's release binary passes a real pseudo-terminal workflow:
-  start a run, wait for completion, open its report, End/Home navigation, change
-  theme without changing reading position, return to filtered results, and quit
-  with exit code zero and alternate-screen restoration. Captured terminal text
-  confirms the report hierarchy and persistent header/help. This remains local
-  terminal evidence, not a live Blink-over-SSH or Linux check.
-- The table release check confirms the header and all three illustrative rows
-  appear near the report's top, theme switching retains the table, Tab/Shift-Tab
-  returns to vertical reading, End reaches the report's end, and quitting restores
-  the terminal with exit code zero. Captured terminal text was inspected.
-- The palette release binary passes a local pseudo-terminal workflow: open a
-  report, reopen into agent creation, edit and cancel, change theme, filter to no
-  commands, and return to editing the original dashboard search. Normal quit
-  restores the alternate screen with exit code zero. Captured terminal text was
-  inspected; this is not a live Blink-over-SSH check.
-- A separate macOS pseudo-terminal comparison reproduced the SSH color issue:
-  with `TERM=xterm-256color` and no `COLORTERM`, the default surface emits
-  `48;5;59` (gray). Adding `COLORTERM=truecolor` emits `48;2;33;29;42` (the authored
-  dark plum). Both runs exited normally and restored the alternate screen.
-  This proves emission, not final rendering on the user's Blink device.
-- Public `TerminalHost` emission regressions preserve the default foreground and
-  background RGB under the documented true-color environment and verify that
-  `NO_COLOR` still suppresses color. These capture bytes through a pipe without
-  taking ownership of a real terminal or using upstream testing SPI.
-- A user-reported Ghostty SSH environment has `TERM=xterm-ghostty`, empty
-  `COLORTERM`/`TERM_PROGRAM`, no tmux/screen marker and no `NO_COLOR`. The pinned
-  native detector selects **ANSI16**, not ANSI256, for those inputs. The standard
-  scene runner passes that profile to the host; appearance/input/graphics probes
-  never promote text color depth, and there is no terminfo or true-color query.
-  A real macOS PTY run of the unchanged release dashboard reproduces ANSI16 with
-  those values. Adding only `COLORTERM=truecolor` emits the authored RGB; adding
-  `NO_COLOR` suppresses it. All three runs exit cleanly and restore terminal modes.
-  These captures prove the launch/emission path, not the live SSH forwarding
-  configuration or final Ghostty appearance. See [SSH setup](Examples.md#colors-over-ssh).
+All 36 preview captures used the same initial application state per example and
+explicit true-color output; each exited successfully and restored terminal
+modes. Representative images were visually inspected. Choices, dashboard,
+Markdown and inbox each emitted the known `collection.unboundedRealization`
+warning once per theme after restoration. Those twelve warnings remain in full
+capture evidence; selected frames and published clips contain no diagnostics.
+Browser checks establish gallery behavior, not live Blink/SSH rendering.
 
 ### macOS toolchain findings
 
-The installed Command Line Tools' default SwiftPM backend does not discover its
-Swift Testing macro plugin automatically. The complete test run used the explicit
-plugin flag below. The native backend was also attempted but
-could not find the Testing module. Neither workaround changes package sources or
-adds a runtime dependency.
+Some Apple Swift 6.4 toolchains do not discover the installed Swift Testing macro
+plugin. `verify.sh` detects and supplies it when available; its command is the
+preferred entry point. The attempted native backend could not find Testing.
 
-```sh
-swift test -c release --no-parallel -Xswiftc -load-plugin-library \
-  -Xswiftc "$(xcode-select -p)/usr/lib/swift/host/plugins/testing/libTestingMacros.dylib"
-```
-
-Apple Swift `6.4.0.34.1` with `/Library/Developer/CommandLineTools` selected also
-emits linker warnings for nonexistent `CommandLineTools/Developer/usr/lib` and
-`CommandLineTools/Developer/Library/Frameworks` paths. Chio and its dependency
-manifests do not add those paths. This matches the open upstream
+Apple Swift `6.4.0.34.1` with Command Line Tools also emitted linker warnings for
+nonexistent `CommandLineTools/Developer/usr/lib` and framework search paths.
+An independent dependency-free package reproduced the warning and ran; Xcode 27
+built that probe without it. This is recorded in
 [SwiftPM issue #10557](https://github.com/swiftlang/swift-package-manager/issues/10557).
-An isolated package with one library, one executable, and no dependencies
-reproduced the framework-path warning in release mode and ran successfully.
-The same probe built and ran without warnings using installed Xcode 27 via
-`env -u SDKROOT DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer xcrun swift build`.
-This comparison did not rebuild Chio with Xcode or change the global developer
-selection. Chio's Command Line Tools release build and feedback terminal check
-at `454356e` passed despite the warnings. No package flags suppress them.
+Chio adds no suppression flags and does not change the global developer selection.
 
-## Responsiveness baseline
+### Responsiveness baseline
 
-Local measurements of commit `2aba923` used a 100 × 30 pseudo-terminal,
-`COLORTERM=truecolor`, and `--paused`, with no concurrent build or diagnostic
-overrides. The same script injected individual keys and reconstructed terminal
-text until the list selection marker or typed Name value became visible.
-
-| Interaction | Debug | Release |
-| --- | ---: | ---: |
-| Selection change, median of six keys | 344 ms | 73 ms |
-| Name typing, median of six characters | 729 ms | 122 ms |
-| Open form, one observation | 1,215 ms | 208 ms |
-
-These are small local samples, including capture/decoding overhead, with no SSH
-transit or Blink display time. Both binaries exited normally. Release materially
-improves responsiveness, but typing remains noticeable locally; this does not
-establish which render phase dominates or promise performance on another host.
-The supported `SWIFTTUI_DIAGNOSTICS` trace attributes roughly 72–74% of measured
-pipeline time to placement, with no focus-sync convergence passes on these inputs.
-Chio's hint flow now supplies native measurement and placement reuse signatures
-containing its sole layout value, the gap. SwiftTUI still validates child inputs
-and proposals. In the instrumented comparison, median typing changed from about
-123 ms to 104 ms and 108 ms in two repeats; custom child measurement requests per
-typing frame fell from 77 to 35. Selection timing did not consistently improve.
-Hosted regression coverage changes labels, adds/removes hints, changes the gap,
-and resizes through wrapping boundaries. Further placement profiling remains
-useful; this bounded change does not resolve all latency.
-
-The integrated Markdown/report release was rechecked with the original local
-harness and no diagnostic overrides: median selection was 74 ms, median Name
-typing was 103 ms (six inputs each), and opening the form took 206 ms. These small
-samples show no evident regression from report presentation; SSH and device
-display latency are still outside this measurement.
-
-The command-palette release was checked with the same harness, with no concurrent
-build or tests: selection measured 75 ms median and Name typing 92 ms median
-(six inputs each), with one form opening at 215 ms. These local samples show no
-evident responsiveness regression; they do not include SSH or device latency.
-
-The richer-choice release was sampled at 100 × 30 with no concurrent build or
-tests. The checklist measured 28 ms median for search typing, 45 ms for row
-navigation, and 67 ms for toggling (six inputs each). The original dashboard
-harness measured 99 ms for selection and 108 ms for Name typing, with one form
-opening at 239 ms. Dashboard samples are slower than the earlier palette sample;
-these runs do not isolate a cause or establish a regression-free result. The
-dashboard retains its original application/view entry structure; `--choices`
-uses a separate native App in the same executable. All timings include local
-capture/decoding overhead and exclude SSH and device display latency.
-
-The text-entry release was sampled at 100 × 30 with no concurrent build or tests:
-masked typing measured 55 ms median and multiline typing 61 ms median, with six
-characters each. These are local observations including capture/decoding overhead;
-they do not measure SSH transport or Blink display latency.
-
-The file-selection release was sampled at 100 × 30 against a temporary folder
-with 40 files, with no concurrent build or tests. Search typing measured 90 ms
-median and row navigation 25 ms median, with six inputs each. The loaded and
-filtered terminal layouts were inspected; the process exited with code zero and
-restored terminal modes. These small local samples include capture/decoding
-overhead and exclude SSH/Blink latency; they do not establish large-folder performance.
-
-The tabs release was sampled locally at 100 × 30 without concurrent builds or
-tests. Six page activations measured 82 ms median, and six characters typed into
-Notes measured 24 ms median. The process exited with code zero and restored
-terminal modes. These small samples include capture/decoding overhead and do not
-measure SSH transport or Blink display latency.
-
-The pagination release was sampled locally at 100 × 30 without concurrent builds
-or tests. Ten page movements measured 63 ms median, and six filter keystrokes
-measured 53 ms median. The process exited with code zero and restored terminal
-modes. These small samples include capture/decoding overhead and exclude SSH and
-Blink display latency; they do not establish large-result-set performance.
-
-The viewport release was sampled locally at 100 × 30 without concurrent builds
-or tests. Six vertical steps measured 120 ms median and six horizontal steps
-137 ms median in the forty-row example. The process exited with code zero and
-restored terminal modes. These include capture/decoding overhead; they do not
-isolate style cost, establish large-log performance or measure SSH/Blink latency.
-
-The tree release was sampled locally at 100 × 30 without concurrent builds or
-tests. Closing Sources measured 59 ms median and reopening it measured 65 ms
-median, with six inputs each. The process exited with code zero and restored
-terminal modes. These small samples include capture/decoding overhead; they do
-not establish large-tree performance or measure SSH/Blink latency.
-
-The grouped-form release was sampled locally at 100 × 30 without concurrent
-builds or tests. Six name-field keystrokes measured 59 ms median. The process
-exited with code zero and restored terminal modes. This includes capture/decoding
-overhead and does not measure SSH transport or Blink display latency.
+Use release mode for interactive examples: native debug verification adds
+substantial layout cost. The historical dashboard probe at `2aba923` measured
+median selection at 344 ms debug / 73 ms release and Name typing at 729 ms /
+122 ms release. Later focused probes informed hint-layout reuse and smaller
+native row compositions. These were small local samples including capture and
+decoding overhead, not SSH timings, benchmarks of the current release or
+large-data guarantees. Detailed measurements remain in the
+[historical baseline](https://github.com/echoz/Chio/blob/v0.1.0/Docs/Plan.md#responsiveness-baseline).
 
 ## Linux and CI
 
-The initial demonstration slices are delivered. Portability verification adds CI and
-repeatable terminal checks without changing the public API or dependency pins.
+[CI](../.github/workflows/ci.yml) runs on `main` pushes and pull requests using
+Xcode 27 and the Swift 6.4.0 Ubuntu 24.04 container. Builds/tests serialize within
+each job; artifacts retain logs, text captures and xUnit reports. The release's
+x86_64/glibc result is recorded above. Earlier ARM64 Linux builds and terminal
+checks passed for older slices; they are not full current-release ARM64 coverage.
+Ordinary Linux executables need the Swift/Foundation runtime libraries.
 
-Current source revision `634dc5e` passes both macOS and Linux x86_64/glibc in
-[run 37400886839](https://github.com/echoz/Chio/actions/runs/37400886839), including
-the inbox and diff release interactions and all terminal workflows. Exact counts
-and the approved debug/release split are [recorded above](#verified-on-macos).
-The failures below are historical investigations; this run passes those exercised
-workflows without extending their deadlines. Static Linux remains separate.
-
-- Commit `4e47001` passed both macOS and Linux x86_64/glibc in
-  [run 37376092806](https://github.com/echoz/Chio/actions/runs/37376092806), including
-  Swift fenced-code highlighting and the synchronized track-focus regression.
-  This verifies the new C dependencies in the ordinary Linux build; it does not
-  establish static-musl support or coverage of the later inbox example.
-- Linux [run 37367526697](https://github.com/echoz/Chio/actions/runs/37367526697)
-  exposed a track-focus test ordering race: press/release in one input batch could
-  finish before or after native focus revealed the reserved bottom corner.
-  The fixture now observes press at offset (6, 1), then release at (6, 0), before
-  continuing the existing drag and focus assertions. Offsets and deadlines remain
-  exact; this changes test synchronization, not native scrolling behavior.
-- Ubuntu 24.04 ARM64, official `swift:6.4.0-noble` container: all 113 tests pass
-  with `--no-parallel` (76 library and 37 dashboard). The debug and release
-  dashboard builds pass. The tested release is a dynamically linked glibc ELF
-  executable requiring Swift/Foundation runtime libraries, not a static artifact.
-- The committed `Scripts/ci/terminal-smoke.py` passes on macOS ARM64 and Linux
-  ARM64 release builds. It checks canonical mode/echo disabled, VMIN=1/VTIME=0,
-  real typed search, palette no matches and cancellation, restored search focus,
-  report/table opening, form entry/cancellation, zero exit, alternate-screen
-  teardown, and exact restoration of the original terminal attributes.
-- `.github/workflows/ci.yml` runs serial tests, an optimized build, snapshot
-  captures, and that smoke check for macOS/Xcode 27 and Ubuntu 24.04/Swift 6.4.0.
-  Logs and text captures are retained as CI artifacts. Snapshot captures are
-  inspection artifacts; the Swift tests assert rendering contracts. macOS uses
-  the currently available `xcode-27` preview runner because the package needs
-  Swift 6.4.
-- [Hosted CI run 37174523755](https://github.com/echoz/Chio/actions/runs/37174523755)
-  passed for commit `297bacb` on macOS ARM64 and Linux x86_64. Each job passed
-  all 113 tests, the release build, and the terminal smoke check. Both uploaded
-  their full verification log and six snapshot captures; the artifacts were
-  downloaded and checked. This adds x86_64/glibc execution evidence to the local
-  ARM64 Linux run, without extending coverage to other distributions or devices.
-- The workflows and scripts received an independent read-only correctness review
-  with no actionable findings. Builds/tests remain serialized within each job.
-- [Run 37183707010](https://github.com/echoz/Chio/actions/runs/37183707010) for the
-  immutable-value commit `dcb0eb2` passed all 134 tests, the release build, and
-  terminal smoke check on Linux x86_64. Its macOS job failed two existing
-  Create-agent opening checks: the form rendered but Name had not acquired native
-  focus before the deadline. Other openings passed; the log does not establish
-  whether acquisition was lost or merely late. Local macOS verification passed.
-  Keep the focus assertions and deadlines intact and distinguish fresh-run evidence
-  from a demonstrated fix for this platform discrepancy.
-- [Run 37186814418](https://github.com/echoz/Chio/actions/runs/37186814418) for the
-  choice-field commit `b46228c` passed all 102 library tests on both platforms,
-  including the new checklist. Its dashboard run failed with 13 issues on Linux
-  and one on macOS, involving existing form-arrival focus and report/palette
-  handoff checks. New choice-example checks passed. Some individual issue details
-  were missing from both the streamed logs and retained artifacts. Targeted local
-  reruns of initial/invalid form arrival and both palette handoffs passed unchanged;
-  this does not establish a fix. CI now retains Swift Testing's xUnit report as
-  well as console logs to improve evidence on subsequent failures. Assertions,
-  deadlines, dependency pins, and the original dashboard remain unchanged.
-- [Run 37210474889](https://github.com/echoz/Chio/actions/runs/37210474889) for
-  text entry (`aae078e`) passed all 170 tests, the optimized build, eight snapshots,
-  and three terminal checks on macOS. Linux passed all 108 library tests but
-  reported 11 failures in the older dashboard form/report/palette workflows.
-  The new choice and text-entry workflows passed on both platforms.
-- Local x86_64 Linux reproduction under Rosetta established a debug timing
-  failure matching the retained CI frames. The form's arrival callback executed,
-  and Name received focus after about 5.4 seconds, beyond the unchanged five-second
-  wait. Both palette commands also executed and eventually presented reports.
-  Public runtime diagnostics reported only the already-known collection warning;
-  the reproduction did not establish a lost callback or state write. An unchanged
-  Linux ARM64 run passed the 13 targeted tests. These are platform/configuration
-  observations, not a live SSH latency measurement.
-- Verification now runs every suite in release mode, retaining the same assertions
-  and deadlines against the optimized runtime. The additional debug pass includes
-  library controls, domain values, raster layouts, and the focused examples; only
-  `CreateAgentTests`, `DashboardPaletteTests`, and `AgentReportInteractionTests`
-  run exclusively in release. This retains their behavioral coverage but does
-  not cover their native debug-only lifecycle/layout traps or debug soundness
-  sampling. Full debug investigation remains available with
-  `swift test --no-parallel`. Separate xUnit artifacts identify each configuration.
-
-- [Run 37213492012](https://github.com/echoz/Chio/actions/runs/37213492012) for
-  `9ff6aff` passed macOS verification. Linux passed the selected debug tests, the
-  full release suite, optimized build, and dashboard terminal smoke, then failed
-  the existing choices terminal workflow at the batched Return transition from
-  language to capabilities. The screen retained the filtered Rust row. This
-  predates the feedback slice; its hosted regression passed, so the PTY failure
-  remains open rather than being described as a fully green Linux run.
-
-### Linux viewport startup regression
-
-Three consecutive Linux jobs on `3547b83`, `711be15` and `37f86fe` failed the
-same debug viewport workflow before its first recorder frame, around eight
-seconds into the unchanged five-second wait. The latest was
-[run 37331309999](https://github.com/echoz/Chio/actions/runs/37331309999); other
-focused examples, including grouped forms, passed. These were hosted-test
-failures after successful compilation, not the separate musl build blocker.
-
-The example composed forty eager rows, each with five text views and multiple
-layout wrappers. Native startup focus reveal repeats evaluation, while debug
-soundness verification adds measurement/placement work. Rows now use one native
-rich `Text` each, preserving the same fixed fixture columns and styled fragments.
-The native renderer, input/focus behavior, dependency pin, CI selection and
-five-second deadlines are unchanged. Raster regressions assert columns, colors,
-agent emphasis, complete semantic row labels and the 96 × 40 scroll extent;
-unexpected hosted-session errors are reported rather than discarded.
-
-A local Swift 6.4 Linux x86_64 run under Rosetta failed the unchanged workflow at
-F6 focus restoration after about 35 seconds; it did not reproduce CI's exact
-initial-frame failure. With the lighter rows, all three focused tests pass and
-the full workflow completes in about nine seconds. The same focused tests pass
-on macOS, with the workflow around five seconds. This comparison supports the
-render-work hypothesis; it is not an SSH measurement or proof of arbitrary
-large-log performance. The full hosted CI gate remains the platform acceptance
-check, separate from these targeted local observations.
+Earlier CI failures led to lighter viewport/diff row composition, explicit
+focus synchronization in fixtures and the approved release-only composition
+checks. The current gate passes those exercised paths without extending their
+deadlines. Historical failures are not an active defect queue; future failures
+still require evidence and must not be hidden by weakened tests.
 
 ### Static Linux blocker
 
-An actual ARM64 release cross-build using the official Swift 6.4.0 compiler and
-matching Static Linux SDK `swift-6.4.0-RELEASE_static-linux-0.1.0` fails against
-the unchanged published pins. The SDK archive checksum was verified before use.
-SwiftTUI's `Vendor/swift-figlet/Sources/SwiftFiglet/SwiftFiglet.swift` imports Darwin,
-Glibc, Android, or CRT but not Musl. Compilation fails at line 1771 onward with
-missing `access`, `F_OK`, `opendir`, `fopen`, `getenv`, and related POSIX symbols.
-Figlet is also reached through Chio's library dependency, not only the dashboard.
-No static executable was produced; static linkage and execution are unverified.
+Static Linux remains blocked. A Swift 6.4.0 ARM64 cross-build with the matching
+`swift-6.4.0-RELEASE_static-linux-0.1.0` SDK failed because upstream SwiftFiglet's
+platform imports omit Musl, leaving POSIX symbols such as `access`, `opendir`
+and `fopen` unavailable. Figlet is reached through Chio's library dependency,
+not only the example. No static executable was produced.
 
-The source audit identifies additional Musl gaps in upstream C math imports,
-`PlatformMath`, terminal input/control guards, link opening, image file I/O,
-platform/PTY adapters, and web socket constants. Those are inspection findings,
-not subsequent compiler failures: the build stopped at Figlet. Correcting one
-import would not establish full static compatibility. Upstream POSIX support
-should be fixed and verified before changing Chio's dependency pin.
+[Run 37174543215](https://github.com/echoz/Chio/actions/runs/37174543215)
+reproduced the blocker on x86_64. The manual
+[static workflow](../.github/workflows/static-linux.yml) retains failures; if a
+future build succeeds, it checks ELF dependencies and executes the terminal
+workflow. Use the matching official open-source compiler/Static Linux SDK;
+Apple's Xcode compiler is not a substitute.
 
-The manual `.github/workflows/static-linux.yml` reproduces the build attempt for
-x86_64, retaining failures as artifacts. [Run 37174543215](https://github.com/echoz/Chio/actions/runs/37174543215)
-failed at the same Figlet symbols and successfully uploaded its diagnostic log.
-If compilation succeeds in the future,
-it rejects an ELF interpreter/shared-library dependency and executes the same
-terminal smoke check. It does not rewrite dependency sources or mask failures.
-Use the [official Static Linux SDK instructions](https://www.swift.org/documentation/articles/static-linux-getting-started.html)
-with the matching open-source toolchain; Apple's Xcode toolchain is not suitable.
-
-The audit also found hard-coded Darwin VMIN/VTIME tuple indices in upstream
-`TerminalPOSIXController.swift`. Linux's `cfmakeraw` supplies the intended values
-for the tested path: the Linux PTY check observes VMIN=1/VTIME=0, functioning
-input, and complete termios restoration. This is not proof those indices are
-portable; correcting the platform implementation remains upstream work.
+Source inspection found additional Musl gaps in native math, terminal, image,
+link, PTY and socket paths. These are audit findings, not later compiler
+failures: compilation stopped at Figlet. Native termios code also contains
+Darwin VMIN/VTIME tuple indices. Linux `cfmakeraw` supplies the tested path's
+correct values, but passing restoration tests do not prove those indices portable.
+One import fix alone cannot establish static support; a changed dependency needs
+compiled, linked and executed evidence before a static-distribution claim.
 
 ## Remaining boundaries
 
-- Native disclosure focus bounds include expanded content, while its pointer
-  trigger covers only the header. Geometric arrow navigation and native scroll
-  reveal can therefore consider an entire branch. Tab/Shift-Tab and Return/Space
-  are the documented example controls. Collapsed content has no native omission
-  archive; keep values that must survive collapse in a parent owner.
-- Native ScrollView focus reveal includes its reserved indicator tracks in the
-  focused rectangle but compares it to the smaller content viewport. With both
-  axes overflowing, focusing the body can move the offset by one cell in each axis;
-  returning from the reset button can repeat that movement. There is no public
-  reveal-policy control in the pin. Chio retains native geometry and input;
-  hiding tracks, overlaying content or fabricating cursor metadata would change
-  other contracts. The correction belongs in native scroll/focus ownership.
-- Native TabView can publish terminal width during resolution inside an
-  unconstrained HStack even when a later fixed frame allocates fewer columns.
-  Chio uses native clipping to contain paint and actual overlay geometry to
-  bound the menu, but cannot revise native overflow partitioning after layout;
-  clipping also leaves upstream pointer regions unchanged.
-  The full-window tabs example covers resizing; arbitrary nested tab strips
-  require an upstream proposal-publication correction.
-- The public API is experimental. Keep the SwiftTUI revision pinned while its
-  style and focus contracts evolve; dependency upgrades need the hosted tests.
-- The full-window choice example reads public `terminalSize` for its responsive
-  decisions. Nesting its changing fields under `GeometryReader` triggered the
-  pinned runtime's debug lifecycle-publication assertion for a missing
-  `SearchableList.onAppear` handler. Explicit step identity alone did not fix it.
-  The full-window composition passes the workflow without disabling checks;
-  the upstream root cause and support for the original composition remain unproved.
-  Checklist handlers capture the resolved native namespace during body evaluation,
-  so deferred input uses the same scope as the rendered list.
-- Native list focus chrome is still owned by SwiftTUI's theme. Chio selection
-  and authored content use Chio tokens; exact native focus palette customization
-  requires an upstream public capability.
-- Native multiline editing samples enabled foreground from its surrounding
-  environment before calling `TextEditorStyle`. The custom-color probe verifies
-  that `.chioTheme` reaches enabled glyphs, surface, and border. Disabled inner
-  glyphs use upstream placeholder paint and opacity; a modifier inside the style
-  cannot replace that sampled paint. Chio keeps the protected native slot and
-  avoids compounding its dimming. Secure controls omit value/text-query metadata
-  from public snapshots; this does not sanitize app-authored labels or feedback.
-- Native Table's generated control chrome masks `TableStylePresentation.borderStyle`.
-  The Chio table style's header colors work, but borders/background chrome remain
-  native upstream colors. Native headers also accept plain strings only; body
-  cells preserve rich Text. Neither limitation is hidden by a second renderer.
-- The pinned ANSI-256 quantizer rounds RGB channels onto uniformly spaced cube
-  coordinates, although the terminal cube is nonuniform, and ignores its grayscale
-  ramp. This washes out dark colors. [True-color launch guidance](Examples.md#colors-over-ssh)
-  is in the examples guide. Limited-color approximation remains a documented
-  boundary; the conversion experiment and upstream PR are shelved. For dependency upgrades,
-  compare the paused dashboard with `TERM=xterm-256color`, first without
-  `COLORTERM`, then with `COLORTERM=truecolor` (and without `NO_COLOR`). The latter
-  must preserve authored RGB; the former exercises the actual indexed palette.
-- Native ideal-size measurement reports `collection.unboundedRealization` for
-  the small dashboard and inbox lists (up to sixteen rows in the latter).
-  `VStack` probes children with an unspecified height; a flexible maximum frame
-  preserves that proposal, and native List realizes every row to find its ideal
-  size. This is real eager measurement, not evidence that the committed viewport
-  is unbounded. SwiftTUI buffers these warnings and prints them after terminal
-  teardown. No diagnostics are suppressed; large-dataset performance and
-  virtualization through this composition remain unverified.
-- Type-ahead during slash-to-search focus handoff appends to the query until the
-  native editor acquires focus. Chio does not implement an editor, event loop,
-  layout engine, or focus graph.
-- Native full-screen presentation also drains input before its first frame. The
-  demo covers simple Name type-ahead, an initial Tab, and valid/invalid submission
-  during that handoff. Arbitrary multi-control navigation within the same opening
-  input batch remains unsupported; a general solution belongs in SwiftTUI.
-- Palette opening carries simple text/backspace until native editing owns focus.
-  Navigation and Return before that first frame are consumed. The surrounding
-  dropdown chrome remains native; the pinned `sheetStyle` does not control it.
-- The terminal smoke check used a pseudo-terminal, not every terminal emulator or
-  assistive technology. Accessibility and color-capability coverage is partial.
-- Linux/glibc ARM64 and x86_64 tests and terminal execution pass. Static Linux/musl
-  compilation is blocked by the pinned SwiftTUI dependency, as recorded above.
-  Other distributions, architectures, and live SSH devices need separate evidence.
+These limits apply to the pinned implementation; none authorizes another
+renderer, focus system or hidden dependency patch.
 
-## Proposed connected table grid correction
+| Boundary | Current limit and responsible follow-up |
+| --- | --- |
+| Native style hooks | Table border/background chrome, list focus gutter, palette shell, prompt headers and disabled-editor glyph paint are not fully controlled by Chio. Keep native behavior and resolve missing hooks upstream. |
+| Layout and lifecycle | Scroll focus reveal can move a two-axis viewport by one cell; nested tab strips can receive stale width proposals; expanded disclosure focus includes descendants. Keep the documented native contracts for [scrolling](Design.md#scrolling), [tabs](Design.md#tabs) and [disclosure](Design.md#expandable-groups-and-trees). |
+| Choice composition | Changing choice fields inside `GeometryReader` triggered a native debug lifecycle-publication assertion. The full-window example uses `terminalSize`; arbitrary nesting remains unproved. |
+| Collection measurement | Native ideal-size probes can realize all rows before a bounded viewport commits and emit deferred `collection.unboundedRealization` warnings. Small fixtures do not prove virtualization or large-dataset performance; diagnostics are retained. |
+| Early input | Search, palette and form handoffs cover documented type-ahead/batched paths. Arbitrary multi-control input before presentation settles needs native support, not an application-built editor or focus graph. |
+| Portability and accessibility | CI and pseudo-terminals cover specific workflows. Other distributions, architectures, assistive technologies and live SSH devices require separate evidence. Static Linux is blocked as above. |
 
-The Blink screenshot exposed native black fills between Chio-colored table rows
-and a border color too faint to read as a connected grid. A scoped terminal
-appearance override fixed the fills but left native borders faint, so it was
-not retained. The responsible fix is a small SwiftTUI style correction.
+### Proposed connected table grid correction
 
-Two reviewable patches are retained, but are **not applied to the default build**:
+Two historical patches are retained and **not applied to the default build**:
+[SwiftTUI table paints](../Patches/SwiftTUI-table-style-paints.patch) against the
+pinned native revision, and [Chio connected grid](../Patches/Chio-connected-table-grid.patch)
+against `b47280b`. The combined preview passed local Chio tests and terminal paint
+checks, but full upstream gates and API-inventory regeneration were not run.
+Shipping it needs an upstream fix or an explicit reproducible dependency decision
+and fresh integration evidence. The
+[original investigation](https://github.com/echoz/Chio/blob/v0.1.0/Docs/Plan.md#proposed-connected-table-grid-correction)
+records the candidate and its limits; an ignored preview binary is not shipped.
 
-- [SwiftTUI table paints](../Patches/SwiftTUI-table-style-paints.patch), against
-  `2d84ac7083993da2ef52e9d3d30255467efb9553`, makes explicit border paint take
-  precedence and adds an optional background paint. Nil retains native control
-  colors; native selection, disabled opacity, geometry, and scrolling remain.
-- [Chio connected grid](../Patches/Chio-connected-table-grid.patch), against
-  `b47280b`, uses one surface for header, rows, and rules, with the exact semantic
-  border color. It includes black-host regressions for every native box glyph,
-  both themes, and custom colors.
+### Proposed ANSI-256 conversion correction
 
-The combined candidate passed all 104 Chio tests (74 library, 30 dashboard),
-including native table navigation through theme and resize. Independent review
-found no paint/state/reuse defects. A release build and pseudo-terminal workflow
-also passed: all 176 visible grid glyphs emitted the exact theme border/surface
-RGB in each theme, with scrolling, report return, and clean terminal restoration.
-This is local terminal evidence, not a new live Blink-over-SSH check.
+**Shelved.** The user closed this investigation on 2026-10-05: no SwiftTUI PR,
+maintained fork, forced true-color default or Chio color-depth flag is planned.
 
-The locally built preview is `.build/previews/chio-dashboard-table-grid`; it is
-an ignored build artifact, not the default dependency or a portable distribution.
-Run it from the repository with `COLORTERM=truecolor` to inspect the report.
+Ghostty and Blink SSH reports lacked `COLORTERM`/`TERM_PROGRAM`; the pinned
+detector selected ANSI16 for `xterm-ghostty` and ANSI256 for `xterm-256color`.
+That missing remote metadata does not describe the terminal's actual RGB support.
+The inspected SSH server accepted `LANG`/`LC_*`, not `COLORTERM`; no configuration
+was changed. See [Colors over SSH](Examples.md#colors-over-ssh) for explicit
+launch/forwarding options. PTY evidence verifies authored RGB with
+`COLORTERM=truecolor` and suppression under `NO_COLOR`, not the final live-device
+appearance. `--force-color` alone does not select true color.
 
-SwiftTUI's new focused tests were reviewed
-but not run; its generated public API inventory must still be regenerated.
-The required `swiftly` and `bun` tools are unavailable here, and its external
-development companion could not be retrieved. Full upstream gates remain open.
-
-Shipping this correction requires choosing a reproducible patched SwiftTUI
-dependency or receiving the fix upstream. Chio's published-source pin remains
-unchanged; a local SwiftPM edit is only integration evidence, not distribution.
-
-## Proposed ANSI-256 conversion correction
-
-**Shelved on 2026-10-05.** The SSH investigation is concluded for Chio. The user
-chose to document the findings and continue library work, with no SwiftTUI PR,
-maintained fork, forced true-color default or new color-depth flag. The patches
-and evidence below are historical experiments, not pending implementation work.
-
-The reported Ghostty SSH session used `TERM=xterm-ghostty`; Blink used
-`TERM=xterm-256color`. Both had empty `COLORTERM` and `TERM_PROGRAM`, no tmux/screen
-marker and no `NO_COLOR`. The pin therefore selects ANSI16 and ANSI256 respectively.
-This is missing remote capability metadata, not evidence that either terminal
-lacks RGB support. The inspected SSH server accepts `LANG` and `LC_*`, not
-`COLORTERM`; client forwarding alone would not preserve it. No SSH configuration
-was changed. Declaring `COLORTERM=truecolor` in the remote shell or for one launch
-avoids forwarding configuration; [the examples guide](Examples.md#colors-over-ssh)
-records both options. Local PTY evidence verifies RGB emission and `NO_COLOR`,
-not the user's final live-device appearance.
-
-The separate palette-conversion experiment below does not address that metadata
-gap. Color-depth selection remains with applications and SwiftTUI. The normal
-launcher exposes color enablement, not a depth override; `--force-color` alone
-does not select true color. No launcher change is planned as part of Chio.
-
-The colour-capability audit reproduced the default dashboard surface as palette
-index 59 (`#5F5F5F`) with `TERM=xterm-256color` and no `COLORTERM`; declaring
-true colour emits the authored `#211D2A`. The pinned quantizer rounds onto a
-uniform cube and ignores grayscale. Official SwiftTUI main
-[`7221dce`](https://github.com/SwiftTUI/swift-tui/blob/7221dcec0a63de4ffa19f35a53cdd609a82f42a1/Sources/SwiftTUIRuntime/Terminal/TerminalCellTextRenderer%2BColorCodes.swift)
-and release 0.15.1 retain the same implementation, so a revision upgrade alone
-cannot correct it. Main also changes accessibility/contrast policy; that broader
-upgrade is not part of this proposal.
-
-Two patches are retained and **not applied to the default build**:
-
-- [SwiftTUI ANSI-256 conversion](../Patches/SwiftTUI-ansi256-quantization.patch),
-  against `2d84ac7083993da2ef52e9d3d30255467efb9553`, compares the nearest actual
-  cube entry with the nearest grayscale entry using squared encoded-channel RGB
-  distance, retaining gamut clamping and choosing the lower index on a tie.
-  It changes the existing native foreground/background/underline conversion;
-  there is no Chio quantizer, renderer or capability override.
-- [Chio emission regression](../Patches/Chio-ansi256-emission.patch), against
-  `7925a07`, checks the default theme through the public terminal-host write
-  boundary. It requires the experimental corrected dependency and intentionally
-  fails with the current pin.
-
-The candidate preserves all nine existing equality-based named-colour mappings
-as compatibility exceptions. In particular, `.white` still maps to 255 instead
-of exact white at 231. Nearest matching therefore describes other colours,
-not every Color value. It assumes the conventional extended palette at indices
-16–255; terminals can customize that palette. Capability detection, ANSI16,
-`NO_COLOR`, force-colour precedence, alpha compositing and RGB-profile handling
-remain unchanged. This does not establish perceptual matching, measured contrast,
-profile normalization or actual capabilities of a remote terminal.
-
-An isolated consumer preview based on Chio `7925a07` and the patched native pin
-passes ten focused debug tests: the seven proposed native tests were compiled
-in the consumer alongside three Chio pipe-emission tests. Coverage includes all
-240 extended-palette entries (with the explicit white exception), a 4,096-colour
-independent palette-search oracle, thresholds/ties, out-of-gamut channels,
-foreground/background/underline output, backdrop composition, true colour and
-no colour. Independent source review found no actionable correctness issue.
-
-The 13 native fixture views and their serializer were also run in that isolated
-consumer for all five capability profiles. Ten ANSI256 golden files changed;
-a comparison permits only indexed SGR numbers to differ. The other 55 files
-remain byte-identical. The native fixture-matrix script passes. These are
-consumer-harness results, not execution of the full native repository gate.
-
-The release preview passes the dashboard terminal workflow, including input,
-search, palette, report, form and focus restoration. Separate real PTY captures
-show index 235 (`#262626`) for the corrected default surface, unchanged authored
-RGB in true-colour mode, no colour codes under `NO_COLOR`, clean exit and terminal
-mode restoration in all three modes. This is local macOS terminal-byte evidence,
-not a live Blink/SSH visual check or a new Linux run.
-
-The ignored preview binary is
-`.build/color-preview/Chio/.build/release/chio-dashboard`. The published dependency
-pin and the existing Pages recordings are unchanged. Both patches apply cleanly
-to their recorded bases. The external native `DEVELOPMENT.md` could not be read
-(404), and `swiftly`/`bun` are unavailable, so the required upstream repository
-gate was not run. The fixtures were regenerated with the native views and
-serializer in the isolated consumer, not with the unavailable native recording
-toolchain. These incomplete upstream gates are limitations of the shelved
-experiment, not remaining work for this roadmap. Reopening it would require a
-new dependency decision and the corresponding native and Chio integration gates.
-
-### Shelved upstream contribution preparation
-
-A separate [upstream patch](../Patches/SwiftTUI-ansi256-upstream.patch) and
-[PR draft](../Patches/SwiftTUI-ansi256-upstream.md) target main `7221dce`.
-The colour implementation is unchanged from the reviewed Chio-pin candidate;
-the contribution adds the existing runtime guide's conversion contract and
-refreshes fixtures against upstream's newer styling. The original pin-based
-patch remains available for the earlier Chio integration evidence.
-
-An isolated current-main consumer passes the seven proposed native tests and
-13 fixture cases across all five profiles. Ten ANSI256 files differ only in
-indexed SGR numbers; the other 55 are byte-identical. The six standalone native
-source/test-ownership policy checks, fixture-matrix check and Swift formatting
-lint pass. Independent review found no actionable issues, and the retained patch
-applies cleanly to its recorded base. These are focused consumer and policy results, not a native gate or
-current-main Chio compatibility claim. No upstream PR was published; publication
-is no longer planned. Chio's pin is unchanged.
-
-## Component scope and priorities
-
-The first eleven entries below record delivered work, with the timer slice now
-narrowed to public duration labels and internal example timekeeping. They are
-history, not a template for promoting each demonstration into a framework API.
-The remaining-scope audit supersedes the old instruction to implement items
-12–19 in order. The user accepted the narrowed scope below, selected interactive
-Markdown links next, and confirmed compact btop-inspired composition and passive
-sparklines with application-supplied samples and timing. Examples and prototypes
-must still demonstrate a missing reusable contract before adding public API.
-
-1. **Richer choice fields — implemented.** Prove searchable single-choice form composition and
-   a choose-many workflow using native `List` selection. Reuse `SearchableList`
-   and `FormField` where they already fit; choose a new public abstraction only
-   where the combined behavior earns it. Define stable IDs, checked membership
-   versus keyboard focus, filtering that preserves checked hidden items,
-   removed/disabled options, selection limits and validation. With native row
-   focus, Space/Return toggle multi-selection; at container focus, Return routes
-   to activation while Space toggles. Define activation/commit for both routes.
-   A focused example
-   should select multiple capabilities, filter away and back, and show errors.
-   Acceptance: empty/no-match states, externally changed options/bindings, native
-   navigation, theme/resize preservation, and usable narrow layouts. This is the
-   highest-value behavioral gap after the current single-selection slice.
-2. **Complete everyday text entry — implemented.** Exercise native `SecureField` under the
-   existing style and add a native `TextEditorStyle` for multiline input. First
-   render a small custom-color editor probe to establish how much of the inner
-   text appearance can be controlled; record an upstream gap if necessary.
-   Acceptance: passwords never appear in captured display/semantic output intended
-   to conceal them, native editing and submission remain intact, multiline paste,
-   wrapping/caret/scrolling work, and disabled/focused states remain readable in
-   both themes. Use synthetic secrets in fixtures; do not invent an editor or
-   promise reveal/mask configuration absent from native public APIs.
-3. **Confirmation and feedback — implemented.** Add a coherent prompt treatment and spinner
-   style, followed by native toast styling as the example needs feedback. Prove
-   confirm/cancel, return of focus, disabled/destructive actions, narrow prompts,
-   reduced motion and transient-message lifecycle. Pass toast styles through its
-   explicit native API. Theme limitations in prompt headers remain visible.
-4. **File selection — implemented.** Build one reusable file-choice workflow with application
-   bindings and an owned filesystem-loading boundary. Specify files versus
-   directories, filtering, path/symlink policy, loading/errors and confirmation
-   before implementation. Prove navigation, empty/inaccessible directories,
-   stale loads, cancellation and selection with deterministic temporary trees.
-   Native lists, focus, input and scrolling remain responsible for interaction.
-
-5. **Contextual keyboard help — implemented.** Share ordered immutable shortcut
-   descriptions between compact hints and grouped detail. Keep description and
-   execution distinct, preserve ordinary text in editors, omit unavailable
-   actions, and use native modal presentation and scrolling. A focused example
-   demonstrates `?` in browsing/actions, F1 for the full reference, native Close
-   and Escape, preserved query/selection/focus, and a compact reader.
-
-6. **Themed tabs — implemented.** Style native `TabView` selection and focus,
-   measure labels in terminal cells, and provide bounded overflow at narrow
-   widths. A focused workspace example exercises retained page values, editing,
-   native focus, theme changes and resizing. Keep native selection, input,
-   pointer routes, scrolling and dormancy; no additional tab controller.
-
-7. **Pagination — implemented.** Bind a checked immutable finite-result page
-   value to themed native actions. Define empty/boundary states, count updates,
-   page-size anchoring and retained-binding authority. A focused history example
-   demonstrates filtering, page navigation, size changes and native scrolling.
-
-8. **Themed scrolling — implemented.** Add semantic indicator paints through
-   native `ScrollViewStyle` while preserving geometry, content surfaces and native
-   input. A focused two-axis activity viewport demonstrates bound positions,
-   focus, reset, theme changes and compact resizing.
-
-9. **Expandable disclosure — implemented.** Style native group headers, focus
-   and vertically arranged content. Compose a local project hierarchy with
-   application-owned branch expansion, native activation, bulk actions and an
-   empty branch. Preserve values outside omitted content; do not add a tree
-   engine or claim conventional tree-specific arrow navigation.
-
-10. **Richer grouped forms — implemented.** Compose related native controls with
-    existing groups, `FormField` and `FormValidation`. A local settings example
-    proves conditional fields, cross-field validation, first-invalid focus,
-    committed versus edited values, Save/Cancel and compact scrolling. Add a
-    reusable abstraction only if composition demonstrates a missing contract.
-
-11. **Duration presentation — implemented; timekeeping is example-only.**
-    Public `DurationText` composes with application-owned elapsed-time values and
-    native scheduling. The original public `ElapsedTime` helper has moved into
-    the example target. The focused `--timers`
-    example proves independent stopwatch/countdown actions, completion and reset,
-    including expiry during resize. Its real terminal recording is in the gallery;
-    fresh browser playback checks remain pending as recorded above.
+Separately, the pinned indexed-color quantizer rounds onto a uniform cube and
+ignores the grayscale ramp, washing out dark colors. Retained
+[native conversion](../Patches/SwiftTUI-ansi256-quantization.patch),
+[consumer regression](../Patches/Chio-ansi256-emission.patch) and
+[upstream preparation](../Patches/SwiftTUI-ansi256-upstream.md) are unapplied
+experiments. Focused probes passed, but full native gates did not run; no upstream
+PR was published. Detailed algorithms, compatibility exceptions and evidence
+remain in the [shelved investigation](https://github.com/echoz/Chio/blob/v0.1.0/Docs/Plan.md#proposed-ansi-256-conversion-correction).
+Reopening it requires a new dependency decision, not another automatic roadmap task.
 
 ### Markdown syntax highlighting
 
-The bounded integration directly uses the [Tree-sitter 0.26.13 C runtime](https://github.com/tree-sitter/tree-sitter/tree/d97971e24500218865c05ed1febdee2acf41bae1)
-at revision `d97971e24500218865c05ed1febdee2acf41bae1` and the generated
-[tree-sitter-swift 0.7.4 C grammar](https://github.com/alex-pinkus/tree-sitter-swift/tree/82bb3a533e0801fd2bbaa11dc49676e10bf41948)
-at revision `82bb3a533e0801fd2bbaa11dc49676e10bf41948`. Parsing stays private to
-`MarkdownDocument` construction; the view consumes retained, immutable token
-ranges and authoritative parsed source. Only a case-insensitive `swift` first
-fence word enables classification. Unknown/unlabeled code and code larger than
-65,536 UTF-8 bytes remain plain. A deterministic 4,096-progress-checkpoint budget
-cancels parsing to a whole-block plain fallback without clock reads. The callback
-runs outside individual scanner operations: this is not a hard wall-time or
-memory guarantee. An iterative C tree cursor selects roles and slices the
-original UTF-8 source at grapheme-safe boundaries, preserving combining
-characters and emoji sequences. Complete strings, including interpolation,
-receive one string role. Malformed and partially recognized nodes retain literal
-source; the grammar may not cover every latest Swift feature. Document equality
-and hashing use language/text with canonical Unicode string semantics, excluding
-derived paint.
+Swift highlighting uses pinned Tree-sitter 0.26.13 and tree-sitter-swift 0.7.4 C
+targets, privately behind `MarkdownDocument`. They require no Swift wrapper,
+JavaScript runtime or grammar generation. The grammar copies an unused query
+bundle; Chio performs no query-resource I/O. [Design](Design.md#markdown-and-agent-reports)
+owns source fidelity, budgets, plain fallback and theme contracts.
 
-Five `ChioTheme.syntax` colors identify keywords, types, strings, numbers, and
-comments. Plain identifiers, punctuation, and operators use ordinary foreground;
-syntax does not convey application status. `.codeHighlighting(.plain)` suppresses
-syntax paint without changing the code scroll subtree or link action. Existing
-`ChioTheme.Colors` Codable fields are unchanged. The report's existing Example
-workflow section includes a Swift fence; the existing Markdown gallery card is
-the demonstration destination.
-
-Both selected dependencies are MIT licensed and expose two C targets. The
-integration needs no SwiftTreeSitter wrapper, JavaScript runtime, Foundation,
-Apple UI dependency, or runtime grammar generation. Source inspection counted
-46 runtime files under `lib/src` (732,213 bytes), a generated grammar parser of
-23,127,367 bytes, and a 36,786-byte scanner. These are source sizes, not binary
-sizes. The grammar's ABI 14 is within the runtime's supported ABI range 13–15.
-Its SwiftPM manifest copies an unused query bundle; Chio loads no queries or
-resources, and a C-only target generates no Objective-C/Foundation resource accessor. The source
-audit does not establish compiled size, link compatibility, build time, or
-runtime cost.
-
-The earlier SwiftSyntax 604.0.0 candidate was rejected: a 128-level nested-array
-input terminated both the Chio path and a minimal direct-parser probe with
-SIGBUS, despite parser nesting limits of 64, 20, and 8. Source inspection found
-recursive lookahead paths outside that configured limit in
-[Lookahead.swift](https://github.com/swiftlang/swift-syntax/blob/050f1a346fbbac0ca2cfb15a95274f7bd1cf0ccf/Sources/SwiftParser/Lookahead.swift)
-and [Types.swift](https://github.com/swiftlang/swift-syntax/blob/050f1a346fbbac0ca2cfb15a95274f7bd1cf0ccf/Sources/SwiftParser/Types.swift#L1052).
-That candidate's recursion limit was insufficient to support the intact plain
-fallback contract. Splash was also considered, but stale maintenance and
-recursion concerns made it less suitable. The direct C integration keeps
-Tree-sitter's runtime and generated grammar private to this Swift-only slice.
-
-Local release probes on macOS ARM64 used an 8,100-byte, 270-line source.
-Thirty document constructions plus hashing averaged 1.40 ms with Swift
-classification and 0.019 ms with a plain language label. Ten fresh native raster
-renders of the retained document averaged 35.7 ms with syntax colors versus
-32.9 ms with plain paint. These are one local sample, not timing guarantees or
-measurements of a hosted frame update. The first build after adding the two C
-targets took 43.2 seconds with existing dependencies cached; a controlled clean
-build comparison was not performed. The ordinary production executable grew from
-49,610,928 to 54,168,848 bytes (about 4.56 MB, 9.2%) on this machine; these are
-unstripped local artifacts, not a cross-platform size guarantee.
-
-The full serial macOS gate passes; [verification](#verified-on-macos) records this
-integration's coverage. Linux x86_64/glibc verification including these dependencies
-passed for `4e47001` in [CI](https://github.com/echoz/Chio/actions/runs/37376092806).
-Static-musl linking remains unverified, with existing blockers in the pinned SwiftTUI
-dependency; the source audit does not show that adding Tree-sitter resolves or
-worsens those blockers. Native tab-stop expansion and exact Unicode widths remain
-upstream limits; cmark's CRLF-to-LF normalization remains the parser contract.
-
-### Remaining scope audit
-
-Chio's purpose is an opinionated, declarative presentation and interaction layer.
-A matching item in Charm's catalog, or a demo that could be written, is insufficient
-reason to add a public type. These references retain the old item numbers so the
-inventories below remain traceable; they no longer prescribe an execution order.
-
-| Previous item | Recommendation | Scope and extraction bar |
-| --- | --- | --- |
-| 12 — Markdown syntax highlighting | **Implemented for Swift; [verification](#verified-on-macos)** | Existing code blocks gain private Tree-sitter classification, theme syntax roles, and a plain fallback. Parsed source, whitespace, native scrolling and focus are retained; [dependency costs and portability limits](#markdown-syntax-highlighting) are documented. |
-| 13 — Active Markdown links | **Implemented; [verification](#verified-on-macos)** | Native inline links with an explicit application `OpenLinkAction`; passive existing initializer, intact rich labels, native focus/wrapping and themed feedback. No Chio browser, URL launcher or automatic fetching. |
-| 14 — btop theme/metrics and 16 — compact panels/meters | **Implemented together** | `ChioTheme.btop`, optional group border titles and measurement progress paint are composed in `--metrics`. Fixed local values, native controls/layout; no metrics service, sampler, scheduler or btop model. |
-| 15 — Sparklines/history graphs | **Implemented** | Passive `Sparkline` over native Canvas: finite readings, nil gaps, automatic/fixed scaling, extrema-preserving narrow reduction and accessible summary. Applications own collection, retention, clocks, units and thresholds; `--metrics` supplies manual samples. |
-| 17 — Dense sorted inbox/detail layout | **Implemented; [verification](#verified-on-macos)** | `--inbox` composes native queue/sort Pickers, substring SearchableList, passive wide Markdown preview, and full-screen reading. Application code owns fixtures, sort policy and stable selection; no new public abstraction. |
-| 18 — Diff reading | **Bounded example prototype; public extraction deferred** | `--diff` proves normalized hunks, independent gutters, uneven split rows, explicit summaries and native scrolling. Source remains unwrapped because native wrapping changes whitespace. The eager small-fixture reader does not establish large-document performance or editor semantics. Git/JJ/Sapling ingestion and repository operations stay outside Chio. |
-| 19 — Review navigation and annotations | **Hunk navigation included in 18; annotations remain outside the library roadmap** | Use native logical-ID reveal in the example. Notes can compose the existing editor. Search policy, review sessions, note storage, persistence and agent protocols are application concerns, not new Chio subsystems. |
-
-**Accepted direction and working sequence:**
-
-1. Fix regressions and prioritize limitations that impair shipped presentation:
-   table border/background paint, focus contrast and narrow layout/input behavior.
-   Resolve changes at their owning layer; a SwiftTUI pin/fork change requires a
-   reproducible dependency decision and integration evidence, not a local patch
-   hidden inside Chio. Performance and Linux portability remain quality work.
-2. Deliver opt-in interactive Markdown links in the existing report reader. Keep
-   destination policy and effects with the application, and native text/focus
-   underneath; do not add a separate document navigation system.
-3. Delivered one compact btop-inspired composition and a passive history graph
-   using native drawing. Applications provide samples and timing. The shared
-   `--metrics` example demonstrates all treatments. Swift-only Markdown syntax
-   highlighting is also delivered in the existing report, with dependency costs
-   and source/layout/native-input checks recorded above.
-4. Delivered a dense list/detail composition using existing components in
-   `--inbox`. A general master/detail abstraction remains deferred until a second
-   use establishes the contract.
-5. Added the bounded read-only `--diff` prototype with basic hunk navigation.
-   Try it before promoting models or behavior into the public library; wrapped
-   source, large documents and split-pane width policy remain open design work.
-
-The coverage map's other gaps—completion/history, async choices, wizards, broader
-file selection, tree adapters, status queues and more themes—remain observations,
-not promised work. Add them only for a concrete consumer need. No further timer,
-stopwatch, monitoring, workflow-engine or annotation subsystem is planned.
-
-The accepted feature sequence is complete through the bounded diff prototype.
-The next completion work is the outstanding showcase playback and mobile-layout
-verification, followed by fixes for demonstrated usability issues. Further public
-components or promotion of example models require a concrete consumer need; the
-shelved color investigation does not create another framework task.
-
-Each selected addition should be proved in a small runnable example (reuse an
-existing example when it fits), with public usage documentation only for actual
-public API, relevant model/raster/hosted-input regressions and a release terminal
-check, followed by the [demo-site completion workflow](#demo-site).
-Keep the dashboard as an integration example. A component
-counts as delivered only for its documented and exercised scope; inheritance of
-an upstream API or a themed static screenshot is insufficient evidence of all
-interaction behavior. Recheck responsiveness when editing/navigation paths change.
-
-Existing upstream integration boundaries remain separate: table paint correction,
-native focus-theme control and finite collection measurement. The ANSI-256
-conversion experiment is shelved; the SSH findings are documented above.
-Keep large-data behavior unclaimed until measured. Resolve Musl support before
-promising static Linux distribution; it does not block ordinary glibc components.
-No new public products, renderer, general focus manager or external agent
-integration are required by this roadmap.
-
-### btop-inspired UI inventory
-
-This source audit informed the delivered compact slice; dense sorting and other
-unmarked ideas remain proposals, not delivered coverage. References are btop's [drawing elements](https://github.com/aristocratos/btop/blob/main/src/btop_draw.hpp),
-[drawing implementation](https://github.com/aristocratos/btop/blob/main/src/btop_draw.cpp)
-and [theme roles](https://github.com/aristocratos/btop/blob/main/src/btop_theme.cpp),
-compared with Chio `3547b83` and the pinned SwiftTUI revision.
-
-| Element | Where it fits | Meaningful work or boundary |
-| --- | --- | --- |
-| Dark palette, density and selection | Existing `ChioTheme` colors, spacing and treatments | Delivered as `ChioTheme.btop`; compact near-black/cyan semantic roles. It remains independent of group-title and measurement options. |
-| Titles embedded in panel borders | Extend `ChioGroupBoxStyle` through native border/overlay composition | Delivered optional `.border` title placement with one-row truncation, intrinsic masking and passive title semantics. Default `.content` remains; no `Panel` wrapper. |
-| Labeled utilization meters | Native `ProgressView`, existing progress-style family and authored rows | Delivered `.measurement` progress treatment keeps accent at 100%; default `.progress` retains success at completion. Units/thresholds belong to applications; native progress-bar accessibility remains. |
-| Sparklines and history graphs | A small Chio presentation over native [`Canvas`][native-canvas] and `CanvasDrawing` | Delivered `Sparkline` defines sample/gap/scaling/reduction contracts in [Design.md](Design.md#compact-instrumentation). Native [`CanvasGrid`][native-canvas-grid] already packs braille and block samples into terminal cells. |
-| Dense process-like rows and sorting | Existing list/table styles, native selection and authored stacks | Prove an application-owned sort choice and ordered rows with stable selected IDs. The pin has no sortable-header/comparator API; existing native table border/focus paint limits still apply. |
-| Inline shortcut labels | Existing `KeyHint`, `KeyHints`, `ShortcutHint` and `KeyboardHelp` | Reuse their descriptions and native handlers. A bracket/keycap treatment is optional presentation, not a command registry. |
-| Adaptive panel arrangements | Native stacks, geometry, frames, scrolling and `ViewThatFits` | Compose wide/compact layouts in the example. `ViewThatFits` resolves all alternatives, so retained state belongs above them. Draggable split panes would require a separate keyboard/minimum-size contract and are deferred. |
-
-The native canvas supports clipping and per-cell paint. Overlapping subcell
-writes still share a terminal cell's foreground/background: the last styled
-write wins. Start with one series; do not promise independently colored overlaps.
-The pin's octant mode currently uses braille coverage, so expose only verified
-glyph treatments. Application code owns sample collection, clocks, retention,
-units and alert thresholds; Chio presents values without reading system metrics.
-
-The accepted combined compact-presentation slice is implemented as above; its original extraction gates were:
-
-1. Compose one compact metrics example from existing groups, progress tracks,
-   rows and hints, using fixed local values and a btop-inspired theme prototype.
-   Compare it with the default palette and resize it before deciding new tokens.
-2. Evaluate a passive single-series history view in that same example through
-   native drawing. Define missing/invalid values, fixed versus automatic
-   scaling and overflow/reduction policy before fixing its public API. Verify
-   deterministic output and accessible textual summaries alongside the graph.
-3. Extract compact border-title and inline-meter treatments only where the example
-   demonstrates value; apply them to existing styles and verify both themes.
-4. Follow with a focused sorted table/list workflow if the example establishes
-   a reusable interaction need.
-
-No repository reorganization is justified by this inventory. Extend the existing
-`Presentation/Styles` owners; keep an eventual history view and its private drawing
-together in `Presentation`, with pure data rules in their owning domain value
-only when the invariants require one. Keep the focused example under the existing
-example target. The reusable goal is compact instrumentation across applications,
-not a system monitor or a separate btop component family.
-
-### gh-dash and Hunk UI inventory
-
-Official product documentation was inspected on 2026-10-05 and compared with
-Chio `37f86fe` and pinned SwiftTUI `2d84ac7083993da2ef52e9d3d30255467efb9553`.
-This is a capability/design audit, not a runtime comparison or a pinned audit of
-those products' implementations. [gh-dash](https://www.gh-dash.dev/) is a GitHub
-inbox/dashboard. [Hunk](https://www.hunk.dev/) is a review-first terminal diff
-viewer with a continuous multi-file stream, not a general editor.
-
-| Pattern | Reuse or gap | Proposed proof |
-| --- | --- | --- |
-| Sections/counts, dense rows, selection, status labels, help and preview tabs | Compose native tabs/lists/tables, existing `SearchableList`, hints/help, status bar and Markdown | Item 17's local inbox; application owns filtering, sorting and stable IDs. No new badge or panel type solely to restyle Text/GroupBox. |
-| Right/bottom preview and show/hide | Native stacks, geometry and parent-owned state | Preserve query/selection and intended focus during layout changes. Keep state above `ViewThatFits`, which resolves all alternatives. A draggable splitter needs a separate keyboard/minimum-size contract and is deferred. |
-| Compact borders, status treatments and dense spacing | Existing theme/style families | Fold into items 14, 16 and 17. Native table border/focus paint limitations remain; do not invent a second table renderer. |
-| File navigation, file headers/stats and note editing | Existing search/list/disclosure, text, forms and native editor | Keep row content passive and editors outside result rows; authored file IDs and notes remain application-owned. |
-| Unified/split diffs, aligned old/new line gutters and context | Meaningful reusable presentation gap | Item 18: normalized immutable input, semantic change styling and native text/scrolling. Added/removed content is not automatically success/error status. One vertical owner keeps split rows aligned without synchronizing independent scroll views. |
-| Hunk navigation, logical review position and content-match reveal | Example composition first; native ID-based `ScrollViewReader.scrollTo` supplies reveal | Fold item 19 into the bounded item 18 prototype. Keep logical identities and match ranges independent of raw cells; scope shortcuts so editors receive ordinary text. Extract only demonstrated shared UI behavior. |
-| Syntax-colored code and active links | Existing items 12 and 13 | Reuse those decisions, dependency analysis and native text/link APIs. |
-| GitHub requests/actions, Git/JJ/Sapling, patch ingestion, file watching, shell/editor launch and agent sessions | Application integration | Local fixtures can validate the UI without implementing these systems. Chio does not promise a full Hunk clone. |
-
-Source references: gh-dash's [responsive preview defaults](https://www.gh-dash.dev/configuration/defaults/),
-[preview navigation](https://www.gh-dash.dev/getting-started/keybindings/preview/)
-and [theme roles](https://www.gh-dash.dev/configuration/theme/); Hunk's
-[renderer-component boundary](https://www.hunk.dev/docs/reference/opentui-components/),
-[layout options](https://www.hunk.dev/docs/configure/layout-and-display/),
-[keyboard/search behavior](https://www.hunk.dev/docs/start/keyboard-and-mouse/)
-and [comments/annotations](https://www.hunk.dev/docs/agents/comments-and-annotations/).
-Hunk's TypeScript/OpenTUI components are design evidence, not Swift dependencies.
-
-The fixed review example should establish behavior before the public data/view
-API. Use raster/semantic checks and native hosted input for both widths, uneven
-changes, empty/binary/rename summaries, long text and stable anchors. Define how
-unsupported input is represented rather than manufacturing source lines. A large
-changeset requires measured allocation/rendering cost and native windowing evidence;
-source inspection and a small screenshot do not establish virtualization,
-selection/copy, large-document performance or product parity. Scroll edge/cell
-commands target the first scroll view in a reader scope, so preview and diff
-commands need appropriately scoped native readers. This inventory describes
-potential proofs, not a build order or a promise of Hunk feature parity. The
-remaining-scope audit above governs prioritization; annotations are application work.
-
-[native-canvas]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIViews/Canvas.swift
-[native-canvas-grid]: https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIPrimitives/Draw/CanvasGrid.swift
+A prior SwiftSyntax 604.0.0 candidate crashed on deeply nested input despite
+configured nesting limits, so it did not satisfy the plain-fallback contract.
+The selected C integration passed macOS and glibc Linux checks. A local historical
+probe measured roughly 1.40 ms versus 0.019 ms per document construction with
+versus without classification, and about 4.56 MB additional unstripped executable
+size. These are single-machine observations, not portable performance guarantees
+or a clean-build comparison. The [dependency investigation](https://github.com/echoz/Chio/blob/v0.1.0/Docs/Plan.md#markdown-syntax-highlighting)
+retains the full measurements and rejected alternatives. Static-musl support
+remains blocked separately.
