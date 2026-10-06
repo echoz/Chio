@@ -1232,6 +1232,72 @@ Shipping this correction requires choosing a reproducible patched SwiftTUI
 dependency or receiving the fix upstream. Chio's published-source pin remains
 unchanged; a local SwiftPM edit is only integration evidence, not distribution.
 
+## Proposed ANSI-256 conversion correction
+
+The colour-capability audit reproduced the default dashboard surface as palette
+index 59 (`#5F5F5F`) with `TERM=xterm-256color` and no `COLORTERM`; declaring
+true colour emits the authored `#211D2A`. The pinned quantizer rounds onto a
+uniform cube and ignores grayscale. Official SwiftTUI main
+[`7221dce`](https://github.com/SwiftTUI/swift-tui/blob/7221dcec0a63de4ffa19f35a53cdd609a82f42a1/Sources/SwiftTUIRuntime/Terminal/TerminalCellTextRenderer%2BColorCodes.swift)
+and release 0.15.1 retain the same implementation, so a revision upgrade alone
+cannot correct it. Main also changes accessibility/contrast policy; that broader
+upgrade is not part of this proposal.
+
+Two patches are retained and **not applied to the default build**:
+
+- [SwiftTUI ANSI-256 conversion](../Patches/SwiftTUI-ansi256-quantization.patch),
+  against `2d84ac7083993da2ef52e9d3d30255467efb9553`, compares the nearest actual
+  cube entry with the nearest grayscale entry using squared encoded-channel RGB
+  distance, retaining gamut clamping and choosing the lower index on a tie.
+  It changes the existing native foreground/background/underline conversion;
+  there is no Chio quantizer, renderer or capability override.
+- [Chio emission regression](../Patches/Chio-ansi256-emission.patch), against
+  `7925a07`, checks the default theme through the public terminal-host write
+  boundary. Apply it with the corrected dependency; it intentionally fails with
+  the current pin.
+
+The candidate preserves all nine existing equality-based named-colour mappings
+as compatibility exceptions. In particular, `.white` still maps to 255 instead
+of exact white at 231. Nearest matching therefore describes other colours,
+not every Color value. It assumes the conventional extended palette at indices
+16–255; terminals can customize that palette. Capability detection, ANSI16,
+`NO_COLOR`, force-colour precedence, alpha compositing and RGB-profile handling
+remain unchanged. This does not establish perceptual matching, measured contrast,
+profile normalization or actual capabilities of a remote terminal.
+
+An isolated consumer preview based on Chio `7925a07` and the patched native pin
+passes ten focused debug tests: the seven proposed native tests were compiled
+in the consumer alongside three Chio pipe-emission tests. Coverage includes all
+240 extended-palette entries (with the explicit white exception), a 4,096-colour
+independent palette-search oracle, thresholds/ties, out-of-gamut channels,
+foreground/background/underline output, backdrop composition, true colour and
+no colour. Independent source review found no actionable correctness issue.
+
+The 13 native fixture views and their serializer were also run in that isolated
+consumer for all five capability profiles. Ten ANSI256 golden files changed;
+a comparison permits only indexed SGR numbers to differ. The other 55 files
+remain byte-identical. The native fixture-matrix script passes. These are
+consumer-harness results, not execution of the full native repository gate.
+
+The release preview passes the dashboard terminal workflow, including input,
+search, palette, report, form and focus restoration. Separate real PTY captures
+show index 235 (`#262626`) for the corrected default surface, unchanged authored
+RGB in true-colour mode, no colour codes under `NO_COLOR`, clean exit and terminal
+mode restoration in all three modes. This is local macOS terminal-byte evidence,
+not a live Blink/SSH visual check or a new Linux run.
+
+The ignored preview binary is
+`.build/color-preview/Chio/.build/release/chio-dashboard`. The published dependency
+pin and the existing Pages recordings are unchanged. Both patches apply cleanly
+to their recorded bases. The external native `DEVELOPMENT.md` could not be read
+(404), and `swiftly`/`bun` are unavailable, so the required upstream repository
+gate is still open. The fixtures were regenerated with the native views and
+serializer in the isolated consumer, not with the unavailable native recording
+toolchain. Before shipping, choose an accepted upstream revision or a deliberately
+maintained pinned fork, complete native gates, and run Chio's full integration
+checks on that reproducible dependency. Publishing to SwiftTUI or maintaining a
+new fork remains a separate decision.
+
 ## Component scope and priorities
 
 The first eleven entries below record delivered work, with the timer slice now

@@ -1,0 +1,18 @@
+--- a/Tests/ChioTests/Presentation/TerminalColorEmissionTests.swift
++++ b/Tests/ChioTests/Presentation/TerminalColorEmissionTests.swift
+@@ -32,6 +32,15 @@
+         #expect(!output.contains("48;"))
+     }
+
++    @Test("Chio's default surface uses the dark grayscale ramp in ANSI256")
++    func indexedColorEmission() throws {
++        let output = try emitThemedText(environment: [
++            "TERM": "xterm-256color", "LANG": "en_US.UTF-8",
++        ])
++        #expect(output.contains("48;5;235"))
++        #expect(!output.contains("48;5;59"))
++    }
++
+     private func emitThemedText(environment: [String: String]) throws -> String {
+         let pipe = Pipe()
+         defer {

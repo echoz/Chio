@@ -942,6 +942,8 @@ ANSI-256 conversion maps dark RGB colors poorly; Chio's default surface becomes
 Keep the authored palette and
 native detection; correcting conversion for limited-color terminals is upstream
 work, not a second Chio quantizer or an unconditional true-color override.
+A tested native patch is retained in the [conversion proposal](Plan.md#proposed-ansi-256-conversion-correction);
+it is not part of the published dependency pin.
 
 - [SwiftTUI style system](https://github.com/SwiftTUI/swift-tui/blob/main/Sources/SwiftTUIViews/SwiftTUIViews.docc/Style-System.md)
 - [SwiftTUI theme model](https://github.com/SwiftTUI/swift-tui/blob/main/Sources/SwiftTUIPrimitives/Styling/Theme.swift)
