@@ -382,6 +382,17 @@ explicit click; the player's NPT-poster seek limitation is documented alongside
 the vendored assets. Independent review covers deployment permissions and static
 asset boundaries. These website checks do not add Swift or Linux test evidence.
 
+The 2026-10-05 completion audit removed terminal teardown from six older published
+clips: forms, metrics, pagination, timers, tree and viewport. Every byte before
+teardown is preserved; a non-painting style reset at the original end time keeps
+the final pause and duration. Initial previews and the other six clips are
+unchanged. Independent byte-level review, site assembly, all twelve recording
+structures, local assets, contextual commands and guide links pass. No clip now
+contains an alternate-screen exit or runtime diagnostic output. Full-session
+restoration evidence remains separate from these edited playback excerpts.
+Browser playback and 390-pixel layout checks are still pending: the host Mac
+remained locked when verification was attempted. No Swift source changed.
+
 The compact component/composition navigation passes site assembly, generated
 asset hash/reference checks, JavaScript syntax, HTML structure, category
 membership, all twelve source links and stable recording fragments, local assets,
