@@ -323,8 +323,8 @@ Use `--forms --snapshot` for a deterministic initial frame.
 
 ## Colors over SSH
 
-For a true-color terminal such as Blink, declare that capability on the remote
-host when launching the dashboard:
+For a true-color terminal such as Blink or Ghostty, declare that capability on
+the remote host when launching the dashboard:
 
 ```sh
 COLORTERM=truecolor .build/release/chio-dashboard
@@ -332,13 +332,32 @@ COLORTERM=truecolor .build/release/chio-dashboard
 COLORTERM=truecolor swift run -c release chio-dashboard
 ```
 
-SSH may not forward `COLORTERM`. With only `TERM=xterm-256color`, the pinned
-SwiftTUI renderer falls back to 256 colors and incorrectly maps Chio's dark plum
-background (`#211D2A`) to gray (`#5F5F5F`). The launch prefix preserves the authored
-RGB palette through SwiftTUI's existing capability detection and applies only to
-that process. `NO_COLOR` remains respected; `--force-color` does not select true
-color. This addresses a missing capability declaration on true-color terminals;
-the upstream conversion still needs correction for actual 256-color terminals.
+SSH may not forward `COLORTERM`. The pinned SwiftTUI chooses text color depth
+from environment variables; it does not query the terminal for true-color support
+or consult terminfo. For an interactive terminal with color enabled:
+
+| Remote environment | Selected output |
+| --- | --- |
+| `COLORTERM=truecolor` or `24bit` | True color |
+| Missing/empty `COLORTERM`, `TERM=xterm-256color` | 256 colors |
+| Missing/empty `COLORTERM`, `TERM=xterm-ghostty` | 16 colors |
+
+Check the environment in the remote shell that launches the dashboard, rather
+than in the local terminal. `TERM=xterm-ghostty` alone is not recognized as a
+true-color capability by this pin. `TERM_PROGRAM` does not affect its color-depth
+decision. The launch prefix above preserves the authored RGB palette and applies
+only to that process. `NO_COLOR` remains respected; `--force-color` does not select
+true color.
+
+For persistent forwarding, the SSH client must send `COLORTERM` and the server
+must allow it through `AcceptEnv`. Ghostty documents both sides in its
+[SSH guide](https://ghostty.org/docs/features/ssh). Reconnect after changing
+forwarding configuration and check the remote value before launching Chio.
+
+Missing capability information and poor palette conversion are separate issues.
+With 256 colors selected, the pinned converter maps Chio's dark plum background
+(`#211D2A`) to gray (`#5F5F5F`). Correcting that converter will not make a true-color
+terminal advertise its capability, nor change Ghostty's 16-color fallback above.
 
 ## Timers and stopwatches
 

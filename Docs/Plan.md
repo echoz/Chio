@@ -846,6 +846,16 @@ Swift 6.4, with SwiftTUI pinned at
   background RGB under the documented true-color environment and verify that
   `NO_COLOR` still suppresses color. These capture bytes through a pipe without
   taking ownership of a real terminal or using upstream testing SPI.
+- A user-reported Ghostty SSH environment has `TERM=xterm-ghostty`, empty
+  `COLORTERM`/`TERM_PROGRAM`, no tmux/screen marker and no `NO_COLOR`. The pinned
+  native detector selects **ANSI16**, not ANSI256, for those inputs. The standard
+  scene runner passes that profile to the host; appearance/input/graphics probes
+  never promote text color depth, and there is no terminfo or true-color query.
+  A real macOS PTY run of the unchanged release dashboard reproduces ANSI16 with
+  those values. Adding only `COLORTERM=truecolor` emits the authored RGB; adding
+  `NO_COLOR` suppresses it. All three runs exit cleanly and restore terminal modes.
+  These captures prove the launch/emission path, not the live SSH forwarding
+  configuration or final Ghostty appearance. See [SSH setup](Examples.md#colors-over-ssh).
 
 ### macOS toolchain findings
 

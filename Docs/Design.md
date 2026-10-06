@@ -935,15 +935,19 @@ native focus gutter remains an integration gap. Do not hide this with a second
 focus system or a private API dependency. `StatusBar` uses a composed text rule
 because the pinned native `Divider` does not honor ambient foreground styling.
 
-Color-depth detection and palette conversion also belong to SwiftTUI. The pinned
-ANSI-256 conversion maps dark RGB colors poorly; Chio's default surface becomes
-`#5F5F5F` instead of `#211D2A`. True-color SSH sessions should declare
-`COLORTERM=truecolor` as documented in [the SSH guide](Examples.md#colors-over-ssh).
+Color-depth detection and palette conversion also belong to SwiftTUI. The pin
+selects text color depth from environment variables, without a true-color query
+or terminfo lookup. Missing `COLORTERM` selects ANSI256 for `xterm-256color` but
+ANSI16 for `xterm-ghostty`; neither establishes the terminal's actual capability.
+The separate pinned ANSI-256 conversion maps dark RGB colors poorly; Chio's
+default surface becomes `#5F5F5F` instead of `#211D2A`. True-color SSH sessions
+should declare `COLORTERM=truecolor` as documented in
+[the SSH guide](Examples.md#colors-over-ssh).
 Keep the authored palette and
 native detection; correcting conversion for limited-color terminals is upstream
 work, not a second Chio quantizer or an unconditional true-color override.
 A tested native patch is retained in the [conversion proposal](Plan.md#proposed-ansi-256-conversion-correction);
-it is not part of the published dependency pin.
+it is not part of the published dependency pin and does not fix capability discovery.
 
 - [SwiftTUI style system](https://github.com/SwiftTUI/swift-tui/blob/main/Sources/SwiftTUIViews/SwiftTUIViews.docc/Style-System.md)
 - [SwiftTUI theme model](https://github.com/SwiftTUI/swift-tui/blob/main/Sources/SwiftTUIPrimitives/Styling/Theme.swift)
