@@ -68,11 +68,11 @@ Add `--choices`, `--text-entry`, `--feedback`, or `--files` to try a focused exa
 - [Charm](https://charm.sh/), especially Lip Gloss, Bubbles, Huh, and Glamour —
   cohesive themes, expressive controls, forms, and polished terminal typography.
 - [btop++](https://github.com/aristocratos/btop) — compact panels, meters, history
-  graphs, and information-dense layouts; a direction we are now exploring.
+  graphs, and information-dense layouts in the compact metrics example.
 - [gh-dash](https://www.gh-dash.dev/) — dense collections, contextual navigation,
   and list/detail workspaces.
 - [Hunk](https://www.hunk.dev/) — readable diffs and keyboard-driven review flows;
-  references for planned review components.
+  the reference for the example-only diff reader prototype.
 
 Chio adapts these ideas to native SwiftTUI composition and Swift APIs.
 

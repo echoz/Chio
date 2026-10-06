@@ -61,6 +61,9 @@ struct ChioDashboardCommand {
     @Flag(help: "Run the local review inbox and Markdown preview example.")
     var inbox = false
 
+    @Flag(help: "Run the bounded read-only diff prototype with local fixtures.")
+    var diff = false
+
     @Option(help: "Starting folder for --files (defaults to the current working directory).")
     var directory: String?
 
@@ -69,7 +72,9 @@ struct ChioDashboardCommand {
 
     @MainActor @ViewBuilder
     private var snapshotView: some View {
-        if inbox {
+        if diff {
+            DiffExampleView(light: light)
+        } else if inbox {
             InboxExampleView(light: light)
         } else if metrics {
             MetricsExampleView(light: light)
@@ -109,10 +114,10 @@ extension ChioDashboardCommand: AsyncParsableCommand {
         guard (20...240).contains(width), (10...100).contains(height) else {
             throw ValidationError("Use --width 20...240 and --height 10...100.")
         }
-        if [choices, textEntry, feedback, files, keyboardHelp, tabs, pagination, viewport, tree, forms, timers, metrics, inbox].filter({ $0 }).count > 1 {
-            throw ValidationError("Choose one example: --choices, --text-entry, --feedback, --files, --keyboard-help, --tabs, --pagination, --viewport, --tree, --forms, --timers, --metrics or --inbox.")
+        if [choices, textEntry, feedback, files, keyboardHelp, tabs, pagination, viewport, tree, forms, timers, metrics, inbox, diff].filter({ $0 }).count > 1 {
+            throw ValidationError("Choose one example: --choices, --text-entry, --feedback, --files, --keyboard-help, --tabs, --pagination, --viewport, --tree, --forms, --timers, --metrics, --inbox or --diff.")
         }
-        if (choices || textEntry || feedback || files || keyboardHelp || tabs || pagination || viewport || tree || forms || timers || metrics || inbox) && (scenario != .normal || paused) {
+        if (choices || textEntry || feedback || files || keyboardHelp || tabs || pagination || viewport || tree || forms || timers || metrics || inbox || diff) && (scenario != .normal || paused) {
             throw ValidationError("--scenario and --paused describe the dashboard simulation; omit them with a focused example.")
         }
         if directory != nil && !files {
@@ -132,6 +137,8 @@ extension ChioDashboardCommand: AsyncParsableCommand {
                 frameInstant: .zero
             )
             print(frame.rasterSurface.lines.joined(separator: "\n"))
+        } else if diff {
+            try await WebHostCLIRunner.run(DiffApplication(light: light), configuration: swiftTUIOptions.runtimeConfiguration())
         } else if inbox {
             try await WebHostCLIRunner.run(InboxApplication(light: light), configuration: swiftTUIOptions.runtimeConfiguration())
         } else if metrics {

@@ -108,6 +108,34 @@ These are fixed snapshots, with no GitHub connection, current clock or repositor
 operations. Use `--inbox --snapshot --width 36 --height 18` for a compact frame.
 Watch the [inbox recording](https://echoz.github.io/Chio/#inbox).
 
+## Diff reader prototype
+
+```sh
+swift run -c release chio-dashboard --diff
+```
+
+Read six fixed local file examples: a three-hunk change, Unicode and long source
+lines, empty additions/deletions, a rename, and binary content. This is an
+example prototype built from native text, scrolling and existing Chio styles;
+it does not expose a public diff component or read your repository.
+
+Arrow keys and Home/End use native scrolling. `[` and `]` jump between hunks while
+the reader is focused. Ctrl-L switches unified/split views; below 92 columns the
+reader uses unified rows and restores your preference when widened. Ctrl-F cycles
+files, Ctrl-T changes theme, and Ctrl-Q quits. Tab reaches the file picker and
+buttons; F6 returns to the reader. Resize or change layout to retain the selected
+hunk. The hunk indicator records the last navigation target, not your manual
+scroll position.
+
+Source lines scroll horizontally without wrapping, preserving authored spaces
+and blank lines. Split panes share one scroll position; very long lines can push
+the right pane offscreen. Native SwiftTUI measures Unicode cells and tabs, so this
+is not a terminal-independent source editor. Large diffs, selection/copy,
+syntax highlighting and VCS ingestion are outside this prototype.
+
+Use `--diff --snapshot --width 36 --height 18` for a compact frame. Watch the
+[diff recording](https://echoz.github.io/Chio/#diff).
+
 ## Choice fields
 
 Run the focused two-step form using the same executable:
@@ -356,7 +384,7 @@ seeking, and fullscreen playback. These are recorded examples; run the binary to
 interact with the controls yourself.
 
 The gallery groups focused views and native control styles under **Components**.
-The dashboard, metrics, and inbox are **Compositions** of those building blocks.
+The dashboard, metrics, inbox, and diff prototype are **Compositions** of those building blocks.
 Each recording lists the Chio APIs, native SwiftTUI controls, and application-owned
 behavior it uses, with a link to its example source.
 
@@ -445,6 +473,15 @@ their meaning at 100%; the application supplies data and updates.
 Sort and filter fixed local reviews, hide the wide preview, and open the full
 reader. Query, selection and native focus survive theme and terminal-size changes.
 [Watch](https://echoz.github.io/Chio/#inbox) · [Download recording](Media/inbox.cast).
+
+### Read-only diff prototype
+
+![Paired old and new source lines with independent gutters, change markers and hunk navigation](Media/diff.png)
+
+Jump between hunks, switch split/unified views, and resize into compact reading.
+Existing Chio styles and native scrolling support an example-owned diff model;
+empty files, renames and binary content have explicit summaries.
+[Watch](https://echoz.github.io/Chio/#diff) · [Download recording](Media/diff.cast).
 
 These previews render real release-binary terminal output. Font rendering can
 vary between terminals. The accompanying Asciinema-compatible recordings replay

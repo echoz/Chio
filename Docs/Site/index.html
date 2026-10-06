@@ -56,6 +56,7 @@
             <a href="#dashboard" data-demo="dashboard">Dashboard</a>
             <a href="#metrics" data-demo="metrics">Metrics</a>
             <a href="#inbox" data-demo="inbox">Review inbox</a>
+            <a href="#diff" data-demo="diff">Diff reader</a>
           </nav>
         </div>
 
@@ -411,6 +412,38 @@
             <a class="example-source" href="https://github.com/echoz/Chio/blob/main/Examples/AgentDashboard/Presentation/InboxExampleView.swift">View example source <span aria-hidden="true">↗</span></a>
           </div>
         </article>
+        <article id="diff" class="recording" data-cols="100" data-rows="30">
+          <div class="recording-heading">
+            <h3>Read the changes, hunk by hunk</h3>
+            <span class="recording-kind">Prototype</span>
+          </div>
+          <div class="recording-preview">
+            <img class="recording-image" src="recordings/diff.png" alt="A read-only split diff with paired line-number gutters, added and removed source lines, layout controls, and hunk navigation." width="1248" height="798">
+            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play recording</button>
+          </div>
+          <div class="player" aria-label="Diff reader recording"></div>
+          <p class="player-message" role="status" hidden></p>
+          <div class="recording-caption">
+            <p>A read-only prototype pairs line-number gutters with changed source lines. Jump between hunks, switch between split and unified layouts, and follow the narrow unified mode through theme and terminal-size changes.</p>
+            <a class="download" href="recordings/diff.cast" download>Download recording ↓</a>
+          </div>
+          <div class="recording-run">
+            <div class="run-heading">
+              <h4>Try this example</h4>
+              <a href="https://github.com/echoz/Chio/blob/main/Docs/Examples.md#diff-reader-prototype">Keyboard controls <span aria-hidden="true">↗</span></a>
+            </div>
+            <pre><code>swift run -c release chio-dashboard --diff</code></pre>
+          </div>
+          <div class="recording-details">
+            <dl class="recording-ingredients">
+              <div><dt>Chio</dt><dd>Existing theme and control styles, <code>KeyHints</code>, <code>StatusBar</code></dd></div>
+              <div><dt>SwiftTUI</dt><dd><code>Text</code>, <code>ScrollView</code>, <code>ScrollViewReader</code>, <code>Picker</code>, <code>Button</code></dd></div>
+              <div><dt>Example code</dt><dd>The normalized local diff fixture, unified/split layout, and hunk navigation.</dd></div>
+            </dl>
+            <a class="example-source" href="https://github.com/echoz/Chio/blob/main/Examples/AgentDashboard/Presentation/DiffExampleView.swift">View example source <span aria-hidden="true">↗</span></a>
+          </div>
+        </article>
+
         <p class="playback-note">Press play to watch. Pause, seek, or open fullscreen for a closer look.
           These are recordings; try the binary to use the controls yourself.</p>
         <noscript><p>Enable JavaScript for playback, or download a recording and open it with asciinema.</p></noscript>

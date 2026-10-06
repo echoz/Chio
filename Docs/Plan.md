@@ -305,7 +305,7 @@ To check an already-built binary's terminal workflow:
 python3 Scripts/ci/terminal-smoke.py .build/release/chio-dashboard
 ```
 
-Add `--choices`, `--text-entry`, `--feedback`, `--files`, `--keyboard-help`, `--tabs`, `--pagination`, `--viewport`, `--tree`, `--forms`, `--timers`, `--metrics`, or `--inbox` for a focused workflow.
+Add `--choices`, `--text-entry`, `--feedback`, `--files`, `--keyboard-help`, `--tabs`, `--pagination`, `--viewport`, `--tree`, `--forms`, `--timers`, `--metrics`, `--inbox`, or `--diff` for a focused workflow.
 These check terminal input/output and restoration, not live Blink/SSH rendering
 or latency. `swift test --no-parallel` remains available for a full debug investigation.
 
@@ -321,7 +321,7 @@ The [GitHub Pages showcase](https://echoz.github.io/Chio/) plays recordings from
 `Docs/Media` with a pinned, locally served asciinema player. Site source lives in
 `Docs/Site`; its vendored assets retain their upstream Apache 2.0 license.
 The gallery separates **Components** (focused Chio views and native control
-styles) from **Compositions** (the dashboard, metrics, and review inbox).
+styles) from **Compositions** (the dashboard, metrics, review inbox, and diff prototype).
 Components appear first, with searchable choices as the default. Each recording
 identifies its Chio APIs, native SwiftTUI building blocks, application-owned
 behavior, and example source. Compositions are examples, not additional public
@@ -380,8 +380,8 @@ asset boundaries. These website checks do not add Swift or Linux test evidence.
 
 The compact component/composition navigation passes site assembly, generated
 asset hash/reference checks, JavaScript syntax, HTML structure, category
-membership, all eleven source links and stable recording fragments, local assets,
-image dimensions and recording checks. All eleven launch commands and keyboard
+membership, all twelve source links and stable recording fragments, local assets,
+image dimensions and recording checks. All twelve launch commands and keyboard
 guide anchors match the CLI and examples guide, and each command is nested in
 its matching recording. Independent source review found no
 actionable issues. Script-free preview markup remains available; recording
@@ -457,6 +457,39 @@ and mobile-layout checks remain pending because the host Mac is locked. Player
 code, CSS and deployment permissions are unchanged.
 
 ## Verified on macOS
+
+The integrated diff slice passed the full serial verification gate: 404 release
+tests and 381 selected debug tests (one existing case-distinct-filename test is
+skipped in each configuration on this filesystem), the standalone release build,
+twenty snapshots and fifteen terminal workflows. Eighteen new tests cover checked
+construction/decoding, independent gutters, uneven and blank lines, raw Unicode
+and whitespace labels, native width measurement, explicit summaries and horizontal
+bounds. Ten raster cases cover both themes at 36, 91, 92, 100 and 160 columns.
+Hosted input retains native focus and logical hunk targets across mode, theme,
+file and size changes, including batched shortcuts and the narrow-mode fallback.
+Independent source review found no remaining production issues. This is local
+macOS evidence; fresh Linux CI and live-device behavior remain separate.
+
+The final picker metadata cleanup and corrected Ctrl-S byte in the existing
+inbox isolation test were rechecked with all 24 diff/inbox tests in both debug
+and release, plus the standalone build. Raster checks reject runtime diagnostics;
+the diff terminal workflow also checks the complete output after restoration.
+The three-hunk source fixture has 26 unified rows or 21 paired source rows before
+headers and spacing. This bounded eager layout is not a large-document claim.
+
+Five fresh-process release snapshots per size took a median 77.6 ms at 36 × 18
+(range 75.9–89.2 ms) and 101.8 ms at 100 × 30 (100.2–105.0 ms). These timings
+include process startup and view construction; they do not measure interaction,
+SSH latency or large-patch throughput.
+
+The final release recording lasts 26 seconds and demonstrates hunk jumps, both
+layouts, theme and 36 × 18 resizing, and empty/rename/binary summaries. The full
+capture exits cleanly, restores terminal modes and emits no runtime warnings;
+the published clip ends on a complete UI frame before teardown. Its preview was
+visually inspected. Site assembly, all twelve navigation entries, contextual
+commands, links, image dimensions, hashed assets and recording event checks pass.
+Browser playback and mobile layout remain unverified because the host Mac is
+locked; player code and CSS are unchanged.
 
 The inbox resize correction passes all six focused inbox tests in release and
 debug, including sixteen raster cases across both themes at 36–240 columns.
@@ -1322,8 +1355,8 @@ inventories below remain traceable; they no longer prescribe an execution order.
 | 14 — btop theme/metrics and 16 — compact panels/meters | **Implemented together** | `ChioTheme.btop`, optional group border titles and measurement progress paint are composed in `--metrics`. Fixed local values, native controls/layout; no metrics service, sampler, scheduler or btop model. |
 | 15 — Sparklines/history graphs | **Implemented** | Passive `Sparkline` over native Canvas: finite readings, nil gaps, automatic/fixed scaling, extrema-preserving narrow reduction and accessible summary. Applications own collection, retention, clocks, units and thresholds; `--metrics` supplies manual samples. |
 | 17 — Dense sorted inbox/detail layout | **Implemented; [verification](#verified-on-macos)** | `--inbox` composes native queue/sort Pickers, substring SearchableList, passive wide Markdown preview, and full-screen reading. Application code owns fixtures, sort policy and stable selection; no new public abstraction. |
-| 18 — Diff reading | **Keep as a later bounded prototype** | A read-only diff is a meaningful presentation gap, but specialized and costly. Prove gutters, uneven sides, Unicode/wrapping and measured document bounds before committing to a public view/data API. Git/JJ/Sapling ingestion and repository operations stay outside Chio. |
-| 19 — Review navigation and annotations | **Fold navigation proof into 18; drop annotations from the library roadmap** | Use native logical-ID reveal in the example. Notes can compose the existing editor. Search policy, review sessions, note storage, persistence and agent protocols are application concerns, not new Chio subsystems. |
+| 18 — Diff reading | **Bounded example prototype; public extraction deferred** | `--diff` proves normalized hunks, independent gutters, uneven split rows, explicit summaries and native scrolling. Source remains unwrapped because native wrapping changes whitespace. The eager small-fixture reader does not establish large-document performance or editor semantics. Git/JJ/Sapling ingestion and repository operations stay outside Chio. |
+| 19 — Review navigation and annotations | **Hunk navigation included in 18; annotations remain outside the library roadmap** | Use native logical-ID reveal in the example. Notes can compose the existing editor. Search policy, review sessions, note storage, persistence and agent protocols are application concerns, not new Chio subsystems. |
 
 **Accepted direction and working sequence:**
 
@@ -1343,8 +1376,9 @@ inventories below remain traceable; they no longer prescribe an execution order.
 4. Delivered a dense list/detail composition using existing components in
    `--inbox`. A general master/detail abstraction remains deferred until a second
    use establishes the contract.
-5. Explore the bounded read-only diff, including basic hunk navigation. Review
-   its scope again before promoting models or behavior into the public library.
+5. Added the bounded read-only `--diff` prototype with basic hunk navigation.
+   Try it before promoting models or behavior into the public library; wrapped
+   source, large documents and split-pane width policy remain open design work.
 
 The coverage map's other gaps—completion/history, async choices, wizards, broader
 file selection, tree adapters, status queues and more themes—remain observations,

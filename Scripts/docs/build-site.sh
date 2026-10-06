@@ -26,7 +26,7 @@ for name in ("site.css", "recordings.js"):
     html = html.replace(f'"{name}"', f'"{versioned}"')
 index.write_text(html)
 PY
-for recording in dashboard choices feedback-light pagination viewport tree forms timers markdown-links metrics inbox; do
+for recording in dashboard choices feedback-light pagination viewport tree forms timers markdown-links metrics inbox diff; do
   cp "$repo_root/Docs/Media/$recording.cast" "$site_output/recordings/"
   cp "$repo_root/Docs/Media/$recording.png" "$site_output/recordings/"
 done

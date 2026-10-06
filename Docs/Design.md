@@ -102,8 +102,8 @@ passive `Sparkline`. Other inventory entries remain proposals.
 
 gh-dash informs dense inbox/detail composition and contextual navigation. Hunk
 informs a review-first diff reader: normalized immutable content, split/unified
-presentation and logical hunk navigation. These are references for planned local
-UI slices, not delivered product parity. Reuse native views and existing themes
+presentation and logical hunk navigation. The inbox composition and bounded diff prototype exercise these ideas locally,
+without establishing product parity. Reuse native views and existing themes
 before extracting a new component. GitHub/VCS commands, authentication, file
 watching and agent protocols belong to applications. See the
 [gh-dash/Hunk inventory](Plan.md#gh-dash-and-hunk-ui-inventory) for the gaps.
@@ -730,6 +730,41 @@ Markdown exception to Codable; the underlying review fixtures remain Codable,
 Hashable and Sendable. There is no new public inbox, sorter, master/detail or
 review-coordinator API. The fixture size does not establish large-data behavior.
 
+## Read-only diff prototype
+
+`--diff` keeps its normalized `DiffFile` model and views in the executable target.
+It is a bounded design proof, with no new public Chio API or dependency. Immutable
+file changes distinguish modified, added, deleted and renamed paths; binary
+content is separate from textual hunks, including an empty textual file.
+
+Hunks store zero-based offsets and context/change blocks. Checked construction
+and decoding reject negative/overflowing ranges, multiline source entries,
+empty change blocks, overlapping hunks and inconsistent unchanged gaps. The
+input describes a complete normalized file diff: omitted old/new prefixes and
+gaps must have equal lengths. Partial or filtered hunks require a different
+contract. Line numbers, counts and unified/split rows derive from these blocks.
+An absent split cell is distinct from a present empty source line; replacements
+pair old/new lines in order and leave excess lines on their own side.
+
+One native two-axis `ScrollView` owns both split panes. Literal native `Text`
+retains source strings; gutters use native cell frames and line width uses public
+native text measurement. Additions/removals have markers and theme ink, independent
+of success/error status. Palette choices remain example-local until a reusable
+diff style justifies new semantic roles. Below 92 columns, unified rows preserve
+readable source space; widening restores the requested layout. Native anchors
+reveal a retained logical hunk after navigation, file changes or relayout. Manual
+scrolling does not change that explicit target. Theme changes preserve the offset.
+
+This prototype deliberately leaves lines unwrapped. The pinned native word-wrap
+implementation can remove whitespace at boundaries and insert continuation marks,
+which is unsuitable for faithful source display. A future wrapped reader needs a
+source-preserving native contract first. Very long lines widen both split panes
+and may require horizontal scrolling to reach the right side. Unicode cell width
+and tabs follow SwiftTUI's current measurement; this does not promise arbitrary
+terminal agreement or editor-style tab stops. The eager stack is demonstrated on
+small fixtures, not virtualized or certified for large patches. There is no diff
+parser, VCS adapter, repository operation, review session or annotation subsystem.
+
 ## Markdown and agent reports
 
 `MarkdownDocument(source)` parses once into an immutable, `Hashable`, `Sendable`
@@ -853,7 +888,7 @@ before cover presentation, dashboard shortcuts are consumed so Enter followed by
 | `Sources/Chio/Presentation/Styles` | Native SwiftTUI control styles |
 | `Examples/AgentDashboard` | Dashboard and focused control examples, domain rules, presentation, and thin entry point |
 | `Tests/ChioTests` | Tests grouped by corresponding responsibility |
-| `Tests/ChioDashboardTests` | Simulation, draft rules, report snapshots, and dashboard/form/report/palette interaction |
+| `Tests/ChioDashboardTests` | Example domain values, report/diff snapshots, and hosted application interactions |
 | `Docs/Site` | Static GitHub Pages showcase and vendored asciinema player |
 | `Docs/Media` | Release-terminal screenshots and recordings shared by docs and the showcase |
 | `Scripts/docs` | Assemble the static site without building the Swift package |
