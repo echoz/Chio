@@ -1175,11 +1175,11 @@ portable; correcting the platform implementation remains upstream work.
 - The pinned ANSI-256 quantizer rounds RGB channels onto uniformly spaced cube
   coordinates, although the terminal cube is nonuniform, and ignores its grayscale
   ramp. This washes out dark colors. [True-color launch guidance](Examples.md#colors-over-ssh)
-  is in the examples guide;
-  actual 256-color fallback remains an upstream defect. For dependency upgrades,
+  is in the examples guide. Limited-color approximation remains a documented
+  boundary; the conversion experiment and upstream PR are shelved. For dependency upgrades,
   compare the paused dashboard with `TERM=xterm-256color`, first without
   `COLORTERM`, then with `COLORTERM=truecolor` (and without `NO_COLOR`). The latter
-  must preserve authored RGB; an eventual upstream fix should improve the former.
+  must preserve authored RGB; the former exercises the actual indexed palette.
 - Native ideal-size measurement reports `collection.unboundedRealization` for
   the small dashboard and inbox lists (up to sixteen rows in the latter).
   `VStack` probes children with an unspecified height; a flexible maximum frame
@@ -1244,6 +1244,27 @@ unchanged; a local SwiftPM edit is only integration evidence, not distribution.
 
 ## Proposed ANSI-256 conversion correction
 
+**Shelved on 2026-10-05.** The SSH investigation is concluded for Chio. The user
+chose to document the findings and continue library work, with no SwiftTUI PR,
+maintained fork, forced true-color default or new color-depth flag. The patches
+and evidence below are historical experiments, not pending implementation work.
+
+The reported Ghostty SSH session used `TERM=xterm-ghostty`; Blink used
+`TERM=xterm-256color`. Both had empty `COLORTERM` and `TERM_PROGRAM`, no tmux/screen
+marker and no `NO_COLOR`. The pin therefore selects ANSI16 and ANSI256 respectively.
+This is missing remote capability metadata, not evidence that either terminal
+lacks RGB support. The inspected SSH server accepts `LANG` and `LC_*`, not
+`COLORTERM`; client forwarding alone would not preserve it. No SSH configuration
+was changed. Declaring `COLORTERM=truecolor` in the remote shell or for one launch
+avoids forwarding configuration; [the examples guide](Examples.md#colors-over-ssh)
+records both options. Local PTY evidence verifies RGB emission and `NO_COLOR`,
+not the user's final live-device appearance.
+
+The separate palette-conversion experiment below does not address that metadata
+gap. Color-depth selection remains with applications and SwiftTUI. The normal
+launcher exposes color enablement, not a depth override; `--force-color` alone
+does not select true color. No launcher change is planned as part of Chio.
+
 The colour-capability audit reproduced the default dashboard surface as palette
 index 59 (`#5F5F5F`) with `TERM=xterm-256color` and no `COLORTERM`; declaring
 true colour emits the authored `#211D2A`. The pinned quantizer rounds onto a
@@ -1263,8 +1284,8 @@ Two patches are retained and **not applied to the default build**:
   there is no Chio quantizer, renderer or capability override.
 - [Chio emission regression](../Patches/Chio-ansi256-emission.patch), against
   `7925a07`, checks the default theme through the public terminal-host write
-  boundary. Apply it with the corrected dependency; it intentionally fails with
-  the current pin.
+  boundary. It requires the experimental corrected dependency and intentionally
+  fails with the current pin.
 
 The candidate preserves all nine existing equality-based named-colour mappings
 as compatibility exceptions. In particular, `.white` still maps to 255 instead
@@ -1301,14 +1322,13 @@ The ignored preview binary is
 pin and the existing Pages recordings are unchanged. Both patches apply cleanly
 to their recorded bases. The external native `DEVELOPMENT.md` could not be read
 (404), and `swiftly`/`bun` are unavailable, so the required upstream repository
-gate is still open. The fixtures were regenerated with the native views and
+gate was not run. The fixtures were regenerated with the native views and
 serializer in the isolated consumer, not with the unavailable native recording
-toolchain. Before shipping, choose an accepted upstream revision or a deliberately
-maintained pinned fork, complete native gates, and run Chio's full integration
-checks on that reproducible dependency. Publishing to SwiftTUI or maintaining a
-new fork remains a separate decision.
+toolchain. These incomplete upstream gates are limitations of the shelved
+experiment, not remaining work for this roadmap. Reopening it would require a
+new dependency decision and the corresponding native and Chio integration gates.
 
-### Current-upstream contribution preparation
+### Shelved upstream contribution preparation
 
 A separate [upstream patch](../Patches/SwiftTUI-ansi256-upstream.patch) and
 [PR draft](../Patches/SwiftTUI-ansi256-upstream.md) target main `7221dce`.
@@ -1323,8 +1343,8 @@ indexed SGR numbers; the other 55 are byte-identical. The six standalone native
 source/test-ownership policy checks, fixture-matrix check and Swift formatting
 lint pass. Independent review found no actionable issues, and the retained patch
 applies cleanly to its recorded base. These are focused consumer and policy results, not a native gate or
-current-main Chio compatibility claim. Upstream publication, native gates and
-the shipping dependency decision remain open; Chio's pin is unchanged.
+current-main Chio compatibility claim. No upstream PR was published; publication
+is no longer planned. Chio's pin is unchanged.
 
 ## Component scope and priorities
 
@@ -1527,6 +1547,12 @@ file selection, tree adapters, status queues and more themes—remain observatio
 not promised work. Add them only for a concrete consumer need. No further timer,
 stopwatch, monitoring, workflow-engine or annotation subsystem is planned.
 
+The accepted feature sequence is complete through the bounded diff prototype.
+The next completion work is the outstanding showcase playback and mobile-layout
+verification, followed by fixes for demonstrated usability issues. Further public
+components or promotion of example models require a concrete consumer need; the
+shelved color investigation does not create another framework task.
+
 Each selected addition should be proved in a small runnable example (reuse an
 existing example when it fits), with public usage documentation only for actual
 public API, relevant model/raster/hosted-input regressions and a release terminal
@@ -1536,8 +1562,9 @@ counts as delivered only for its documented and exercised scope; inheritance of
 an upstream API or a themed static screenshot is insufficient evidence of all
 interaction behavior. Recheck responsiveness when editing/navigation paths change.
 
-Existing upstream integration work remains separate: table paint correction,
-native focus-theme control, ANSI-256 conversion, and finite collection measurement.
+Existing upstream integration boundaries remain separate: table paint correction,
+native focus-theme control and finite collection measurement. The ANSI-256
+conversion experiment is shelved; the SSH findings are documented above.
 Keep large-data behavior unclaimed until measured. Resolve Musl support before
 promising static Linux distribution; it does not block ordinary glibc components.
 No new public products, renderer, general focus manager or external agent

@@ -1,10 +1,16 @@
-# SwiftTUI ANSI-256 contribution draft
+# Shelved SwiftTUI ANSI-256 contribution draft
 
-Local preparation only; no upstream PR has been published. The accompanying
+**Shelved on 2026-10-05; not queued for publication.** The user chose to document
+the SSH capability findings and continue Chio library work. The reported SSH
+sessions lack `COLORTERM`; this conversion patch does not restore that metadata.
+See [the investigation's disposition](../Docs/Plan.md#proposed-ansi-256-conversion-correction).
+
+Retained as historical local preparation; no upstream PR has been published. The accompanying
 [patch](SwiftTUI-ansi256-upstream.patch) targets SwiftTUI
 `7221dcec0a63de4ffa19f35a53cdd609a82f42a1`. It is separate from the
 [Chio-pin patch](SwiftTUI-ansi256-quantization.patch); neither changes Chio's
-normal dependency. Native gate completion and publication remain outstanding.
+normal dependency. The native gate was not completed, and no further contribution
+work is planned.
 
 ## Proposed title
 
@@ -50,15 +56,9 @@ unavailable on this host, and the linked external `DEVELOPMENT.md` returns 404.
 Consumer checks do not substitute for the native gate. Native CI, Linux and the
 other supported-platform gates remain unverified for this patch.
 
-## Before publication
+## Disposition
 
-Apply the patch to the recorded SwiftTUI revision. Follow upstream's current
-contribution instructions, obtain the missing development guide, install its
-required tools, and run `bun run test`. Use its native fixture recording script
-to confirm the retained outputs, with recording variables unset for the gate.
-Review any new differences rather than accepting snapshot changes mechanically.
-
-Choose upstream publication or a deliberately maintained pinned fork before
-distributing the change. Once a reproducible dependency is selected, apply the
-[Chio emission regression](Chio-ansi256-emission.patch) and run Chio's full
-integration gate. Keep the unrelated table-paint proposal separate.
+The patch and draft preserve the investigation; neither is a shipping change or
+an active task. Reopening would require a new dependency/publication decision,
+the upstream repository's full gate and Chio integration verification. The
+unrelated table-paint proposal remains separate.

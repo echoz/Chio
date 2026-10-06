@@ -943,11 +943,13 @@ The separate pinned ANSI-256 conversion maps dark RGB colors poorly; Chio's
 default surface becomes `#5F5F5F` instead of `#211D2A`. True-color SSH sessions
 should declare `COLORTERM=truecolor` as documented in
 [the SSH guide](Examples.md#colors-over-ssh).
-Keep the authored palette and
-native detection; correcting conversion for limited-color terminals is upstream
-work, not a second Chio quantizer or an unconditional true-color override.
-A tested native patch is retained in the [conversion proposal](Plan.md#proposed-ansi-256-conversion-correction);
-it is not part of the published dependency pin and does not fix capability discovery.
+Keep the authored palette and native detection. Applications own any explicit
+color-depth policy; Chio does not force true color or add a fallback flag to the
+example. The reported SSH sessions did not convey true-color metadata at launch, so
+this investigation does not require a SwiftTUI PR or a dependency fork.
+A tested native patch is retained as a [shelved conversion experiment](Plan.md#proposed-ansi-256-conversion-correction).
+It is not part of the published dependency pin, does not fix capability discovery,
+and is no longer planned for upstream publication.
 
 - [SwiftTUI style system](https://github.com/SwiftTUI/swift-tui/blob/main/Sources/SwiftTUIViews/SwiftTUIViews.docc/Style-System.md)
 - [SwiftTUI theme model](https://github.com/SwiftTUI/swift-tui/blob/main/Sources/SwiftTUIPrimitives/Styling/Theme.swift)

@@ -332,6 +332,17 @@ COLORTERM=truecolor .build/release/chio-dashboard
 COLORTERM=truecolor swift run -c release chio-dashboard
 ```
 
+Alternatively, set it for the current remote shell, then launch normally:
+
+```sh
+export COLORTERM=truecolor
+```
+
+Use this when the connecting terminal supports true color. Setting it in the
+remote shell needs no SSH client/server configuration change and lasts for that
+shell session. Chio leaves color capability and overrides to the application
+and terminal runtime; importing the library does not force true-color output.
+
 SSH may not forward `COLORTERM`. The pinned SwiftTUI chooses text color depth
 from environment variables; it does not query the terminal for true-color support
 or consult terminfo. For an interactive terminal with color enabled:
@@ -341,6 +352,10 @@ or consult terminfo. For an interactive terminal with color enabled:
 | `COLORTERM=truecolor` or `24bit` | True color |
 | Missing/empty `COLORTERM`, `TERM=xterm-256color` | 256 colors |
 | Missing/empty `COLORTERM`, `TERM=xterm-ghostty` | 16 colors |
+
+The reported Blink and Ghostty SSH sessions both had empty `COLORTERM`, with
+`TERM=xterm-256color` and `TERM=xterm-ghostty` respectively. Those values describe
+what reached the remote process, not the connecting terminals' full capabilities.
 
 Check the environment in the remote shell that launches the dashboard, rather
 than in the local terminal. `TERM=xterm-ghostty` alone is not recognized as a
