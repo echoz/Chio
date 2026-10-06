@@ -1,14 +1,14 @@
 import SwiftTUI
 
 struct MetricsApplication {
-    let light: Bool
+    let theme: ExampleTheme
 
-    nonisolated init() { light = false }
-    nonisolated init(light: Bool) { self.light = light }
+    nonisolated init() { theme = .btop }
+    nonisolated init(theme: ExampleTheme) { self.theme = theme }
 }
 
 extension MetricsApplication: SwiftTUIRuntime.App {
     var body: some Scene {
-        WindowGroup("Chio metrics studio") { MetricsExampleView(light: light) }
+        WindowGroup("Chio metrics studio") { MetricsExampleView(theme: theme) }
     }
 }

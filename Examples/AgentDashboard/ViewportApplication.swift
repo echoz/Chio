@@ -1,14 +1,14 @@
 import SwiftTUI
 
 struct ViewportApplication {
-    let light: Bool
+    let theme: ExampleTheme
 
-    nonisolated init() { light = false }
-    nonisolated init(light: Bool) { self.light = light }
+    nonisolated init() { theme = .default }
+    nonisolated init(theme: ExampleTheme) { self.theme = theme }
 }
 
 extension ViewportApplication: SwiftTUIRuntime.App {
     var body: some Scene {
-        WindowGroup("Chio activity viewport") { ViewportExampleView(light: light) }
+        WindowGroup("Chio activity viewport") { ViewportExampleView(theme: theme) }
     }
 }

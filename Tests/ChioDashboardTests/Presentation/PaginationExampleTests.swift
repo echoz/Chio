@@ -8,10 +8,10 @@ import Testing
 struct PaginationExampleTests {
     @Test("History keeps its first page, controls and hints across themes and sizes",
           arguments: [CellSize(width: 100, height: 30), CellSize(width: 50, height: 30),
-                      CellSize(width: 36, height: 18)], [false, true])
-    func layout(size: CellSize, light: Bool) {
+                      CellSize(width: 36, height: 18)], ExampleTheme.allCases)
+    func layout(size: CellSize, appearance: ExampleTheme) {
         let rendered = DefaultRenderer().render(
-            PaginationExampleView(light: light).environment(\.terminalSize, size),
+            PaginationExampleView(theme: appearance).environment(\.terminalSize, size),
             proposal: .init(width: size.width, height: size.height), frameInstant: .zero
         )
         let text = rendered.rasterSurface.lines.joined(separator: "\n")

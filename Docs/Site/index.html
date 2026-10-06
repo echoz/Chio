@@ -65,9 +65,20 @@
             <h3>A little more choice</h3>
             <span class="recording-kind">Component example</span>
           </div>
+          <div class="theme-preview-controls" hidden>
+            <label for="choices-preview-theme">Static preview
+              <select id="choices-preview-theme" aria-describedby="choices-preview-status">
+                <option value="default" selected>Default</option>
+                <option value="light">Light</option>
+                <option value="btop">btop</option>
+              </select>
+            </label>
+            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play original recording</button>
+            <button class="show-theme-preview" type="button" hidden>Show static preview</button>
+            <p id="choices-preview-status" class="preview-status" role="status"></p>
+          </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/choices.png" alt="A searchable capabilities checklist with Build and Test checked and Deploy unavailable." width="960" height="723">
-            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play recording</button>
           </div>
           <div class="player" aria-label="Choices recording"></div>
           <p class="player-message" role="status" hidden></p>
@@ -94,12 +105,23 @@
 
         <article id="feedback" class="recording" data-cols="76" data-rows="20">
           <div class="recording-heading">
-            <h3>Same controls. A lighter mood.</h3>
+            <h3>Actions with clear feedback.</h3>
             <span class="recording-kind">Component example</span>
+          </div>
+          <div class="theme-preview-controls" hidden>
+            <label for="feedback-preview-theme">Static preview
+              <select id="feedback-preview-theme" aria-describedby="feedback-preview-status">
+                <option value="default">Default</option>
+                <option value="light" selected>Light</option>
+                <option value="btop">btop</option>
+              </select>
+            </label>
+            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play original recording</button>
+            <button class="show-theme-preview" type="button" hidden>Show static preview</button>
+            <p id="feedback-preview-status" class="preview-status" role="status"></p>
           </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/feedback-light.png" alt="The light theme's feedback screen with an accent outline around the focused Publish button." width="960" height="548">
-            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play recording</button>
           </div>
           <div class="player" aria-label="Feedback recording"></div>
           <p class="player-message" role="status" hidden></p>
@@ -129,9 +151,20 @@
             <h3>A page at a time</h3>
             <span class="recording-kind">Component example</span>
           </div>
+          <div class="theme-preview-controls" hidden>
+            <label for="pagination-preview-theme">Static preview
+              <select id="pagination-preview-theme" aria-describedby="pagination-preview-status">
+                <option value="default" selected>Default</option>
+                <option value="light">Light</option>
+                <option value="btop">btop</option>
+              </select>
+            </label>
+            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play original recording</button>
+            <button class="show-theme-preview" type="button" hidden>Show static preview</button>
+            <p id="pagination-preview-status" class="preview-status" role="status"></p>
+          </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/pagination.png" alt="A filtered run history with three Build results, native page buttons, and a 4–6 of 6 item summary." width="960" height="723">
-            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play recording</button>
           </div>
           <div class="player" aria-label="Pagination recording"></div>
           <p class="player-message" role="status" hidden></p>
@@ -161,9 +194,20 @@
             <h3>A little room for a wide view</h3>
             <span class="recording-kind">Component example</span>
           </div>
+          <div class="theme-preview-controls" hidden>
+            <label for="viewport-preview-theme">Static preview
+              <select id="viewport-preview-theme" aria-describedby="viewport-preview-status">
+                <option value="default" selected>Default</option>
+                <option value="light">Light</option>
+                <option value="btop">btop</option>
+              </select>
+            </label>
+            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play original recording</button>
+            <button class="show-theme-preview" type="button" hidden>Show static preview</button>
+            <p id="viewport-preview-status" class="preview-status" role="status"></p>
+          </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/viewport.png" alt="A dark activity log of forty local events with native scroll indicators, row and column status, and a Back to start button." width="960" height="723">
-            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play recording</button>
           </div>
           <div class="player" aria-label="Viewport recording"></div>
           <p class="player-message" role="status" hidden></p>
@@ -193,9 +237,20 @@
             <h3>One branch at a time</h3>
             <span class="recording-kind">Component example</span>
           </div>
+          <div class="theme-preview-controls" hidden>
+            <label for="tree-preview-theme">Static preview
+              <select id="tree-preview-theme" aria-describedby="tree-preview-status">
+                <option value="default" selected>Default</option>
+                <option value="light">Light</option>
+                <option value="btop">btop</option>
+              </select>
+            </label>
+            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play original recording</button>
+            <button class="show-theme-preview" type="button" hidden>Show static preview</button>
+            <p id="tree-preview-status" class="preview-status" role="status"></p>
+          </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/tree.png" alt="A dark example workspace with Sources, Chio, and Presentation expanded into file labels, three collapsed folders, and bulk expansion buttons." width="960" height="723">
-            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play recording</button>
           </div>
           <div class="player" aria-label="Tree recording"></div>
           <p class="player-message" role="status" hidden></p>
@@ -225,9 +280,20 @@
             <h3>Related settings, one draft</h3>
             <span class="recording-kind">Component example</span>
           </div>
+          <div class="theme-preview-controls" hidden>
+            <label for="forms-preview-theme">Static preview
+              <select id="forms-preview-theme" aria-describedby="forms-preview-status">
+                <option value="default" selected>Default</option>
+                <option value="light">Light</option>
+                <option value="btop">btop</option>
+              </select>
+            </label>
+            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play original recording</button>
+            <button class="show-theme-preview" type="button" hidden>Show static preview</button>
+            <p id="forms-preview-status" class="preview-status" role="status"></p>
+          </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/forms.png" alt="A dark grouped settings form with Workspace and Automation sections, a saved-values summary, and Save and Cancel buttons." width="960" height="798">
-            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play recording</button>
           </div>
           <div class="player" aria-label="Grouped forms recording"></div>
           <p class="player-message" role="status" hidden></p>
@@ -257,9 +323,20 @@
             <h3>Elapsed and remaining time</h3>
             <span class="recording-kind">Component example</span>
           </div>
+          <div class="theme-preview-controls" hidden>
+            <label for="timers-preview-theme">Static preview
+              <select id="timers-preview-theme" aria-describedby="timers-preview-status">
+                <option value="default" selected>Default</option>
+                <option value="light">Light</option>
+                <option value="btop">btop</option>
+              </select>
+            </label>
+            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play original recording</button>
+            <button class="show-theme-preview" type="button" hidden>Show static preview</button>
+            <p id="timers-preview-status" class="preview-status" role="status"></p>
+          </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/timers.png" alt="A dark time studio with independent stopwatch and countdown panels, elapsed and remaining time, native pause and reset buttons, and a progress track." width="960" height="798">
-            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play recording</button>
           </div>
           <div class="player" aria-label="Duration labels recording"></div>
           <p class="player-message" role="status" hidden></p>
@@ -289,9 +366,20 @@
             <h3>Read the code, follow the thread</h3>
             <span class="recording-kind">Component example</span>
           </div>
+          <div class="theme-preview-controls" hidden>
+            <label for="markdown-preview-theme">Static preview
+              <select id="markdown-preview-theme" aria-describedby="markdown-preview-status">
+                <option value="default" selected>Default</option>
+                <option value="light">Light</option>
+                <option value="btop">btop</option>
+              </select>
+            </label>
+            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play original recording</button>
+            <button class="show-theme-preview" type="button" hidden>Show static preview</button>
+            <p id="markdown-preview-status" class="preview-status" role="status"></p>
+          </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/markdown-links.png" alt="A Swift code block in an agent report, with themed keywords, types, strings, numbers, and comments above local link feedback." width="960" height="798">
-            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play recording</button>
           </div>
           <div class="player" aria-label="Markdown code and links recording"></div>
           <p class="player-message" role="status" hidden></p>
@@ -322,9 +410,20 @@
             <h3>An agent workspace</h3>
             <span class="recording-kind">Composition</span>
           </div>
+          <div class="theme-preview-controls" hidden>
+            <label for="dashboard-preview-theme">Static preview
+              <select id="dashboard-preview-theme" aria-describedby="dashboard-preview-status">
+                <option value="default" selected>Default</option>
+                <option value="light">Light</option>
+                <option value="btop">btop</option>
+              </select>
+            </label>
+            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play original recording</button>
+            <button class="show-theme-preview" type="button" hidden>Show static preview</button>
+            <p id="dashboard-preview-status" class="preview-status" role="status"></p>
+          </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/dashboard.png" alt="A dark terminal dashboard with four agents, a selected Build Agent, progress, and keyboard hints." width="1248" height="948">
-            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play recording</button>
           </div>
           <div class="player" aria-label="Dashboard recording"></div>
           <p class="player-message" role="status" hidden></p>
@@ -354,9 +453,20 @@
             <h3>A compact view of the readings</h3>
             <span class="recording-kind">Composition</span>
           </div>
+          <div class="theme-preview-controls" hidden>
+            <label for="metrics-preview-theme">Static preview
+              <select id="metrics-preview-theme" aria-describedby="metrics-preview-status">
+                <option value="default">Default</option>
+                <option value="light">Light</option>
+                <option value="btop" selected>btop</option>
+              </select>
+            </label>
+            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play original recording</button>
+            <button class="show-theme-preview" type="button" hidden>Show static preview</button>
+            <p id="metrics-preview-status" class="preview-status" role="status"></p>
+          </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/metrics.png" alt="Compact dark instrumentation panels with border titles, utilization tracks, single-series history graphs, and native Next sample and History buttons." width="960" height="798">
-            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play recording</button>
           </div>
           <div class="player" aria-label="Compact metrics recording"></div>
           <p class="player-message" role="status" hidden></p>
@@ -386,9 +496,20 @@
             <h3>A little space to review</h3>
             <span class="recording-kind">Composition</span>
           </div>
+          <div class="theme-preview-controls" hidden>
+            <label for="inbox-preview-theme">Static preview
+              <select id="inbox-preview-theme" aria-describedby="inbox-preview-status">
+                <option value="default" selected>Default</option>
+                <option value="light">Light</option>
+                <option value="btop">btop</option>
+              </select>
+            </label>
+            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play original recording</button>
+            <button class="show-theme-preview" type="button" hidden>Show static preview</button>
+            <p id="inbox-preview-status" class="preview-status" role="status"></p>
+          </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/inbox.png" alt="A dense review queue beside a Markdown preview, with search, queue and sort controls, selected review metadata, and keyboard hints." width="1248" height="798">
-            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play recording</button>
           </div>
           <div class="player" aria-label="Review inbox recording"></div>
           <p class="player-message" role="status" hidden></p>
@@ -417,9 +538,20 @@
             <h3>Read the changes, hunk by hunk</h3>
             <span class="recording-kind">Prototype</span>
           </div>
+          <div class="theme-preview-controls" hidden>
+            <label for="diff-preview-theme">Static preview
+              <select id="diff-preview-theme" aria-describedby="diff-preview-status">
+                <option value="default" selected>Default</option>
+                <option value="light">Light</option>
+                <option value="btop">btop</option>
+              </select>
+            </label>
+            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play original recording</button>
+            <button class="show-theme-preview" type="button" hidden>Show static preview</button>
+            <p id="diff-preview-status" class="preview-status" role="status"></p>
+          </div>
           <div class="recording-preview">
             <img class="recording-image" src="recordings/diff.png" alt="A read-only split diff with paired line-number gutters, added and removed source lines, layout controls, and hunk navigation." width="1248" height="798">
-            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play recording</button>
           </div>
           <div class="player" aria-label="Diff reader recording"></div>
           <p class="player-message" role="status" hidden></p>
@@ -445,8 +577,8 @@
         </article>
 
         <p class="playback-note">Press play to watch. Pause, seek, or open fullscreen for a closer look.
-          These are recordings; try the binary to use the controls yourself.</p>
-        <noscript><p>Enable JavaScript for playback, or download a recording and open it with asciinema.</p></noscript>
+          Theme choices show static previews and update the run command. Recordings keep their original captured themes; try the binary to use the controls yourself.</p>
+        <noscript><p>Enable JavaScript for theme previews and playback, or download a recording and open it with asciinema.</p></noscript>
       </section>
 
       <aside class="setup-note" aria-label="Local setup">

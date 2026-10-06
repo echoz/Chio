@@ -5,13 +5,13 @@ import SwiftTUI
 struct ViewportExampleView {
     @Environment(\.terminalSize) private var terminalSize
     @Environment(\.requestTermination) private var requestTermination
-    @State private var isLight: Bool
+    @State private var themeChoice: ExampleTheme
     @State private var position = ScrollCellOffset.zero
     @FocusState private var logFocused: Bool
 
-    init(light: Bool = false) { _isLight = State(wrappedValue: light) }
+    init(theme: ExampleTheme = .default) { _themeChoice = State(wrappedValue: theme) }
 
-    private var theme: ChioTheme { isLight ? .light : .default }
+    private var theme: ChioTheme { themeChoice.theme }
 
     private var hints: some View {
         KeyHints {
@@ -83,7 +83,7 @@ extension ViewportExampleView: View {
             }
             guard press.modifiers == .ctrl else { return .ignored }
             switch press.key {
-            case .character("t"): isLight.toggle()
+            case .character("t"): themeChoice = themeChoice.next
             case .character("q"): _ = requestTermination()
             default: return .ignored
             }

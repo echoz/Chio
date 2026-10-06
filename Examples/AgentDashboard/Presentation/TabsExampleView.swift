@@ -5,19 +5,19 @@ import SwiftTUI
 struct TabsExampleView {
     @Environment(\.terminalSize) private var terminalSize
     @Environment(\.requestTermination) private var requestTermination
-    @State private var isLight: Bool
+    @State private var themeChoice: ExampleTheme
     @State private var section = Section.overview
     @FocusState private var stripFocused: Bool
 
-    init(light: Bool = false) {
-        _isLight = State(wrappedValue: light)
+    init(theme: ExampleTheme = .default) {
+        _themeChoice = State(wrappedValue: theme)
     }
 
     private enum Section: Hashable, Codable, Sendable {
         case overview, agents, notes, activity, settings
     }
 
-    private var theme: ChioTheme { isLight ? .light : .default }
+    private var theme: ChioTheme { themeChoice.theme }
     private var hints: [ShortcutHint] {
         let navigation = stripFocused
             ? [ShortcutHint("←→", "choose"), ShortcutHint("↵", "open"), ShortcutHint("↓", "more")]
@@ -62,7 +62,7 @@ extension TabsExampleView: View {
                 return .handled
             }
             if press == KeyPress(.character("t"), modifiers: .ctrl) {
-                isLight.toggle()
+                themeChoice = themeChoice.next
                 return .handled
             }
             if press == KeyPress(.character("q"), modifiers: .ctrl) {

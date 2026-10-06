@@ -6,14 +6,14 @@ import SwiftTUI
 struct PaginationExampleView {
     @Environment(\.terminalSize) private var terminalSize
     @Environment(\.requestTermination) private var requestTermination
-    @State private var isLight: Bool
+    @State private var themeChoice: ExampleTheme
     @State private var query = ""
     @State private var pagination = Pagination(totalCount: 23, pageSize: 3)
     @FocusState private var searchFocused: Bool
 
-    init(light: Bool = false) { _isLight = State(wrappedValue: light) }
+    init(theme: ExampleTheme = .default) { _themeChoice = State(wrappedValue: theme) }
 
-    private var theme: ChioTheme { isLight ? .light : .default }
+    private var theme: ChioTheme { themeChoice.theme }
     private static let entries = (1...23).map { index in
         Entry(id: index, title: ["Build", "Review", "Test", "Docs"][(index - 1) % 4],
               outcome: index % 5 == 0 ? .failed : .passed)
@@ -124,7 +124,7 @@ extension PaginationExampleView: View {
             guard press.modifiers == .ctrl else { return .ignored }
             switch press.key {
             case .character("r"): filter.wrappedValue = ""
-            case .character("t"): isLight.toggle()
+            case .character("t"): themeChoice = themeChoice.next
             case .character("q"): _ = requestTermination()
             default: return .ignored
             }

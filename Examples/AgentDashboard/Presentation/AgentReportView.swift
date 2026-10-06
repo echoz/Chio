@@ -4,12 +4,12 @@ import SwiftTUI
 @MainActor
 struct AgentReportView {
     let report: AgentReport
-    @Binding var isLight: Bool
+    @Binding var themeChoice: ExampleTheme
     let close: @MainActor @Sendable () -> Void
     @FocusState private var isReading: Bool
     @State private var lastLinkDestination = ""
 
-    private var theme: ChioTheme { isLight ? .light : .default }
+    private var theme: ChioTheme { themeChoice.theme }
 }
 
 extension AgentReportView: View {
@@ -59,7 +59,7 @@ extension AgentReportView: View {
         }
         .onKeyPress { press in
             guard press == KeyPress(.character("t"), modifiers: .ctrl) else { return .ignored }
-            isLight.toggle()
+            themeChoice = themeChoice.next
             return .handled
         }
     }

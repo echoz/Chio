@@ -6,7 +6,7 @@ import SwiftTUI
 struct MetricsExampleView {
     @Environment(\.terminalSize) private var terminalSize
     @Environment(\.requestTermination) private var requestTermination
-    @State private var palette: Palette
+    @State private var themeChoice: ExampleTheme
     @State private var history: History = .populated
     @State private var sampleIndex = 0
 
@@ -19,28 +19,8 @@ struct MetricsExampleView {
         61, 63, 64, 65, 65, 67, 68, 69, 68, 70, 71, 71,
     ]
 
-    init(light: Bool = false) {
-        _palette = State(wrappedValue: light ? .light : .btop)
-    }
-
-    private enum Palette {
-        case btop, standard, light
-
-        var theme: ChioTheme {
-            switch self {
-            case .btop: .btop
-            case .standard: .default
-            case .light: .light
-            }
-        }
-
-        var next: Self {
-            switch self {
-            case .btop: .standard
-            case .standard: .light
-            case .light: .btop
-            }
-        }
+    init(theme: ExampleTheme = .btop) {
+        _themeChoice = State(wrappedValue: theme)
     }
 
     private enum History: String {
@@ -63,7 +43,7 @@ struct MetricsExampleView {
         }
     }
 
-    private var theme: ChioTheme { palette.theme }
+    private var theme: ChioTheme { themeChoice.theme }
     private var wide: Bool { terminalSize.width >= 70 }
     private var compact: Bool { !wide || terminalSize.height < 24 }
     private var panelWidth: Int {
@@ -180,7 +160,7 @@ extension MetricsExampleView: View {
         .onKeyPress { press in
             if press.modifiers == .ctrl {
                 switch press.key {
-                case .character("t"): palette = palette.next
+                case .character("t"): themeChoice = themeChoice.next
                 case .character("q"): _ = requestTermination()
                 default: return .ignored
                 }

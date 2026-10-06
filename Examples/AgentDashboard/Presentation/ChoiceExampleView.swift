@@ -8,7 +8,7 @@ struct ChoiceExampleView {
     @Environment(\.terminalSize) private var terminalSize
     @State private var draft: ChoiceDraft
     @State private var step: Step
-    @State private var isLight: Bool
+    @State private var themeChoice: ExampleTheme
     @State private var languageQuery = ""
     @State private var capabilityQuery = ""
     @State private var showsValidation: Bool
@@ -37,16 +37,16 @@ struct ChoiceExampleView {
     }
 
     // Initial step and validation visibility also allow focused snapshot coverage.
-    init(light: Bool = false, initialDraft: ChoiceDraft = ChoiceDraft(),
+    init(theme: ExampleTheme = .default, initialDraft: ChoiceDraft = ChoiceDraft(),
          initialStep: Step = .language, showsValidation: Bool = false) {
         original = initialDraft
         _draft = State(wrappedValue: initialDraft)
         _step = State(wrappedValue: initialStep)
-        _isLight = State(wrappedValue: light)
+        _themeChoice = State(wrappedValue: theme)
         _showsValidation = State(wrappedValue: showsValidation)
     }
 
-    private var theme: ChioTheme { isLight ? .light : .default }
+    private var theme: ChioTheme { themeChoice.theme }
 
     private var languageSelection: Binding<ChoiceDraft.Language?> {
         let storage = $draft
@@ -196,7 +196,7 @@ extension ChoiceExampleView: View {
             case .character("b"): step = .language
             case .character("x"): cancel()
             case .character("r"): reset()
-            case .character("t"): isLight.toggle()
+            case .character("t"): themeChoice = themeChoice.next
             case .character("q"): _ = requestTermination()
             default: return .ignored
             }

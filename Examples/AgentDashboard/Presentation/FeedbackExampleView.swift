@@ -6,13 +6,13 @@ import SwiftTUI
 struct FeedbackExampleView {
     @Environment(\.terminalSize) private var terminalSize
     @Environment(\.requestTermination) private var requestTermination
-    @State private var isLight: Bool
+    @State private var themeChoice: ExampleTheme
     @State private var phase = Phase.ready
     @State private var prompt: Prompt?
     @State private var showsToast = false
 
-    init(light: Bool = false) {
-        _isLight = State(wrappedValue: light)
+    init(theme: ExampleTheme = .default) {
+        _themeChoice = State(wrappedValue: theme)
     }
 
     private enum Prompt: Equatable { case publish, discard }
@@ -37,7 +37,7 @@ struct FeedbackExampleView {
         }
     }
 
-    private var theme: ChioTheme { isLight ? .light : .default }
+    private var theme: ChioTheme { themeChoice.theme }
 
     private func publish() {
         guard phase != .publishing else { return }
@@ -140,7 +140,7 @@ extension FeedbackExampleView: View {
         .onKeyPress { press in
             guard press.modifiers == .ctrl else { return .ignored }
             switch press.key {
-            case .character("t"): isLight.toggle()
+            case .character("t"): themeChoice = themeChoice.next
             case .character("q"): _ = requestTermination()
             case .character("p") where prompt == nil: publish()
             case .character("d") where prompt == nil: discard()

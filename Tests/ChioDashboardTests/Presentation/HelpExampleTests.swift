@@ -270,9 +270,9 @@ struct HelpExampleTests {
                 $0.helpButtonFocused("Close")
             }
             session.send(.key(.character("t"), modifiers: .ctrl))
-            let closeThemed = try await recorder.wait(after: close.sequence, description: "Close receives theme shortcut without losing native focus") {
+            let closeThemed = try await recorder.wait(after: close.sequence, description: "Close advances to btop without losing native focus") {
                 $0.helpIsPresented && $0.helpButtonFocused("Close") && $0.raster.cells != close.raster.cells
-                    && $0.raster.cells.flatMap { $0 }.contains { $0.style?.foregroundColor == ChioTheme.default.colors.heading }
+                    && $0.raster.cells.flatMap { $0 }.contains { $0.style?.foregroundColor == ChioTheme.btop.colors.heading }
             }
             #expect(closeThemed.focusedIdentity == close.focusedIdentity)
             session.send(.key(.escape))
@@ -320,10 +320,10 @@ struct HelpExampleTests {
 
     @Test("The help example keeps content, status, actions and essential hints in both themes",
           arguments: [CellSize(width: 100, height: 30), CellSize(width: 50, height: 30),
-                      CellSize(width: 36, height: 18)], [false, true])
-    func layout(size: CellSize, light: Bool) {
+                      CellSize(width: 36, height: 18)], ExampleTheme.allCases)
+    func layout(size: CellSize, appearance: ExampleTheme) {
         let frame = DefaultRenderer().render(
-            HelpExampleView(light: light).environment(\.terminalSize, size),
+            HelpExampleView(theme: appearance).environment(\.terminalSize, size),
             proposal: .init(width: size.width, height: size.height), frameInstant: .zero
         )
         let text = frame.rasterSurface.lines.joined(separator: "\n")
@@ -336,7 +336,7 @@ struct HelpExampleTests {
         #expect(text.contains("^T theme") && text.contains("^Q quit"))
         #expect(frame.semanticSnapshot.accessibilityNodes.contains { $0.role == .button && $0.label == "Run" && $0.isEnabled })
         #expect(frame.semanticSnapshot.accessibilityNodes.contains { $0.role == .button && $0.label == "Help" && $0.isEnabled })
-        let theme: ChioTheme = light ? .light : .default
+        let theme = appearance.theme
         #expect(frame.rasterSurface.cells.flatMap { $0 }.contains {
             $0.character == "?" && $0.style?.foregroundColor == theme.colors.accent
         })

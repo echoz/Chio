@@ -6,7 +6,7 @@ import SwiftTUI
 struct GroupedFormExampleView {
     @Environment(\.terminalSize) private var terminalSize
     @Environment(\.requestTermination) private var requestTermination
-    @State private var isLight: Bool
+    @State private var themeChoice: ExampleTheme
     @State private var draft: RunSettingsDraft
     @State private var savedDraft = RunSettingsDraft()
     @State private var validation = FormValidation<RunSettingsDraft.Field>()
@@ -14,13 +14,13 @@ struct GroupedFormExampleView {
     @FocusState private var focus: RunSettingsDraft.Field?
 
     // A draft override supports layout probes; the saved baseline remains the defaults.
-    init(light: Bool = false, initialDraft: RunSettingsDraft = .init()) {
-        _isLight = State(wrappedValue: light)
+    init(theme: ExampleTheme = .default, initialDraft: RunSettingsDraft = .init()) {
+        _themeChoice = State(wrappedValue: theme)
         _draft = State(wrappedValue: initialDraft)
     }
 
     private enum Feedback: Equatable { case editing, saved, rejected, cancelled }
-    private var theme: ChioTheme { isLight ? .light : .default }
+    private var theme: ChioTheme { themeChoice.theme }
     private var short: Bool { terminalSize.height < 24 }
 
     private var name: Binding<String> {
@@ -197,7 +197,7 @@ extension GroupedFormExampleView: View {
                 switch press.key {
                 case .character("s"): save()
                 case .character("x"): cancel()
-                case .character("t"): isLight.toggle()
+                case .character("t"): themeChoice = themeChoice.next
                 case .character("q"): _ = requestTermination()
                 default: return .ignored
                 }

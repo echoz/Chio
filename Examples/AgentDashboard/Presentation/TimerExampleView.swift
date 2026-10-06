@@ -5,7 +5,7 @@ import SwiftTUI
 struct TimerExampleView {
     @Environment(\.terminalSize) private var terminalSize
     @Environment(\.requestTermination) private var requestTermination
-    @State private var isLight: Bool
+    @State private var themeChoice: ExampleTheme
     @State private var stopwatch = ElapsedTime()
     @State private var countdown = ElapsedTime()
 
@@ -14,15 +14,15 @@ struct TimerExampleView {
     // Tests can supply explicit instants while retaining the real native timeline.
     private let now: @MainActor () -> MonotonicInstant
 
-    init(light: Bool = false, countdownDuration: Duration = .seconds(20),
+    init(theme: ExampleTheme = .default, countdownDuration: Duration = .seconds(20),
          now: @escaping @MainActor () -> MonotonicInstant = { .now() }) {
         precondition(countdownDuration > .zero && countdownDuration <= .seconds(Int64.max))
-        _isLight = State(wrappedValue: light)
+        _themeChoice = State(wrappedValue: theme)
         self.countdownDuration = countdownDuration
         self.now = now
     }
 
-    private var theme: ChioTheme { isLight ? .light : .default }
+    private var theme: ChioTheme { themeChoice.theme }
 
     private func toggleStopwatch() {
         let instant = now()
@@ -159,7 +159,7 @@ extension TimerExampleView: View {
         .onKeyPress { press in
             if press.modifiers == .ctrl {
                 switch press.key {
-                case .character("t"): isLight.toggle()
+                case .character("t"): themeChoice = themeChoice.next
                 case .character("q"): _ = requestTermination()
                 default: return .ignored
                 }

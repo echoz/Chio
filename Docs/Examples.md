@@ -5,6 +5,30 @@
 Run these commands from a checkout of the repository. All examples are local;
 the dashboard simulates agents, while file selection reads your filesystem.
 
+## Compare themes
+
+Every example accepts `--theme default`, `--theme light` or `--theme btop`:
+
+```sh
+swift run -c release chio-dashboard --choices --theme btop
+swift run -c release chio-dashboard --inbox --theme light
+swift run -c release chio-dashboard --metrics --theme default
+```
+
+Press **Ctrl-T** to cycle default → light → btop while retaining your place and
+entered values. The dashboard also accepts `t` while browsing. With no option,
+metrics starts in btop and other examples start in default. `--light` remains an
+alias for `--theme light`; use one option or the other.
+
+The [showcase](https://echoz.github.io/Chio/) provides a **Static preview** theme
+selector beside each example. These previews render the same example state in
+all three themes, and the launch command follows the selected theme. **Play
+original recording** opens the interaction recording, whose own theme changes
+remain part of that recorded session.
+
+Themes change styling, not terminal color support. For true-color terminals over
+SSH, see [Colors over SSH](#colors-over-ssh).
+
 ## Dashboard
 
 Use Swift 6.4 or later on macOS 15 or later, matching the pinned upstream requirements:

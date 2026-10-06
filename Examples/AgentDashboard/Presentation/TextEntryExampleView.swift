@@ -6,7 +6,7 @@ import SwiftTUI
 struct TextEntryExampleView {
     @Environment(\.terminalSize) private var terminalSize
     @Environment(\.requestTermination) private var requestTermination
-    @State private var isLight: Bool
+    @State private var themeChoice: ExampleTheme
     @State private var password: String
     @State private var notes: String
     @State private var showsValidation: Bool
@@ -14,9 +14,9 @@ struct TextEntryExampleView {
     @State private var feedback = Feedback.editing
     @FocusState private var focus: Field?
 
-    init(light: Bool = false, initialPassword: String = "", initialNotes: String = "",
+    init(theme: ExampleTheme = .default, initialPassword: String = "", initialNotes: String = "",
          showsValidation: Bool = false, inputsDisabled: Bool = false) {
-        _isLight = State(wrappedValue: light)
+        _themeChoice = State(wrappedValue: theme)
         _password = State(wrappedValue: initialPassword)
         _notes = State(wrappedValue: initialNotes)
         _showsValidation = State(wrappedValue: showsValidation)
@@ -43,7 +43,7 @@ struct TextEntryExampleView {
         return false
     }
 
-    private var theme: ChioTheme { isLight ? .light : .default }
+    private var theme: ChioTheme { themeChoice.theme }
     private var passwordError: String? { password.count < 8 ? "Use at least 8 characters." : nil }
     private var notesError: String? {
         notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Enter some notes." : nil
@@ -149,7 +149,7 @@ extension TextEntryExampleView: View {
             case .character("s"): save()
             case .character("x"): cancel()
             case .character("d"): toggleDisabled()
-            case .character("t"): isLight.toggle()
+            case .character("t"): themeChoice = themeChoice.next
             case .character("q"): _ = requestTermination()
             default: return .ignored
             }

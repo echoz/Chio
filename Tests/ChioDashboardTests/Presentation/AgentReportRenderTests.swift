@@ -7,10 +7,10 @@ import Testing
 struct AgentReportRenderTests {
     @Test("Reports retain their header, complete navigation hints, and captured agent across sizes and themes",
           arguments: [CellSize(width: 100, height: 30), CellSize(width: 50, height: 30),
-                      CellSize(width: 36, height: 18)], [false, true])
-    func layout(size: CellSize, light: Bool) {
+                      CellSize(width: 36, height: 18)], ExampleTheme.allCases)
+    func layout(size: CellSize, appearance: ExampleTheme) {
         let view = AgentReportView(report: AgentReport(agent: Agent.examples[3]),
-                                   isLight: .constant(light), close: {})
+                                   themeChoice: .constant(appearance), close: {})
         let surface = DefaultRenderer().render(
             view, proposal: .init(width: size.width, height: size.height), frameInstant: .zero
         ).rasterSurface
@@ -24,7 +24,7 @@ struct AgentReportRenderTests {
         #expect(text.contains("home/end jump"))
         #expect(text.contains("esc back"))
         #expect(text.contains("^T theme"))
-        let theme: ChioTheme = light ? .light : .default
+        let theme = appearance.theme
         #expect(surface.cells.flatMap { $0 }.contains {
             $0.character == "c" && $0.style?.foregroundColor == theme.colors.accent
         })

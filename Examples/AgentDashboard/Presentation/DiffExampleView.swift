@@ -6,7 +6,7 @@ import SwiftTUI
 struct DiffExampleView {
     @Environment(\.terminalSize) private var terminalSize
     @Environment(\.requestTermination) private var requestTermination
-    @State private var isLight: Bool
+    @State private var themeChoice: ExampleTheme
     @State private var fileIndex: Int
     @State private var prefersSplit: Bool
     @State private var activeHunk: Int?
@@ -15,16 +15,16 @@ struct DiffExampleView {
     private let files = DiffFile.examples
     private let sourceWidths: [Int]
 
-    init(light: Bool = false, initialFile: Int = 0, split: Bool = true) {
+    init(theme: ExampleTheme = .default, initialFile: Int = 0, split: Bool = true) {
         precondition(DiffFile.examples.indices.contains(initialFile))
-        _isLight = State(wrappedValue: light)
+        _themeChoice = State(wrappedValue: theme)
         _fileIndex = State(wrappedValue: initialFile)
         _prefersSplit = State(wrappedValue: split)
         _activeHunk = State(wrappedValue: DiffFile.examples[initialFile].hunks.indices.first)
         sourceWidths = DiffFile.examples.map(Self.sourceWidth)
     }
 
-    private var theme: ChioTheme { isLight ? .light : .default }
+    private var theme: ChioTheme { themeChoice.theme }
     private var file: DiffFile { files[fileIndex] }
     private var compact: Bool { terminalSize.height < 24 }
     private var canSplit: Bool { terminalSize.width >= 92 }
@@ -80,7 +80,7 @@ struct DiffExampleView {
             switch press.key {
             case .character("l") where canSplit: prefersSplit.toggle()
             case .character("f"): selectFile((fileIndex + 1) % files.count)
-            case .character("t"): isLight.toggle()
+            case .character("t"): themeChoice = themeChoice.next
             case .character("q"): _ = requestTermination()
             default: return .ignored
             }

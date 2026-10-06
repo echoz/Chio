@@ -16,7 +16,7 @@
 body { margin: 0; }
 a { color: inherit; text-underline-offset: .23em; }
 a:hover { color: var(--accent); }
-a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 5px; }
+a:focus-visible, button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 5px; }
 [hidden] { display: none !important; }
 .page { max-width: 1168px; margin: 0 auto; padding: 0 36px; }
 .site-header, .site-header nav, footer { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
@@ -51,9 +51,14 @@ h1 span { color: var(--accent); }
 .recording-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 16px 22px; border-bottom: 1px solid var(--border); }
 .recording-heading h3 { margin: 0; font-size: 14px; font-weight: 500; }
 .recording-kind { flex-shrink: 0; font: 11px/1.5 ui-monospace, "SFMono-Regular", Consolas, monospace; color: var(--mint); }
+.theme-preview-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 12px 22px; border-bottom: 1px solid var(--border); }
+.theme-preview-controls label { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+.theme-preview-controls select, .show-theme-preview, .play-recording { border: 1px solid var(--border); border-radius: 5px; padding: 7px 10px; background: var(--background); color: var(--text); font: inherit; font-size: 12px; cursor: pointer; }
+.show-theme-preview, .play-recording { margin-left: auto; }
+.show-theme-preview:hover { border-color: var(--accent); }
+.preview-status { flex-basis: 100%; margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
 .recording-image { display: block; width: 100%; height: auto; }
-.recording-preview { position: relative; }
-.play-recording { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); border: 1px solid var(--accent); border-radius: 8px; padding: 15px 20px; background: #211d2af5; color: var(--text); font: inherit; font-size: 14px; white-space: nowrap; cursor: pointer; box-shadow: 0 4px 24px #0005; }
+.play-recording { border-color: var(--accent); }
 .play-recording span { color: var(--accent); padding-right: 7px; }
 .play-recording:hover { background: #38263f; }
 .player { min-width: 0; }
@@ -100,6 +105,7 @@ footer span span { padding: 0 8px; }
   .demo-options { gap: 20px; }
   .recording-label { display: none; }
   .recording-heading { padding: 14px; flex-wrap: wrap; gap: 8px; }
+  .theme-preview-controls { padding: 12px 14px; gap: 8px; }
   .recording-caption { padding: 14px; flex-direction: column; gap: 12px; }
   .recording-details { padding: 0 14px 16px; }
   .recording-ingredients div { grid-template-columns: 1fr; gap: 0; }

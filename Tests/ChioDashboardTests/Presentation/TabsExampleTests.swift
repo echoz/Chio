@@ -8,10 +8,10 @@ import Testing
 struct TabsExampleTests {
     @Test("Workspace tabs retain essential content and hints across sizes and themes",
           arguments: [CellSize(width: 100, height: 30), CellSize(width: 50, height: 30),
-                      CellSize(width: 36, height: 18)], [false, true])
-    func initialLayout(size: CellSize, light: Bool) {
+                      CellSize(width: 36, height: 18)], ExampleTheme.allCases)
+    func initialLayout(size: CellSize, appearance: ExampleTheme) {
         let rendered = DefaultRenderer().render(
-            TabsExampleView(light: light).environment(\.terminalSize, size),
+            TabsExampleView(theme: appearance).environment(\.terminalSize, size),
             proposal: .init(width: size.width, height: size.height), frameInstant: .zero
         )
         let surface = rendered.rasterSurface
@@ -25,7 +25,7 @@ struct TabsExampleTests {
         #expect(rendered.semanticSnapshot.accessibilityNodes.contains { $0.role == .tabView })
         #expect(rendered.semanticSnapshot.accessibilityNodes.contains { $0.role == .button && $0.label == "Run demo" })
         if size.width == 36 { #expect(text.contains("More ▾")) }
-        let theme: ChioTheme = light ? .light : .default
+        let theme = appearance.theme
         #expect(surface.cells.flatMap { $0 }.contains {
             $0.character == "W" && $0.style?.foregroundColor == theme.colors.heading
         })

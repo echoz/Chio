@@ -10,10 +10,10 @@ struct InboxExampleTests {
           arguments: [CellSize(width: 240, height: 50), CellSize(width: 160, height: 40),
                       CellSize(width: 100, height: 30), CellSize(width: 88, height: 26),
                       CellSize(width: 87, height: 26), CellSize(width: 88, height: 25),
-                      CellSize(width: 60, height: 22), CellSize(width: 36, height: 18)], [false, true])
-    func layout(size: CellSize, light: Bool) throws {
+                      CellSize(width: 60, height: 22), CellSize(width: 36, height: 18)], ExampleTheme.allCases)
+    func layout(size: CellSize, appearance: ExampleTheme) throws {
         let rendered = DefaultRenderer().render(
-            InboxExampleView(light: light).environment(\.terminalSize, size),
+            InboxExampleView(theme: appearance).environment(\.terminalSize, size),
             proposal: .init(width: size.width, height: size.height)
         )
         let text = rendered.rasterSurface.lines.joined(separator: "\n")
@@ -36,7 +36,7 @@ struct InboxExampleTests {
             #expect(panels.queueWidth >= (size.width >= 160 ? 60 : 40))
             #expect(panels.previewWidth > panels.queueWidth)
         }
-        let theme: ChioTheme = light ? .light : .default
+        let theme = appearance.theme
         #expect(rendered.rasterSurface.cells.flatMap { $0 }.contains {
             $0.style?.foregroundColor == theme.colors.accent
         })

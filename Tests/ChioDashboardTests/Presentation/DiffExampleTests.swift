@@ -10,10 +10,10 @@ struct DiffExampleTests {
     @Test("The bounded diff retains its controls, one native viewport and compact hints",
           arguments: [CellSize(width: 36, height: 18), CellSize(width: 100, height: 30),
                       CellSize(width: 160, height: 40), CellSize(width: 91, height: 30),
-                      CellSize(width: 92, height: 30)], [false, true])
-    func layout(size: CellSize, light: Bool) throws {
+                      CellSize(width: 92, height: 30)], ExampleTheme.allCases)
+    func layout(size: CellSize, appearance: ExampleTheme) throws {
         let rendered = DefaultRenderer().render(
-            DiffExampleView(light: light).environment(\.terminalSize, size),
+            DiffExampleView(theme: appearance).environment(\.terminalSize, size),
             proposal: .init(width: size.width, height: size.height), frameInstant: .zero
         )
         let text = rendered.rasterSurface.lines.joined(separator: "\n")
@@ -33,19 +33,19 @@ struct DiffExampleTests {
         #expect(nodes.contains { $0.role == .picker && $0.label == "File" && $0.isEnabled })
         #expect(nodes.contains { $0.role == .button && $0.label == "Previous hunk" && !$0.isEnabled })
         #expect(nodes.contains { $0.role == .button && $0.label == "Next hunk" && $0.isEnabled })
-        let theme: ChioTheme = light ? .light : .default
+        let theme = appearance.theme
         #expect(rendered.rasterSurface.cells.flatMap { $0 }.contains {
             $0.style?.foregroundColor == theme.colors.accent
         })
     }
 
     @Test("Unified gutters advance independently and retain blank numbers on an absent side",
-          arguments: [false, true])
-    func unifiedGutters(light: Bool) throws {
+          arguments: ExampleTheme.allCases)
+    func unifiedGutters(appearance: ExampleTheme) throws {
         let file = try gutterFixture()
         let rendered = DefaultRenderer().render(
             DiffFileView(file: file, split: false, minimumWidth: 60, sourceWidth: 9, activeHunk: 0)
-                .chioTheme(light ? .light : .default),
+                .chioTheme(appearance.theme),
             proposal: .init(width: 80, height: 15)
         )
         let lines = rendered.rasterSurface.lines
@@ -71,11 +71,11 @@ struct DiffExampleTests {
     }
 
     @Test("Split replacements share rows and uneven removals leave the opposite cells empty",
-          arguments: [false, true])
-    func splitGutters(light: Bool) throws {
+          arguments: ExampleTheme.allCases)
+    func splitGutters(appearance: ExampleTheme) throws {
         let rendered = DefaultRenderer().render(
             DiffFileView(file: try gutterFixture(), split: true, minimumWidth: 60,
-                         sourceWidth: 9, activeHunk: 0).chioTheme(light ? .light : .default),
+                         sourceWidth: 9, activeHunk: 0).chioTheme(appearance.theme),
             proposal: .init(width: 80, height: 15)
         )
         let lines = rendered.rasterSurface.lines
@@ -91,7 +91,7 @@ struct DiffExampleTests {
         #expect(cellText(cells[paired], from: 31, count: 3) == "100")
         #expect(cells[paired][4].character == "−")
         #expect(cells[paired][35].character == "+")
-        let theme: ChioTheme = light ? .light : .default
+        let theme = appearance.theme
         #expect(cells[paired][4].style?.foregroundColor == theme.colors.accent)
         #expect(cells[paired][35].style?.foregroundColor == theme.syntax.string)
         for (text, number) in [("old-two", "101"), ("old-three", "102")] {

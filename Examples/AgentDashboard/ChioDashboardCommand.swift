@@ -16,7 +16,10 @@ struct ChioDashboardCommand {
     @Option(help: "Sample state: normal, empty, no-matches, failed, completed.")
     var scenario: DashboardScenario = .normal
 
-    @Flag(help: "Start with the light theme.")
+    @Option(help: "Starting theme: default, light or btop. Defaults to btop for metrics and default elsewhere.")
+    var theme: ExampleTheme?
+
+    @Flag(help: "Start with the light theme (alias for --theme light).")
     var light = false
 
     @Flag(help: "Start with simulated progress paused.")
@@ -70,36 +73,38 @@ struct ChioDashboardCommand {
     @OptionGroup(title: "SwiftTUI options")
     var swiftTUIOptions: SwiftTUIOptions
 
+    var resolvedTheme: ExampleTheme { theme ?? (light ? .light : metrics ? .btop : .default) }
+
     @MainActor @ViewBuilder
     private var snapshotView: some View {
         if diff {
-            DiffExampleView(light: light)
+            DiffExampleView(theme: resolvedTheme)
         } else if inbox {
-            InboxExampleView(light: light)
+            InboxExampleView(theme: resolvedTheme)
         } else if metrics {
-            MetricsExampleView(light: light)
+            MetricsExampleView(theme: resolvedTheme)
         } else if timers {
-            TimerExampleView(light: light)
+            TimerExampleView(theme: resolvedTheme)
         } else if forms {
-            GroupedFormExampleView(light: light)
+            GroupedFormExampleView(theme: resolvedTheme)
         } else if tree {
-            TreeExampleView(light: light)
+            TreeExampleView(theme: resolvedTheme)
         } else if viewport {
-            ViewportExampleView(light: light)
+            ViewportExampleView(theme: resolvedTheme)
         } else if pagination {
-            PaginationExampleView(light: light)
+            PaginationExampleView(theme: resolvedTheme)
         } else if tabs {
-            TabsExampleView(light: light)
+            TabsExampleView(theme: resolvedTheme)
         } else if keyboardHelp {
-            HelpExampleView(light: light)
+            HelpExampleView(theme: resolvedTheme)
         } else if feedback {
-            FeedbackExampleView(light: light)
+            FeedbackExampleView(theme: resolvedTheme)
         } else if textEntry {
-            TextEntryExampleView(light: light)
+            TextEntryExampleView(theme: resolvedTheme)
         } else if choices {
-            ChoiceExampleView(light: light)
+            ChoiceExampleView(theme: resolvedTheme)
         } else {
-            DashboardView(scenario: scenario, light: light, animates: false, paused: paused)
+            DashboardView(scenario: scenario, theme: resolvedTheme, animates: false, paused: paused)
         }
     }
 }
@@ -111,6 +116,9 @@ extension ChioDashboardCommand: AsyncParsableCommand {
     )
 
     mutating func validate() throws {
+        if light && theme != nil {
+            throw ValidationError("Choose --theme or --light, not both.")
+        }
         guard (20...240).contains(width), (10...100).contains(height) else {
             throw ValidationError("Use --width 20...240 and --height 10...100.")
         }
@@ -138,38 +146,38 @@ extension ChioDashboardCommand: AsyncParsableCommand {
             )
             print(frame.rasterSurface.lines.joined(separator: "\n"))
         } else if diff {
-            try await WebHostCLIRunner.run(DiffApplication(light: light), configuration: swiftTUIOptions.runtimeConfiguration())
+            try await WebHostCLIRunner.run(DiffApplication(theme: resolvedTheme), configuration: swiftTUIOptions.runtimeConfiguration())
         } else if inbox {
-            try await WebHostCLIRunner.run(InboxApplication(light: light), configuration: swiftTUIOptions.runtimeConfiguration())
+            try await WebHostCLIRunner.run(InboxApplication(theme: resolvedTheme), configuration: swiftTUIOptions.runtimeConfiguration())
         } else if metrics {
-            try await WebHostCLIRunner.run(MetricsApplication(light: light), configuration: swiftTUIOptions.runtimeConfiguration())
+            try await WebHostCLIRunner.run(MetricsApplication(theme: resolvedTheme), configuration: swiftTUIOptions.runtimeConfiguration())
         } else if timers {
-            try await WebHostCLIRunner.run(TimersApplication(light: light), configuration: swiftTUIOptions.runtimeConfiguration())
+            try await WebHostCLIRunner.run(TimersApplication(theme: resolvedTheme), configuration: swiftTUIOptions.runtimeConfiguration())
         } else if forms {
-            try await WebHostCLIRunner.run(FormsApplication(light: light), configuration: swiftTUIOptions.runtimeConfiguration())
+            try await WebHostCLIRunner.run(FormsApplication(theme: resolvedTheme), configuration: swiftTUIOptions.runtimeConfiguration())
         } else if tree {
-            try await WebHostCLIRunner.run(TreeApplication(light: light), configuration: swiftTUIOptions.runtimeConfiguration())
+            try await WebHostCLIRunner.run(TreeApplication(theme: resolvedTheme), configuration: swiftTUIOptions.runtimeConfiguration())
         } else if viewport {
-            try await WebHostCLIRunner.run(ViewportApplication(light: light), configuration: swiftTUIOptions.runtimeConfiguration())
+            try await WebHostCLIRunner.run(ViewportApplication(theme: resolvedTheme), configuration: swiftTUIOptions.runtimeConfiguration())
         } else if pagination {
-            try await WebHostCLIRunner.run(PaginationApplication(light: light), configuration: swiftTUIOptions.runtimeConfiguration())
+            try await WebHostCLIRunner.run(PaginationApplication(theme: resolvedTheme), configuration: swiftTUIOptions.runtimeConfiguration())
         } else if tabs {
-            try await WebHostCLIRunner.run(TabsApplication(light: light), configuration: swiftTUIOptions.runtimeConfiguration())
+            try await WebHostCLIRunner.run(TabsApplication(theme: resolvedTheme), configuration: swiftTUIOptions.runtimeConfiguration())
         } else if keyboardHelp {
-            try await WebHostCLIRunner.run(HelpApplication(light: light), configuration: swiftTUIOptions.runtimeConfiguration())
+            try await WebHostCLIRunner.run(HelpApplication(theme: resolvedTheme), configuration: swiftTUIOptions.runtimeConfiguration())
         } else if files {
             let startingDirectory = URL(fileURLWithPath: directory ?? FileManager.default.currentDirectoryPath,
                                         isDirectory: true)
-            try await WebHostCLIRunner.run(FileSelectionApplication(directory: startingDirectory, light: light),
+            try await WebHostCLIRunner.run(FileSelectionApplication(directory: startingDirectory, theme: resolvedTheme),
                                           configuration: swiftTUIOptions.runtimeConfiguration())
         } else if feedback {
-            try await WebHostCLIRunner.run(FeedbackApplication(light: light), configuration: swiftTUIOptions.runtimeConfiguration())
+            try await WebHostCLIRunner.run(FeedbackApplication(theme: resolvedTheme), configuration: swiftTUIOptions.runtimeConfiguration())
         } else if textEntry {
-            try await WebHostCLIRunner.run(TextEntryApplication(light: light), configuration: swiftTUIOptions.runtimeConfiguration())
+            try await WebHostCLIRunner.run(TextEntryApplication(theme: resolvedTheme), configuration: swiftTUIOptions.runtimeConfiguration())
         } else if choices {
-            try await WebHostCLIRunner.run(ChoiceApplication(light: light), configuration: swiftTUIOptions.runtimeConfiguration())
+            try await WebHostCLIRunner.run(ChoiceApplication(theme: resolvedTheme), configuration: swiftTUIOptions.runtimeConfiguration())
         } else {
-            let app = DashboardApplication(scenario: scenario, light: light, paused: paused)
+            let app = DashboardApplication(scenario: scenario, theme: resolvedTheme, paused: paused)
             try await WebHostCLIRunner.run(app, configuration: swiftTUIOptions.runtimeConfiguration())
         }
     }

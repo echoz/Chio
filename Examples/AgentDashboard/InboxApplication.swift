@@ -1,14 +1,14 @@
 import SwiftTUI
 
 struct InboxApplication {
-    let light: Bool
+    let theme: ExampleTheme
 
-    nonisolated init() { light = false }
-    nonisolated init(light: Bool) { self.light = light }
+    nonisolated init() { theme = .default }
+    nonisolated init(theme: ExampleTheme) { self.theme = theme }
 }
 
 extension InboxApplication: SwiftTUIRuntime.App {
     var body: some Scene {
-        WindowGroup("Chio review inbox") { InboxExampleView(light: light) }
+        WindowGroup("Chio review inbox") { InboxExampleView(theme: theme) }
     }
 }

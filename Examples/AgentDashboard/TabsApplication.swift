@@ -1,14 +1,14 @@
 import SwiftTUI
 
 struct TabsApplication {
-    let light: Bool
+    let theme: ExampleTheme
 
-    nonisolated init() { light = false }
-    nonisolated init(light: Bool) { self.light = light }
+    nonisolated init() { theme = .default }
+    nonisolated init(theme: ExampleTheme) { self.theme = theme }
 }
 
 extension TabsApplication: SwiftTUIRuntime.App {
     var body: some Scene {
-        WindowGroup("Chio workspace tabs") { TabsExampleView(light: light) }
+        WindowGroup("Chio workspace tabs") { TabsExampleView(theme: theme) }
     }
 }

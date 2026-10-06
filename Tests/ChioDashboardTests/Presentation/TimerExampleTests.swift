@@ -9,10 +9,10 @@ struct TimerExampleTests {
     @Test("Time studio keeps both clocks, native actions and hints across themes and sizes",
           arguments: [CellSize(width: 100, height: 30), CellSize(width: 76, height: 30),
                       CellSize(width: 50, height: 30),
-                      CellSize(width: 36, height: 18)], [false, true])
-    func layout(size: CellSize, light: Bool) {
+                      CellSize(width: 36, height: 18)], ExampleTheme.allCases)
+    func layout(size: CellSize, appearance: ExampleTheme) {
         let rendered = DefaultRenderer().render(
-            TimerExampleView(light: light, now: { .zero }).environment(\.terminalSize, size),
+            TimerExampleView(theme: appearance, now: { .zero }).environment(\.terminalSize, size),
             proposal: .init(width: size.width, height: size.height), frameInstant: .zero
         )
         let text = rendered.rasterSurface.lines.joined(separator: "\n")
@@ -28,7 +28,7 @@ struct TimerExampleTests {
         }
         #expect(nodes.contains { $0.label == "Elapsed time: 0 seconds" })
         #expect(nodes.contains { $0.label == "Remaining time: 20 seconds" })
-        let theme: ChioTheme = light ? .light : .default
+        let theme = appearance.theme
         #expect(rendered.rasterSurface.cells.flatMap { $0 }.contains {
             $0.character == "0" && $0.style?.foregroundColor == theme.colors.accent
         })

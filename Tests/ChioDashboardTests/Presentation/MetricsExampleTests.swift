@@ -8,10 +8,10 @@ import Testing
 struct MetricsExampleTests {
     @Test("Simulated metrics retain both panels, gauges, native actions and hints at wide and compact sizes",
           arguments: [CellSize(width: 100, height: 30), CellSize(width: 70, height: 24),
-                      CellSize(width: 50, height: 24), CellSize(width: 36, height: 18)], [false, true])
-    func layout(size: CellSize, light: Bool) {
+                      CellSize(width: 50, height: 24), CellSize(width: 36, height: 18)], ExampleTheme.allCases)
+    func layout(size: CellSize, appearance: ExampleTheme) {
         let rendered = DefaultRenderer().render(
-            MetricsExampleView(light: light).environment(\.terminalSize, size),
+            MetricsExampleView(theme: appearance).environment(\.terminalSize, size),
             proposal: .init(width: size.width, height: size.height)
         )
         let text = rendered.rasterSurface.lines.joined(separator: "\n")
@@ -28,7 +28,7 @@ struct MetricsExampleTests {
         #expect(nodes.contains { $0.label == "RAM utilization: 71 percent" })
         #expect(nodes.contains { $0.label == "Processor history, simulated, full, 0 to 100 percent. 24 readings, 0 missing. Latest: 62 percent. Minimum: 22 percent. Maximum: 100 percent." })
         #expect(nodes.contains { $0.label == "Memory history, simulated, full, 0 to 100 percent. 24 readings, 0 missing. Latest: 71 percent. Minimum: 48 percent. Maximum: 71 percent." })
-        let theme: ChioTheme = light ? .light : .btop
+        let theme = appearance.theme
         #expect(rendered.rasterSurface.cells.flatMap { $0 }.contains {
             $0.character == "6" && $0.style?.foregroundColor == theme.colors.accent
         })

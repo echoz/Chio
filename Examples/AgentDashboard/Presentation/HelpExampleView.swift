@@ -7,7 +7,7 @@ import SwiftTUI
 struct HelpExampleView {
     @Environment(\.terminalSize) private var terminalSize
     @Environment(\.requestTermination) private var requestTermination
-    @State private var isLight: Bool
+    @State private var themeChoice: ExampleTheme
     @State private var selection: Agent.ID? = Agent.examples.first?.id
     @State private var query = ""
     @State private var isSearching = false
@@ -15,8 +15,8 @@ struct HelpExampleView {
     @State private var runs = 0
     @FocusState private var actionFocus: Action?
 
-    init(light: Bool = false) {
-        _isLight = State(wrappedValue: light)
+    init(theme: ExampleTheme = .default) {
+        _themeChoice = State(wrappedValue: theme)
     }
 
     private enum Context { case browse, editing, actions, all }
@@ -32,12 +32,12 @@ struct HelpExampleView {
     private static let finishSearch = ShortcutHint("↵", "results", detail: "Keep the filter and return to the result list.")
     private static let clear = ShortcutHint("esc", "clear", detail: "Clear the filter; leave search when it has focus.")
     private static let tab = ShortcutHint("tab", "next", detail: "Move between search, results, and action buttons. Shift-Tab moves back.")
-    private static let theme = ShortcutHint("^T", "theme", detail: "Switch between Chio's dark and light themes without losing your place.")
+    private static let theme = ShortcutHint("^T", "theme", detail: "Cycle the default, light and btop themes without losing your place.")
     private static let quit = ShortcutHint("^Q", "quit", detail: "Exit this local example.")
     private static let scroll = ShortcutHint("↑↓ / pgup/pgdn", "scroll", detail: "Scroll the help viewport. Tab moves between the viewport and Close.")
     private static let close = ShortcutHint("esc", "close", detail: "Close help and return to the control you were using.")
 
-    private var theme: ChioTheme { isLight ? .light : .default }
+    private var theme: ChioTheme { themeChoice.theme }
     private var selectedAgent: Agent? { Agent.examples.first { $0.id == selection } }
     private var context: Context {
         if actionFocus != nil { return .actions }
@@ -92,7 +92,7 @@ struct HelpExampleView {
         // native focus. Protect its query/actions and honor an immediate Escape.
         if help != nil {
             if press == KeyPress(.escape) { help = nil }
-            if press == KeyPress(.character("t"), modifiers: .ctrl) { isLight.toggle() }
+            if press == KeyPress(.character("t"), modifiers: .ctrl) { themeChoice = themeChoice.next }
             if press == KeyPress(.character("q"), modifiers: .ctrl) { _ = requestTermination() }
             return .handled
         }
@@ -103,7 +103,7 @@ struct HelpExampleView {
         guard press.modifiers == .ctrl else { return .ignored }
         switch press.key {
         case .character("r"): runSelected()
-        case .character("t"): isLight.toggle()
+        case .character("t"): themeChoice = themeChoice.next
         case .character("q"): _ = requestTermination()
         default: return .ignored
         }
@@ -172,7 +172,7 @@ extension HelpExampleView: View {
                 .chioTheme(theme)
                 .onKeyPress { press in
                     if press == KeyPress(.character("t"), modifiers: .ctrl) {
-                        isLight.toggle()
+                        themeChoice = themeChoice.next
                         return .handled
                     }
                     if press == KeyPress(.character("q"), modifiers: .ctrl) {

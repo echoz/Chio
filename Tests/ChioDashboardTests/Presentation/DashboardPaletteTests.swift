@@ -159,7 +159,7 @@ struct DashboardPaletteTests {
             })
             session.sendInput(Array("theme".utf8))
             _ = try await recorder.wait(description: "theme command reflects changed state") {
-                $0.hasPaletteText("Switch to dark theme")
+                $0.hasPaletteText("Switch to btop theme")
             }
         }
     }

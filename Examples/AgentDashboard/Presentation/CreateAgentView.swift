@@ -4,7 +4,7 @@ import SwiftTUI
 @MainActor
 struct CreateAgentView {
     @Binding var draft: AgentDraft
-    @Binding var isLight: Bool
+    @Binding var themeChoice: ExampleTheme
     @State private var validation = FormValidation<AgentDraft.Field>()
     @FocusState private var focus: Focus?
     let entry: Entry
@@ -13,13 +13,13 @@ struct CreateAgentView {
     let cancel: @MainActor @Sendable () -> Void
 
     init(
-        draft: Binding<AgentDraft>, isLight: Binding<Bool>,
+        draft: Binding<AgentDraft>, themeChoice: Binding<ExampleTheme>,
         entry: Entry = .name, validateOnArrival: Bool = false,
         create: @escaping @MainActor @Sendable () -> Void,
         cancel: @escaping @MainActor @Sendable () -> Void
     ) {
         _draft = draft
-        _isLight = isLight
+        _themeChoice = themeChoice
         self.entry = entry
         self.validateOnArrival = validateOnArrival
         self.create = create
@@ -43,7 +43,7 @@ struct CreateAgentView {
         }
     }
 
-    private var theme: ChioTheme { isLight ? .light : .default }
+    private var theme: ChioTheme { themeChoice.theme }
 
     private var name: Binding<String> {
         let storage = $draft
@@ -176,7 +176,7 @@ extension CreateAgentView: View {
                 guard press.modifiers == .ctrl else { return .ignored }
                 switch press.key {
                 case .character("s"): submit()
-                case .character("t"): isLight.toggle()
+                case .character("t"): themeChoice = themeChoice.next
                 default: return .ignored
                 }
                 return .handled

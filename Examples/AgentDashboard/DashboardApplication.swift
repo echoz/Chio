@@ -2,16 +2,16 @@ import SwiftTUI
 
 struct DashboardApplication {
     let scenario: DashboardScenario
-    let light: Bool
+    let theme: ExampleTheme
     let paused: Bool
 
     nonisolated init() {
-        self.init(scenario: .normal, light: false, paused: false)
+        self.init(scenario: .normal, theme: .default, paused: false)
     }
 
-    nonisolated init(scenario: DashboardScenario, light: Bool, paused: Bool) {
+    nonisolated init(scenario: DashboardScenario, theme: ExampleTheme, paused: Bool) {
         self.scenario = scenario
-        self.light = light
+        self.theme = theme
         self.paused = paused
     }
 }
@@ -19,7 +19,7 @@ struct DashboardApplication {
 extension DashboardApplication: SwiftTUIRuntime.App {
     var body: some Scene {
         WindowGroup("Chio") {
-            DashboardView(scenario: scenario, light: light, animates: true, paused: paused)
+            DashboardView(scenario: scenario, theme: theme, animates: true, paused: paused)
         }
     }
 }

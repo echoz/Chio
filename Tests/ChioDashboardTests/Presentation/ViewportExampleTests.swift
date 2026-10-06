@@ -8,10 +8,10 @@ import Testing
 struct ViewportExampleTests {
     @Test("The activity viewport retains content, native tracks and actions in both themes",
           arguments: [CellSize(width: 100, height: 30), CellSize(width: 50, height: 30),
-                      CellSize(width: 36, height: 18)], [false, true])
-    func layout(size: CellSize, light: Bool) {
+                      CellSize(width: 36, height: 18)], ExampleTheme.allCases)
+    func layout(size: CellSize, appearance: ExampleTheme) {
         let rendered = DefaultRenderer().render(
-            ViewportExampleView(light: light).environment(\.terminalSize, size),
+            ViewportExampleView(theme: appearance).environment(\.terminalSize, size),
             proposal: .init(width: size.width, height: size.height), frameInstant: .zero
         )
         let text = rendered.rasterSurface.lines.joined(separator: "\n")
@@ -25,17 +25,17 @@ struct ViewportExampleTests {
     }
 
     @Test("Passive log rows retain fixed columns, semantic emphasis and full scroll extent",
-          arguments: [false, true])
-    func eventColumns(light: Bool) throws {
+          arguments: ExampleTheme.allCases)
+    func eventColumns(appearance: ExampleTheme) throws {
         let size = CellSize(width: 100, height: 30)
         let rendered = DefaultRenderer().render(
-            ViewportExampleView(light: light).environment(\.terminalSize, size),
+            ViewportExampleView(theme: appearance).environment(\.terminalSize, size),
             proposal: .init(width: size.width, height: size.height), frameInstant: .zero
         )
         let y = try #require(rendered.rasterSurface.lines.firstIndex { $0.contains("01  ✓  Build agent") })
         let row = rendered.rasterSurface.cells[y]
         let x = try #require(row.firstIndex { $0.character == "0" })
-        let theme: ChioTheme = light ? .light : .default
+        let theme = appearance.theme
         #expect(String(row[x..<(x + 2)].map(\.character)) == "01")
         #expect(row[x + 4].character == "✓")
         #expect(String(row[(x + 7)..<(x + 18)].map(\.character)) == "Build agent")

@@ -9,7 +9,7 @@ struct DashboardView {
     @State private var selection: Agent.ID?
     @State private var query: String
     @State private var isSearching = false
-    @State private var isLight: Bool
+    @State private var themeChoice: ExampleTheme
     @State private var isPaused: Bool
     @State private var openedAgent: String?
     @State private var isCreating = false
@@ -28,16 +28,16 @@ struct DashboardView {
         case create, run, report, theme, pause
     }
 
-    init(scenario: DashboardScenario = .normal, light: Bool = false, animates: Bool = true, paused: Bool = false) {
+    init(scenario: DashboardScenario = .normal, theme: ExampleTheme = .default, animates: Bool = true, paused: Bool = false) {
         _agents = State(wrappedValue: scenario.agents)
         _selection = State(wrappedValue: scenario == .noMatches ? nil : scenario.agents.first?.id)
         _query = State(wrappedValue: scenario.query)
-        _isLight = State(wrappedValue: light)
+        _themeChoice = State(wrappedValue: theme)
         _isPaused = State(wrappedValue: paused)
         self.animates = animates
     }
 
-    private var theme: ChioTheme { isLight ? .light : .default }
+    private var theme: ChioTheme { themeChoice.theme }
     private var selectedAgent: Agent? { agents.first { $0.id == selection } }
 
     private func beginCreation() {
@@ -62,7 +62,7 @@ struct DashboardView {
         case .run: runSelected()
         case .report:
             if let selectedAgent { openReport(selectedAgent) }
-        case .theme: isLight.toggle()
+        case .theme: themeChoice = themeChoice.next
         case .pause: isPaused.toggle()
         case nil: break
         }
@@ -104,7 +104,7 @@ struct DashboardView {
         // Keep subsequent keys out of the dashboard during that handoff.
         if report != nil {
             if press.key == .escape { report = nil }
-            if press == KeyPress(.character("t"), modifiers: .ctrl) { isLight.toggle() }
+            if press == KeyPress(.character("t"), modifiers: .ctrl) { themeChoice = themeChoice.next }
             return .handled
         }
         // A read can contain n and subsequent keys before the cover appears.
@@ -116,7 +116,7 @@ struct DashboardView {
                 return .handled
             }
             if press == KeyPress(.character("t"), modifiers: .ctrl) {
-                isLight.toggle()
+                themeChoice = themeChoice.next
                 return .handled
             }
             guard press.modifiers.subtracting(.shift).isEmpty else { return .handled }
@@ -144,7 +144,7 @@ struct DashboardView {
         case .character("q"):
             _ = requestTermination()
         case .character("t"):
-            isLight.toggle()
+            themeChoice = themeChoice.next
         case .character("r"):
             runSelected()
         case .character("f"):
@@ -316,7 +316,7 @@ extension DashboardView: View {
                         isEnabled: selectedAgent != nil) {
             pendingCommand = .report
         }
-        .paletteCommand(name: isLight ? "Switch to dark theme" : "Switch to light theme",
+        .paletteCommand(name: "Switch to \(themeChoice.next.rawValue) theme",
                         description: "Change the workspace appearance") {
             pendingCommand = .theme
         }
@@ -330,13 +330,13 @@ extension DashboardView: View {
         }
         .paletteStyle(ChioPaletteStyle(theme: theme, initialQuery: commandQuery))
         .fullScreenCover(isPresented: $isCreating) {
-            CreateAgentView(draft: $draft, isLight: $isLight, entry: creationEntry,
+            CreateAgentView(draft: $draft, themeChoice: $themeChoice, entry: creationEntry,
                             validateOnArrival: validateOnArrival,
                             create: createAgent, cancel: { isCreating = false })
                 .id(creationNumber)
         }
         .fullScreenCover(item: $report) { report in
-            AgentReportView(report: report, isLight: $isLight, close: { self.report = nil })
+            AgentReportView(report: report, themeChoice: $themeChoice, close: { self.report = nil })
         }
         .task {
             guard animates else { return }

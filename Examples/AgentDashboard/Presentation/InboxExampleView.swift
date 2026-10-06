@@ -6,7 +6,7 @@ import SwiftTUI
 struct InboxExampleView {
     @Environment(\.terminalSize) private var terminalSize
     @Environment(\.requestTermination) private var requestTermination
-    @State private var isLight: Bool
+    @State private var themeChoice: ExampleTheme
     @State private var queue = Queue.review
     @State private var order = ReviewItem.Order.recent
     @State private var query = ""
@@ -15,8 +15,8 @@ struct InboxExampleView {
     @State private var showsPreview = true
     @State private var isSearching = false
 
-    init(light: Bool = false) {
-        _isLight = State(wrappedValue: light)
+    init(theme: ExampleTheme = .default) {
+        _themeChoice = State(wrappedValue: theme)
         _selection = State(wrappedValue: ReviewItem.examples.first.map(Selection.init))
     }
 
@@ -85,7 +85,7 @@ struct InboxExampleView {
     }
 
     private var theme: ChioTheme {
-        let base: ChioTheme = isLight ? .light : .default
+        let base: ChioTheme = themeChoice.theme
         return base.replacing(spacing: base.spacing.replacing(sectionGap: 0))
     }
     private var compact: Bool { terminalSize.height < 26 || terminalSize.width < 88 }
@@ -127,7 +127,7 @@ struct InboxExampleView {
         // Cover presentation follows a frame; consume input during that handoff.
         if readerPresentation.isActive {
             if press.key == .escape { readerPresentation = .closed }
-            if press == KeyPress(.character("t"), modifiers: .ctrl) { isLight.toggle() }
+            if press == KeyPress(.character("t"), modifiers: .ctrl) { themeChoice = themeChoice.next }
             return .handled
         }
         guard press.modifiers == .ctrl else { return .ignored }
@@ -135,7 +135,7 @@ struct InboxExampleView {
         case .character("g"): queueBinding.wrappedValue = queue.next
         case .character("s"): order = order.next
         case .character("p"): showsPreview.toggle()
-        case .character("t"): isLight.toggle()
+        case .character("t"): themeChoice = themeChoice.next
         case .character("q"): _ = requestTermination()
         default: return .ignored
         }
@@ -176,7 +176,7 @@ struct InboxExampleView {
     @MainActor
     fileprivate struct Reader {
         let selection: Selection
-        @Binding var isLight: Bool
+        @Binding var themeChoice: ExampleTheme
         let close: @MainActor @Sendable () -> Void
         @FocusState private var reading: Bool
     }
@@ -261,7 +261,7 @@ extension InboxExampleView: View {
             }
         }
         .fullScreenCover(item: presentedReader) { selection in
-            Reader(selection: selection, isLight: $isLight, close: { readerPresentation = .closed })
+            Reader(selection: selection, themeChoice: $themeChoice, close: { readerPresentation = .closed })
         }
     }
 }
@@ -281,7 +281,7 @@ extension InboxExampleView.ReaderPresentation: Sendable {}
 
 extension InboxExampleView.Reader: View {
     var body: some View {
-        let theme: ChioTheme = isLight ? .light : .default
+        let theme: ChioTheme = themeChoice.theme
         VStack(alignment: .leading, spacing: 1) {
             Text("chio / review #\(selection.id)").bold().foregroundStyle(theme.colors.accent)
             ScrollView {
@@ -307,7 +307,7 @@ extension InboxExampleView.Reader: View {
         .onKeyPress { press in
             if press.key == .escape { close(); return .handled }
             if press == KeyPress(.character("t"), modifiers: .ctrl) {
-                isLight.toggle()
+                themeChoice = themeChoice.next
                 return .handled
             }
             return .ignored

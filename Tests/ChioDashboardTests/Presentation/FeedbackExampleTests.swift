@@ -17,10 +17,14 @@ struct FeedbackExampleTests {
             let ready = try await recorder.wait(description: "ready with Publish focused") {
                 $0.feedbackFocused("Publish") && $0.feedbackContains("Ready to publish")
             }
-            session.send(.key(.character("t"), modifiers: .ctrl))
-            _ = try await recorder.wait(after: ready.sequence, description: "theme changes without losing trigger focus") {
-                $0.focusedIdentity == ready.focusedIdentity && $0.raster.cells.flatMap { $0 }.contains {
-                    $0.style?.foregroundColor == ChioTheme.light.colors.accent
+            var themed = ready
+            for appearance in [ExampleTheme.light, .btop, .default, .light] {
+                session.send(.key(.character("t"), modifiers: .ctrl))
+                themed = try await recorder.wait(after: themed.sequence, description: "all themes retain the ready state and Publish focus") {
+                    $0.focusedIdentity == ready.focusedIdentity && $0.feedbackContains("Ready to publish")
+                        && $0.raster.cells.flatMap { $0 }.contains {
+                            $0.style?.foregroundColor == appearance.theme.colors.accent
+                        }
                 }
             }
             session.send(.key(.return))
@@ -75,9 +79,9 @@ struct FeedbackExampleTests {
     }
 
     @Test("Feedback example keeps actions and help visible", arguments: [CellSize(width: 100, height: 30),
-          CellSize(width: 50, height: 30), CellSize(width: 36, height: 18)], [false, true])
-    func layout(size: CellSize, light: Bool) {
-        let frame = DefaultRenderer().render(FeedbackExampleView(light: light).environment(\.terminalSize, size),
+          CellSize(width: 50, height: 30), CellSize(width: 36, height: 18)], ExampleTheme.allCases)
+    func layout(size: CellSize, appearance: ExampleTheme) {
+        let frame = DefaultRenderer().render(FeedbackExampleView(theme: appearance).environment(\.terminalSize, size),
                                             proposal: .init(width: size.width, height: size.height), frameInstant: .zero)
         let text = frame.rasterSurface.lines.joined(separator: "\n")
         #expect(frame.rasterSurface.size == size)

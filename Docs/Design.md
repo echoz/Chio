@@ -119,6 +119,13 @@ receiver's values. Construction and replacement keep the existing nonnegative
 spacing and single-printable-cell glyph preconditions.
 Component options specify behavior; application composition specifies content.
 
+The executable's internal `ExampleTheme` selects default, light or btop for
+comparison; it is not a public registry or a restriction on custom `ChioTheme`
+values. `--theme` sets the initial choice and Ctrl-T cycles it through the same
+native view hierarchy. Reports and forms bind to their parent choice. An omitted
+choice preserves metrics' btop startup and the default elsewhere; `--light` is a
+compatible alias, mutually exclusive with `--theme`.
+
 Changing theme preserves query, stable selection, focus, and entered values.
 Native `GroupBox`, `List`, `Table`, `Button`, `Link`, `TextField`, `TextEditor`, `Picker`,
 `Toggle`, `TabView`, `ScrollView`, `DisclosureGroup`, `ProgressView`, `Spinner`,

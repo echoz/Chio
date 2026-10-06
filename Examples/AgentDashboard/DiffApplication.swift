@@ -1,14 +1,14 @@
 import SwiftTUI
 
 struct DiffApplication {
-    let light: Bool
+    let theme: ExampleTheme
 
-    nonisolated init() { light = false }
-    nonisolated init(light: Bool) { self.light = light }
+    nonisolated init() { theme = .default }
+    nonisolated init(theme: ExampleTheme) { self.theme = theme }
 }
 
 extension DiffApplication: SwiftTUIRuntime.App {
     var body: some Scene {
-        WindowGroup("Chio changes") { DiffExampleView(light: light) }
+        WindowGroup("Chio changes") { DiffExampleView(theme: theme) }
     }
 }

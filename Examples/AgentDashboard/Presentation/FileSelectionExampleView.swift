@@ -7,16 +7,16 @@ struct FileSelectionExampleView {
     let directory: URL
     @Environment(\.terminalSize) private var terminalSize
     @Environment(\.requestTermination) private var requestTermination
-    @State private var isLight: Bool
+    @State private var themeChoice: ExampleTheme
     @State private var selection: URL?
     @State private var phase = Phase.choosing
 
-    init(directory: URL, light: Bool = false) {
+    init(directory: URL, theme: ExampleTheme = .default) {
         self.directory = directory
-        _isLight = State(wrappedValue: light)
+        _themeChoice = State(wrappedValue: theme)
     }
 
-    private var theme: ChioTheme { isLight ? .light : .default }
+    private var theme: ChioTheme { themeChoice.theme }
     private enum Phase: Equatable { case choosing, confirmed, cancelled }
     private var isChoosing: Bool { phase == .choosing }
 
@@ -79,7 +79,7 @@ extension FileSelectionExampleView: View {
         .onKeyPress { press in
             guard press.modifiers == .ctrl else { return .ignored }
             switch press.key {
-            case .character("t"): isLight.toggle()
+            case .character("t"): themeChoice = themeChoice.next
             case .character("q"): _ = requestTermination()
             case .character("o") where phaseStorage.wrappedValue != .choosing:
                 phaseStorage.wrappedValue = .choosing

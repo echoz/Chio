@@ -3,23 +3,23 @@ import SwiftTUI
 
 struct FileSelectionApplication {
     let directory: URL
-    let light: Bool
+    let theme: ExampleTheme
 
     nonisolated init() {
         directory = URL(fileURLWithPath: "/", isDirectory: true)
-        light = false
+        theme = .default
     }
 
-    nonisolated init(directory: URL, light: Bool = false) {
+    nonisolated init(directory: URL, theme: ExampleTheme = .default) {
         self.directory = directory
-        self.light = light
+        self.theme = theme
     }
 }
 
 extension FileSelectionApplication: SwiftTUIRuntime.App {
     var body: some Scene {
         WindowGroup("Chio file selection") {
-            FileSelectionExampleView(directory: directory, light: light)
+            FileSelectionExampleView(directory: directory, theme: theme)
         }
     }
 }

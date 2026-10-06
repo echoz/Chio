@@ -30,5 +30,11 @@ for recording in dashboard choices feedback-light pagination viewport tree forms
   cp "$repo_root/Docs/Media/$recording.cast" "$site_output/recordings/"
   cp "$repo_root/Docs/Media/$recording.png" "$site_output/recordings/"
 done
+mkdir -p "$site_output/recordings/themes"
+for example in choices feedback pagination viewport tree forms timers markdown dashboard metrics inbox diff; do
+  for theme in default light btop; do
+    cp "$repo_root/Docs/Media/themes/$example-$theme.png" "$site_output/recordings/themes/"
+  done
+done
 touch "$site_output/.nojekyll"
 printf 'Built demo site: %s\n' "$site_output"

@@ -8,11 +8,11 @@ import Testing
 struct GroupedFormExampleTests {
     @Test("Grouped settings retain actions, native values and hints across themes and sizes",
           arguments: [CellSize(width: 100, height: 30), CellSize(width: 50, height: 30),
-                      CellSize(width: 36, height: 18)], [false, true])
-    func layout(size: CellSize, light: Bool) {
+                      CellSize(width: 36, height: 18)], ExampleTheme.allCases)
+    func layout(size: CellSize, appearance: ExampleTheme) {
         for scheduled in [false, true] {
             let rendered = DefaultRenderer().render(
-                GroupedFormExampleView(light: light, initialDraft: .init(automaticRuns: scheduled))
+                GroupedFormExampleView(theme: appearance, initialDraft: .init(automaticRuns: scheduled))
                     .environment(\.terminalSize, size),
                 proposal: .init(width: size.width, height: size.height), frameInstant: .zero
             )
@@ -29,7 +29,7 @@ struct GroupedFormExampleTests {
             #expect(nodes.contains { $0.role == .toggle && $0.label == "Automatic runs" && $0.control?.value == .boolean(scheduled) })
             #expect(nodes.contains { $0.role == .textField && $0.label == "Interval" && $0.control?.value == .text("15") } == scheduled)
             #expect(nodes.contains { $0.role == .textField && $0.label == "Timeout" && $0.control?.value == .text("5") } == scheduled)
-            let theme: ChioTheme = light ? .light : .default
+            let theme = appearance.theme
             #expect(rendered.rasterSurface.cells.flatMap { $0 }.contains {
                 $0.character == "W" && $0.style?.foregroundColor == theme.colors.heading
             })

@@ -1,14 +1,14 @@
 import SwiftTUI
 
 struct FormsApplication {
-    let light: Bool
+    let theme: ExampleTheme
 
-    nonisolated init() { light = false }
-    nonisolated init(light: Bool) { self.light = light }
+    nonisolated init() { theme = .default }
+    nonisolated init(theme: ExampleTheme) { self.theme = theme }
 }
 
 extension FormsApplication: SwiftTUIRuntime.App {
     var body: some Scene {
-        WindowGroup("Chio grouped forms") { GroupedFormExampleView(light: light) }
+        WindowGroup("Chio grouped forms") { GroupedFormExampleView(theme: theme) }
     }
 }

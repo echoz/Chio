@@ -7,10 +7,10 @@ import Testing
 struct ChoiceExampleRenderTests {
     @Test("Single-choice chrome and actions remain visible across sizes and themes",
           arguments: [CellSize(width: 100, height: 30), CellSize(width: 50, height: 30),
-                      CellSize(width: 36, height: 18)], [false, true])
-    func languageLayout(size: CellSize, light: Bool) {
+                      CellSize(width: 36, height: 18)], ExampleTheme.allCases)
+    func languageLayout(size: CellSize, appearance: ExampleTheme) {
         let surface = DefaultRenderer().render(
-            ChoiceExampleView(light: light).environment(\.terminalSize, size),
+            ChoiceExampleView(theme: appearance).environment(\.terminalSize, size),
             proposal: .init(width: size.width, height: size.height), frameInstant: .zero
         ).rasterSurface
         let text = surface.lines.joined(separator: "\n")
@@ -25,7 +25,7 @@ struct ChoiceExampleRenderTests {
         #expect(text.contains("^T theme"))
         #expect(text.contains("^Q quit"))
         #expect(!text.contains("Error:"))
-        let theme: ChioTheme = light ? .light : .default
+        let theme = appearance.theme
         #expect(surface.cells.flatMap { $0 }.contains {
             $0.character == "L" && $0.style?.foregroundColor == theme.colors.heading
         })
@@ -33,10 +33,10 @@ struct ChoiceExampleRenderTests {
 
     @Test("Multi-choice errors retain save, back, cancel and help at narrow sizes",
           arguments: [CellSize(width: 100, height: 30), CellSize(width: 50, height: 30),
-                      CellSize(width: 36, height: 18)], [false, true])
-    func capabilitiesLayout(size: CellSize, light: Bool) {
+                      CellSize(width: 36, height: 18)], ExampleTheme.allCases)
+    func capabilitiesLayout(size: CellSize, appearance: ExampleTheme) {
         let surface = DefaultRenderer().render(
-            ChoiceExampleView(light: light, initialStep: .capabilities, showsValidation: true)
+            ChoiceExampleView(theme: appearance, initialStep: .capabilities, showsValidation: true)
                 .environment(\.terminalSize, size),
             proposal: .init(width: size.width, height: size.height), frameInstant: .zero
         ).rasterSurface

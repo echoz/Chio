@@ -216,7 +216,7 @@ come from Chio's original brief; they are not all standalone Bubbles packages.
 
 | Capability | Chio today | Native foundation | Remaining work |
 | --- | --- | --- | --- |
-| Semantic themes | Delivered default/light palettes, tokens, spacing, and treatments | Environment and native style protocols | Broader control coverage; native focus colors and ANSI-256 conversion have upstream limits |
+| Semantic themes | Delivered default/light/btop palettes, tokens, spacing, and treatments | Environment and native style protocols | Broader control coverage; native focus colors and ANSI-256 conversion have upstream limits |
 | Panels | Delivered through `ChioGroupBoxStyle` | `GroupBox` | Use the native name; SwiftTUI `Panel` means action scope, not a visual box |
 | Buttons and toggles | Delivered themed controls; toggle interaction tested | `Button`, `Toggle` | More variants only when a workflow justifies them |
 | Single-line input | Delivered `ChioTextFieldStyle`, search and form editing | `TextField` | No claim of a full enhanced-input suite such as completion/history |
@@ -345,6 +345,14 @@ additional selection state. The Markdown card launches the dashboard and tells
 the reader to press Enter to open an agent report; feedback starts in the light
 theme shown in its recording. A shared setup note replaces the global command
 catalogue. Script-free pages retain each command beside its own preview.
+Each enhanced card also offers default, light and btop **static previews** from
+real terminal output. Selecting a theme pauses playback, shows that preview and
+adds the corresponding `--theme` to its launch command. The choice is retained
+per example during navigation. Original recordings keep their recorded themes;
+the controls identify that distinction and can resume the recording or return
+to the selected static preview. Missing theme images fall back to the original
+preview with an explicit message. Without JavaScript, original previews,
+commands and downloads remain available.
 The site build gives owned CSS and JavaScript content-hashed filenames and
 rewrites generated HTML references so a new page requests matching assets.
 
@@ -381,6 +389,24 @@ previews retain screenshots and download links. Playback begins only after an
 explicit click; the player's NPT-poster seek limitation is documented alongside
 the vendored assets. Independent review covers deployment permissions and static
 asset boundaries. These website checks do not add Swift or Linux test evidence.
+
+Theme comparison verification on 2026-10-05 covers 36 previews from the verified
+release executable: twelve examples in each built-in theme, with the same initial
+application state and explicit true-color capture environment. All captures
+restore terminal modes exactly and exit successfully; representative images were
+visually inspected. Choices, dashboard, Markdown and inbox each emit the known
+`collection.unboundedRealization` warning once per theme after terminal
+restoration. Full-session evidence retains those twelve warnings; the selected
+frames contain no diagnostics. Preview capture does not fix that upstream limit.
+
+Real headless Chromium checks pass for all 36 images and matching commands, all
+twelve original recordings and their final UI frames, pause/resume, forward/backward
+seeking, retained theme choices through navigation/history, focus restoration,
+390-pixel layout, missing-image recovery, a superseded failed-image request and
+script-free fallback. The playback button sits beside the selector so it does not
+obscure the image. Independent source review found no actionable issues. These
+checks supersede the pending browser checks recorded below for the current gallery;
+they do not establish live Blink/SSH behavior.
 
 The 2026-10-05 completion audit removed terminal teardown from six older published
 clips: forms, metrics, pagination, timers, tree and viewport. Every byte before
@@ -472,6 +498,17 @@ and mobile-layout checks remain pending because the host Mac is locked. Player
 code, CSS and deployment permissions are unchanged.
 
 ## Verified on macOS
+
+Theme comparison adds an internal three-choice example value, `--theme`, and a
+shared cycle through default, light and btop. The current candidate passes 377
+selected debug tests (with the corrected help-cycle assertion rerun), all 407
+release tests, the standalone release build, 20 snapshots and all 15 terminal
+workflows. One existing case-distinct-filename test is skipped in each
+configuration on this filesystem. CLI checks cover every example's explicit
+choice, preserved startup defaults, the light alias and invalid/conflicting
+arguments. Public raster tests now exercise all three palettes; hosted workflows
+retain native focus, editing and selection during theme changes. The change adds
+no public library API, dependency or terminal capability override.
 
 The final diff-rendering and approved workflow-split candidate `634dc5e` passes
 the full local serial gate: 374 selected debug tests, the full 404-test release
