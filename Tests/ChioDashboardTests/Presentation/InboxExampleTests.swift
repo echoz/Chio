@@ -224,7 +224,7 @@ struct InboxExampleTests {
     func pendingReaderIsolation() async throws {
         try await withInboxExample { session, _, recorder in
             let ready = try await inboxReady(recorder)
-            session.sendInput(Array("/214\r\r\u{7}\u{19}".utf8))
+            session.sendInput(Array("/214\r\r\u{7}\u{13}".utf8))
             let opened = try await recorder.wait(after: ready.sequence, description: "pending cover consumes background shortcuts in the same read") {
                 $0.inboxContains("chio / review #214") && $0.inboxViewportFocused
             }
