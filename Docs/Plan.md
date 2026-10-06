@@ -1298,6 +1298,24 @@ maintained pinned fork, complete native gates, and run Chio's full integration
 checks on that reproducible dependency. Publishing to SwiftTUI or maintaining a
 new fork remains a separate decision.
 
+### Current-upstream contribution preparation
+
+A separate [upstream patch](../Patches/SwiftTUI-ansi256-upstream.patch) and
+[PR draft](../Patches/SwiftTUI-ansi256-upstream.md) target main `7221dce`.
+The colour implementation is unchanged from the reviewed Chio-pin candidate;
+the contribution adds the existing runtime guide's conversion contract and
+refreshes fixtures against upstream's newer styling. The original pin-based
+patch remains available for the earlier Chio integration evidence.
+
+An isolated current-main consumer passes the seven proposed native tests and
+13 fixture cases across all five profiles. Ten ANSI256 files differ only in
+indexed SGR numbers; the other 55 are byte-identical. The six standalone native
+source/test-ownership policy checks, fixture-matrix check and Swift formatting
+lint pass. Independent review found no actionable issues, and the retained patch
+applies cleanly to its recorded base. These are focused consumer and policy results, not a native gate or
+current-main Chio compatibility claim. Upstream publication, native gates and
+the shipping dependency decision remain open; Chio's pin is unchanged.
+
 ## Component scope and priorities
 
 The first eleven entries below record delivered work, with the timer slice now
