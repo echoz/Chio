@@ -15,7 +15,7 @@ import Glibc
 struct MapHTTPClientTests {
     @Test("Real localhost transport bounds decompressed bodies and rejects HTTP/MIME/redirect failures")
     func boundedHTTP() async throws {
-        let server = try Server()
+        let server = try await Server()
         defer { server.stop() }
         let valid = try await bounded("empty HTTP 200") { try await MapHTTPClient.fetch(server.url("/empty"), resource: .tile) }
         #expect(valid.data.isEmpty)
@@ -73,7 +73,7 @@ struct MapHTTPClientTests {
 
     @Test("Cancellation queued before a redirect decision still acknowledges exactly once")
     func cancelledPendingRedirect() async throws {
-        let server = try Server()
+        let server = try await Server()
         defer { server.stop() }
         let control = RedirectGate()
         let acknowledgments = Mutex(0)
@@ -159,53 +159,100 @@ struct MapHTTPClientTests {
     private final class Server: @unchecked Sendable {
         private let process: Process
         private let base: URL
+        private let errorHandle: FileHandle
         private let stopped = Mutex(false)
-        init() throws {
+        init() async throws {
+            try Task.checkCancellation()
             let process = Process(), pipe = Pipe(), errorPipe = Pipe()
             let errors = Mutex(Data())
             process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
             process.arguments = ["python3", "-u", "-c", Self.script]
             process.standardOutput = pipe
             process.standardError = errorPipe
-            do { try process.run() }
-            catch { throw WaitError.fixtureStartup("Could not launch fixed Python HTTP fixture: \(error)") }
-            let errorHandle = errorPipe.fileHandleForReading
-            DispatchQueue.global().async {
-                while let chunk = try? errorHandle.read(upToCount: 1_024), !chunk.isEmpty {
-                    errors.withLock { bytes in bytes.append(chunk.prefix(max(0, 8_192 - bytes.count))) }
-                }
-            }
-            self.process = process
-            let output = Mutex<Data?>(nil), ready = DispatchSemaphore(value: 0)
+            let command = "executable=/usr/bin/env; arguments=\(process.arguments!.debugDescription)"
             let handle = pipe.fileHandleForReading
-            DispatchQueue.global().async {
-                var bytes = Data()
-                while bytes.count < 256 {
-                    guard let byte = try? handle.read(upToCount: 1), !byte.isEmpty else { break }
-                    bytes.append(byte)
-                    output.withLock { $0 = bytes }
-                    if byte.last == 10 { break }
+            let errorHandle = errorPipe.fileHandleForReading
+            for input in [handle, errorHandle] {
+                let flags = fcntl(input.fileDescriptor, F_GETFL)
+                guard flags >= 0 else { throw WaitError.fixtureStartup("Could not read fixture pipe flags; \(command)") }
+                let hasNonblockingPipe = fcntl(input.fileDescriptor, F_SETFL, flags | O_NONBLOCK) == 0
+                guard hasNonblockingPipe else { throw WaitError.fixtureStartup("Could not make fixture pipe nonblocking; \(command)") }
+            }
+            do { try process.run() }
+            catch { throw WaitError.fixtureStartup("Could not launch fixed Python HTTP fixture: \(error); \(command)") }
+            errorHandle.readabilityHandler = { handle in
+                guard let chunk = Self.readAvailable(from: handle, limit: 1_024) else { return }
+                guard !chunk.isEmpty else {
+                    handle.readabilityHandler = nil
+                    return
                 }
-                output.withLock { $0 = bytes }
-                ready.signal()
+                errors.withLock { bytes in bytes.append(chunk.prefix(max(0, 8_192 - bytes.count))) }
             }
-            let readyInTime = ready.wait(timeout: .now() + 5) == .success
-            let data = output.withLock { $0 } ?? Data()
-            let text = String(decoding: data, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
-            guard readyInTime, let url = URL(string: text), url.host == "127.0.0.1" else {
-                let status = process.isRunning ? "still running" : "exited \(process.terminationStatus)"
+            let output = Mutex((bytes: Data(), isComplete: false))
+            handle.readabilityHandler = { handle in
+                guard let chunk = Self.readAvailable(from: handle, limit: 256) else { return }
+                let isComplete = output.withLock { state in
+                    state.bytes.append(chunk.prefix(max(0, 256 - state.bytes.count)))
+                    let hasNewline = state.bytes.contains(10)
+                    let hasReachedLimit = state.bytes.count == 256
+                    state.isComplete = chunk.isEmpty || hasNewline || hasReachedLimit
+                    return state.isComplete
+                }
+                if isComplete { handle.readabilityHandler = nil }
+            }
+            defer { handle.readabilityHandler = nil; try? handle.close() }
+            do {
+                // Yield the cooperative executor while Foundation dispatches pipe
+                // readiness. No reader thread blocks waiting for the child output.
+                let clock = ContinuousClock()
+                let deadline = clock.now.advanced(by: .seconds(5))
+                while !output.withLock({ $0.isComplete }) {
+                    try Task.checkCancellation()
+                    guard clock.now < deadline else { throw WaitError.timeout("Python HTTP fixture readiness after five seconds") }
+                    try await Task.sleep(for: .milliseconds(10))
+                }
+                try Task.checkCancellation()
+                let data = output.withLock { $0.bytes }
+                let text = String(decoding: data, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+                guard let url = URL(string: text) else { throw WaitError.fixtureStartup("Invalid readiness URL") }
+                let isLocalhost = url.host == "127.0.0.1"
+                guard isLocalhost else { throw WaitError.fixtureStartup("Readiness URL is not the localhost fixture") }
+                self.process = process
+                self.base = url
+                self.errorHandle = errorHandle
+            } catch {
+                let status: String
+                if process.isRunning { status = "still running" }
+                else { status = "exited \(process.terminationStatus)" }
                 Self.terminate(process)
+                errorHandle.readabilityHandler = nil
+                try? errorHandle.close()
+                if error is CancellationError { throw error }
+                let stdout = output.withLock { String(decoding: $0.bytes, as: UTF8.self) }
                 let stderr = errors.withLock { String(decoding: $0, as: UTF8.self) }
-                throw WaitError.fixtureStartup("Python HTTP fixture startup \(readyInTime ? "invalid readiness" : "timed out after five seconds"); child \(status); stdout=\(text.debugDescription); stderr=\(stderr.debugDescription)")
+                throw WaitError.fixtureStartup("Python HTTP fixture startup failed: \(error); child \(status); \(command); stdout=\(stdout.debugDescription); stderr=\(stderr.debugDescription)")
             }
-            self.base = url
         }
         func url(_ path: String) -> URL { URL(string: path, relativeTo: base)!.absoluteURL }
         func stop() {
             let shouldStop = stopped.withLock { value in if value { return false }; value = true; return true }
-            if shouldStop { Self.terminate(process) }
+            if shouldStop {
+                Self.terminate(process)
+                errorHandle.readabilityHandler = nil
+                try? errorHandle.close()
+            }
         }
         deinit { stop() }
+        private static func readAvailable(from handle: FileHandle, limit: Int) -> Data? {
+            // One nonblocking POSIX read cannot wait to fill a Foundation read's
+            // requested length. A transient read error waits for the next event.
+            var bytes = [UInt8](repeating: 0, count: limit)
+            let count = bytes.withUnsafeMutableBytes { buffer in
+                read(handle.fileDescriptor, buffer.baseAddress, buffer.count)
+            }
+            guard count >= 0 else { return nil }
+            return Data(bytes.prefix(count))
+        }
         private static func terminate(_ process: Process) {
             if process.isRunning { process.terminate() }
             let exited = DispatchSemaphore(value: 0)
