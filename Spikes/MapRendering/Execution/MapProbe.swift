@@ -6,11 +6,11 @@ import SwiftTUI
 @MainActor
 enum MapProbe {
     static func run(fixtures: MapFixtures, appearance: MapSpikeCommand.Appearance, aspect: Double,
-                    detail: MapDetail = .minimal) throws {
+                    detail: MapDetail = .minimal, streetSource: MapFixtures.StreetSource = .overpass) throws {
         let clock = ContinuousClock()
         var results: [Measurement] = []
         for scene in MapFixtures.Scene.allCases {
-            let dataset = fixtures.dataset(for: scene)
+            let dataset = fixtures.dataset(for: scene, streetSource: streetSource)
             for (columns, rows) in [(100, 30), (60, 20), (36, 18)] {
                 let viewport = try MapViewport(columns: columns, rows: rows, cellAspectRatio: aspect)
                 var preparation: [Double] = []
@@ -48,7 +48,8 @@ enum MapProbe {
                     fillWrites = max(fillWrites, view.drawing.work.fillWrites)
                     strokeSamples = max(strokeSamples, view.drawing.work.strokeSamples)
                 }
-                results.append(Measurement(scene: scene.rawValue, detail: detail,
+                results.append(Measurement(scene: scene.rawValue,
+                                           source: scene == .world ? "natural-earth" : streetSource.rawValue, detail: detail,
                                            columns: columns, rows: rows, cellAspect: aspect,
                                            sourceFeatures: dataset.features.count, sourceVertices: dataset.vertexCount,
                                            peakPreparedVertices: vertices, peakVisibleFeatures: features, peakLabels: visibleLabels,
@@ -89,6 +90,7 @@ enum MapProbe {
 
     private struct Measurement: Encodable {
         let scene: String
+        let source: String
         let detail: MapDetail
         let columns: Int
         let rows: Int

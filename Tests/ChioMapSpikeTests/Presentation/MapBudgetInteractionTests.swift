@@ -25,7 +25,8 @@ struct MapBudgetInteractionTests {
                                   ])))
         let source = try MapSource(dataset: MapDataset(features: buildings + [road]),
                                    metadata: loaded.streetSource.metadata, coverage: loaded.streetSource.coverage)
-        let fixtures = MapFixtures(worldSource: loaded.worldSource, streetSource: source)
+        let fixtures = MapFixtures(worldSource: loaded.worldSource, streetSource: source,
+                                   openFreeMapSource: loaded.openFreeMapSource)
         let frames = Frames()
         let surface = HostedRasterSurface(surfaceSize: .init(width: 100, height: 30), appearance: .fallback,
                                           onFrame: { frames.latest = $0 })
@@ -44,14 +45,14 @@ struct MapBudgetInteractionTests {
             #expect(overloaded.focusedIdentity == initial.focusedIdentity)
             session.send([.key(.arrowRight), .key(.character("t"))])
             let moved = try await frames.wait(after: overloaded.sequence) {
-                $0.text.contains("Center 1.289, 103.860") && $0.text.contains("source · light")
+                $0.text.contains("Center 1.289, 103.870") && $0.text.contains("source · light")
                     && $0.text.contains("Too much map detail")
             }
             session.send(.key(.character("f")))
             let recovered = try await frames.wait(after: moved.sequence) {
                 !$0.text.contains("Too much map detail") && $0.hasGeography
             }
-            #expect(recovered.text.contains("Center 1.289, 103.860"))
+            #expect(recovered.text.contains("Center 1.289, 103.870"))
             #expect(recovered.text.contains("detail 4/4 source"))
             #expect(recovered.focusedIdentity == initial.focusedIdentity)
             session.send(.key(.character("f")))
@@ -68,7 +69,7 @@ struct MapBudgetInteractionTests {
             let expanded = try await frames.wait(after: compact.sequence) {
                 $0.raster.size == CellSize(width: 100, height: 30) && $0.hasGeography
             }
-            #expect(expanded.text.contains("Center 1.289, 103.860"))
+            #expect(expanded.text.contains("Center 1.289, 103.870"))
             #expect(expanded.text.contains("detail 2/4 minimal"))
             #expect(expanded.focusedIdentity == initial.focusedIdentity)
             session.stop()

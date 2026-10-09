@@ -68,6 +68,16 @@ the documented allocations. Work counters are operation allowances, not latency
 guarantees; benchmark drawing setup (admission and label placement) separately
 from native raster work.
 
+Source-adapter changes additionally check the pinned raw MVT/TileJSON hashes,
+malformed/truncated protobuf, tag indices, command state, buffered coordinates,
+ring orientation/holes, multipart identities and input/work bounds. Exercise the
+real tile through all four shared detail levels, the three themes and narrow
+allocations. Hosted and PTY checks must preserve camera, detail, theme and native
+focus across source changes, including batched round trips and coverage recovery.
+`--benchmark --source openfreemap` measures the tile with the same preparation/
+drawing path; fixed tile resolution does not establish source-level selection,
+network acquisition, tile stitching or arbitrary-provider support.
+
 Pass an example flag such as `--choices`, `--inbox` or `--diff` for its workflow;
 [verify.sh](../Scripts/ci/verify.sh) is the complete list. Terminal checks cover
 input/output, raw mode, cursor/alternate-screen restoration and exact original

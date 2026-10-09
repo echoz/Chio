@@ -8,6 +8,7 @@ struct MapSpikeView {
     @Environment(\.cellPixelMetrics) private var pixelMetrics
     @Environment(\.requestTermination) private var requestTermination
     @State private var scene: MapFixtures.Scene
+    @State private var streetSource: MapFixtures.StreetSource
     @State private var camera: MapCamera
     @State private var appearance: MapSpikeCommand.Appearance
     @State private var fills = true
@@ -17,17 +18,35 @@ struct MapSpikeView {
     private let inspectSmall: Bool
 
     init(fixtures: MapFixtures, scene: MapFixtures.Scene, appearance: MapSpikeCommand.Appearance,
-         inspectSmall: Bool = false, detail: MapDetail = .minimal) {
+         inspectSmall: Bool = false, detail: MapDetail = .minimal,
+         streetSource: MapFixtures.StreetSource = .overpass) {
         self.fixtures = fixtures
         self.inspectSmall = inspectSmall
         _scene = State(wrappedValue: scene)
+        _streetSource = State(wrappedValue: streetSource)
         _camera = State(wrappedValue: scene.camera)
         _appearance = State(wrappedValue: appearance)
         _detail = State(wrappedValue: detail)
     }
 
     private var theme: ChioTheme { appearance.theme }
-    private var source: MapSource { fixtures.source(for: scene) }
+    private var source: MapSource { fixtures.source(for: scene, streetSource: streetSource) }
+    private var sourceTitle: String { scene == .world ? "Natural Earth" : streetSource.title }
+    private var summary: String {
+        let detailText = "detail \(detail.levelNumber)/\(MapDetail.allCases.count) \(detail.rawValue) · \(appearance.rawValue)"
+        if !source.coverage.contains(camera.center) {
+            if terminalSize.width >= 96 {
+                return "Outside offline coverage · \(sourceTitle) · \(detailText) · r reset"
+            }
+            if terminalSize.width >= 58 {
+                return "Outside coverage · \(sourceTitle) · \(detail.levelNumber)/\(MapDetail.allCases.count) \(detail.rawValue); r reset"
+            }
+            return "Outside · \(sourceTitle) · \(detail.levelNumber)/\(MapDetail.allCases.count)"
+        }
+        return terminalSize.width >= 96
+            ? "\(sourceDescription) · \(sourceTitle) · \(detailText)"
+            : "\(sourceTitle) · \(detailText)"
+    }
     private var sourceDescription: String {
         switch source.coverage {
         case .worldwide: "Offline world"
@@ -73,7 +92,7 @@ struct MapSpikeView {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         } else {
             switch Result(catching: {
-                let map = try MapPreparation.prepare(dataset: fixtures.dataset(for: scene),
+                let map = try MapPreparation.prepare(dataset: source.dataset,
                                                      camera: camera, viewport: viewport, detail: detail)
                 return try MapCanvasView(map: map, viewport: viewport, theme: theme, fills: fills, labels: labels,
                                          waterColor: tint(theme.syntax.type, amount: 0.22),
@@ -103,6 +122,7 @@ struct MapSpikeView {
             scene = scene.next
             camera = scene.camera
         case .character("t"): appearance = appearance.next
+        case .character("p"): streetSource = streetSource.next
         case .character("f"): fills.toggle()
         case .character("l"): labels.toggle()
         case .character("["): detail = detail.less
@@ -128,7 +148,7 @@ extension MapSpikeView: View {
                 Text("chio").bold().foregroundStyle(theme.colors.accent)
                 Text("/ map spike · \(scene.title)")
             }.frame(height: 1, alignment: .leading)
-            Text("\(sourceDescription) · detail \(detail.levelNumber)/\(MapDetail.allCases.count) \(detail.rawValue) · \(appearance.rawValue)")
+            Text(summary)
                 .foregroundStyle(theme.colors.mutedText).frame(height: 1, alignment: .leading)
             Spacer().frame(height: 1)
             mapView.frame(width: max(1, terminalSize.width - 2), height: viewport.rows, alignment: .center)
@@ -139,10 +159,10 @@ extension MapSpikeView: View {
             Text(source.metadata.attribution).foregroundStyle(theme.colors.mutedText).frame(height: 1, alignment: .leading)
             Text(licenseText).foregroundStyle(theme.colors.mutedText).frame(height: 1, alignment: .leading)
             Text(terminalSize.width >= 96
-                 ? "↑↓←→ pan  +/- zoom  [ ] detail  d cycle  space map  t theme  f fill  l labels  r reset  q quit"
+                 ? "↑↓←→ pan +/- zoom [ ] detail d cycle p source space map t theme f fill l labels r reset q quit"
                  : terminalSize.width >= 58
-                    ? "↑↓←→ pan  +/- zoom  [ ] detail  space map  q quit"
-                    : "q quit  +/- zoom  space map")
+                    ? "↑↓←→ pan +/- zoom [] detail p source space map q quit"
+                    : "q quit  p source  space map")
                 .foregroundStyle(theme.colors.accent).frame(height: 1, alignment: .leading)
         }
         .padding(1)

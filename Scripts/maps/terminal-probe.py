@@ -160,9 +160,9 @@ def probe(binary, output_dir, record=None):
         key("world abstract shapes", b"]", ("World", "detail 3/4 abstract", "span 360.0000"))
         key("street", b" ", ("Singapore", "span 0.0300"))
         abstract_samples = map_samples()
-        key("minimal detail", b"[", ("detail 2/4 minimal", "Center 1.289, 103.856", "span 0.0300"))
+        key("minimal detail", b"[", ("detail 2/4 minimal", "Center 1.289, 103.866", "span 0.0300"))
         minimal_samples = map_samples()
-        key("silhouette detail", b"[", ("detail 1/4 silhouette", "Center 1.289, 103.856", "span 0.0300"))
+        key("silhouette detail", b"[", ("detail 1/4 silhouette", "Center 1.289, 103.866", "span 0.0300"))
         assert map_samples() != minimal_samples, "Silhouette did not remove road geometry"
         key("raise detail", b"]]", ("detail 3/4 abstract", "span 0.0300"))
         assert map_samples() == abstract_samples, "Raising detail did not restore the drawing"
@@ -173,25 +173,44 @@ def probe(binary, output_dir, record=None):
         assert map_samples() == abstract_samples, "Abstract comparison did not restore the drawing"
         key("zoom", b"+", ("Singapore", "span 0.0210"))
         zoom_samples = map_samples()
-        key("pan", b"\x1b[C", ("Center 1.289, 103.859", "span 0.0210"))
+        key("pan", b"\x1b[C", ("Center 1.289, 103.869", "span 0.0210"))
         assert map_samples() != zoom_samples, "Pan changed camera text without moving the drawing"
         key("light theme", b"t", ("abstract · light", "span 0.0210"))
+        # Exercise visible label changes on the named Overpass extract. The
+        # supported tile geometry has no placed labels at this camera; toggling
+        # that option correctly need not emit another terminal frame.
         key("fills off redraw", b"f", ("Singapore", "abstract · light", "span 0.0210"))
         key("labels off redraw", b"l", ("Singapore", "span 0.0210"))
         key("fills on redraw", b"f", ("Singapore", "span 0.0210"))
         key("labels on redraw", b"l", ("Singapore", "span 0.0210"))
-        key("minimal final view", b"[", ("detail 2/4 minimal", "Center 1.289, 103.859", "span 0.0210"))
+        extract_samples = map_samples()
+        key("OpenFreeMap source", b"p", ("OpenFreeMap", "detail 3/4 abstract", "Center 1.289, 103.869", "span 0.0210"))
+        assert map_samples() != extract_samples, "Changing real sources did not change geography"
+        tile_samples = map_samples()
+        key("batched source round trip", b"pp", ("OpenFreeMap", "abstract · light", "span 0.0210"))
+        assert map_samples() == tile_samples, "Source round trip changed the retained map"
+        key("tile minimal detail", b"[", ("OpenFreeMap", "detail 2/4 minimal", "span 0.0210"))
+        tile_minimal = map_samples()
+        key("tile silhouette detail", b"[", ("OpenFreeMap", "detail 1/4 silhouette", "span 0.0210"))
+        assert map_samples() != tile_minimal, "Shared detail policy did not remove tile roads"
+        key("tile source detail", b"]]]", ("OpenFreeMap", "detail 4/4 source", "span 0.0210"))
+        assert map_samples() != tile_minimal, "Shared detail policy did not expose tile source geometry"
+        key("restore tile abstract", b"[", ("OpenFreeMap", "abstract · light", "span 0.0210"))
+        assert map_samples() == tile_samples, "Tile abstract geometry did not restore"
+        key("tile fills off redraw", b"f", ("OpenFreeMap", "abstract · light", "span 0.0210"))
+        key("tile fills on redraw", b"f", ("OpenFreeMap", "abstract · light", "span 0.0210"))
+        key("minimal final view", b"[", ("detail 2/4 minimal", "Center 1.289, 103.869", "span 0.0210"))
         stop_recording()
 
-        key("lower detail limit", b"[[[", ("detail 1/4 silhouette", "Center 1.289, 103.859", "span 0.0210"))
-        key("upper detail limit", b"]]]]", ("detail 4/4 source", "Center 1.289, 103.859", "span 0.0210"))
+        key("lower detail limit", b"[[[", ("detail 1/4 silhouette", "Center 1.289, 103.869", "span 0.0210"))
+        key("upper detail limit", b"]]]]", ("detail 4/4 source", "Center 1.289, 103.869", "span 0.0210"))
         key("restore abstract detail", b"[", ("detail 3/4 abstract", "span 0.0210"))
         observe("compact fallback", ("More room for the map",), lambda: resize(36, 18))
-        observe("restored size retains camera and detail", ("Singapore", "detail 3/4 abstract", "Center 1.289, 103.859", "span 0.0210"),
+        observe("restored size retains camera and detail", ("Singapore", "detail 3/4 abstract", "Center 1.289, 103.869", "span 0.0210"),
                 lambda: resize(100, 30))
         assert "More room for the map" not in current_screen(), "Fallback remained after expansion"
         key("leave offline coverage", b"\x1b[C" * 8, ("Outside offline coverage",))
-        key("reset", b"r", ("Center 1.289, 103.856", "span 0.0300"))
+        key("reset", b"r", ("Center 1.289, 103.866", "span 0.0300"))
         assert "Outside offline coverage" not in current_screen(), "Coverage status did not reset"
 
         before = len(output)

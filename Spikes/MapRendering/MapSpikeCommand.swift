@@ -5,6 +5,8 @@ import SwiftTUI
 @main
 struct MapSpikeCommand {
     @Option(help: "Local fixture: world or street.") var scene: MapFixtures.Scene = .world
+    @Option(help: "Street source: overpass or openfreemap; retained while viewing world.")
+    var source: MapFixtures.StreetSource = .overpass
     @Option(help: "Theme: default, light or btop.") var theme: Appearance = .default
     @Flag(help: "Print a deterministic native raster as text.") var snapshot = false
     @Flag(help: "Export native raster cells as JSON for visual inspection.") var snapshotJSON = false
@@ -65,12 +67,14 @@ extension MapSpikeCommand: AsyncParsableCommand {
         let fixtures = try MapFixtures.load()
         let detail: MapDetail = sourceDetail ? .source : self.detail
         if benchmark {
-            try MapProbe.run(fixtures: fixtures, appearance: theme, aspect: cellAspect ?? 2, detail: detail)
+            try MapProbe.run(fixtures: fixtures, appearance: theme, aspect: cellAspect ?? 2, detail: detail,
+                             streetSource: source)
         } else if snapshot || snapshotJSON {
             let metrics = CellPixelMetrics(width: 100, height: Int((cellAspect ?? 2) * 100),
                                            source: cellAspect == nil ? .estimated : .reported)
             let frame = DefaultRenderer().render(
-                MapSpikeView(fixtures: fixtures, scene: scene, appearance: theme, inspectSmall: inspectSmall, detail: detail)
+                MapSpikeView(fixtures: fixtures, scene: scene, appearance: theme, inspectSmall: inspectSmall,
+                             detail: detail, streetSource: source)
                     .environment(\.terminalSize, CellSize(width: width, height: height))
                     .environment(\.cellPixelMetrics, metrics),
                 proposal: ProposedSize(width: width, height: height), frameInstant: .zero)
@@ -80,7 +84,8 @@ extension MapSpikeCommand: AsyncParsableCommand {
             } else { print(frame.rasterSurface.lines.joined(separator: "\n")) }
         } else {
             try await WebHostCLIRunner.run(MapSpikeApplication(fixtures: fixtures, scene: scene, appearance: theme,
-                                                               inspectSmall: inspectSmall, cellAspect: cellAspect, detail: detail),
+                                                               inspectSmall: inspectSmall, cellAspect: cellAspect,
+                                                               detail: detail, streetSource: source),
                                           configuration: swiftTUIOptions.runtimeConfiguration())
         }
     }

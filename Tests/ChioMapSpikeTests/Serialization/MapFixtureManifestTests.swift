@@ -8,6 +8,8 @@ struct MapFixtureManifestTests {
         let decoded = try JSONDecoder().decode(MapFixtureManifest.self, from: Data(manifest.utf8))
         #expect(decoded.worldMetadata.sourceRevision == "world-commit")
         #expect(decoded.streetMetadata.sourceRevision == "street-snapshot")
+        #expect(decoded.openFreeMapMetadata.sourceRevision == "tile-revision")
+        #expect(decoded.openFreeMapTile == (try MapTileCoordinate(zoom: 14, x: 12918, y: 8133)))
         #expect(decoded.worldMetadata.attributionURL == nil)
         #expect(decoded.streetMetadata.attributionURL?.absoluteString == "https://example.test/credit")
         #expect(decoded.streetBounds.southwest.latitude == 1.278)
@@ -39,5 +41,5 @@ struct MapFixtureManifestTests {
         }
     }
 
-    private let manifest = #"{"sources":{"world":{"sourceCommit":"world-commit","attribution":"World credit","license":"Public domain","licenseURL":"https://example.test/license","sourceURL":"https://example.test/world"},"singapore":{"sourceTimestamp":"street-snapshot","attribution":"Street credit","attributionURL":"https://example.test/credit","license":"ODbL 1.0","licenseURL":"https://example.test/license","sourceURL":"https://example.test/street","queryBounds":[103.842,1.278,103.870,1.300]}}}"#
+    private let manifest = #"{"sources":{"world":{"sourceCommit":"world-commit","attribution":"World credit","license":"Public domain","licenseURL":"https://example.test/license","sourceURL":"https://example.test/world"},"singapore":{"sourceTimestamp":"street-snapshot","attribution":"Street credit","attributionURL":"https://example.test/credit","license":"ODbL 1.0","licenseURL":"https://example.test/license","sourceURL":"https://example.test/street","queryBounds":[103.842,1.278,103.870,1.300]},"openfreemap":{"sourceRevision":"tile-revision","attribution":"OpenFreeMap · © OpenMapTiles · © OpenStreetMap contributors","license":"ODbL 1.0","licenseURL":"https://example.test/license","sourceURL":"https://example.test/tile","tile":{"zoom":14,"x":12918,"y":8133}}}}"#
 }

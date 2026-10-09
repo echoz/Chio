@@ -5,6 +5,7 @@ import SwiftTUI
 struct MapFixtures {
     let worldSource: MapSource
     let streetSource: MapSource
+    let openFreeMapSource: MapSource
 
     var world: MapDataset { worldSource.dataset }
     var street: MapDataset { streetSource.dataset }
@@ -20,12 +21,24 @@ struct MapFixtures {
         let worldAdapter = NormalizedGeoJSONMapAdapter(metadata: manifest.worldMetadata, coverage: .worldwide)
         let streetAdapter = NormalizedGeoJSONMapAdapter(metadata: manifest.streetMetadata,
                                                       coverage: .boundedOfflineExtract(manifest.streetBounds))
+        let tileAdapter = OpenMapTilesAdapter(tile: manifest.openFreeMapTile, metadata: manifest.openFreeMapMetadata)
         return try Self(worldSource: worldAdapter.adapt(read("world", extension: "geojson")),
-                        streetSource: streetAdapter.adapt(read("singapore", extension: "geojson")))
+                        streetSource: streetAdapter.adapt(read("singapore", extension: "geojson")),
+                        openFreeMapSource: tileAdapter.adapt(read("openfreemap-singapore", extension: "pbf")))
     }
 
-    func source(for scene: Scene) -> MapSource { scene == .world ? worldSource : streetSource }
-    func dataset(for scene: Scene) -> MapDataset { source(for: scene).dataset }
+    func source(for scene: Scene, streetSource choice: StreetSource = .overpass) -> MapSource {
+        scene == .world ? worldSource : choice == .overpass ? streetSource : openFreeMapSource
+    }
+    func dataset(for scene: Scene, streetSource choice: StreetSource = .overpass) -> MapDataset {
+        source(for: scene, streetSource: choice).dataset
+    }
+
+    enum StreetSource: String {
+        case overpass, openfreemap
+        var title: String { self == .overpass ? "Overpass" : "OpenFreeMap" }
+        var next: Self { self == .overpass ? .openfreemap : .overpass }
+    }
 
     enum Scene: String {
         case world, street
@@ -36,7 +49,7 @@ struct MapFixtures {
             // Fixed experiment inputs satisfy the checked geographic constructors.
             switch self {
             case .world: try! MapCamera(center: MapCoordinate(latitude: 0, longitude: 0), longitudeSpan: 360)
-            case .street: try! MapCamera(center: MapCoordinate(latitude: 1.289, longitude: 103.856), longitudeSpan: 0.030)
+            case .street: try! MapCamera(center: MapCoordinate(latitude: 1.289, longitude: 103.866), longitudeSpan: 0.030)
             }
         }
     }
@@ -48,3 +61,8 @@ extension MapFixtures.Scene: Hashable {}
 extension MapFixtures.Scene: Codable {}
 extension MapFixtures.Scene: Sendable {}
 extension MapFixtures.Scene: ExpressibleByArgument {}
+extension MapFixtures.StreetSource: CaseIterable {}
+extension MapFixtures.StreetSource: Hashable {}
+extension MapFixtures.StreetSource: Codable {}
+extension MapFixtures.StreetSource: Sendable {}
+extension MapFixtures.StreetSource: ExpressibleByArgument {}

@@ -1,18 +1,20 @@
 import Foundation
 
-/// Reads the existing offline fixture manifest without changing its representation.
+/// Reads provider provenance and fixture coordinates at the executable boundary.
 struct MapFixtureManifest {
     let worldMetadata: MapSourceMetadata
     let streetMetadata: MapSourceMetadata
     let streetBounds: MapCoverage.Bounds
+    let openFreeMapMetadata: MapSourceMetadata
+    let openFreeMapTile: MapTileCoordinate
 }
 
 extension MapFixtureManifest: Decodable {
     private enum CodingKeys: String, CodingKey { case sources }
-    private enum SourceKeys: String, CodingKey { case world, singapore }
+    private enum SourceKeys: String, CodingKey { case world, singapore, openfreemap }
     private enum FieldKeys: String, CodingKey {
         case attribution, attributionURL, license, licenseURL, sourceURL
-        case sourceCommit, sourceTimestamp, queryBounds
+        case sourceCommit, sourceTimestamp, sourceRevision, queryBounds, tile
     }
 
     init(from decoder: any Decoder) throws {
@@ -22,6 +24,9 @@ extension MapFixtureManifest: Decodable {
         let street = try sources.nestedContainer(keyedBy: FieldKeys.self, forKey: .singapore)
         worldMetadata = try Self.metadata(from: world, revisionKey: .sourceCommit)
         streetMetadata = try Self.metadata(from: street, revisionKey: .sourceTimestamp)
+        let openFreeMap = try sources.nestedContainer(keyedBy: FieldKeys.self, forKey: .openfreemap)
+        openFreeMapMetadata = try Self.metadata(from: openFreeMap, revisionKey: .sourceRevision)
+        openFreeMapTile = try openFreeMap.decode(MapTileCoordinate.self, forKey: .tile)
         var bounds = try street.nestedUnkeyedContainer(forKey: .queryBounds)
         let west = try bounds.decode(Double.self)
         let south = try bounds.decode(Double.self)

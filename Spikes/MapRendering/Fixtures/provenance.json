@@ -1,6 +1,6 @@
 {
   "retrievedUTC": "2026-10-09T03:31:07.628349+00:00",
-  "coordinates": "WGS84 [longitude, latitude]",
+  "coordinates": "GeoJSON: WGS84 [longitude, latitude]. MVT: integer tile coordinates with per-layer extent.",
   "sources": {
     "world": {
       "fixture": "world.geojson",
@@ -70,8 +70,44 @@
       ],
       "license": "ODbL 1.0",
       "licenseURL": "https://opendatacommons.org/licenses/odbl/1-0/",
-      "attribution": "© OpenStreetMap contributors",
+      "attribution": "\u00a9 OpenStreetMap contributors",
       "attributionURL": "https://www.openstreetmap.org/copyright"
+    },
+    "openfreemap": {
+      "fixture": "openfreemap-singapore.pbf",
+      "bytes": 104054,
+      "sha256": "056fa5c4e16df7569bb8c7276f1278c0fe18087a73cca4abe2c87fbca3666e2a",
+      "sourceURL": "https://tiles.openfreemap.org/planet/20261004_113936_pt/14/12919/8133.pbf",
+      "sourceRevision": "20261004_113936_pt",
+      "retrievedUTC": "2026-10-09T14:39:34.578947+00:00",
+      "tile": {
+        "zoom": 14,
+        "x": 12919,
+        "y": 8133
+      },
+      "format": "MVT 2.x, uncompressed protobuf",
+      "schema": "OpenMapTiles",
+      "schemaURL": "https://openmaptiles.org/docs/schema/",
+      "tileJSON": "openfreemap-tilejson.json",
+      "tileJSONURL": "https://tiles.openfreemap.org/planet",
+      "tileJSONSHA256": "89433520bac4ce0cac9013a05d0f448f9e1bfa5fa2adb4610848ec5cf7dff005",
+      "license": "ODbL 1.0",
+      "licenseURL": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "attribution": "OpenFreeMap \u00b7 \u00a9 OpenMapTiles \u00b7 \u00a9 OpenStreetMap contributors",
+      "attributionURL": "https://openfreemap.org/#attribution",
+      "schemaLicense": "CC BY 4.0",
+      "schemaLicenseURL": "https://creativecommons.org/licenses/by/4.0/",
+      "stats": {
+        "features": 384,
+        "vertices": 3365,
+        "holes": 2,
+        "kinds": {
+          "building": 136,
+          "primaryRoad": 138,
+          "road": 76,
+          "water": 34
+        }
+      }
     }
   }
 }

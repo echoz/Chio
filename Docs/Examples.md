@@ -37,9 +37,11 @@ The rendering proof is a separate executable, not a public Chio component:
 swift run -c release chio-map-spike --scene world
 swift run -c release chio-map-spike --scene street --theme btop
 swift run -c release chio-map-spike --scene street --detail minimal
+swift run -c release chio-map-spike --scene street --source openfreemap
 ```
 
 Start at **100 × 30**. Arrows pan, `+`/`-` zoom, Space switches world/Singapore,
+`p` switches Overpass/OpenFreeMap street data while retaining position and detail,
 `t` cycles themes, `[` lowers detail, `]` raises it, `d` cycles all four levels,
 `f` toggles area fills,
 `l` toggles labels, `r` resets the camera,
@@ -48,12 +50,17 @@ provisional map allocation, a resize hint replaces the drawing and retains the
 camera. Try **60 × 26** or larger with ordinary 2:1 terminal cells.
 
 The world uses Natural Earth land; the neighborhood uses real OpenStreetMap
-vectors around Marina Bay. The default minimal view emphasizes water and major
+vectors around Marina Bay. `--source openfreemap` uses a bundled vector tile
+through a second adapter; the default `overpass` uses the normalized GeoJSON
+extract. The OpenFreeMap tile covers a smaller area; zoom in to compare the same
+location. Its source resolution is fixed, and standalone point/label layers are
+outside this proof. Both sources use the same detail policy and themes.
+The default minimal view emphasizes water and major
 roads, with broader coastline shapes and no buildings or minor streets.
 Labels leave more empty space. Choose `--detail silhouette`, `minimal`
 (the default), `abstract`, or `source`. Silhouette shows land and water; minimal
 adds major roads. Abstract adds parks and scale-dependent smaller streets; source includes
-all available layers. Lower levels omit smaller areas and show fewer labels.
+all supported feature classes supplied by the adapter. Lower levels omit smaller areas and show fewer labels.
 Silhouette and minimal also simplify the actual land and water boundaries into
 broader shapes at the current terminal scale. Abstract and source retain the
 original polygon shapes. The header shows the active level, and changes preserve

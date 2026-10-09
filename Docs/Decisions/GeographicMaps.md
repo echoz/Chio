@@ -93,10 +93,106 @@ that happen to cross it. The UI identifies the offline extract and reports when
 the camera center leaves it; this is a center-based notice, not proof that every
 visible cell is covered. It neither clamps the camera nor requests more data.
 The source adapter owns normalization; acquisition, tile caching, cancellation
-and asynchronous preparation remain deferred. No public library API or network
+and asynchronous preparation remain deferred. The second schema proof below
+adds a local MVT response without changing those boundaries. No public library API or network
 dependency is added by this seam.
 
-A local release comparison uses the same retained street dataset and 20 timed
+### Second source-schema proof
+
+Before formalizing the map API, exercise real OpenMapTiles data through the same
+checked geographic values and presentation pipeline. `OpenMapTilesAdapter`
+accepts a retained OpenFreeMap MVT response plus a checked XYZ tile address and
+required source metadata. The executable loads the bundled tile once; no runtime
+network, archive reader, tile cache or provider credential handling is introduced.
+
+`--source overpass|openfreemap` selects the initial street source; Overpass remains
+the default. `p` swaps them without resetting position, zoom, detail, theme, fills
+or labels. The world keeps Natural Earth data and retains the street choice for
+returning. Coverage is the unbuffered tile square; source buffers retain their
+positions but do not enlarge coverage. This remains a camera-center notice, not
+a promise that the entire visible map is covered.
+
+The comparison starts at 1.289° N, 103.866° E, inside both retained coverages.
+Tile 14/12919/8133 contains 384 supported canonical features, 3,365 vertices and
+two holes. The denser western neighbor expands to 4,797 features and exceeds the
+existing 4,000-feature allowance; it is not bundled or silently truncated. This
+is a concrete constraint for later acquisition: raw tile-record counts do not
+predict the cost of multipart geometry. A future loader needs an explicit
+bounded selection or overload policy before accepting arbitrary tiles.
+
+There are two distinct levels of detail. **Presentation detail** is Chio's shared,
+per-map policy (minimal by default), applied after normalization using scale,
+allocation and cell metrics. **Source resolution** is what the provider supplied.
+This proof fixes source resolution at tile zoom 14. A future acquisition owner
+can translate presentation requirements into suitable source requests; an
+adapter must not independently redefine the meaning of minimal or promise detail
+that its source omitted. Themes supply colors independently of both.
+
+The supported OpenMapTiles subset maps water and building polygons, park polygons
+and selected green-space landuse classes, and transportation lines classified as
+motorway/trunk/primary or secondary/tertiary/minor (including link variants).
+Multipart lines and polygon exteriors become separate canonical features; holes
+remain with their exterior. Positive/negative MVT ring orientation is interpreted
+in tile coordinates before geographic conversion. Tile/layer/ordinal/source ID/
+part identify a feature within this snapshot; they are not stable identities
+across providers, source revisions or neighboring tiles.
+
+Service/path roads, waterways, generic landcover and other unsupported classes
+are intentionally omitted. Separate label layers and point features are also
+outside the current geometry model. Names present on supported shapes survive;
+we do not duplicate road geometry or guess joins to attach separate labels. This
+is a concrete input to the upcoming annotation design: provider labels need their
+own anchors, and application annotations need their own identity and priority.
+The proof does not establish complete feature parity between providers.
+
+The internal reader implements a bounded MVT v2 protobuf subset, with no new
+package dependency. It accepts ordinary unknown protobuf fields, and rejects
+groups, unsupported layer versions, duplicate required fields, invalid tag tables,
+nonfinite values, malformed supported geometry and exceeded limits. Geometry
+outside ±8 layer extents is rejected as outside this experiment's buffer allowance.
+It handles ClosePath without resetting the delta cursor, then validates canonical
+rings/paths through the existing checked constructors; it performs no geometry
+repair. Wire and metadata validation covers all layers; command interpretation is
+performed for supported features only.
+Segments spanning half a world or more in tile space reject before longitude
+wrapping: the current canonical path model follows shortest longitude edges and
+cannot preserve those segments faithfully. Extents are checked before arithmetic.
+
+Reader allowances are 16 MiB input, 64 layers, 20,000 raw features, 65,536 total
+table entries, one million packed/unpacked words, and 2 MiB total text (16 KiB per
+string). Extents are 1…65,536; XYZ zoom is 0…22. Existing canonical feature/vertex,
+path/ring, preparation and drawing limits remain in force. The limits bound this
+experiment; they do not make this a general protobuf or GIS implementation.
+
+MVTTools was considered but brings GIS, compression, logging and protobuf library
+products. SwiftProtobuf's runtime avoids external package dependencies, but still
+requires schema integration and geographic validation. The narrow reader is an
+internal proof choice; wider format support should revisit a maintained decoder.
+No new compression or system-library dependency is introduced, and the existing
+static Linux blocker is unchanged.
+
+The pinned response, TileJSON, hashes, credits and retrieval command are in
+[fixture provenance](../../Spikes/MapRendering/Fixtures/Provenance.md). Offline
+verification checks those exact bytes; decoder, adapter and hosted tests own
+semantic, geometry and source-switching contracts.
+
+The local release suite passes 98 map tests, including independent expected
+coordinates, multipart counts and holes from the retained tile; exact/over-budget
+admission; all four detail levels across three themes and three allocations; and
+hosted source changes, batched round trips, focus, resizing and coverage recovery.
+This is offline model/raster/interaction evidence, not a live tile or SSH test.
+
+At a 100×30 map allocation, 20 warmed local release samples of this tile measured
+median preparation/drawing-setup/raster times of 0.27/0.004/1.64 ms in minimal mode
+and 0.58/0.016/2.45 ms in source mode. Minimal retained at most 64 visible features
+and 497 prepared vertices; source retained 266 and 4,102. These measurements use
+the probe's uniform area colors and this small retained tile, not arbitrary tile
+density, initial decoding, acquisition or SSH latency.
+
+### Earlier abstract presentation measurements
+
+A local release comparison at the earlier 103.856° E starting camera uses the
+same retained Overpass street dataset and 20 timed
 samples after warm-up. At a **100×30 map allocation**, abstract preparation retains
 at most 643 visible features and 3,614 prepared vertices, compared with 2,212 and
 19,761 in source mode. Preparation/raster medians are about 0.9/5.9 ms versus

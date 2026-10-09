@@ -222,6 +222,21 @@ def main():
         stats.update(bytes=len(encoded), sha256=hashlib.sha256(encoded).hexdigest())
         print(name + ': ' + json.dumps(stats, sort_keys=True))
 
+    # The MVT fixture is the exact provider response, not converted GeoJSON.
+    # Swift's decoder/adapter tests verify geometry and source semantics.
+    manifest = json.loads((FIXTURES / 'provenance.json').read_text())['sources']['openfreemap']
+    tile = (FIXTURES / manifest['fixture']).read_bytes()
+    assert len(tile) == manifest['bytes'] and len(tile) <= 2 * 1024 * 1024
+    assert hashlib.sha256(tile).hexdigest() == manifest['sha256'], 'Provider tile bytes changed'
+    metadata = (FIXTURES / manifest['tileJSON']).read_bytes()
+    assert hashlib.sha256(metadata).hexdigest() == manifest['tileJSONSHA256'], 'TileJSON bytes changed'
+    coordinate = manifest['tile']
+    assert 0 <= coordinate['zoom'] <= 22
+    assert all(0 <= coordinate[axis] < 2 ** coordinate['zoom'] for axis in ('x', 'y'))
+    template = json.loads(metadata)['tiles'][0]
+    assert template.format(z=coordinate['zoom'], x=coordinate['x'], y=coordinate['y']) == manifest['sourceURL']
+    print('openfreemap: ' + json.dumps({'bytes': len(tile), 'sha256': manifest['sha256'], 'tile': coordinate}, sort_keys=True))
+
 
 if __name__ == '__main__':
     main()

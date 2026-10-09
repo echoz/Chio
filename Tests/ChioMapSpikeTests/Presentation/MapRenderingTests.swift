@@ -230,6 +230,26 @@ struct MapRenderingTests {
         }
     }
 
+    @Test("The real vector tile uses all shared detail levels and themes at wide and narrow allocations")
+    func vectorTilePresentation() throws {
+        let source = try MapFixtures.load().openFreeMapSource
+        #expect(source.coverage.contains(MapFixtures.Scene.street.camera.center))
+        for detail in MapDetail.allCases {
+            for (width, height) in [(100, 30), (60, 20), (36, 18)] {
+                let viewport = try MapViewport(columns: width, rows: height)
+                let prepared = try MapPreparation.prepare(dataset: source.dataset,
+                    camera: MapFixtures.Scene.street.camera, viewport: viewport, detail: detail)
+                #expect(prepared.statistics.visibleFeatures > 0)
+                for theme in [ChioTheme.default, .light, .btop] {
+                    let surface = try render(prepared, columns: width, rows: height, theme: theme,
+                                             labels: true, detail: detail)
+                    #expect(surface.size == CellSize(width: width, height: height))
+                    #expect(surface.cells.flatMap { $0 }.contains { $0.character != " " })
+                }
+            }
+        }
+    }
+
     @Test("The experimental UI uses a compact summary below its provisional drawing allocation")
     func minimumAllocation() throws {
         let fixtures = try MapFixtures.load()
@@ -253,7 +273,8 @@ struct MapRenderingTests {
     @Test("Map UI credits and coverage follow the adapted source rather than the selected scene name")
     func adaptedSourcePresentation() throws {
         let loaded = try MapFixtures.load()
-        let swapped = MapFixtures(worldSource: loaded.streetSource, streetSource: loaded.worldSource)
+        let swapped = MapFixtures(worldSource: loaded.streetSource, streetSource: loaded.worldSource,
+                                  openFreeMapSource: loaded.openFreeMapSource)
         let view = MapSpikeView(fixtures: swapped, scene: .world, appearance: .default)
             .environment(\.terminalSize, CellSize(width: 100, height: 30))
         let frame = DefaultRenderer().render(view, proposal: .init(width: 100, height: 30), frameInstant: .zero)
@@ -265,10 +286,10 @@ struct MapRenderingTests {
     }
 
     private func render(_ map: PreparedMap, columns: Int, rows: Int, theme: ChioTheme,
-                        fills: Bool = true, labels: Bool = false) throws -> RasterSurface {
+                        fills: Bool = true, labels: Bool = false, detail: MapDetail = .source) throws -> RasterSurface {
         let view = try MapCanvasView(map: map, viewport: MapViewport(columns: columns, rows: rows),
                                  theme: theme, fills: fills, labels: labels,
-                                 waterColor: waterColor(theme), parkColor: parkColor(theme)).chioTheme(theme)
+                                 waterColor: waterColor(theme), parkColor: parkColor(theme), detail: detail).chioTheme(theme)
         return DefaultRenderer().render(view, proposal: .init(width: columns, height: rows), frameInstant: .zero).rasterSurface
     }
 

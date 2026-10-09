@@ -29,15 +29,19 @@ boundary carrying source credits and explicit coverage. Adjust silhouette,
 minimal, abstract and source detail with `[` / `]`, or cycle with `d`. The lower
 levels now explore actual land/water shape simplification as well as feature and
 label selection. A checked drawing allowance rejects excessive work before
-painting and keeps controls available for recovery. The next work is the reusable
-offline component, including cancellation and camera binding behavior. Do not promote the
+painting and keeps controls available for recovery. A second real source-schema
+proof now adapts an offline OpenFreeMap vector tile into the same checked geometry
+as the existing Overpass extract, sharing detail controls and native drawing.
+The next work is the reusable offline component, including annotations,
+cancellation and camera binding behavior. Do not promote the
 experimental types unchanged: camera bindings, asynchronous preparation/stale
 results, markers, routes and selection have not yet been implemented.
 
-Acquisition remains deferred while the look is refined. Live vector tiles are a
-later, separate decision. Decoder/provider choices and
-static linking compatibility are unverified; project policy still defers live
-external-service examples. See the [tile-loading proposal](Decisions/GeographicMaps.md#later-proposal-vector-tile-loading).
+Runtime acquisition remains deferred. The second adapter reads a pinned local
+MVT response; live vector tiles remain a later, separate decision. Its narrow
+internal decoder adds no package dependency and does not establish static-musl
+compatibility. Project policy still defers live external-service examples. See the
+[tile-loading proposal](Decisions/GeographicMaps.md#later-proposal-vector-tile-loading).
 
 ## Remaining scope audit
 
@@ -60,7 +64,7 @@ Public additions require a concrete consumer need and reusable UX value:
   shared contract.
 - Completion/history, async choices, wizards, broader file selection, tree
   adapters, status queues and more themes remain possible gaps, not tasks.
-- Keep monitoring, clocks, workflow engines, annotations, persistence, external
+- Keep monitoring, clocks, workflow engines, annotation content, persistence, external
   services and repository operations with applications.
 
 Prove an accepted addition in a small runnable example, document actual public
