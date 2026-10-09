@@ -53,6 +53,12 @@ inspection previews with Pillow and explicit text/braille fonts. Its default
 fonts are macOS paths; supply `--font` and `--symbol-font` elsewhere. It is an
 optional capture tool, not a Swift package or CI dependency.
 
+Shape changes additionally compare land and water fills without labels, preserve
+holes and seam behavior, and exercise unsafe-candidate/work-budget fallback.
+Compare both world and street captures across detail levels; fewer annotations
+alone do not establish geographic shape simplification. Keep abstract/source
+captures unchanged when their geometry contracts are unchanged.
+
 Pass an example flag such as `--choices`, `--inbox` or `--diff` for its workflow;
 [verify.sh](../Scripts/ci/verify.sh) is the complete list. Terminal checks cover
 input/output, raw mode, cursor/alternate-screen restoration and exact original

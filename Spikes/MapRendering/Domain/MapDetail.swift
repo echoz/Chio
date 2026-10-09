@@ -34,6 +34,17 @@ enum MapDetail: String {
         }
     }
 
+    /// Provisional deviation in terminal-column widths, measured in physical space.
+    /// Abstract and source retain the accepted polygon geometry exactly.
+    func shapeTolerance(for kind: MapFeature.Kind) -> Double {
+        guard kind == .land || kind == .water else { return 0 }
+        switch self {
+        case .silhouette: return 1.5
+        case .minimal: return 0.75
+        case .abstract, .source: return 0
+        }
+    }
+
     func admits(_ kind: MapFeature.Kind, camera: MapCamera, viewport: MapViewport) -> Bool {
         switch self {
         case .source:

@@ -5,6 +5,45 @@ import Testing
 
 @MainActor
 struct MapRenderingTests {
+    @Test("Lower detail changes the actual filled coastline while retaining an island hole",
+          arguments: [MapFeature.Kind.land, .water])
+    func generalizedCoastline(kind: MapFeature.Kind) throws {
+        // A shallow bay crosses a cell center: removing it must visibly change
+        // the fill, even with no names or labels anywhere in the input.
+        let coast: [PreparedMap.Point] = [
+            .init(x: 2.2, y: 2.2), .init(x: 7.2, y: 2.2),
+            .init(x: 7.2, y: 2.8), .init(x: 9.2, y: 2.8),
+            .init(x: 9.2, y: 2.2), .init(x: 18.2, y: 2.2),
+            .init(x: 18.2, y: 14.2), .init(x: 2.2, y: 14.2), .init(x: 2.2, y: 2.2),
+        ]
+        let rings = try [coast, rectangle(12.2, 8.2, 14.2, 10.2)].map { points in
+            try MapRing(coordinates: points.map {
+                try MapCoordinate(latitude: MapViewport.latitude(mercatorY: (10 - $0.y) * 2),
+                                  longitude: $0.x - 20)
+            })
+        }
+        let dataset = try MapDataset(features: [MapFeature(id: "coast", kind: kind,
+                                                           geometry: .polygon(MapPolygon(rings: rings)))])
+        let viewport = try MapViewport(columns: 40, rows: 20)
+        let camera = try MapCamera(center: MapCoordinate(latitude: 0, longitude: 0), longitudeSpan: 40)
+        let exact = try MapPreparation.prepare(dataset: dataset, camera: camera, viewport: viewport, detail: .source)
+        let broad = try MapPreparation.prepare(dataset: dataset, camera: camera, viewport: viewport, detail: .silhouette)
+        #expect(broad.polygons[0].rings[0].count < exact.polygons[0].rings[0].count)
+        #expect(exact.labels.isEmpty && broad.labels.isEmpty)
+        for theme in [ChioTheme.default, .light, .btop] {
+            let original = try render(exact, columns: 40, rows: 20, theme: theme)
+            let generalized = try render(broad, columns: 40, rows: 20, theme: theme)
+            let fill = kind == .land ? theme.colors.selectedSurface : waterColor(theme)
+            #expect(original.cells[2][7].style?.backgroundColor == theme.colors.surface)
+            #expect(generalized.cells[2][7].style?.backgroundColor == fill)
+            #expect(original.cells[5][5].style?.backgroundColor == fill)
+            #expect(generalized.cells[5][5].style?.backgroundColor == fill)
+            #expect(generalized.cells[8][12].style?.backgroundColor == theme.colors.surface)
+            let abstract = try MapPreparation.prepare(dataset: dataset, camera: camera, viewport: viewport, detail: .abstract)
+            #expect(try render(abstract, columns: 40, rows: 20, theme: theme) == original)
+        }
+    }
+
     @Test("Native polygon fills retain holes and underlying area colors in every theme")
     func polygonHoles() throws {
         let water = PreparedMap.Polygon(featureID: "lake", kind: .water,

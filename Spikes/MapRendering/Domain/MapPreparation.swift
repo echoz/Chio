@@ -9,6 +9,7 @@ enum MapPreparation {
         var labels: [PreparedMap.Label] = []
         var visibleIDs: Set<String> = []
         var preparedVertices = 0
+        var shapeOperations = MapShapeSimplification.operationLimit
         let wrapWidth = 360 * Double(viewport.columns) / camera.longitudeSpan
         let ordered = dataset.features.enumerated().sorted {
             if $0.element.kind.priority != $1.element.kind.priority {
@@ -46,13 +47,28 @@ enum MapPreparation {
                 let rings = [outer] + polygon.rings.dropFirst().map {
                     project($0.coordinates, camera: camera, viewport: viewport, referenceLongitude: referenceLongitude)
                 }
-                for shift in [-1.0, 0, 1] {
-                    let shiftedRings = rings.map { shifted($0, by: shift * wrapWidth) }
-                    guard intersects(shiftedRings[0], viewport: viewport) else { continue }
-                    guard detail == .source || detail.admitsArea(visibleArea(shiftedRings, viewport: viewport),
-                                                                kind: feature.kind) else { continue }
-                    // Retain every ring and vertex. Filling only viewport scanlines bounds work
-                    // without introducing clipped border edges or destroying hole topology.
+                // Cull and admit source geometry before spending generalization work.
+                // Admission stays monotonic across levels and independent of fallback.
+                let admittedShifts = [-1.0, 0, 1].filter { shift in
+                    let sourceRings = rings.map { shifted($0, by: shift * wrapWidth) }
+                    return intersects(sourceRings[0], viewport: viewport)
+                        && (detail == .source || detail.admitsArea(visibleArea(sourceRings, viewport: viewport),
+                                                                   kind: feature.kind))
+                }
+                guard !admittedShifts.isEmpty else { continue }
+                let preparedRings: [[PreparedMap.Point]]
+                let tolerance = detail.shapeTolerance(for: feature.kind)
+                if tolerance > 0, !MapShapeSimplification.hasGeographicCut(polygon) {
+                    preparedRings = MapShapeSimplification.simplify(rings, tolerance: tolerance,
+                                                                   cellAspectRatio: viewport.cellAspectRatio,
+                                                                   operationBudget: &shapeOperations)
+                } else {
+                    preparedRings = rings
+                }
+                for shift in admittedShifts {
+                    let shiftedRings = preparedRings.map { shifted($0, by: shift * wrapWidth) }
+                    // Generalize closed rings before clipping their matching outlines.
+                    // Scanline fill keeps offscreen geometry and all accepted hole rings.
                     preparedVertices += shiftedRings.reduce(0) { $0 + $1.count }
                     guard preparedVertices <= MapLimits.preparedVertices else { throw MapValidationError.budgetExceeded }
                     polygons.append(.init(featureID: feature.id, kind: feature.kind, rings: shiftedRings))
@@ -150,7 +166,7 @@ enum MapPreparation {
     }
 
     /// Clip temporary copies only to measure visible area for admission. The prepared
-    /// polygons keep every original ring: this never creates borders or changes holes.
+    /// polygons keep closed rings: admission never creates borders or changes holes.
     private static func visibleArea(_ rings: [[PreparedMap.Point]], viewport: MapViewport) -> Double {
         func area(_ ring: [PreparedMap.Point]) -> Double {
             var points = Array(ring.dropLast())

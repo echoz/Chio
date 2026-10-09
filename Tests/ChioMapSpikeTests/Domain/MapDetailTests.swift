@@ -193,7 +193,7 @@ struct MapDetailTests {
         }
     }
 
-    @Test("Real fixture geometry grows monotonically with detail across world and street allocations")
+    @Test("Real fixture feature admission grows with detail while lower geography changes shape")
     func fixtureLevels() throws {
         let fixtures = try MapFixtures.load()
         for scene in MapFixtures.Scene.allCases {
@@ -206,12 +206,20 @@ struct MapDetailTests {
                     try MapPreparation.prepare(dataset: dataset, camera: camera, viewport: viewport, detail: $0)
                 }
                 for (less, more) in zip(maps, maps.dropFirst()) {
-                    #expect(Set(less.polygons).isSubset(of: Set(more.polygons)))
-                    #expect(Set(less.lines).isSubset(of: Set(more.lines)))
+                    #expect(Set(less.polygons.map(\.featureID)).isSubset(of: Set(more.polygons.map(\.featureID))))
+                    let lessIDs = Set(less.polygons.map(\.featureID) + less.lines.map(\.featureID))
+                    let moreIDs = Set(more.polygons.map(\.featureID) + more.lines.map(\.featureID))
+                    #expect(lessIDs.isSubset(of: moreIDs))
                     #expect(less.statistics.visibleFeatures <= more.statistics.visibleFeatures)
-                    #expect(less.statistics.preparedVertices <= more.statistics.preparedVertices)
                     #expect(less.statistics.sourceVertices == more.statistics.sourceVertices)
                 }
+                // Lower geometry can fall back independently at either tolerance;
+                // vertex counts need not be monotonically nested across candidates.
+                let retainedIDs = Set(maps[0].polygons.map(\.featureID))
+                let sourceGeography = maps[3].polygons.filter { retainedIDs.contains($0.featureID) }
+                #expect(maps[0].polygons.reduce(0) { $0 + $1.rings.reduce(0) { $0 + $1.count } }
+                        < sourceGeography.reduce(0) { $0 + $1.rings.reduce(0) { $0 + $1.count } })
+                #expect(maps[2].polygons.allSatisfy { maps[3].polygons.contains($0) })
                 #expect(maps[0].statistics.visibleFeatures > 0)
                 #expect(maps[0].polygons.allSatisfy { $0.kind == .land || $0.kind == .water })
                 #expect(maps[1].lines.filter { $0.kind == .primaryRoad }
@@ -225,6 +233,40 @@ struct MapDetailTests {
             #expect(dataset == captured)
             #expect(camera == scene.camera)
         }
+    }
+
+    @Test("Lower levels change filled bays and matching outlines while abstract and source stay exact",
+          arguments: [MapFeature.Kind.land, .water])
+    func shapeGeneralization(kind: MapFeature.Kind) throws {
+        let bay: [PreparedMap.Point] = [.init(x: 10, y: 10), .init(x: 18, y: 10),
+                                       .init(x: 18, y: 10.5), .init(x: 22, y: 10.5),
+                                       .init(x: 22, y: 10), .init(x: 30, y: 10),
+                                       .init(x: 30, y: 30), .init(x: 10, y: 30), .init(x: 10, y: 10)]
+        let dataset = try MapDataset(features: [polygon("bay", kind: kind, rings: [bay])])
+        let captured = dataset
+        let maps = try MapDetail.allCases.map { try prepare(dataset, detail: $0) }
+        #expect(maps[0].polygons[0].rings[0].count == 7)
+        #expect(maps[1].polygons[0].rings[0].count > 7)
+        #expect(maps[0].polygons[0].rings != maps[3].polygons[0].rings)
+        #expect(maps[2].polygons == maps[3].polygons)
+        #expect(maps[2].lines == maps[3].lines)
+        let outline = maps[0].lines[0].points
+        let fill = maps[0].polygons[0].rings[0]
+        #expect(outline.count == fill.count)
+        // Clipping recomputes segment endpoints, so compare at sub-cell precision
+        // rather than requiring identical floating-point evaluation order.
+        for (linePoint, fillPoint) in zip(outline, fill) {
+            #expect(abs(linePoint.x - fillPoint.x) < 1e-9)
+            #expect(abs(linePoint.y - fillPoint.y) < 1e-9)
+        }
+        #expect(abs(maps[0].labels[0].position.x - 20) < 1e-9)
+        #expect(abs(maps[0].labels[0].position.y - 50.0 / 3) < 1e-9)
+        #expect(dataset == captured)
+        #expect(MapDetail.silhouette.shapeTolerance(for: kind) == 1.5)
+        #expect(MapDetail.minimal.shapeTolerance(for: kind) == 0.75)
+        #expect(MapDetail.abstract.shapeTolerance(for: kind) == 0)
+        #expect(MapDetail.source.shapeTolerance(for: kind) == 0)
+        #expect(MapDetail.silhouette.shapeTolerance(for: .park) == 0)
     }
 
     private func prepare(_ source: MapDataset, detail: MapDetail) throws -> PreparedMap {

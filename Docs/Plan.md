@@ -26,8 +26,9 @@ public library API. [Findings](Decisions/GeographicMaps.md#rendering-spike-findi
 record native rendering, source budgets, provisional sizes and verification.
 The experiment now defaults to abstract geography and has an internal adapter
 boundary carrying source credits and explicit coverage. Adjust silhouette,
-minimal, abstract and source detail with `[` / `]`, or cycle with `d`; validate
-the visual direction before expanding acquisition. The next
+minimal, abstract and source detail with `[` / `]`, or cycle with `d`. The lower
+levels now explore actual land/water shape simplification as well as feature and
+label selection; validate the visual direction before expanding acquisition. The next
 work is to assess that treatment in use, establish a drawing work budget, and
 then design the reusable offline component. Do not promote the
 experimental types unchanged: camera bindings, asynchronous preparation/stale

@@ -54,7 +54,10 @@ Labels leave more empty space. Choose `--detail silhouette`, `minimal`, `abstrac
 (the default), or `source`. Silhouette shows land and water; minimal adds major
 roads. Abstract adds parks and scale-dependent smaller streets; source includes
 all available layers. Lower levels omit smaller areas and show fewer labels.
-The header shows the active level, and changes preserve the camera. Brackets stop
+Silhouette and minimal also simplify the actual land and water boundaries into
+broader shapes at the current terminal scale. Abstract and source retain the
+original polygon shapes. The header shows the active level, and changes preserve
+the camera. Brackets stop
 at the ends; `d` wraps. `--source-detail` remains an alias that takes precedence
 over `--detail`. No level modifies retained source geometry or merges roads.
 

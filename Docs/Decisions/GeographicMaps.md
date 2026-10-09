@@ -17,7 +17,7 @@ only at scales of at most 12 ground metres per column with a 58×16 or larger al
 The source converter classifies motorway/trunk/primary roads, including links,
 as major; secondary and tertiary streets remain in the ordinary-road category.
 Small visible areas are omitted using filled area after viewport intersection,
-with holes deducted. Admitted rings and holes retain their source geometry.
+with holes deducted. Abstract and source keep their original polygon rings.
 Parks use quiet fills without outlines. Abstract labels have wider spacing and
 a budget of one per 300 cells, capped at eight. These are experimental defaults,
 not a promise of a finished map style or general-purpose level-of-detail engine.
@@ -26,8 +26,8 @@ The live detail control has four ordered levels, selected with `[` / `]`:
 
 | Level | Presentation |
 | --- | --- |
-| 1. `silhouette` | Land and water; omit areas below 2 and 4 cells² respectively; at most two labels |
-| 2. `minimal` | The same land/water policy plus major roads; at most four labels |
+| 1. `silhouette` | Broad land/water shapes; omit areas below 2 and 4 cells² respectively; at most two labels |
+| 2. `minimal` | More faithful land/water shapes plus major roads; at most four labels |
 | 3. `abstract` | The existing default: major roads, quiet parks, scale-dependent minor roads and at most eight labels |
 | 4. `source` | All available feature classes and the original denser label policy |
 
@@ -37,9 +37,39 @@ cycles and wraps. The header shows the level number and name. `--detail` chooses
 the initial level, including in snapshots and benchmarks; `--source-detail`
 remains a compatibility alias that takes precedence. The default abstract and
 source treatments are unchanged. These are discrete semantic presets for the
-spike, not a continuous simplification tolerance or public API commitment. They
-do not merge parallel roads, remove individual junction branches, distort
-geography or fetch additional vectors.
+spike, not a public API commitment. They do not merge parallel roads, remove
+individual junction branches or fetch additional vectors.
+
+The first detail control only selected layers, small areas and labels. The lower
+two levels now also generalize the actual land and water polygon boundaries,
+including the geometry used for area fills. Silhouette/minimal use tolerances of
+1.5/0.75 terminal-column widths, with row distances scaled by cell aspect. Zooming
+in naturally retains more geographic detail. Abstract/source keep exact polygon
+geometry, so the previously accepted default remains a comparison.
+
+The closed-ring reduction retains the first vertex and all extrema. It accepts a
+whole polygon only after checking source and candidate rings for closure, finite
+coordinates, winding, nonzero area, self intersections, boundary crossings, and
+contained, nonnested holes. Each ring must retain 85–115% of its area. Unsafe or
+unproved candidates retain exact input; these guards do not repair malformed
+topology. Polar/clamped and genuine dateline-crossing polygons remain exact;
+merely seam-touching rings retain their cut vertices as extrema.
+
+Source-based viewport culling and area admission precede this work. A preparation
+shares a three-million-operation allowance, with at most one million per polygon
+for distance/topology checks. Exhaustion retains the original polygon. Retained
+features remain nested across detail levels, but vertex counts need not be:
+different tolerances can independently fall back. Fills, outlines and label
+anchors use the same accepted rings. Source fixtures remain unchanged.
+
+This is a conservative per-polygon rendering experiment. Separate features do not
+coordinate shared boundaries; per-ring area checks do not bound every local
+channel width or the exterior-minus-holes area. Fixed-epsilon predicates are
+conservative checks, not robust GIS topology proofs. Budget fallback can retain
+different features at exact detail depending on source order and visibility.
+This does not establish general GIS topology preservation, a complete
+drawing-work budget or arbitrary-input performance. Visual comparison of real
+world/street data remains part of choosing these provisional tolerances.
 
 Themes supply color; the semantic detail policy is
 independent of both the theme and the provider. Low-level preparation defaults to

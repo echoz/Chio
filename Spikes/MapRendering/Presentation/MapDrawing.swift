@@ -45,8 +45,8 @@ struct MapDrawing {
         }
     }
 
-    /// Intersect a bounded scanline with original rings. Pairing sorted crossings
-    /// applies even-odd holes without reconstructing or simplifying polygon topology.
+    /// Intersect a bounded scanline with the prepared rings. Pairing sorted crossings
+    /// applies even-odd holes; fill and outline use the same prepared geometry.
     private func intervals(_ rings: [[PreparedMap.Point]], at y: Double) -> [(Double, Double)] {
         var crossings: [Double] = []
         for ring in rings {

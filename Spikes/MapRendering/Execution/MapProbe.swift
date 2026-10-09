@@ -39,7 +39,7 @@ enum MapProbe {
                     visibleLabels = max(visibleLabels, MapLabels(candidates: map.labels, columns: columns, rows: rows,
                                                                  enabled: true, detail: detail).labels.count)
                 }
-                results.append(Measurement(scene: scene.rawValue, detail: detail == .abstract ? "abstract" : "source",
+                results.append(Measurement(scene: scene.rawValue, detail: detail,
                                            columns: columns, rows: rows, cellAspect: aspect,
                                            sourceFeatures: dataset.features.count, sourceVertices: dataset.vertexCount,
                                            peakPreparedVertices: vertices, peakVisibleFeatures: features, peakLabels: visibleLabels,
@@ -76,7 +76,7 @@ enum MapProbe {
 
     private struct Measurement: Encodable {
         let scene: String
-        let detail: String
+        let detail: MapDetail
         let columns: Int
         let rows: Int
         let cellAspect: Double

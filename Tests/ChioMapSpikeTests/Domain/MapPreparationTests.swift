@@ -125,6 +125,57 @@ struct MapPreparationTests {
         #expect(prepared.polygons[0].rings[1].map(\.x) == [50, 60, 60, 50, 50])
     }
 
+    @Test("Seam-touching geography can generalize while every seam vertex stays fixed")
+    func seamTouchingShape() throws {
+        let ring = try MapRing(coordinates: [coordinate(170, -5), coordinate(175, -5),
+                                            coordinate(180, -5), coordinate(180, 0),
+                                            coordinate(180, 5), coordinate(175, 5),
+                                            coordinate(170, 5), coordinate(170.2, 0), coordinate(170, -5)])
+        let polygon = try MapPolygon(rings: [ring])
+        #expect(!MapShapeSimplification.hasGeographicCut(polygon))
+        let dataset = try MapDataset(features: [MapFeature(id: "seam", kind: .land, geometry: .polygon(polygon))])
+        let camera = try MapCamera(center: coordinate(175, 0), longitudeSpan: 20)
+        let viewport = try MapViewport(columns: 100, rows: 40)
+        let source = try MapPreparation.prepare(dataset: dataset, camera: camera, viewport: viewport)
+        let reduced = try MapPreparation.prepare(dataset: dataset, camera: camera, viewport: viewport, detail: .silhouette)
+        #expect(reduced.polygons[0].rings[0].count < source.polygons[0].rings[0].count)
+        #expect(reduced.polygons[0].rings[0].filter { $0.x == 75 }
+                == source.polygons[0].rings[0].filter { $0.x == 75 })
+        #expect(reduced.polygons[0].rings[0].first == reduced.polygons[0].rings[0].last)
+    }
+
+    @Test("Prepared shape tolerance follows physical aspect and zoom; camera pans translate retained vertices")
+    func preparedShapeScale() throws {
+        let ring = try MapRing(coordinates: [coordinate(-10, -10), coordinate(10, -10),
+                                            coordinate(10, 10), coordinate(2, 10),
+                                            coordinate(2, 9.5), coordinate(-2, 9.5),
+                                            coordinate(-2, 10), coordinate(-10, 10), coordinate(-10, -10)])
+        let dataset = try MapDataset(features: [MapFeature(id: "bay", kind: .water, geometry: .polygon(MapPolygon(rings: [ring])))])
+        let viewport = try MapViewport(columns: 100, rows: 40)
+        let camera = try MapCamera(center: coordinate(0, 0), longitudeSpan: 100)
+        let shape = try MapPreparation.prepare(dataset: dataset, camera: camera, viewport: viewport, detail: .silhouette)
+        let pan = try MapPreparation.prepare(dataset: dataset,
+                                             camera: MapCamera(center: coordinate(1, 0), longitudeSpan: 100),
+                                             viewport: viewport, detail: .silhouette)
+        #expect(pan.polygons[0].rings[0].count == shape.polygons[0].rings[0].count)
+        for (before, after) in zip(shape.polygons[0].rings[0], pan.polygons[0].rings[0]) {
+            #expect(abs(after.x - before.x + 1) < 1e-9)
+            #expect(after.y == before.y)
+        }
+        let square = try MapPreparation.prepare(dataset: dataset, camera: camera,
+                                                viewport: MapViewport(columns: 100, rows: 40, cellAspectRatio: 1),
+                                                detail: .silhouette)
+        #expect(square.polygons[0].rings[0].count == shape.polygons[0].rings[0].count)
+        for (tall, square) in zip(shape.polygons[0].rings[0], square.polygons[0].rings[0]) {
+            #expect(tall.x == square.x)
+            #expect(abs((tall.y - 20) * 2 - (square.y - 20)) < 1e-9)
+        }
+        let zoomed = try MapPreparation.prepare(dataset: dataset,
+                                                camera: MapCamera(center: coordinate(0, 0), longitudeSpan: 20),
+                                                viewport: viewport, detail: .silhouette)
+        #expect(zoomed.polygons[0].rings[0].count > shape.polygons[0].rings[0].count)
+    }
+
     @Test("Named clipped roads use a visible arclength midpoint, including two-point crossings")
     func visibleLineLabel() throws {
         let camera = try MapCamera(center: coordinate(0, 0), longitudeSpan: 20)

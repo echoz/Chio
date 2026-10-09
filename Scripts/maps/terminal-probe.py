@@ -152,6 +152,13 @@ def probe(binary, output_dir, record=None):
         validations["alternate_screen_entered"] = True
         validations["cursor_hidden"] = True
 
+        world_samples = map_samples()
+        key("world minimal shapes", b"[", ("World", "detail 2/4 minimal", "span 360.0000"))
+        minimal_world_samples = map_samples()
+        key("world silhouette shapes", b"[", ("World", "detail 1/4 silhouette", "span 360.0000"))
+        assert map_samples() != minimal_world_samples, "World shape strengths did not change the coastline"
+        key("restore world abstract", b"]]", ("World", "detail 3/4 abstract", "span 360.0000"))
+        assert map_samples() == world_samples, "World abstraction did not restore the original coastline"
         key("street", b" ", ("Singapore", "span 0.0300"))
         abstract_samples = map_samples()
         key("minimal detail", b"[", ("detail 2/4 minimal", "Center 1.289, 103.856", "span 0.0300"))
