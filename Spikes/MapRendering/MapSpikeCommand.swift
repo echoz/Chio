@@ -4,7 +4,8 @@ import SwiftTUI
 
 @main
 struct MapSpikeCommand {
-    @Option(help: "Local fixture: world or street.") var scene: MapFixtures.Scene = .world
+    @Option(name: .customLong("map"), help: "Local map: world or street.")
+    var scene: MapFixtures.Scene = .world
     @Option(help: "Street source: overpass or openfreemap; retained while viewing world.")
     var source: MapFixtures.StreetSource = .overpass
     @Option(help: "Theme: default, light or btop.") var theme: Appearance = .default

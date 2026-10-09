@@ -112,6 +112,11 @@ returning. Coverage is the unbuffered tile square; source buffers retain their
 positions but do not enlarge coverage. This remains a camera-center notice, not
 a promise that the entire visible map is covered.
 
+The CLI selects world/street with `--map`. This replaces the experimental
+`--scene` spelling, which collided with the reserved `SwiftTUIOptions` web-host
+flag and failed ArgumentParser's debug validation. Native `--scene` remains
+available for web-host selection. A parsing regression checks both independently.
+
 The comparison starts at 1.289° N, 103.866° E, inside both retained coverages.
 Tile 14/12919/8133 contains 384 supported canonical features, 3,365 vertices and
 two holes. The denser western neighbor expands to 4,797 features and exceeds the
@@ -176,7 +181,7 @@ The pinned response, TileJSON, hashes, credits and retrieval command are in
 verification checks those exact bytes; decoder, adapter and hosted tests own
 semantic, geometry and source-switching contracts.
 
-The local release suite passes 98 map tests, including independent expected
+The local debug and release suites each pass 98 map tests, including independent expected
 coordinates, multipart counts and holes from the retained tile; exact/over-budget
 admission; all four detail levels across three themes and three allocations; and
 hosted source changes, batched round trips, focus, resizing and coverage recovery.

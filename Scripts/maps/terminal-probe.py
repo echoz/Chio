@@ -55,7 +55,7 @@ def probe(binary, output_dir, record=None):
     failure = None
     validations = {}
     recording_completed = False
-    command = [str(binary), "--scene", "world", "--theme", "default"]
+    command = [str(binary), "--map", "world", "--theme", "default"]
 
     def receive(timeout=0.1):
         nonlocal last_recorded_time

@@ -99,6 +99,12 @@ struct MapSourceInteractionTests {
         #expect(try MapSpikeCommand.parse([]).source == .overpass)
         #expect(try MapSpikeCommand.parse(["--source", "openfreemap"]).source == .openfreemap)
         #expect(throws: (any Error).self) { try MapSpikeCommand.parse(["--source", "unknown"]) }
+        #expect(throws: (any Error).self) { try MapSpikeCommand.parse(["--map", "unknown"]) }
+        let command = try MapSpikeCommand.parse(["--map", "street", "--source", "openfreemap",
+                                                "--web", "--scene", "Chio map rendering spike"])
+        #expect(command.scene == .street && command.source == .openfreemap)
+        #expect(command.swiftTUIOptions.web)
+        #expect(command.swiftTUIOptions.scene == "Chio map rendering spike")
         let fixtures = try MapFixtures.load()
         func render(_ scene: MapFixtures.Scene, _ source: MapFixtures.StreetSource) -> RasterSurface {
             let view = MapSpikeView(fixtures: fixtures, scene: scene, appearance: .default, streetSource: source)

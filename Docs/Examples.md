@@ -34,11 +34,15 @@ SSH, see [Colors over SSH](#colors-over-ssh).
 The rendering proof is a separate executable, not a public Chio component:
 
 ```sh
-swift run -c release chio-map-spike --scene world
-swift run -c release chio-map-spike --scene street --theme btop
-swift run -c release chio-map-spike --scene street --detail minimal
-swift run -c release chio-map-spike --scene street --source openfreemap
+swift run -c release chio-map-spike --map world
+swift run -c release chio-map-spike --map street --theme btop
+swift run -c release chio-map-spike --map street --detail minimal
+swift run -c release chio-map-spike --map street --source openfreemap
 ```
+
+Use `--map` for world/street selection. The earlier experimental `--scene`
+option conflicted with SwiftTUI's reserved web-host scene selector and has been
+renamed; `--scene` retains its native meaning when using `--web`.
 
 Start at **100 × 30**. Arrows pan, `+`/`-` zoom, Space switches world/Singapore,
 `p` switches Overpass/OpenFreeMap street data while retaining position and detail,
