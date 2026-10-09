@@ -66,15 +66,15 @@ struct MapSourceAdapterTests {
         #expect(original == replacement)
         #expect(!replacement.lines.isEmpty && !replacement.labels.isEmpty)
         let theme = ChioTheme.default
-        func raster(_ map: PreparedMap) -> RasterSurface {
-            let view = MapCanvasView(map: map, viewport: viewport, theme: theme, fills: true, labels: true,
+        func raster(_ map: PreparedMap) throws -> RasterSurface {
+            let view = try MapCanvasView(map: map, viewport: viewport, theme: theme, fills: true, labels: true,
                                      waterColor: theme.colors.selectedSurface,
                                      parkColor: theme.colors.selectedSurface).chioTheme(theme)
             return DefaultRenderer().render(view, proposal: .init(width: viewport.columns, height: viewport.rows),
                                             frameInstant: .zero).rasterSurface
         }
-        let originalRaster = raster(original)
-        #expect(originalRaster == raster(replacement))
+        let originalRaster = try raster(original)
+        #expect(try originalRaster == raster(replacement))
         #expect(originalRaster.lines.joined().contains("Main Road"))
         #expect(coordinates.count == 2 && coordinates[0].longitude == 0)
     }

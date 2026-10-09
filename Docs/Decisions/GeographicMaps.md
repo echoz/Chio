@@ -11,7 +11,9 @@ The [active plan](../Plan.md) tracks the next steps. Experimental code lives in
 
 ### Abstract presentation and source adapters
 
-The default experiment now uses an abstract cartographic treatment. Buildings are
+The user selected minimal as the preferred visual direction on 2026-10-09; it is
+now the example default. The earlier abstract treatment remains available for
+comparison. In abstract mode, buildings are
 omitted, major roads keep their connected source paths, and minor roads appear
 only at scales of at most 12 ground metres per column with a 58×16 or larger allocation.
 The source converter classifies motorway/trunk/primary roads, including links,
@@ -27,16 +29,16 @@ The live detail control has four ordered levels, selected with `[` / `]`:
 | Level | Presentation |
 | --- | --- |
 | 1. `silhouette` | Broad land/water shapes; omit areas below 2 and 4 cells² respectively; at most two labels |
-| 2. `minimal` | More faithful land/water shapes plus major roads; at most four labels |
-| 3. `abstract` | The existing default: major roads, quiet parks, scale-dependent minor roads and at most eight labels |
+| 2. `minimal` | Default: more faithful land/water shapes plus major roads; at most four labels |
+| 3. `abstract` | Major roads, quiet parks, scale-dependent minor roads and at most eight labels |
 | 4. `source` | All available feature classes and the original denser label policy |
 
 The two lower levels use wider label spacing, with one label per 800/500 cells
 respectively and a minimum budget of one. Brackets stop at the endpoints; `d`
 cycles and wraps. The header shows the level number and name. `--detail` chooses
 the initial level, including in snapshots and benchmarks; `--source-detail`
-remains a compatibility alias that takes precedence. The default abstract and
-source treatments are unchanged. These are discrete semantic presets for the
+remains a compatibility alias that takes precedence. The abstract and source
+treatments remain available. These are discrete semantic presets for the
 spike, not a public API commitment. They do not merge parallel roads, remove
 individual junction branches or fetch additional vectors.
 
@@ -67,14 +69,15 @@ coordinate shared boundaries; per-ring area checks do not bound every local
 channel width or the exterior-minus-holes area. Fixed-epsilon predicates are
 conservative checks, not robust GIS topology proofs. Budget fallback can retain
 different features at exact detail depending on source order and visibility.
-This does not establish general GIS topology preservation, a complete
-drawing-work budget or arbitrary-input performance. Visual comparison of real
+This does not establish general GIS topology preservation or arbitrary-input
+performance. The separate drawing allowance below bounds downstream work.
+Visual comparison of real
 world/street data remains part of choosing these provisional tolerances.
 
 Themes supply color; the semantic detail policy is
 independent of both the theme and the provider. Low-level preparation defaults to
 source mode for geometric contract tests; the executable explicitly chooses the
-abstract mode. Panning and detail changes retain the camera.
+minimal mode. Panning and detail changes retain the camera.
 
 An internal synchronous `MapSourceAdapter` normalizes a typed input into
 `MapSource`: the existing checked `MapDataset` composed with required source
@@ -102,11 +105,57 @@ about 3.3 and 2.2 ms. As in the initial probe below, timing uses uniform area co
 the native UI's three-theme captures are checked separately. These observations
 do not establish worst-case budgets or SSH latency.
 
-The full 100×30 **terminal UI** has a 98×20 street allocation and six abstract
+The earlier abstract 100×30 **terminal UI** has a 98×20 street allocation and six
 labels. A 60×26 terminal keeps a readable map with three labels and compact pan,
 detail, zoom and scene hints. The updated recording compares all four detail levels
 and ends on the final complete UI frame. Terminal verification compares drawing
 samples after panning and toggling detail, and checks the outside-coverage notice.
+
+### Drawing work and overload
+
+Drawing now has a checked construction boundary before native Canvas painting.
+It admits the complete immutable drawing or throws `drawingBudgetExceeded`;
+there is no partial paint, silent geometry removal or automatic detail change.
+The view presents “Too much map detail” and keeps its camera, native focus and
+controls. Changing scale/detail or disabling fills can admit a new drawing.
+
+The provisional per-drawing allowances are two million scanline edge visits,
+16 million crossing-sort work units, 250,000 fill-cell writes and 250,000 stroke
+samples. Counts use actual geometry rather than diagnostic statistics. Validation
+also bounds collection traversal and rejects nonfinite projected coordinates.
+All polygon rings contribute to clamped bounds, including source holes outside
+an exterior: drawing admission must not silently repair accepted source topology.
+Only rows with possible cell-center coverage are scanned. Each polygon's bounding
+cell rectangle bounds its disjoint even-odd fill intervals, including overdraw
+from repeated polygons. Finite interpolated crossings are clamped to their segment
+bounds so numerical cancellation cannot paint beyond that allowance.
+Stroke counting and painting share the same clipped
+2×4 sampling calculation, including both endpoints of each segment.
+
+The crossing-sort weight is a conservative complexity estimate, not a count of
+Swift's actual sort comparisons. These allowances bound the named drawing work,
+not wall-clock latency, native renderer internals or arbitrary-input preparation.
+The existing checked input/prepared-vertex limits and separate shape-simplification
+budget still apply. Preparation remains synchronous; cancellation and rejection
+of stale work are required before promoting a reusable component. Label/source
+validation remains at its existing boundary rather than being established by
+the drawing check.
+
+The release regression matrix admits both fixtures at all four detail levels,
+at 100×30, 60×20 and 240×100 map allocations, with initial and panned/zoomed
+cameras. Adversarial tests independently reach the fill, edge and stroke limits,
+reject excessive sort work, and reject 4,000 overlapping full-screen polygons.
+A native hosted test retains focus and camera through overload, pan, theme,
+fill/detail recovery and resize. A raster regression covers interpolation rounding
+at extreme finite coordinates.
+
+Local release measurements at a 100×30 map allocation use 20 samples after
+warm-up. Minimal world preparation/setup/raster medians are approximately
+2.30/0.01/1.91 ms; street is 1.15/0.03/3.87 ms. Setup includes drawing admission
+and label placement. Peak fill-write allowances are 2,598/2,516 and stroke samples
+2,728/4,968 for world/street respectively. Full-source street setup is about
+0.24 ms with a 19.8 ms raster median. These are fixture measurements, with the
+probe's uniform area colors, and make no SSH or worst-case latency claim.
 
 ### Initial rendering proof
 
@@ -196,10 +245,11 @@ transitions emitted roughly 24–33 kB. The probe records settlement time, inclu
 deliberate quiet waits; it is not an input-to-pixel latency benchmark. Bandwidth
 is another reason to reduce overview detail before assuming pleasant SSH use.
 
-Input limits make work finite, not predictably fast: 4,000 overlapping full-screen
-polygons could still cause 96 million cell writes at 240×100. Only bounded fixtures
-were performance-tested. A drawing/preparation work budget and overload policy
-are required before accepting arbitrary application-supplied datasets.
+At the initial proof, input limits alone allowed 4,000 overlapping full-screen
+polygons to cause 96 million cell writes at 240×100. The drawing allowance above
+now rejects this before painting. Separate preparation/cancellation policy and
+measured rapid-input behavior remain required before public application-supplied
+datasets; a finite operation allowance is not a frame-time guarantee.
 
 Decoding happens once at the CLI boundary. Preparation currently runs synchronously
 when the experimental view changes. This intentionally measures the basic path;

@@ -598,12 +598,12 @@
             <p id="maps-preview-status" class="preview-status" role="status"></p>
           </div>
           <div class="recording-preview">
-            <img class="recording-image" src="recordings/maps.png" alt="An abstract offline map of Singapore's Marina Bay with prominent roads, water, a few parks and sparse labels.">
+            <img class="recording-image" src="recordings/maps.png" alt="A minimal offline map of Singapore's Marina Bay with prominent roads, simplified water boundaries and sparse labels.">
           </div>
           <div class="player" aria-label="Experimental maps recording"></div>
           <p class="player-message" role="status" hidden></p>
           <div class="recording-caption">
-            <p>Adjust detail from simplified land-and-water shapes through minimal roads, the default abstract map, and full source detail. The lower levels simplify coastlines and river boundaries as well as showing fewer features and labels. Pan, zoom and switch world/street scenes while retaining your detail level. The offline Singapore extract has finite coverage; panning does not fetch new areas. Static previews show the default abstract level; the recording compares all four levels in a real terminal session. This experiment has no public map API.</p>
+            <p>Start with the minimal map: broad coastlines, clear water boundaries and prominent roads. Adjust detail through silhouette, minimal, abstract and full source views. Pan, zoom and switch world/street scenes while retaining your detail level. The offline Singapore extract has finite coverage; panning does not fetch new areas. Static previews show the default minimal level; the recording compares all four levels in a real terminal session. This experiment has no public map API.</p>
             <a class="download" href="recordings/maps.cast" download>Download recording ↓</a>
           </div>
           <div class="recording-run">
@@ -612,7 +612,7 @@
               <a href="https://github.com/echoz/Chio/blob/main/Docs/Decisions/GeographicMaps.md">Map proof and decisions <span aria-hidden="true">↗</span></a>
             </div>
             <pre><code>swift run -c release chio-map-spike --scene street</code></pre>
-            <p>Arrow keys pan · + / − zoom · [ / ] lower/raise detail · d cycles levels · Space switches world/street · t changes theme · f toggles fills · l toggles labels · r resets · q quits. Start with <code>--detail minimal</code>, or choose <code>silhouette</code>, <code>abstract</code> or <code>source</code>.</p>
+            <p>Arrow keys pan · + / − zoom · [ / ] lower/raise detail · d cycles levels · Space switches world/street · t changes theme · f toggles fills · l toggles labels · r resets · q quits. Minimal is the default; use <code>--detail silhouette</code>, <code>abstract</code> or <code>source</code> to start elsewhere.</p>
           </div>
           <div class="recording-details">
             <dl class="recording-ingredients">

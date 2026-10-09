@@ -8,4 +8,5 @@ enum MapValidationError: Error, Equatable, Sendable {
     case duplicateIdentity
     case unsupportedGeoJSON
     case budgetExceeded
+    case drawingBudgetExceeded
 }

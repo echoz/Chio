@@ -142,7 +142,7 @@ def probe(binary, output_dir, record=None):
         for key_name in ("NO_COLOR", "CLICOLOR", "CLICOLOR_FORCE", "FORCE_COLOR"):
             environment.pop(key_name, None)
         process = subprocess.Popen(command, stdin=slave, stdout=slave, stderr=slave, env=environment)
-        observe("world", ("/ map spike", "World", "span 360.0000"))
+        observe("world minimal default", ("/ map spike", "World", "detail 2/4 minimal", "span 360.0000"))
         modes = termios.tcgetattr(slave)
         assert not modes[3] & (termios.ECHO | termios.ICANON | termios.ISIG | termios.IEXTEN), "Terminal is not in raw input mode"
         assert modes[6][termios.VMIN] == 1 and modes[6][termios.VTIME] == 0, "Unexpected raw read timing"
@@ -152,13 +152,12 @@ def probe(binary, output_dir, record=None):
         validations["alternate_screen_entered"] = True
         validations["cursor_hidden"] = True
 
-        world_samples = map_samples()
-        key("world minimal shapes", b"[", ("World", "detail 2/4 minimal", "span 360.0000"))
         minimal_world_samples = map_samples()
         key("world silhouette shapes", b"[", ("World", "detail 1/4 silhouette", "span 360.0000"))
         assert map_samples() != minimal_world_samples, "World shape strengths did not change the coastline"
-        key("restore world abstract", b"]]", ("World", "detail 3/4 abstract", "span 360.0000"))
-        assert map_samples() == world_samples, "World abstraction did not restore the original coastline"
+        key("restore world minimal", b"]", ("World", "detail 2/4 minimal", "span 360.0000"))
+        assert map_samples() == minimal_world_samples, "World detail did not restore the minimal coastline"
+        key("world abstract shapes", b"]", ("World", "detail 3/4 abstract", "span 360.0000"))
         key("street", b" ", ("Singapore", "span 0.0300"))
         abstract_samples = map_samples()
         key("minimal detail", b"[", ("detail 2/4 minimal", "Center 1.289, 103.856", "span 0.0300"))
@@ -181,6 +180,7 @@ def probe(binary, output_dir, record=None):
         key("labels off redraw", b"l", ("Singapore", "span 0.0210"))
         key("fills on redraw", b"f", ("Singapore", "span 0.0210"))
         key("labels on redraw", b"l", ("Singapore", "span 0.0210"))
+        key("minimal final view", b"[", ("detail 2/4 minimal", "Center 1.289, 103.859", "span 0.0210"))
         stop_recording()
 
         key("lower detail limit", b"[[[", ("detail 1/4 silhouette", "Center 1.289, 103.859", "span 0.0210"))

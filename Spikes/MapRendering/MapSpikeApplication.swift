@@ -7,7 +7,7 @@ struct MapSpikeApplication {
     nonisolated init() { launch = .unconfigured }
 
     nonisolated init(fixtures: MapFixtures, scene: MapFixtures.Scene, appearance: MapSpikeCommand.Appearance,
-                     inspectSmall: Bool = false, cellAspect: Double? = nil, detail: MapDetail = .abstract) {
+                     inspectSmall: Bool = false, cellAspect: Double? = nil, detail: MapDetail = .minimal) {
         launch = .map(fixtures: fixtures, scene: scene, appearance: appearance,
                       inspectSmall: inspectSmall, cellAspect: cellAspect, detail: detail)
     }

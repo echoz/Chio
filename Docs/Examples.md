@@ -48,11 +48,11 @@ provisional map allocation, a resize hint replaces the drawing and retains the
 camera. Try **60 × 26** or larger with ordinary 2:1 terminal cells.
 
 The world uses Natural Earth land; the neighborhood uses real OpenStreetMap
-vectors around Marina Bay. The default abstract view emphasizes water and major
-roads, omits buildings, and admits smaller streets only at useful scale and size.
-Labels leave more empty space. Choose `--detail silhouette`, `minimal`, `abstract`
-(the default), or `source`. Silhouette shows land and water; minimal adds major
-roads. Abstract adds parks and scale-dependent smaller streets; source includes
+vectors around Marina Bay. The default minimal view emphasizes water and major
+roads, with broader coastline shapes and no buildings or minor streets.
+Labels leave more empty space. Choose `--detail silhouette`, `minimal`
+(the default), `abstract`, or `source`. Silhouette shows land and water; minimal
+adds major roads. Abstract adds parks and scale-dependent smaller streets; source includes
 all available layers. Lower levels omit smaller areas and show fewer labels.
 Silhouette and minimal also simplify the actual land and water boundaries into
 broader shapes at the current terminal scale. Abstract and source retain the
@@ -60,6 +60,10 @@ original polygon shapes. The header shows the active level, and changes preserve
 the camera. Brackets stop
 at the ends; `d` wraps. `--source-detail` remains an alias that takes precedence
 over `--detail`. No level modifies retained source geometry or merges roads.
+
+Drawing work is checked before painting. A map that exceeds the allowance shows
+“Too much map detail” with the camera and controls retained; try another scale,
+lower detail, or turn fills off. It never shows a partially drawn map as complete.
 
 Panning moves across the bundled data; it does not load new areas. The neighborhood
 has finite coverage, indicated in the header, with an explicit notice when the

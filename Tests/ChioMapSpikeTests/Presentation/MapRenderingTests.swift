@@ -5,6 +5,25 @@ import Testing
 
 @MainActor
 struct MapRenderingTests {
+    @Test("Scanline interpolation stays within the geometry counted by drawing admission")
+    func crossingRoundoff() throws {
+        let triangle = PreparedMap.Polygon(featureID: "extreme", kind: .land, rings: [[
+            .init(x: -1e16, y: 1), .init(x: 3.5, y: 0.5),
+            .init(x: -1e16, y: 0), .init(x: -1e16, y: 1),
+        ]])
+        let prepared = map(polygons: [triangle])
+        let viewport = try MapViewport(columns: 10, rows: 10)
+        #expect(try MapDrawingWork(map: prepared, viewport: viewport, fills: true).fillWrites == 3)
+        for theme in [ChioTheme.default, .light, .btop] {
+            let surface = try render(prepared, columns: 10, rows: 10, theme: theme)
+            #expect(surface.cells.flatMap { $0 }.filter {
+                $0.style?.backgroundColor == theme.colors.selectedSurface
+            }.count == 3)
+            #expect(surface.cells[0][2].style?.backgroundColor == theme.colors.selectedSurface)
+            #expect(surface.cells[0][3].style?.backgroundColor == theme.colors.surface)
+        }
+    }
+
     @Test("Lower detail changes the actual filled coastline while retaining an island hole",
           arguments: [MapFeature.Kind.land, .water])
     func generalizedCoastline(kind: MapFeature.Kind) throws {
@@ -247,7 +266,7 @@ struct MapRenderingTests {
 
     private func render(_ map: PreparedMap, columns: Int, rows: Int, theme: ChioTheme,
                         fills: Bool = true, labels: Bool = false) throws -> RasterSurface {
-        let view = MapCanvasView(map: map, viewport: try MapViewport(columns: columns, rows: rows),
+        let view = try MapCanvasView(map: map, viewport: MapViewport(columns: columns, rows: rows),
                                  theme: theme, fills: fills, labels: labels,
                                  waterColor: waterColor(theme), parkColor: parkColor(theme)).chioTheme(theme)
         return DefaultRenderer().render(view, proposal: .init(width: columns, height: rows), frameInstant: .zero).rasterSurface

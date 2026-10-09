@@ -45,7 +45,7 @@ and `Scripts/maps/terminal-probe.py` against its release binary. The PTY checks
 compare map samples after pan and detail changes, including batched detail keys,
 endpoint limits and cycle wrapping, as well as retained camera text, offline
 coverage status and terminal restoration. Its `--benchmark` mode measures the
-default abstract treatment; use `--detail minimal` (or `silhouette`, `abstract`,
+default minimal treatment; use `--detail abstract` (or `silhouette`, `minimal`,
 `source`) to compare a level (`--source-detail` remains an alias). It measures
 local preparation and native raster work; it does not measure SSH
 latency. `Scripts/maps/render-snapshot.py` converts `--snapshot-json` exports into
@@ -58,6 +58,15 @@ holes and seam behavior, and exercise unsafe-candidate/work-budget fallback.
 Compare both world and street captures across detail levels; fewer annotations
 alone do not establish geographic shape simplification. Keep abstract/source
 captures unchanged when their geometry contracts are unchanged.
+
+Drawing-work changes require exact/over-budget accounting cases and adversarial
+overlapping polygons, long strokes and complex rings. Check whole-drawing rejection
+before native painting, finite coordinate handling and the fill-disabled path.
+The hosted overload workflow verifies retained camera/focus, batched detail keys,
+theme changes, fill recovery and resizing; fixed fixtures must still render at
+the documented allocations. Work counters are operation allowances, not latency
+guarantees; benchmark drawing setup (admission and label placement) separately
+from native raster work.
 
 Pass an example flag such as `--choices`, `--inbox` or `--diff` for its workflow;
 [verify.sh](../Scripts/ci/verify.sh) is the complete list. Terminal checks cover

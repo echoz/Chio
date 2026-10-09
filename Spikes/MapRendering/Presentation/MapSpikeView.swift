@@ -17,7 +17,7 @@ struct MapSpikeView {
     private let inspectSmall: Bool
 
     init(fixtures: MapFixtures, scene: MapFixtures.Scene, appearance: MapSpikeCommand.Appearance,
-         inspectSmall: Bool = false, detail: MapDetail = .abstract) {
+         inspectSmall: Bool = false, detail: MapDetail = .minimal) {
         self.fixtures = fixtures
         self.inspectSmall = inspectSmall
         _scene = State(wrappedValue: scene)
@@ -72,12 +72,23 @@ struct MapSpikeView {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         } else {
-            switch Result(catching: { try MapPreparation.prepare(dataset: fixtures.dataset(for: scene),
-                                                                 camera: camera, viewport: viewport, detail: detail) }) {
-            case .success(let map):
-                MapCanvasView(map: map, viewport: viewport, theme: theme, fills: fills, labels: labels,
-                              waterColor: tint(theme.syntax.type, amount: 0.22),
-                              parkColor: tint(theme.syntax.string, amount: 0.16), detail: detail)
+            switch Result(catching: {
+                let map = try MapPreparation.prepare(dataset: fixtures.dataset(for: scene),
+                                                     camera: camera, viewport: viewport, detail: detail)
+                return try MapCanvasView(map: map, viewport: viewport, theme: theme, fills: fills, labels: labels,
+                                         waterColor: tint(theme.syntax.type, amount: 0.22),
+                                         parkColor: tint(theme.syntax.string, amount: 0.16), detail: detail)
+            }) {
+            case .success(let view):
+                view
+            case .failure(MapValidationError.drawingBudgetExceeded):
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Too much map detail").bold().foregroundStyle(theme.colors.accent)
+                    Text("Try another scale, [ lower detail, or f turn off fills.")
+                    Text("Camera retained · pan and zoom remain available")
+                        .foregroundStyle(theme.colors.secondaryText)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             case .failure(let error):
                 Text("Map preparation failed: \(error)").foregroundStyle(theme.colors.error)
             }

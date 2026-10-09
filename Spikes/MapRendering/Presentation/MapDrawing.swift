@@ -6,12 +6,27 @@ import SwiftTUI
 /// Filled areas use cell backgrounds, keeping road/coastline braille visible above them.
 struct MapDrawing {
     let map: PreparedMap
-    let columns: Int
-    let rows: Int
+    let viewport: MapViewport
     let colors: ChioTheme.Colors
     let waterColor: Color
     let parkColor: Color
     let fills: Bool
+    let work: MapDrawingWork
+
+    init(map: PreparedMap, viewport: MapViewport, colors: ChioTheme.Colors,
+         waterColor: Color, parkColor: Color, fills: Bool) throws {
+        let work = try MapDrawingWork(map: map, viewport: viewport, fills: fills)
+        self.map = map
+        self.viewport = viewport
+        self.colors = colors
+        self.waterColor = waterColor
+        self.parkColor = parkColor
+        self.fills = fills
+        self.work = work
+    }
+
+    private var columns: Int { viewport.columns }
+    private var rows: Int { viewport.rows }
 
     private func fillColor(_ kind: MapFeature.Kind) -> Color {
         switch kind {
@@ -52,7 +67,9 @@ struct MapDrawing {
         for ring in rings {
             for (a, b) in zip(ring, ring.dropFirst()) where (a.y > y) != (b.y > y) {
                 let x = a.x + (y - a.y) / (b.y - a.y) * (b.x - a.x)
-                if x.isFinite { crossings.append(x) }
+                // Floating-point cancellation can push an interpolated crossing
+                // beyond its endpoints. Keep it inside the geometry used by preflight.
+                if x.isFinite { crossings.append(min(max(a.x, b.x), max(min(a.x, b.x), x))) }
             }
         }
         crossings.sort()
@@ -65,15 +82,11 @@ struct MapDrawing {
         // Preparation clips segments. Clamp boundary samples inward before native
         // submission. No walk here can exceed the allocated 2x4 sample diagonal.
         for (a, b) in zip(points, points.dropFirst()) {
-            let x0 = min(Double(columns) - 0.001, max(0, a.x))
-            let y0 = min(Double(rows) - 0.001, max(0, a.y))
-            let x1 = min(Double(columns) - 0.001, max(0, b.x))
-            let y1 = min(Double(rows) - 0.001, max(0, b.y))
-            let steps = max(1, Int(ceil(max(abs(x1 - x0) * 2, abs(y1 - y0) * 4))))
-            for step in 0...steps {
-                let fraction = Double(step) / Double(steps)
-                context.setPixel(at: Point(x: x0 + (x1 - x0) * fraction,
-                                           y: y0 + (y1 - y0) * fraction), foreground: color)
+            let segment = MapDrawingWork.StrokeSegment(a, b, viewport: viewport)
+            for step in 0...segment.steps {
+                let fraction = Double(step) / Double(segment.steps)
+                context.setPixel(at: Point(x: segment.x0 + (segment.x1 - segment.x0) * fraction,
+                                           y: segment.y0 + (segment.y1 - segment.y0) * fraction), foreground: color)
             }
         }
     }
@@ -88,7 +101,8 @@ extension MapDrawing: CanvasDrawing {
         if fills {
             for polygon in map.polygons.sorted(by: { priority($0.kind) < priority($1.kind) }) {
                 let color = fillColor(polygon.kind)
-                for row in 0..<rows {
+                let bounds = MapDrawingWork.fillBounds(polygon.rings, viewport: viewport)
+                for row in bounds.rows {
                     for (left, right) in intervals(polygon.rings, at: Double(row) + 0.5) {
                         let start = max(0, Int(ceil(left - 0.5)))
                         let end = min(columns, Int(ceil(right - 0.5)))

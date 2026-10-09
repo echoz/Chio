@@ -10,7 +10,7 @@ struct MapSpikeCommand {
     @Flag(help: "Export native raster cells as JSON for visual inspection.") var snapshotJSON = false
     @Flag(help: "Measure preparation and native raster time at three allocations.") var benchmark = false
     @Flag(help: "Render below the provisional minimum size to assess readability.") var inspectSmall = false
-    @Option(help: "Detail: silhouette, minimal, abstract or source.") var detail: MapDetail = .abstract
+    @Option(help: "Detail: silhouette, minimal, abstract or source.") var detail: MapDetail = .minimal
     @Flag(help: "Alias for --detail source; takes precedence over --detail.") var sourceDetail = false
     @Option(help: "Snapshot width, 20...240 columns.") var width = 100
     @Option(help: "Snapshot height, 12...100 rows.") var height = 30
