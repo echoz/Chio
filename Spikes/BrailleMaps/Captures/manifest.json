@@ -1,0 +1,85 @@
+[
+  {
+    "camera" : {
+      "center" : {
+        "latitude" : 1.289,
+        "longitude" : 103.866
+      },
+      "longitudeSpan" : 0.03
+    },
+    "crop" : {
+      "height" : 16,
+      "width" : 42,
+      "x" : 8,
+      "y" : 12
+    },
+    "detail" : "abstract",
+    "height" : 32,
+    "id" : "singapore",
+    "source" : {
+      "attribution" : "© OpenStreetMap contributors",
+      "attributionURL" : "https:\/\/www.openstreetmap.org\/copyright",
+      "license" : "ODbL 1.0",
+      "licenseURL" : "https:\/\/opendatacommons.org\/licenses\/odbl\/1-0\/",
+      "sourceRevision" : "2026-10-09T03:27:04Z",
+      "sourceURL" : "https:\/\/overpass-api.de\/api\/interpreter"
+    },
+    "title" : "Singapore · Marina Bay",
+    "width" : 96
+  },
+  {
+    "camera" : {
+      "center" : {
+        "latitude" : 1.289,
+        "longitude" : 103.866
+      },
+      "longitudeSpan" : 0.03
+    },
+    "crop" : {
+      "height" : 14,
+      "width" : 28,
+      "x" : 4,
+      "y" : 8
+    },
+    "detail" : "abstract",
+    "height" : 24,
+    "id" : "singapore-narrow",
+    "source" : {
+      "attribution" : "© OpenStreetMap contributors",
+      "attributionURL" : "https:\/\/www.openstreetmap.org\/copyright",
+      "license" : "ODbL 1.0",
+      "licenseURL" : "https:\/\/opendatacommons.org\/licenses\/odbl\/1-0\/",
+      "sourceRevision" : "2026-10-09T03:27:04Z",
+      "sourceURL" : "https:\/\/overpass-api.de\/api\/interpreter"
+    },
+    "title" : "Singapore · Marina Bay",
+    "width" : 60
+  },
+  {
+    "camera" : {
+      "center" : {
+        "latitude" : 0,
+        "longitude" : 0
+      },
+      "longitudeSpan" : 360
+    },
+    "crop" : {
+      "height" : 28,
+      "width" : 40,
+      "x" : 34,
+      "y" : 5
+    },
+    "detail" : "minimal",
+    "height" : 40,
+    "id" : "world",
+    "source" : {
+      "attribution" : "Made with Natural Earth",
+      "license" : "Public domain",
+      "licenseURL" : "https:\/\/www.naturalearthdata.com\/about\/terms-of-use\/",
+      "sourceRevision" : "693f11422f4e08d2da4566b854dda53eb7c39fb3",
+      "sourceURL" : "https:\/\/raw.githubusercontent.com\/nvkelso\/natural-earth-vector\/693f11422f4e08d2da4566b854dda53eb7c39fb3\/geojson\/ne_110m_land.geojson"
+    },
+    "title" : "World",
+    "width" : 80
+  }
+]

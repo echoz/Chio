@@ -40,6 +40,12 @@ expanding this active plan with completed implementation history.
 
 ## Remaining scope audit
 
+An isolated [Braille map visual experiment](../Spikes/BrailleMaps/README.md)
+compares the existing renderer with outlines and sparse textures over identical
+prepared geometry. Native raster captures record cell-colour collisions and halo
+tradeoffs. It is awaiting visual direction, not promoted into the public map;
+Pitwall integration is separate.
+
 There is no committed broader component queue. Real application use of the
 public map remains useful validation.
 Further hardening and a stable release are possible directions, not approved

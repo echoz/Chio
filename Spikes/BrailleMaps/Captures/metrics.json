@@ -1,0 +1,68 @@
+[
+  {
+    "baselineRouteCollisionCells" : 15,
+    "id" : "singapore",
+    "outlines" : {
+      "haloSamples" : 1098,
+      "mixedCellsBeforeResolution" : 34,
+      "strokeSamples" : 3701,
+      "suppressedRoleDots" : 95,
+      "textureCandidates" : 0,
+      "textureEdgeVisits" : 0,
+      "textureSortWeight" : 0
+    },
+    "textured" : {
+      "haloSamples" : 1098,
+      "mixedCellsBeforeResolution" : 77,
+      "strokeSamples" : 3701,
+      "suppressedRoleDots" : 167,
+      "textureCandidates" : 28742,
+      "textureEdgeVisits" : 81875,
+      "textureSortWeight" : 702644
+    }
+  },
+  {
+    "baselineRouteCollisionCells" : 11,
+    "id" : "singapore-narrow",
+    "outlines" : {
+      "haloSamples" : 738,
+      "mixedCellsBeforeResolution" : 30,
+      "strokeSamples" : 2794,
+      "suppressedRoleDots" : 97,
+      "textureCandidates" : 0,
+      "textureEdgeVisits" : 0,
+      "textureSortWeight" : 0
+    },
+    "textured" : {
+      "haloSamples" : 738,
+      "mixedCellsBeforeResolution" : 49,
+      "strokeSamples" : 2794,
+      "suppressedRoleDots" : 133,
+      "textureCandidates" : 12107,
+      "textureEdgeVisits" : 54862,
+      "textureSortWeight" : 473865
+    }
+  },
+  {
+    "baselineRouteCollisionCells" : 21,
+    "id" : "world",
+    "outlines" : {
+      "haloSamples" : 747,
+      "mixedCellsBeforeResolution" : 26,
+      "strokeSamples" : 2978,
+      "suppressedRoleDots" : 74,
+      "textureCandidates" : 0,
+      "textureEdgeVisits" : 0,
+      "textureSortWeight" : 0
+    },
+    "textured" : {
+      "haloSamples" : 747,
+      "mixedCellsBeforeResolution" : 62,
+      "strokeSamples" : 2978,
+      "suppressedRoleDots" : 111,
+      "textureCandidates" : 20017,
+      "textureEdgeVisits" : 104363,
+      "textureSortWeight" : 1009555
+    }
+  }
+]
