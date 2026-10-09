@@ -119,7 +119,21 @@ extension OpenMapTilesAdapter: MapSourceAdapter {
         for layer in layers {
             for (ordinal, feature) in layer.features.enumerated() {
                 guard let kind = kind(layer: layer.name, feature: feature) else { continue }
-                let name = feature.properties["name"]?.string ?? ""
+                let name: String
+                switch feature.properties["name"] {
+                case nil: name = ""
+                case .string(let text): name = text
+                case .signed, .unsigned, .number, .boolean: throw ValidationError.invalidValue
+                }
+                try MapFeature.validateName(name)
+                // Selected layer schema must reject before any geometry allowance
+                // can turn an incompatible wire type into a lower-zoom retry.
+                switch kind {
+                case .road, .primaryRoad:
+                    guard feature.type == 2 else { throw ValidationError.invalidGeometry }
+                case .land, .water, .park, .building:
+                    guard feature.type == 3 else { throw ValidationError.invalidGeometry }
+                }
                 // Ordinal distinguishes missing/repeated source IDs. These identities
                 // belong to this tile snapshot, not to OSM or another provider.
                 let sourceID = feature.id.map(String.init) ?? "absent"
@@ -128,9 +142,6 @@ extension OpenMapTilesAdapter: MapSourceAdapter {
                 let geometries: [MapGeometry]
                 switch geometry {
                 case .lines(let paths):
-                    guard kind == .road || kind == .primaryRoad else {
-                        throw MapboxVectorTileDecoder.ValidationError.invalidGeometry
-                    }
                     var normalizedVertices = 0
                     for path in paths {
                         normalizedVertices += try normalizedVertexCount(path, extent: layer.extent)
@@ -140,9 +151,6 @@ extension OpenMapTilesAdapter: MapSourceAdapter {
                         .polyline(try MapPolyline(coordinates: coordinates(path, extent: layer.extent)))
                     }
                 case .polygons(let parts):
-                    guard kind != .road, kind != .primaryRoad else {
-                        throw MapboxVectorTileDecoder.ValidationError.invalidGeometry
-                    }
                     var normalizedVertices = 0
                     for rings in parts {
                         normalizedVertices += try normalizedPolygonVertexCount(rings, extent: layer.extent)

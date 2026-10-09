@@ -46,8 +46,8 @@ web-host scene meaning. Start at **100 × 30**. Arrows pan, `+`/`-` zoom,
 `n`/`p` select and center the next/previous location, and Return activates the
 selected location with local feedback. Tab leaves the map through native focus.
 Space switches world/Singapore, `t` cycles themes, `[` lowers detail, `]` raises
-it, and `d` cycles all four levels. `f` toggles area fills, `l` toggles labels,
-`r` resets the camera, and `q` quits.
+it, and `d` cycles all four levels. `f` switches filled areas and outlines
+independently of detail, `l` toggles labels, `r` resets the camera, and `q` quits.
 
 Minimal is the default: water, broad coastline shapes and major roads. Choose
 `--detail silhouette`, `minimal`, `abstract`, or `source`. Silhouette shows land

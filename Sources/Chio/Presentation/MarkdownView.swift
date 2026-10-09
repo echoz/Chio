@@ -104,7 +104,8 @@ private struct MarkdownBlock {
     private func codeText(_ code: MarkdownCode) -> Text {
         var interpolation = Text.StringInterpolation(literalCapacity: 0, interpolationCount: code.highlights.count * 2 + 1)
         var cursor = code.text.startIndex
-        if highlighting == .automatic {
+        switch highlighting {
+        case .automatic:
             for highlight in code.highlights {
                 interpolation.appendInterpolation(Text(verbatim: String(code.text[cursor..<highlight.range.lowerBound])))
                 let color: Color
@@ -118,6 +119,8 @@ private struct MarkdownBlock {
                 interpolation.appendInterpolation(Text(verbatim: String(code.text[highlight.range])).foregroundStyle(color))
                 cursor = highlight.range.upperBound
             }
+        case .plain:
+            break
         }
         interpolation.appendInterpolation(Text(verbatim: String(code.text[cursor...])))
         return Text(Text.RichContent(stringInterpolation: interpolation))

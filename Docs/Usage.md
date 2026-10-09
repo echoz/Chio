@@ -213,7 +213,10 @@ omitted from the drawing, while remaining keyboard-selectable.
 
 Customize water and park fills through `theme.replacing(map:
 theme.map.replacing(water: color))`. These colors are independent of syntax
-highlighting. Routes and selected markers use `theme.colors.accent`.
+highlighting. Routes use `theme.colors.accent`; selected Braille rings and their
+labels use `theme.colors.warning`. Ordinary markers use `theme.colors.foreground`.
+Use `.mapFills(false)` for outlines at any detail level. Routes clear nearby
+linework and own the dots in each touched cell, avoiding shared-cell colour bleed.
 
 Detail is `.silhouette`, `.minimal` (the default), `.abstract`, or `.source`.
 It controls geographic classes, boundary simplification and background labels;

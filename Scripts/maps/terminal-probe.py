@@ -205,6 +205,8 @@ def probe(binary, output_dir, record=None, online_source=None):
             assert map_samples() == selected_minimal_samples, "Online minimal detail did not restore the drawing"
             validations["online_detail_and_marker_focus"] = True
             key("online reset retains selected place", b"r", ("Online · z12", "Selected: Gardens by the Bay", "Center 1.289, 103.866"))
+            key("online outlines ready", b"f", ("minimal · default · outlines", "Online · z12", "Selected: Gardens by the Bay"))
+            key("online fills restored", b"f", ("minimal · default · filled", "Online · z12", "Selected: Gardens by the Bay"))
             key("online street light ready", b"t", ("2/4 minimal · light", "Online · z12", "Center 1.289, 103.866", "span 0.0300"))
             key("online street btop ready", b"t", ("2/4 minimal · btop", "Online · z12", "Center 1.289, 103.866", "span 0.0300"))
             key("online final street default ready", b"t", ("2/4 minimal · default", "Online · z12", "Center 1.289, 103.866", "span 0.0300"))
@@ -244,9 +246,9 @@ def probe(binary, output_dir, record=None, online_source=None):
             assert map_samples() != zoom_samples, "Pan changed camera text without moving the drawing"
             key("light theme", b"t", ("abstract · light", "span 0.0210"))
             # Exercise visible label changes on the named Overpass extract.
-            key("fills off redraw", b"f", ("Singapore", "abstract · light", "span 0.0210"))
+            key("fills off redraw", b"f", ("Singapore", "abstract · light · outlines", "span 0.0210"))
             key("labels off redraw", b"l", ("Singapore", "span 0.0210"))
-            key("fills on redraw", b"f", ("Singapore", "span 0.0210"))
+            key("fills on redraw", b"f", ("Singapore", "abstract · light · filled", "span 0.0210"))
             key("labels on redraw", b"l", ("Singapore", "span 0.0210"))
             key("select first place", b"n", ("Selected: Merlion", "Center 1.287, 103.855", "span 0.0210"))
             key("next place", b"n", ("Selected: Gardens by the Bay", "Center 1.282, 103.864"))

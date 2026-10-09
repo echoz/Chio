@@ -140,6 +140,52 @@ struct MapboxVectorTileBudgetTests {
         expectGeometryBudget(over, type: 2)
     }
 
+    @Test("MVT classifies one extra line vertex or polygon closure vertex as a path budget failure")
+    func individualPathBoundary() throws {
+        let line = (0..<MapLimits.pathVertices).map { ($0 % 2, 0) }
+        guard case .lines(let accepted) = try geometry(geometryWords(paths: [line], closed: false), type: 2) else {
+            Issue.record("Expected an exact-limit line"); return
+        }
+        #expect(accepted.count == 1 && accepted[0].count == MapLimits.pathVertices)
+        expectGeometryBudget(geometryWords(paths: [line + [(0, 0)]], closed: false), type: 2)
+
+        // Collinear boundary samples preserve a nonzero clockwise rectangle.
+        // ClosePath contributes the final vertex to the same path allowance.
+        func rectangle(vertices: Int) -> [(Int, Int)] {
+            (0..<(vertices - 2)).map { ($0, 0) } + [(vertices - 3, 1), (0, 1)]
+        }
+        let exact = geometryWords(paths: [rectangle(vertices: MapLimits.pathVertices - 1)], closed: true)
+        guard case .polygons(let polygons) = try geometry(exact, type: 3) else {
+            Issue.record("Expected an exact-limit polygon"); return
+        }
+        #expect(polygons.count == 1 && polygons[0][0].count == MapLimits.pathVertices)
+        expectGeometryBudget(geometryWords(paths: [rectangle(vertices: MapLimits.pathVertices)], closed: true), type: 3)
+    }
+
+    @Test("Malformed oversized paths remain geometry failures before budget-only fallback")
+    func malformedOversizedPaths() throws {
+        let path = (0...MapLimits.pathVertices).map { ($0 % 2, 0) }
+        let over = geometryWords(paths: [path], closed: false)
+        var repeated = over
+        repeated[repeated.count - 2] = 0 // Zero-length final LineTo.
+        var invalidCoordinate = over
+        invalidCoordinate[invalidCoordinate.count - 2] = 65_538 // Beyond extent * 8.
+        // A malformed later path must still reject after a complete over-budget one.
+        let malformed = [Array(over.dropLast()), repeated, invalidCoordinate, over + [9, 0, 0]]
+        for words in malformed {
+            #expect(throws: MapboxVectorTileDecoder.ValidationError.invalidGeometry) {
+                try geometry(words, type: 2)
+            }
+        }
+        // An oversized polygon must still supply a valid closure and nonzero area.
+        let collinear = geometryWords(paths: [Array(0..<MapLimits.pathVertices).map { ($0, 0) }], closed: true)
+        for words in [Array(collinear.dropLast()), collinear] {
+            #expect(throws: MapboxVectorTileDecoder.ValidationError.invalidGeometry) {
+                try geometry(words, type: 3)
+            }
+        }
+    }
+
     @Test("MVT text admission counts all layer/key/value UTF-8 bytes")
     func textBoundary() throws {
         // Layer name and the single key consume two bytes. Every string value

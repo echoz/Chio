@@ -34,11 +34,18 @@ struct CreateAgentView {
     private enum Focus: Hashable {
         case name, role, suite, start, create, cancel
 
+        init(field: AgentDraft.Field) {
+            switch field {
+            case .name: self = .name
+            case .suite: self = .suite
+            }
+        }
+
         var validatedField: AgentDraft.Field? {
             switch self {
             case .name: .name
             case .suite: .suite
-            default: nil
+            case .role, .start, .create, .cancel: nil
             }
         }
     }
@@ -81,7 +88,7 @@ struct CreateAgentView {
 
     private func submit() {
         if let firstInvalid = validate() {
-            focus = firstInvalid == .name ? .name : .suite
+            focus = Focus(field: firstInvalid)
         } else {
             create()
         }
@@ -162,9 +169,12 @@ extension CreateAgentView: View {
                 .chioTheme(theme)
             }
             .onAppear {
-                focus = entry == .role ? .role : .name
+                switch entry {
+                case .name: focus = .name
+                case .role: focus = .role
+                }
                 if validateOnArrival, let firstInvalid = validate() {
-                    focus = firstInvalid == .name ? .name : .suite
+                    focus = Focus(field: firstInvalid)
                 }
             }
             .onSubmit(submit)

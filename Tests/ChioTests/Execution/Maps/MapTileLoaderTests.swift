@@ -94,6 +94,68 @@ struct MapTileLoaderTests {
         #expect(MapTileLoader.cacheLifetime(headers: ["age": "garbage"]) == nil)
     }
 
+    @Test("Real decoder path budgets lower source zoom while malformed oversized paths never retry")
+    func decodedPathBudgetFallback() async throws {
+        let request = try request(span: 0.001)
+        let attempts = Mutex<Set<Int>>([])
+        let loader = MapTileLoader(source: try source(), transport: { url, _ in
+            let zoom = Int(url.pathComponents[2])!
+            _ = attempts.withLock { $0.insert(zoom) }
+            let vertices = zoom == 14 ? MapLimits.pathVertices + 1 : 2
+            return MapHTTPClient.Response(
+                data: visibleTransportationTile(url: url, features: 1, vertices: vertices), headers: [:])
+        })
+        let snapshot = try await loader.load(request)
+        #expect(snapshot.requestedZoom == 14 && snapshot.attainedZoom == 13)
+        #expect(attempts.withLock { $0 } == [14, 13])
+        let plan = try MapTilePlan(request: request, zoom: 13)
+        #expect(snapshot.source.dataset.features.count == plan.tiles.count)
+        #expect(snapshot.source.dataset.vertexCount == plan.tiles.count * 2)
+        #expect(snapshot.source.coverage == .tiled(try MapTileCoverage(tiles: plan.tiles, region: request)))
+
+        let malformedAttempts = Mutex<Set<Int>>([])
+        let malformed = MapTileLoader(source: try source(), transport: { url, _ in
+            _ = malformedAttempts.withLock { $0.insert(Int(url.pathComponents[2])!) }
+            return MapHTTPClient.Response(data: visibleTransportationTile(
+                url: url, features: 1, vertices: MapLimits.pathVertices + 1,
+                hasInvalidFinalCoordinate: true), headers: [:])
+        })
+        await #expect(throws: OpenMapTilesAdapter.ValidationError.invalidGeometry) {
+            try await malformed.load(request)
+        }
+        #expect(malformedAttempts.withLock { $0 } == [14])
+    }
+
+    @Test("Oversized incompatible layer geometry rejects without source zoom retry")
+    func decodedSchemaMismatchDoesNotRetry() async throws {
+        let attempts = Mutex<Set<Int>>([])
+        let loader = MapTileLoader(source: try source(), transport: { url, _ in
+            _ = attempts.withLock { $0.insert(Int(url.pathComponents[2])!) }
+            return MapHTTPClient.Response(data: visibleTransportationTile(
+                url: url, features: 1, vertices: MapLimits.pathVertices + 1, layerName: "water"), headers: [:])
+        })
+        await #expect(throws: OpenMapTilesAdapter.ValidationError.invalidGeometry) {
+            try await loader.load(request(span: 0.001))
+        }
+        #expect(attempts.withLock { $0 } == [14])
+    }
+
+    @Test("Invalid selected string names reject oversized paths without source zoom retry")
+    func invalidOversizedNamesDoNotRetry() async throws {
+        for name in ["Bad\nname", String(repeating: "a", count: 257)] {
+            let attempts = Mutex<Set<Int>>([])
+            let loader = MapTileLoader(source: try source(), transport: { url, _ in
+                _ = attempts.withLock { $0.insert(Int(url.pathComponents[2])!) }
+                return MapHTTPClient.Response(data: visibleTransportationTile(
+                    url: url, features: 1, vertices: MapLimits.pathVertices + 1, name: name), headers: [:])
+            })
+            await #expect(throws: MapValidationError.invalidIdentity) {
+                try await loader.load(request(span: 0.001))
+            }
+            #expect(attempts.withLock { $0 } == [14])
+        }
+    }
+
     @Test("Cache eviction bounds both sixty-four addresses and thirty-two MiB")
     func cacheBounds() async throws {
         // Empty tiles still consume address slots. Widely separated cameras
@@ -273,15 +335,21 @@ struct MapTileLoaderTests {
     }
     /// Put every tile's lines beside the shared world origin, inside the tiny
     /// requested viewport. Offscreen lines must not establish aggregate admission.
-    private func visibleTransportationTile(url: URL, features: Int) -> Data {
+    private func visibleTransportationTile(url: URL, features: Int, vertices: Int = 2,
+                                           hasInvalidFinalCoordinate: Bool = false,
+                                           layerName: String = "transportation", name: String = "") -> Data {
         let zoom = Int(url.pathComponents[2])!
         let x = Int(url.pathComponents[3])!
         let y = Int(url.deletingPathExtension().lastPathComponent)!
         return transportationTile(features: features, x: x < (1 << zoom) / 2 ? 4_095 : 0,
-                                  y: y < (1 << zoom) / 2 ? 4_095 : 0)
+                                  y: y < (1 << zoom) / 2 ? 4_095 : 0, vertices: vertices,
+                                  hasInvalidFinalCoordinate: hasInvalidFinalCoordinate,
+                                  layerName: layerName, name: name)
     }
 
-    private func transportationTile(features: Int, x: Int, y: Int) -> Data {
+    private func transportationTile(features: Int, x: Int, y: Int, vertices: Int = 2,
+                                    hasInvalidFinalCoordinate: Bool = false,
+                                    layerName: String = "transportation", name: String = "") -> Data {
         func varint(_ number: Int) -> [UInt8] {
             var number = number, output: [UInt8] = []
             while number >= 128 { output.append(UInt8(number & 127) | 128); number >>= 7 }
@@ -290,10 +358,24 @@ struct MapTileLoaderTests {
         func message(_ field: Int, _ body: [UInt8]) -> [UInt8] {
             varint(field << 3 | 2) + varint(body.count) + body
         }
-        let geometry = [UInt8(9)] + varint(x * 2) + varint(y * 2) + [10,2,2]
-        let line: [UInt8] = [0x12,2,0,0,0x18,2] + message(4, geometry)
-        let body = message(1, Array("transportation".utf8)) + [0x78,2,0x28,0x80,0x20]
-            + message(3, Array("class".utf8)) + message(4, message(1, Array("primary".utf8)))
+        precondition(vertices >= 2)
+        var geometry = [UInt8(9)] + varint(x * 2) + varint(y * 2) + varint((vertices - 1) << 3 | 2)
+        for index in 1..<vertices {
+            // Alternate between adjacent points, preserving coordinate bounds
+            // regardless of path size. The final bad delta isolates validation
+            // after the retained path allowance has already been exhausted.
+            let delta = index.isMultiple(of: 2) ? 1 : 2
+            let horizontal = hasInvalidFinalCoordinate && index == vertices - 1 ? 65_538 : delta
+            geometry += varint(horizontal) + varint(delta)
+        }
+        var tags: [UInt8] = [0, 0]
+        var tables = message(3, Array("class".utf8)) + message(4, message(1, Array("primary".utf8)))
+        if !name.isEmpty {
+            tags += [1, 1]
+            tables += message(3, Array("name".utf8)) + message(4, message(1, Array(name.utf8)))
+        }
+        let line = message(2, tags) + [0x18,2] + message(4, geometry)
+        let body = message(1, Array(layerName.utf8)) + [0x78,2,0x28,0x80,0x20] + tables
             + Array(repeating: message(2, line), count: features).flatMap { $0 }
         return Data(message(3, body))
     }

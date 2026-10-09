@@ -69,7 +69,12 @@ enum MapboxVectorTileDecoder {
         var offset = 0
         var cursor = Point(x: 0, y: 0)
         var paths: [[Point]] = []
+        var polygons: [[[Point]]] = []
+        var pathCount = 0
+        var polygonRingCount = 0
         var vertices = 0
+        var isBudgetExceeded = false
+        let isPolygon = feature.type == 3
         let bound = Int64(extent) * 8
         func command() throws -> (UInt32, Int) {
             guard offset < feature.words.count else { throw ValidationError.invalidGeometry }
@@ -79,66 +84,75 @@ enum MapboxVectorTileDecoder {
             guard count > 0 else { throw ValidationError.invalidGeometry }
             return (word & 7, count)
         }
-        func points(_ count: Int, into path: inout [Point]) throws {
-            guard count <= MapLimits.pathVertices - path.count,
-                  count <= (feature.words.count - offset) / 2
+        func point() throws -> Point {
+            guard feature.words.count - offset >= 2 else { throw ValidationError.invalidGeometry }
+            let dx = zigzag(feature.words[offset])
+            let dy = zigzag(feature.words[offset + 1])
+            offset += 2
+            let (x, xOverflow) = cursor.x.addingReportingOverflow(dx)
+            let (y, yOverflow) = cursor.y.addingReportingOverflow(dy)
+            guard !xOverflow, !yOverflow, (-bound...bound).contains(x), (-bound...bound).contains(y)
             else { throw ValidationError.invalidGeometry }
-            for _ in 0..<count {
-                let dx = zigzag(feature.words[offset])
-                let dy = zigzag(feature.words[offset + 1])
-                offset += 2
-                let (x, xOverflow) = cursor.x.addingReportingOverflow(dx)
-                let (y, yOverflow) = cursor.y.addingReportingOverflow(dy)
-                guard !xOverflow, !yOverflow, (-bound...bound).contains(x), (-bound...bound).contains(y)
-                else { throw ValidationError.invalidGeometry }
-                cursor = Point(x: x, y: y)
-                path.append(cursor)
-            }
+            cursor = Point(x: x, y: y)
+            return cursor
         }
         while offset < feature.words.count {
             let move = try command()
             guard move.0 == 1, move.1 == 1 else { throw ValidationError.invalidGeometry }
-            var path: [Point] = []
-            try points(1, into: &path)
+            let first = try point()
+            var previous = first
+            var path = isBudgetExceeded ? [] : [first]
             let line = try command()
-            guard line.0 == 2, line.1 >= (feature.type == 3 ? 2 : 1)
+            guard line.0 == 2, line.1 >= (isPolygon ? 2 : 1),
+                  line.1 <= (feature.words.count - offset) / 2
             else { throw ValidationError.invalidGeometry }
-            try points(line.1, into: &path)
-            guard zip(path, path.dropFirst()).allSatisfy({ $0.0 != $0.1 })
-            else { throw ValidationError.invalidGeometry }
-            if feature.type == 3 {
+            // Validate every supplied coordinate even after the retained path
+            // allowance is exhausted. A malformed record must not trigger
+            // geometry-budget fallback. The one-million-word wire allowance and
+            // coordinate bounds keep streaming shoelace sums within Int64 even
+            // when the retained path allowance has been exceeded.
+            var area = Int64(0)
+            for _ in 0..<line.1 {
+                let next = try point()
+                guard previous != next else { throw ValidationError.invalidGeometry }
+                if isPolygon { area += previous.x * next.y - next.x * previous.y }
+                if !isBudgetExceeded, path.count < MapLimits.pathVertices { path.append(next) }
+                previous = next
+            }
+            if isPolygon {
                 let close = try command()
-                guard close.0 == 7, close.1 == 1, path.first != path.last,
-                      path.count < MapLimits.pathVertices
+                guard close.0 == 7, close.1 == 1, first != previous
                 else { throw ValidationError.invalidGeometry }
-                path.append(path[0])
+                area += previous.x * first.y - first.x * previous.y
+                guard area != 0 else { throw ValidationError.invalidGeometry }
+                if area > 0 {
+                    polygonRingCount = 1
+                } else {
+                    guard polygonRingCount > 0 else { throw ValidationError.invalidGeometry }
+                    polygonRingCount += 1
+                }
+                if !isBudgetExceeded, path.count < MapLimits.pathVertices { path.append(first) }
                 // ClosePath leaves cursor at the last LineTo, not at the first vertex.
             }
-            vertices += path.count
-            guard paths.count < maximumPathsPerFeature,
-                  vertices <= MapLimits.sourceVertices
-            else { throw ValidationError.budgetExceeded }
-            paths.append(path)
-        }
-        guard !paths.isEmpty else { throw ValidationError.invalidGeometry }
-        if feature.type == 2 { return .lines(paths) }
-        var polygons: [[[Point]]] = []
-        for ring in paths {
-            // Coordinates are bounded to 8*65536 and paths to 20,000 points,
-            // keeping every shoelace product and sum within Int64.
-            let area = zip(ring, ring.dropFirst()).reduce(Int64(0)) {
-                $0 + $1.0.x * $1.1.y - $1.1.x * $1.0.y
+            let pathVertices = 1 + line.1 + (isPolygon ? 1 : 0)
+            vertices += pathVertices
+            pathCount += 1
+            if pathVertices > MapLimits.pathVertices || pathCount > maximumPathsPerFeature
+                || vertices > MapLimits.sourceVertices || polygonRingCount > MapLimits.polygonRings {
+                isBudgetExceeded = true
             }
-            guard area != 0 else { throw ValidationError.invalidGeometry }
-            if area > 0 {
-                polygons.append([ring])
-            } else {
-                guard !polygons.isEmpty else { throw ValidationError.invalidGeometry }
-                guard polygons[polygons.count - 1].count < MapLimits.polygonRings
-                else { throw ValidationError.budgetExceeded }
-                polygons[polygons.count - 1].append(ring)
+            if !isBudgetExceeded {
+                if isPolygon {
+                    if area > 0 { polygons.append([path]) }
+                    else { polygons[polygons.count - 1].append(path) }
+                } else {
+                    paths.append(path)
+                }
             }
         }
+        guard pathCount > 0 else { throw ValidationError.invalidGeometry }
+        guard !isBudgetExceeded else { throw ValidationError.budgetExceeded }
+        if !isPolygon { return .lines(paths) }
         return .polygons(polygons)
     }
 

@@ -200,6 +200,38 @@ struct MapViewInteractionTests {
         }
     }
 
+    @Test("The outer cells of a selected Braille ring retain native pointer selection and focus")
+    func selectedRingPointer() async throws {
+        try await withMapScene(markers: true) { session, _, recorder in
+            let initial = try await recorder.wait(description: "ready map before selecting a ring") { $0.mapReady }
+            session.send([.key(.character("n")), .key(.character("b"), modifiers: .ctrl)])
+            let selected = try await recorder.wait(after: initial.sequence, description: "selected ring is drawn") {
+                $0.mapReady && $0.mapContains("Selection=near CW=1 SW=1") && !$0.mapSelectedRingCells.isEmpty
+            }
+            session.send(.key(.tab))
+            let adjacent = try await recorder.wait(after: selected.sequence, description: "adjacent button focused before ring click") {
+                $0.mapButtonFocused("Adjacent") && !$0.mapSelectedRingCells.isEmpty
+            }
+            let cells = adjacent.mapSelectedRingCells
+            #expect(Set(cells.map(\.y)).count == 2)
+            // After centering, the marker centre is in the bottom row. Click the
+            // uppermost lit cell, outside the old one-cell marker hit region.
+            let point = try #require(cells.first)
+            #expect(point.y < cells.map(\.y).max()!)
+            session.send([
+                .mouse(MouseEvent(kind: .down(.primary), location: .cellFallback(point))),
+                .mouse(MouseEvent(kind: .up(.primary), location: .cellFallback(point))),
+                .key(.character("b"), modifiers: .ctrl),
+            ])
+            let clicked = try await recorder.wait(after: adjacent.sequence, description: "outer ring click restores map focus") {
+                $0.mapContains("Selection=near CW=2 SW=2") && $0.mapContains("B=2")
+                    && $0.focusedIdentity == initial.focusedIdentity
+            }
+            #expect(clicked.mapContains("Clicks=0"))
+            #expect(clicked.mapContains("A=none"))
+        }
+    }
+
     @Test("External unknown selection survives rendering, resizing and activation without camera repair")
     func unknownSelection() async throws {
         try await withMapScene(markers: true) { session, _, recorder in
@@ -442,11 +474,21 @@ private extension SemanticHostFrame {
     }
     var mapMarkerPoint: CellPoint? {
         for (row, cells) in raster.cells.enumerated() {
-            if let column = cells.firstIndex(where: { $0.character == "●" }) {
+            if let column = cells.firstIndex(where: { $0.character == "⠶" }) {
                 return CellPoint(x: column, y: row)
             }
         }
         return nil
+    }
+    var mapSelectedRingCells: [CellPoint] {
+        raster.cells.enumerated().flatMap { row, cells in
+            cells.enumerated().compactMap { column, cell in
+                guard cell.style?.foregroundColor == ChioTheme.default.colors.warning,
+                      let scalar = cell.character.unicodeScalars.first,
+                      (0x2801...0x28FF).contains(scalar.value) else { return nil }
+                return CellPoint(x: column, y: row)
+            }
+        }
     }
     func mapButtonFocused(_ title: String) -> Bool {
         semantics.accessibilityNodes.contains {

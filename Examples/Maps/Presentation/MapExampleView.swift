@@ -40,9 +40,10 @@ struct MapExampleView {
         overlays.markers.first(where: { $0.id == selection })?.title ?? "None"
     }
     private var context: String {
-        if acquisition.isOnline { return "Online · \(detail.levelNumber)/\(MapDetail.allCases.count) \(detail.rawValue) · \(appearance.rawValue) · synthetic guide" }
+        let areaPresentation = fills ? "filled" : "outlines"
+        if acquisition.isOnline { return "Online · \(detail.levelNumber)/\(MapDetail.allCases.count) \(detail.rawValue) · \(appearance.rawValue) · \(areaPresentation) · synthetic guide" }
         let sourceTitle = scene == .world ? "Natural Earth" : streetSource.title
-        return "Offline · \(sourceTitle) · \(detail.levelNumber)/\(MapDetail.allCases.count) \(detail.rawValue) · \(appearance.rawValue) · synthetic guide"
+        return "Offline · \(sourceTitle) · \(detail.levelNumber)/\(MapDetail.allCases.count) \(detail.rawValue) · \(appearance.rawValue) · \(areaPresentation) · synthetic guide"
     }
 
     /// MapView handles pan, zoom, marker traversal and activation through native focus.
@@ -105,7 +106,7 @@ extension MapExampleView: View {
                 .foregroundStyle(theme.colors.accent)
                 .frame(height: 1, alignment: .leading)
             Text(terminalSize.width >= 80
-                 ? "[] detail  d cycle  t theme  f fills  l labels  r reset  space map"
+                 ? "[] detail  d cycle  t theme  f outline/fill  l labels  r reset"
                  : "[] detail  t theme  r reset")
                 .foregroundStyle(theme.colors.mutedText)
                 .frame(height: 1, alignment: .leading)

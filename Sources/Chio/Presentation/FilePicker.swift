@@ -77,7 +77,7 @@ public struct FilePicker {
         var requestID: UUID? {
             switch self {
             case .loading(let id, _, _), .confirming(let id, _, _): id
-            default: nil
+            case .idle, .browsing, .failed, .closed: nil
             }
         }
 
@@ -92,7 +92,7 @@ public struct FilePicker {
         var entries: [FileEntry] {
             switch self {
             case .browsing(let directory, _), .confirming(_, let directory, _): directory.entries
-            default: []
+            case .idle, .loading, .failed, .closed: []
             }
         }
 
@@ -109,7 +109,7 @@ public struct FilePicker {
         var hasError: Bool {
             switch self {
             case .failed, .browsing(_, .some): true
-            default: false
+            case .idle, .loading, .browsing(_, .none), .confirming, .closed: false
             }
         }
     }
@@ -295,7 +295,7 @@ extension FilePicker: View {
                     }
                     phaseStorage.wrappedValue = .closed
                     confirm(url)
-                default: break
+                case .idle, .browsing, .failed, .closed: break
                 }
             } catch {
                 guard !Task.isCancelled, phaseStorage.wrappedValue.requestID == id else { return }
@@ -304,7 +304,7 @@ extension FilePicker: View {
                     phaseStorage.wrappedValue = .failed(directory: directory, message: error.localizedDescription)
                 case .confirming(_, let directory, _):
                     phaseStorage.wrappedValue = .browsing(directory, error: error.localizedDescription)
-                default: break
+                case .idle, .browsing, .failed, .closed: break
                 }
             }
         }

@@ -12,20 +12,24 @@ struct MapDrawing {
     let fills: Bool
     let work: MapDrawingWork
     let routes: [PreparedMap.Line]
+    let markers: [MapMarkerPlacement.Marker]
 
-    init(prepared: PreparedMapDrawing, colors: ChioTheme.Colors, waterColor: Color, parkColor: Color) {
+    init(prepared: PreparedMapDrawing, colors: ChioTheme.Colors, waterColor: Color, parkColor: Color,
+         markers: [MapMarkerPlacement.Marker] = []) {
         map = prepared.map
         routes = prepared.routes
         viewport = prepared.viewport
         fills = prepared.fills
         work = prepared.work
+        self.markers = markers
         self.colors = colors
         self.waterColor = waterColor
         self.parkColor = parkColor
     }
 
     init(map: PreparedMap, viewport: MapViewport, colors: ChioTheme.Colors,
-         waterColor: Color, parkColor: Color, fills: Bool, routes: [PreparedMap.Line] = []) throws {
+         waterColor: Color, parkColor: Color, fills: Bool, routes: [PreparedMap.Line] = [],
+         markers: [MapMarkerPlacement.Marker] = []) throws {
         let work = try MapDrawingWork(map: map, viewport: viewport, fills: fills, routes: routes)
         self.map = map
         self.viewport = viewport
@@ -35,6 +39,7 @@ struct MapDrawing {
         self.fills = fills
         self.work = work
         self.routes = routes
+        self.markers = markers
     }
 
     private var columns: Int { viewport.columns }
@@ -102,6 +107,48 @@ struct MapDrawing {
             }
         }
     }
+    /// Routes own every cell they touch: all eight dots share one foreground.
+    /// One adjacent dot of clearance keeps pale geography from crowding the route.
+    private func drawRoutes(into context: inout CanvasContext) {
+        guard !routes.isEmpty else { return }
+        var dots = BrailleCanvas(width: columns, height: rows)
+        for line in routes {
+            for (a, b) in zip(line.points, line.points.dropFirst()) {
+                let segment = MapDrawingWork.StrokeSegment(a, b, viewport: viewport)
+                for step in 0...segment.steps {
+                    let t = Double(step) / Double(segment.steps)
+                    dots.setPixel(x: Int(floor((segment.x0 + (segment.x1 - segment.x0) * t) * 2)),
+                                  y: Int(floor((segment.y0 + (segment.y1 - segment.y0) * t) * 4)))
+                }
+            }
+        }
+        for y in 0..<rows {
+            for x in 0..<columns where dots.cell(x: x, y: y).mask != 0 {
+                clearDots(column: x, row: y, into: &context)
+                for dy in 0..<4 {
+                    for dx in 0..<2 where dots.cell(x: x, y: y).contains(x: dx, y: dy) {
+                        for hy in -1...1 {
+                            for hx in -1...1 {
+                                context.clearSample(GridSample(x: x * 2 + dx + hx, y: y * 4 + dy + hy))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        for y in 0..<dots.subpixelHeight {
+            for x in 0..<dots.subpixelWidth where dots.cell(x: x / 2, y: y / 4).contains(x: x % 2, y: y % 4) {
+                context.setPixel(at: Point(x: (Double(x) + 0.5) / 2, y: (Double(y) + 0.5) / 4),
+                                 foreground: colors.accent)
+            }
+        }
+    }
+
+    private func clearDots(column: Int, row: Int, into context: inout CanvasContext) {
+        for y in 0..<4 {
+            for x in 0..<2 { context.clearSample(GridSample(x: column * 2 + x, y: row * 4 + y)) }
+        }
+    }
 }
 
 extension MapDrawing: Equatable {}
@@ -130,9 +177,15 @@ extension MapDrawing: CanvasDrawing {
         for line in map.lines.sorted(by: { priority($0.kind) < priority($1.kind) }) {
             stroke(line.points, color: strokeColor(line.kind), into: &context)
         }
-        // Routes share the canvas so native braille masks compose with geography.
-        for line in routes {
-            stroke(line.points, color: colors.accent, into: &context)
+        drawRoutes(into: &context)
+        // Native marker canvases paint later. Reserve only their lit cells, with
+        // no extra marker halo: wider clearance detaches route endpoints.
+        for marker in markers {
+            for y in 0..<marker.glyph.height {
+                for x in 0..<marker.glyph.width where marker.glyph.cell(x: x, y: y).mask != 0 {
+                    clearDots(column: marker.origin.x + x, row: marker.origin.y + y, into: &context)
+                }
+            }
         }
     }
 }

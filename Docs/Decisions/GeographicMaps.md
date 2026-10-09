@@ -19,7 +19,8 @@ Explicit [online acquisition](OnlineMaps.md) is a separate effect boundary;
 SwiftTUI owns allocation, cell metrics, focus, gestures, input, lifecycle and native
 Canvas/Text rendering. Chio supplies checked geographic values, projection,
 terminal detail, bounded preparation, labels and interaction conventions. One
-canvas composes geography and route dots; native Text supplies markers and labels.
+canvas composes geography and route dots; small native canvases supply marker
+glyphs and tap regions, while native Text supplies labels.
 The existing `Chio` product exports the component and adapters without a package
 split or general map DSL. [Usage](../Usage.md#maps) has the consumer recipe.
 
@@ -72,15 +73,28 @@ marker. Tab and Shift-Tab remain native focus navigation. Clicking a visible
 marker is supplementary to the full keyboard path. Unknown external selection
 IDs are retained, not repaired or cleared when sources/overlays change.
 
-Selected markers use a diamond and accent color, giving a non-color selection cue.
-The selected symbol/name reserves space before other markers and labels; overlapping
+Selected markers use a Braille ring with a centre dot and the theme's warning
+colour; ordinary markers use a compact four-dot glyph and foreground colour.
+The larger ring gives a non-colour selection cue. Its occupied rows and label
+reserve space before other markers and labels; overlapping
 unselected markers may be omitted from the drawing but remain keyboard-selectable.
 Names use native Unicode cell measurement and clip to available space. Optional
 route names precede geographic labels. `mapLabels(false)` disables geographic,
 route and unselected-marker names while leaving selected-marker names enabled.
 Routes survive every detail level, clip at the viewport/dateline and paint above
-geography in the same canvas. They are synthetic guides in the example, not
+geography in the same canvas. Every route-touched cell retains only route dots,
+because all eight Braille dots in a cell share one foreground. A one-dot halo
+clears adjacent linework; existing area fills remain underneath. Marker glyph
+cells clear route/geography dots without an additional marker halo, keeping
+route endpoints closer to the ring. Label backgrounds remain native Text.
+They are synthetic guides in the example, not
 navigation instructions or calculated routes.
+
+`mapFills(false)` selects outlines independently of `MapDetail`; it is not another
+detail level. The Braille area-texture experiment was rejected after visual
+comparison. Its useful route clearance and dot markers are integrated here; the
+spike target and captures are removed (retained in Git at `b17cc43`). No texture
+mode or Pitwall integration is part of the public component.
 
 ### Allocation, themes and fallback
 
@@ -98,8 +112,8 @@ Over-budget drawings similarly show recovery guidance without disabling controls
 
 `ChioTheme.map.water` and `.park` are semantic area-fill colors, independent of
 syntax highlighting. Land/buildings use existing surfaces; roads use text colors;
-routes and selected markers use accent. Default, light and btop palettes provide
-map colors. Theme changes repaint the prepared geometry without resetting state
+routes use accent; selected markers and their labels use warning. Default, light
+and btop palettes provide map colors. Theme changes repaint the prepared geometry without resetting state
 or requiring another geometry job. Required attribution and license remain visible
 within the available width; full source metadata is available to the application.
 
@@ -164,6 +178,13 @@ visits, 16 million crossing-sort weight, 250,000 fill writes and 250,000 stroke
 samples. No partial drawing is painted after rejection. These are work allowances,
 not universal latency guarantees. Source construction/decoding must also respect
 upstream transport limits chosen by the application.
+
+Route clearance additionally uses one native Braille mask bounded by the
+240×100-cell viewport (192,000 dots). Each route dot clears at most nine nearby
+samples; each occupied cell clears at most eight. Emission visits at most the
+same 192,000 dots. Each of the existing maximum 256 markers occupies at most
+three columns and two rows; only its lit cells clear underlying dots. This work
+does not increase with source geometry beyond the admitted stroke allowance.
 
 The MVT reader allows 16 MiB input, 64 layers, 20,000 raw features, 65,536 total
 key/value entries, one million geometry words and 2 MiB text (16 KiB per string).

@@ -66,16 +66,6 @@ let package = Package(
                 .product(name: "SwiftTUIRuntime", package: "swift-tui"),
             ]
         ),
-        // Capture-only visual experiment; no public product or map-style API.
-        .testTarget(
-            name: "ChioBrailleMapSpikeTests",
-            dependencies: [
-                "Chio", "ChioMaps",
-                .product(name: "SwiftTUIRuntime", package: "swift-tui"),
-            ],
-            path: "Spikes/BrailleMaps",
-            exclude: ["render-comparisons.py", "capture.sh", "README.md", "Captures"]
-        ),
         .executableTarget(
             name: "ChioMaps",
             dependencies: [

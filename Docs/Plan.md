@@ -40,11 +40,31 @@ expanding this active plan with completed implementation history.
 
 ## Remaining scope audit
 
-An isolated [Braille map visual experiment](../Spikes/BrailleMaps/README.md)
-compares the existing renderer with outlines and sparse textures over identical
-prepared geometry. Native raster captures record cell-colour collisions and halo
-tradeoffs. It is awaiting visual direction, not promoted into the public map;
-Pitwall integration is separate.
+The Braille map comparison is resolved: the existing fill toggle supplies outline
+presentation, route clearance and dot markers are integrated, and the texture
+experiment is removed. [Geographic maps](Decisions/GeographicMaps.md) owns the
+resulting presentation contract. Pitwall integration remains separate.
+
+The 2026-10-09 global-guidance audit found two tile-admission defects (path-budget
+classification and wrong-typed names), plus incomplete exhaustive switches. The
+focused corrections preserve native state ownership and valid public inputs.
+Meaningful optional selections/loading states and raw/projected/source models
+retain their distinct contracts; no broad consolidation was justified.
+
+Remaining audit cleanup is explicit, not a new component queue:
+
+- [Dashboard command](../Examples/AgentDashboard/ChioDashboardCommand.swift)
+  duplicates choice/flag policy across validation, snapshot and live launch paths.
+- Some owned enum policies still use comparisons, including
+  [map detail](../Sources/Chio/Domain/Maps/MapDetail.swift),
+  [HTTP resource limits](../Sources/Chio/Execution/Maps/MapHTTPClient.swift) and
+  [example fixtures](../Examples/Maps/Execution/MapFixtures.swift).
+- Inferred constructors, internal Boolean names and nonprivate inline
+  conformances have residual adoption work across production and test code.
+
+Apply these in their owning files with contract-preserving checks; avoid a
+mechanical repository-wide rewrite or changing public labels/encoding as
+incidental cleanup.
 
 There is no committed broader component queue. Real application use of the
 public map remains useful validation.

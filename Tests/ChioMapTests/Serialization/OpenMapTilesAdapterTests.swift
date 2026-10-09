@@ -44,6 +44,38 @@ struct OpenMapTilesAdapterTests {
         }
     }
 
+    @Test("Oversized selected geometry still rejects incompatible layer schema before budget admission")
+    func oversizedSchemaMismatch() throws {
+        let tile = try MapTileCoordinate(zoom: 14, x: 12919, y: 8133)
+        let adapter = OpenMapTilesAdapter(tile: tile, metadata: try credit())
+        let request = try centeredRequest(tile: tile)
+        let line = (0...MapLimits.pathVertices).map { (Int64($0 % 2), Int64(0)) }
+        let rectangle = (0..<(MapLimits.pathVertices - 2)).map { (Int64($0), Int64(0)) }
+            + [(Int64(MapLimits.pathVertices - 3), Int64(1)), (Int64(0), Int64(1))]
+        let lineWords = geometryWords(paths: [line])
+        let polygonWords = geometryWords(paths: [rectangle], isPolygon: true)
+        let cases: [(layer: String, sourceClass: String, type: UInt64, words: [UInt32])] = [
+            ("water", "", 2, lineWords), ("building", "", 2, lineWords),
+            ("park", "", 2, lineWords), ("landuse", "park", 2, lineWords),
+            ("transportation", "primary", 3, polygonWords),
+            ("transportation", "secondary", 3, polygonWords),
+        ]
+        for fixture in cases {
+            let input = Data(layer(fixture.layer, type: fixture.type, words: fixture.words,
+                                   sourceClass: fixture.sourceClass))
+            let feature = try MapboxVectorTileDecoder.decode(input)[0].features[0]
+            // Each command stream is otherwise valid and exceeds only a path
+            // allowance, proving schema validation takes precedence over it.
+            #expect(throws: OpenMapTilesAdapter.ValidationError.budgetExceeded) {
+                try MapboxVectorTileDecoder.geometry(feature, extent: 4096)
+            }
+            #expect(throws: OpenMapTilesAdapter.ValidationError.invalidGeometry) { try adapter.adapt(input) }
+            #expect(throws: OpenMapTilesAdapter.ValidationError.invalidGeometry) {
+                try adapter.adapt(input, intersecting: request)
+            }
+        }
+    }
+
     @Test("Park point labels are excluded while park polygons retain strict geometry validation")
     func parkLabels() throws {
         let adapter = OpenMapTilesAdapter(tile: try .init(zoom: 12, x: 3229, y: 2033), metadata: try credit())
@@ -161,6 +193,61 @@ struct OpenMapTilesAdapterTests {
         let wrongType = Data(layer("water", type: 2, words: [9,0,0,10,2,2]))
         #expect(throws: OpenMapTilesAdapter.ValidationError.invalidGeometry) {
             try adapter.adapt(wrongType, intersecting: request)
+        }
+    }
+
+    @Test("Selected numeric and Boolean names reject before visible or offscreen admission")
+    func wronglyTypedNames() throws {
+        let tile = try MapTileCoordinate(zoom: 14, x: 12919, y: 8133)
+        let adapter = OpenMapTilesAdapter(tile: tile, metadata: try credit())
+        let request = try centeredRequest(tile: tile)
+        let visible: [UInt32] = [9,3800,4096,10,600,0]
+        let outside: [UInt32] = [9,0,0,10,2,2]
+        let number = [UInt8(25)] + (0..<8).map { UInt8(truncatingIfNeeded: Double(42).bitPattern >> ($0 * 8)) }
+        let invalidNames = [integer(4, 42), integer(5, 42), integer(6, 84), number, integer(7, 0), integer(7, 1)]
+        for words in [visible, outside] {
+            for name in invalidNames {
+                let input = Data(transportationLayer(words: words, nameValue: name))
+                // Wire data is valid; only the selected name's schema is wrong.
+                #expect(try MapboxVectorTileDecoder.decode(input)[0].features.count == 1)
+                #expect(throws: OpenMapTilesAdapter.ValidationError.invalidValue) { try adapter.adapt(input) }
+                #expect(throws: OpenMapTilesAdapter.ValidationError.invalidValue) {
+                    try adapter.adapt(input, intersecting: request)
+                }
+            }
+        }
+        let absentAndEmptyNames: [[UInt8]?] = [nil, message(1, [])]
+        for words in [visible, outside] {
+            for name in absentAndEmptyNames {
+                let input = Data(transportationLayer(words: words, nameValue: name))
+                let whole = try adapter.adapt(input).dataset
+                let admitted = try adapter.adapt(input, intersecting: request)
+                #expect(whole.features.count == 1 && whole.features[0].name.isEmpty)
+                #expect(admitted.features.count == (words == visible ? 1 : 0))
+                #expect(admitted.features.allSatisfy { $0.name.isEmpty })
+            }
+        }
+    }
+
+    @Test("Invalid selected string names reject before oversized visible or offscreen geometry budgets")
+    func invalidOversizedNames() throws {
+        let tile = try MapTileCoordinate(zoom: 14, x: 12919, y: 8133)
+        let adapter = OpenMapTilesAdapter(tile: tile, metadata: try credit())
+        let request = try centeredRequest(tile: tile)
+        for (x, y) in [(Int64(1900), Int64(2048)), (Int64(0), Int64(0))] {
+            let path = (0...MapLimits.pathVertices).map { (x + Int64($0 % 2), y) }
+            let words = geometryWords(paths: [path])
+            for name in ["Bad\nname", String(repeating: "a", count: 257)] {
+                let input = Data(layer("transportation", type: 2, words: words, sourceClass: "primary", name: name))
+                let feature = try MapboxVectorTileDecoder.decode(input)[0].features[0]
+                #expect(throws: OpenMapTilesAdapter.ValidationError.budgetExceeded) {
+                    try MapboxVectorTileDecoder.geometry(feature, extent: 4096)
+                }
+                #expect(throws: MapValidationError.invalidIdentity) { try adapter.adapt(input) }
+                #expect(throws: MapValidationError.invalidIdentity) {
+                    try adapter.adapt(input, intersecting: request)
+                }
+            }
         }
     }
 
@@ -372,6 +459,18 @@ struct OpenMapTilesAdapterTests {
         feature += message(2, tags)
         return message(3, integer(15, 2) + message(1, Array(name.utf8)) + integer(5, 4096)
                        + tables + Array(repeating: message(2, feature), count: featureCopies).flatMap { $0 })
+    }
+    /// Distinguish a genuinely absent name tag from a present typed MVT value.
+    private func transportationLayer(words: [UInt32], nameValue: [UInt8]?) -> [UInt8] {
+        var tables = message(3, Array("class".utf8)) + message(4, message(1, Array("primary".utf8)))
+        var tags: [UInt8] = [0, 0]
+        if let nameValue {
+            tables += message(3, Array("name".utf8)) + message(4, nameValue)
+            tags += [1, 1]
+        }
+        let feature = integer(3, 2) + message(2, tags) + message(4, words.flatMap { varint(UInt64($0)) })
+        return message(3, integer(15, 2) + message(1, Array("transportation".utf8)) + integer(5, 4096)
+                       + tables + message(2, feature))
     }
     private func integer(_ number: UInt64, _ value: UInt64) -> [UInt8] { varint(number << 3) + varint(value) }
     private func message(_ number: UInt64, _ bytes: [UInt8]) -> [UInt8] {

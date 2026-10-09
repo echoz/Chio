@@ -58,6 +58,10 @@ are subdivided before canonical longitude conversion to retain their direction;
 this adds collinear points without changing provider shapes. See the geometry
 constraints in [geographic maps](GeographicMaps.md#work-bounds).
 
+Absent names normalize to empty strings; a present name must be a string.
+Numeric/Boolean selected names reject with `invalidValue`, including offscreen
+features. This corrects their previous silent normalization to unnamed features.
+
 The unchanged 4,000-feature/200,000-vertex limits apply to the retained aggregate.
 Raw wire, record, path and polygon bounds still apply before culling. The public
 whole-tile `OpenMapTilesAdapter.adapt` continues to enforce whole-tile limits. A
@@ -78,6 +82,13 @@ fallback exposes both zooms. Malformed geometry, HTTP failures and unsupported
 schemas fail the request. No required tile or potentially visible part is omitted
 to fit a count budget. Dense visible areas may still fail after all three bounded
 attempts. Lower zooms are not guaranteed to contain fewer supported features.
+
+Per-path limits include polygon closure vertices. Otherwise valid oversized paths
+report `budgetExceeded`, correcting the former `invalidGeometry` classification
+that prevented fallback. The decoder streams the rest of the wire-bounded record
+without retaining excess geometry so malformed commands, coordinates, duplicates
+or polygon ordering still fail as geometry errors before a budget retry. This
+does not change error precedence across separate features or tiles.
 
 Each `MapTileLoader` actor belongs to one map consumer. A new load cancels and
 drains its predecessor before starting at most two HTTP operations. A generation

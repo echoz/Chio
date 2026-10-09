@@ -8,7 +8,7 @@ struct MapExampleCommand {
     var scene: MapFixtures.Scene = .world
     @Option(help: "Street source: overpass or openfreemap; retained while viewing world.")
     var source: MapFixtures.StreetSource = .overpass
-    @Flag(help: "Load OpenFreeMap tiles online for regions and streets; the world overview stays bundled.")
+    @Flag(help: "Load OpenFreeMap tiles online for world, region and street views.")
     var online = false
     @Option(help: "Optional JSON OpenMapTilesSource file for --online; otherwise discover OpenFreeMap.")
     var tileSource = ""

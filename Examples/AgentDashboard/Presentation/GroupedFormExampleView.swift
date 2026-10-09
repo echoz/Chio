@@ -57,7 +57,7 @@ struct GroupedFormExampleView {
         switch feedback {
         case .cancelled: return "Cancelled · saved values restored"
         case .saved: return "Saved locally · no jobs started"
-        default: return "Local settings · no jobs started"
+        case .editing, .rejected: return "Local settings · no jobs started"
         }
     }
 

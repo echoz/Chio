@@ -91,7 +91,7 @@ public struct MapView {
         case .tiled(let coverage):
             covered = viewport.map { coverage.covers(MapTileRequest(camera: camera, viewport: $0)) } ?? true
             unavailable = "Outside loaded coverage"
-        default:
+        case .worldwide, .boundedOfflineExtract:
             covered = source.coverage.contains(camera.center)
             unavailable = "Outside offline coverage"
         }
@@ -159,7 +159,7 @@ public struct MapView {
         ZStack(alignment: .topLeading) {
             Canvas(MapDrawing(prepared: prepared, colors: theme.colors,
                               waterColor: theme.map.water,
-                              parkColor: theme.map.park), grid: .braille2x4)
+                              parkColor: theme.map.park, markers: markers.markers), grid: .braille2x4)
             ForEach(names.labels, id: \.id) { label in
                 Text(verbatim: label.text).lineLimit(1).foregroundStyle(theme.colors.foreground)
                     .background(theme.colors.surface)
@@ -174,17 +174,16 @@ public struct MapView {
             }
             ForEach(markers.labels, id: \.id) { label in
                 Text(verbatim: label.text).lineLimit(1)
-                    .foregroundStyle(label.id == selection.wrappedValue ? theme.colors.accent : theme.colors.foreground)
+                    .foregroundStyle(label.id == selection.wrappedValue ? theme.colors.warning : theme.colors.foreground)
                     .background(theme.colors.surface)
                     .frame(width: label.width, height: 1, alignment: .leading).clipped()
                     .offset(x: label.column, y: label.row)
             }
             ForEach(markers.markers, id: \.value.id) { marker in
-                Text(marker.selected ? "◆" : "●")
-                    .foregroundStyle(marker.selected ? theme.colors.accent : theme.colors.foreground)
-                    .background(theme.colors.surface)
-                    .frame(width: 1, height: 1)
-                    .offset(x: marker.column, y: marker.row)
+                Canvas(marker, grid: .braille2x4)
+                    .foregroundStyle(marker.isSelected ? theme.colors.warning : theme.colors.foreground)
+                    .frame(width: marker.glyph.width, height: marker.glyph.height)
+                    .offset(x: marker.origin.x, y: marker.origin.y)
                     .onTapGesture { select(marker.value); focused = true }
                     .accessibilityLabel(marker.value.title.isEmpty ? marker.value.id : marker.value.title)
             }

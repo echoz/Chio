@@ -33,13 +33,13 @@ struct MapOverlayRenderingTests {
         let placement = MapMarkerPlacement(markers: [ordinary, selected], selection: selected.id,
                                             camera: camera, viewport: viewport, showsLabels: false)
         #expect(placement.markers.map(\.value.id) == [selected.id])
-        #expect(placement.markers[0].selected)
+        #expect(placement.markers[0].isSelected)
         #expect(placement.labels.map(\.id) == [selected.id])
         #expect(placement.labels[0].text == "Selected")
         let unselected = MapMarkerPlacement(markers: [ordinary, selected], selection: "unknown",
                                              camera: camera, viewport: viewport, showsLabels: false)
         #expect(unselected.markers.map(\.value.id) == [ordinary.id])
-        #expect(!unselected.markers[0].selected)
+        #expect(!unselected.markers[0].isSelected)
         #expect(unselected.labels.isEmpty)
     }
 
@@ -52,7 +52,7 @@ struct MapOverlayRenderingTests {
                                             camera: camera, viewport: viewport, showsLabels: true)
         let label = try #require(placement.labels.first)
         #expect(label.width == 4)
-        #expect(label.column == 13) // Right-side placement would extend beyond column 20.
+        #expect(label.column == 12) // Leave space for the selected ring on the right.
         #expect(label.column + label.width <= viewport.columns)
 
         let long = try MapMarker(id: "long", coordinate: camera.center, title: String(repeating: "界", count: 20))
@@ -71,7 +71,7 @@ struct MapOverlayRenderingTests {
         let narrow = MapMarkerPlacement(markers: [long], selection: long.id,
                                          camera: camera, viewport: viewport, showsLabels: true)
         #expect(narrow.markers.count == 1)
-        #expect(narrow.labels.first?.width == 9)
+        #expect(narrow.labels.first?.width == 8)
         #expect(narrow.labels.first?.column == 0)
         #expect(narrow.labels.first?.text == long.title)
 
@@ -93,7 +93,7 @@ struct MapOverlayRenderingTests {
         let label = try #require(placement.labels.first)
         #expect(placement.labels.count == 1)
         #expect(label.id == selected.id && label.text == selected.title)
-        #expect(label.column == 22 && label.width == 8)
+        #expect(label.column == 23 && label.width == 8)
         #expect(Set(placement.markers.map(\.value.id)) == [selected.id, left.id, beyond.id])
         #expect(placement.markers.allSatisfy {
             $0.row != label.row || !(label.column..<(label.column + label.width)).contains($0.column)
@@ -117,11 +117,11 @@ struct MapOverlayRenderingTests {
         let reserved = MapLabels(candidates: candidates, columns: 40, rows: 20, enabled: true,
                                   reserved: placement.reservations)
         #expect(reserved.labels.map(\.id) == ["far"])
-        #expect(placement.reservations.contains { $0.id == marker.id && $0.width == 1 })
+        #expect(placement.reservations.contains { $0.id == marker.id && $0.text.isEmpty && $0.width == 3 })
         #expect(placement.reservations.contains { $0.id == marker.id && $0.width == 5 })
     }
 
-    @Test("Routes share geographic braille dots and paint the cell accent above geography")
+    @Test("Routes own their native cells and clear adjacent geography without changing area fills")
     func routePaintPriority() throws {
         let viewport = try MapViewport(columns: 10, rows: 10)
         let geography = PreparedMap.Line(featureID: "road", kind: .primaryRoad,
@@ -138,8 +138,9 @@ struct MapOverlayRenderingTests {
             let scalar = try #require(cell.character.unicodeScalars.first)
             #expect((0x2800...0x28FF).contains(scalar.value))
             let mask = scalar.value - 0x2800
-            #expect(mask & 0x01 != 0) // Geography's left-column top dot survives.
-            #expect(mask & 0xB8 == 0xB8) // Route's right-column dots survive.
+            #expect(mask == 0xB8) // Only the route's right-column dots survive.
+            #expect(surface.cells[4][5].character == "⠈") // One adjacent geography dot survives the halo.
+            #expect(surface.cells[4][3].character == "⠉") // More distant geography remains intact.
             #expect(cell.style?.foregroundColor == theme.colors.accent)
             #expect(cell.style?.backgroundColor == theme.colors.selectedSurface)
             #expect(surface.cells[4][2].style?.foregroundColor == theme.colors.foreground)
@@ -169,6 +170,69 @@ struct MapOverlayRenderingTests {
                            waterColor: ChioTheme.default.map.water, parkColor: ChioTheme.default.map.park,
                            fills: false, routes: [excess])
         }
+    }
+
+    @Test("Selected Braille rings clip at edges and displace route dots only in their occupied cells")
+    func brailleMarkerComposition() throws {
+        let viewport = try MapViewport(columns: 10, rows: 6)
+        let value = try MapMarker(id: "position", coordinate: MapCoordinate(latitude: 0, longitude: 0))
+        let route = PreparedMap.Line(featureID: "route", kind: .primaryRoad,
+                                    points: [PreparedMap.Point(x: 0, y: 3), PreparedMap.Point(x: 9.9, y: 3)])
+        for point in [PreparedMap.Point(x: 5, y: 3), PreparedMap.Point(x: 0, y: 0),
+                      PreparedMap.Point(x: 9.9, y: 5.9)] {
+            let marker = MapMarkerPlacement.Marker(value: value, position: point, isSelected: true, viewport: viewport)
+            #expect(marker.glyph.width <= 3 && marker.glyph.height <= 2)
+            #expect(marker.origin.x >= 0 && marker.origin.y >= 0)
+            #expect(marker.origin.x + marker.glyph.width <= viewport.columns)
+            #expect(marker.origin.y + marker.glyph.height <= viewport.rows)
+            if point.x == 5 {
+                #expect(marker.glyph.cells.flatMap { $0 }.reduce(0) { $0 + $1.mask.nonzeroBitCount } == 13)
+            }
+            for theme in [ChioTheme.default, .light, .btop] {
+                for fills in [false, true] {
+                    let land = PreparedMap.Polygon(featureID: "land", kind: .land, rings: [rectangle(0, 0, 10, 6)])
+                    let drawing = try MapDrawing(map: map(polygons: [land]), viewport: viewport, colors: theme.colors,
+                                                  waterColor: theme.map.water, parkColor: theme.map.park,
+                                                  fills: fills, routes: [route], markers: [marker])
+                    let view = ZStack(alignment: .topLeading) {
+                        Canvas(drawing, grid: .braille2x4)
+                        Canvas(marker, grid: .braille2x4).foregroundStyle(theme.colors.warning)
+                            .frame(width: marker.glyph.width, height: marker.glyph.height)
+                            .offset(x: marker.origin.x, y: marker.origin.y)
+                    }.frame(width: 10, height: 6).background(theme.colors.surface)
+                    let raster = DefaultRenderer().render(view, proposal: ProposedSize(width: 10, height: 6)).rasterSurface
+                    for y in 0..<marker.glyph.height {
+                        for x in 0..<marker.glyph.width where marker.glyph.cell(x: x, y: y).mask != 0 {
+                            let cell = raster.cells[marker.origin.y + y][marker.origin.x + x]
+                            #expect(cell.character == marker.glyph.cell(x: x, y: y).glyph)
+                            #expect(cell.style?.foregroundColor == theme.colors.warning)
+                            #expect(cell.style?.backgroundColor == (fills ? theme.colors.selectedSurface : theme.colors.surface))
+                        }
+                    }
+                    if point.x == 5 {
+                        // No additional marker halo: the immediately adjacent route cell survives.
+                        #expect(raster.cells[3][marker.origin.x - 1].character == "⠉")
+                        #expect(raster.cells[3][marker.origin.x - 1].style?.foregroundColor == theme.colors.accent)
+                    }
+                }
+            }
+        }
+        let ordinary = MapMarkerPlacement.Marker(value: value, position: PreparedMap.Point(x: 5, y: 3),
+                                                  isSelected: false, viewport: viewport)
+        #expect(ordinary.glyph.cell(x: 0, y: 0).mask == 0x36)
+    }
+
+    @Test("A selected ring reserves all of its rows before another marker or geographic label")
+    func ringReservations() throws {
+        let camera = try makeCamera()
+        let viewport = try MapViewport(columns: 40, rows: 20)
+        let selected = try MapMarker(id: "selected", coordinate: camera.center)
+        let neighbor = try MapMarker(id: "neighbor", coordinate: MapCoordinate(latitude: 0.5, longitude: 0))
+        let placement = MapMarkerPlacement(markers: [neighbor, selected], selection: selected.id,
+                                            camera: camera, viewport: viewport, showsLabels: false)
+        #expect(placement.markers.map(\.value.id) == [selected.id])
+        #expect(Set(placement.reservations.map(\.row)) == [9, 10])
+        #expect(placement.reservations.allSatisfy { $0.column == 19 && $0.width == 3 })
     }
 
     @Test("Geographic fills use map colors independently of syntax and theme replacement preserves other components")

@@ -600,7 +600,7 @@
           <div class="player" aria-label="Maps recording"></div>
           <p class="player-message" role="status" hidden></p>
           <div class="recording-caption">
-            <p>Compose Chio’s MapView with your own camera, locations and routes. Opt into online world and street maps: panning loads neighboring tiles through the explicit MapTileLoader, retaining the last accepted coverage during loading or failure. Press e to retry; eligible responses can be reused from the memory cache. Visual detail stays independent of source zoom. World and street views use the same online tile pipeline. Select a location with n or p and press Return to activate it.</p>
+            <p>Compose Chio’s MapView with your own camera, locations and routes. Opt into online world and street maps: panning loads neighboring tiles through the explicit MapTileLoader, retaining the last accepted coverage during loading or failure. Press e to retry; eligible responses can be reused from the memory cache. Visual detail stays independent of source zoom. World and street views use the same online tile pipeline. Select a location with n or p and press Return to activate it. Braille location rings and cleared routes keep annotations legible; press f to switch filled areas to outlines at any detail level.</p>
             <p>The recording and static previews replay fixed OpenFreeMap XYZ tiles at source zooms 1 and 12 over local HTTP through the real MapTileLoader. This repeatable fixture session demonstrates world and street coverage, loading, retained coverage, retry, markers, routes, detail changes and themes. Static previews show the default minimal level. The command below discovers current OpenFreeMap tiles; omit <code>--online</code> for the offline default. <a href="https://github.com/echoz/Chio/blob/main/Examples/Maps/Fixtures/OnlineTiles/Provenance.md">Replay inputs and data credits <span aria-hidden="true">↗</span></a>.</p>
             <a class="download" href="recordings/maps.cast" download>Download recording ↓</a>
           </div>
@@ -610,7 +610,7 @@
               <a href="https://github.com/echoz/Chio/blob/main/Docs/Usage.md#maps">Map API and usage <span aria-hidden="true">↗</span></a>
             </div>
             <pre><code>swift run -c release chio-maps --online --map street</code></pre>
-            <p>Arrow keys pan · + / − zoom · e retries online acquisition · n / p select and center a location · Return activates · Tab moves native focus · [ / ] lower/raise detail · d cycles levels · Space switches world/street · t changes theme · f toggles fills · l toggles labels · r resets · q quits. Minimal is the default; use <code>--detail silhouette</code>, <code>abstract</code> or <code>source</code> to start elsewhere.</p>
+            <p>Arrow keys pan · + / − zoom · e retries online acquisition · n / p select and center a location · Return activates · Tab moves native focus · [ / ] lower/raise detail · d cycles levels · Space switches world/street · t changes theme · f switches outlines/fills · l toggles labels · r resets · q quits. Minimal is the default; use <code>--detail silhouette</code>, <code>abstract</code> or <code>source</code> to start elsewhere.</p>
           </div>
           <div class="recording-details">
             <dl class="recording-ingredients">
