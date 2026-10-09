@@ -3,6 +3,7 @@
 Chio is an opinionated, declarative presentation and interaction layer over
 SwiftTUI: “Beautiful terminal interfaces for Swift.” These are the accepted
 architecture and interaction contracts for the experimental source release.
+Future proposals are explicitly marked and do not describe shipped APIs.
 [Plan.md](Plan.md) owns delivered scope, verification and remaining work;
 [Examples.md](Examples.md) owns commands and workflows; [Usage.md](Usage.md)
 owns public API recipes. Historical implementation decisions and evidence remain
@@ -136,6 +137,57 @@ input, so applications bound history retention. Native image semantics provide
 a count/latest/extrema summary that applications can replace to include units.
 Chio owns no sampler, clock, monitoring state or alert policy. Native overlapping
 subcell writes share one cell's paint; independently colored overlaps are unclaimed.
+
+## Geographic maps (proposed)
+
+The requested direction is a flat **2D geographic map**, supporting world and
+street views from vectors, with detail adapted to the available terminal space.
+No map component ships in 0.1.0. The [map plan](Plan.md#proposed-next-slice-2d-maps)
+defines the proof and implementation gates; names and public APIs remain open.
+
+Start with one north-up, pannable, zoomable view and local world/neighborhood
+fixtures. Propose Web Mercator to share a camera with common street tiles; make
+its latitude limit explicit rather than claiming coverage of the poles. Rotation,
+tilt, terrain, routing services and a general GIS engine are outside this slice.
+
+Chio's reusable value is geographic projection, terminal-aware detail, readable
+labels, location/route overlays and native map interaction. SwiftTUI still owns
+layout, focus, gestures, cells and terminal rendering. Prepare geometry for its
+public Canvas/Shape APIs and compose labels with native Text. Reuse the theme
+environment; distinguish roads, water, land and selected overlays without making
+color the only selection cue. Do not introduce a second terminal renderer.
+
+Keep checked geographic values, camera configuration and prepared geometry
+immutable. Distinguish geographic coordinates from projected/tile coordinates;
+derive scale from one camera representation and the current allocation. Camera
+bindings remain application-authoritative. No selection is meaningful absence;
+an empty successful feature set is distinct from loading or failure. Source
+schema types stay behind decoding, with provenance and attribution retained.
+
+Choose detail from zoom, allocation and native cell pixel metrics, including
+their estimated fallback. Request suitable source detail, cull and clip before
+drawing, simplify at the visible sample scale, then place labels by priority and
+collision checks. Preserve polygon holes, tile seams and selected locations or
+routes. Bound input, preparation and drawing work; renderer clipping alone does
+not bound the cost of offscreen segments. Minimum usable allocations must be
+measured for world and street views. Below them, show a compact location/selection
+summary and a resize hint, preserving camera and selection for expansion.
+
+The pinned native Canvas packs multiple braille samples into a cell with one
+foreground/background pair. Overlaid canvases do not merge their dot masks.
+Prove geographic layers in one drawing with explicit per-cell paint priority;
+assess native Shapes for fills without assuming independent subcell colors.
+Use reported cell aspect where available so geography is not stretched. Pan,
+center-based zoom and selection use native focus/input/gestures; pointer input
+is supplementary to keyboard interaction and may have only cell precision.
+
+Expensive decoding and preparation belong outside the draw closure. An explicit
+effect owner bounds and cancels work, correlates results with the current camera,
+source and allocation, and rejects obsolete results. The first example reads
+bundled fixtures. Any later tile adapter must define cache, cancellation, error
+and attribution behavior without adding hidden I/O to values or views; provider
+credentials and network policy remain application-owned. No loader product or
+dependency is selected by this proposal.
 
 ## Searchable selection
 

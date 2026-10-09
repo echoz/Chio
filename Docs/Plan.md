@@ -1,7 +1,7 @@
 # Chio plan and verification
 
-This document records the shipped scope, verification policy and remaining
-boundaries. [Design](Design.md) owns accepted architecture and behavior;
+This document records shipped scope, verification policy, proposed work and
+remaining boundaries. [Design](Design.md) owns architecture and behavior;
 [Usage](Usage.md) owns API recipes; [Examples](Examples.md) owns launch commands
 and controls. Earlier investigations and per-slice results remain in the
 [v0.1.0 development record](https://github.com/echoz/Chio/blob/v0.1.0/Docs/Plan.md)
@@ -63,11 +63,110 @@ remain in the example target. The diff reader proves bounded read-only
 unified/split presentation and hunk navigation; it is not a public diff API,
 editor, VCS integration or large-document solution.
 
+## Proposed next slice: 2D maps
+
+Planning proposal, 2026-10-08. The user wants world and street maps, vector input,
+detail reduction and a minimum usable size in a flat 2D presentation. Research
+supports a prototype; rendering quality, performance and dependency suitability
+are not yet proved. This proposal adds no shipped API or implementation.
+
+Build one composable map with themed geography, readable labels, locations and
+route overlays. Keep source loading separate from presentation. The proposed
+[design boundary](Design.md#geographic-maps-proposed) retains SwiftTUI's renderer,
+layout, input and focus. The first usable deliverable is an **offline world and
+street example using the same component**, not a world-only outline demo.
+
+### 1. Prove the terminal rendering
+
+Use a small Natural Earth world fixture and an attributed OSM-derived neighborhood
+fixture containing roads, water, selected buildings and names. Record provenance,
+source version/date, license and conversion steps. Start with bounded local
+GeoJSON; no online service or API key is needed to judge the component.
+
+Prototype projection, cell-aspect correction, lines, polygon fills/holes and
+native text labels. Compare world and street detail at representative allocations
+(100×30, 60×20 and 36×18 cells), with reported and estimated cell metrics. These
+are test sizes, not promised minimums. Measure and choose the minimum usable
+allocation for each view and its fallback. Check per-cell color priority and
+legibility in default, light and btop themes before freezing a public API.
+
+Exit: both maps are recognizable, useful detail survives reduction, small layouts
+degrade deliberately, and recorded vertex counts, frame times, memory and terminal
+output establish realistic budgets. If native drawing cannot support the result,
+record the specific limitation before expanding the implementation scope.
+
+### 2. Build the reusable offline component
+
+Implement checked geography/camera values, bounded preparation and themed native
+presentation within the existing Chio target. Follow existing responsibility
+directories; add no package split or general map DSL. Pan/zoom, selected markers,
+route overlays, prioritized labels and the below-minimum summary are the reusable
+behavior. Applications supply features and own location meaning and route creation.
+Resizing reflows detail while preserving camera and selection; theme changes
+preserve interaction. Keyboard navigation must work without mouse reporting.
+
+Exit: a runnable local example switches world/neighborhood fixtures and exercises
+pan, zoom, selection, resizing and themes. Add model tests for checked decoding,
+projection, latitude bounds, antimeridian crossing, clipping, holes and work limits;
+raster tests for detail/label priority, color collisions and size fallbacks; hosted
+tests for focus, authoritative bindings, batched input and resize transitions.
+Test cancellation and rejection of stale preparation results with controlled work.
+
+### 3. Verify and publish the first slice
+
+Run the existing [verification gate](#running-checks), adding a bounded release
+terminal workflow and the map regression suites without weakening existing checks.
+Measure rapid pan/zoom against the budgets from the proof. Exercise macOS and
+Linux separately; keep live Ghostty/Blink SSH appearance and latency evidence
+distinct from local raster and PTY results. Verify estimated cell metrics and
+limited-color readability without reopening the shelved color-detection work.
+
+Update public usage, example commands and README inspiration credits. Add the
+map component to the [showcase](#demo-site), including matching recordings,
+three-theme previews and commands. Exit: verified implementation and published
+example evidence; only then describe the offline map slice as delivered.
+
+### Later proposal: vector tile loading
+
+For arbitrary street exploration, evaluate MVT decoding plus a configurable tile
+source. Map source layers into the demonstrated geographic model; tile-local
+coordinates, layer identities and optional feature IDs are not global geography
+or stable selection identities. Respect extent, buffered geometry and attribution.
+Define missing/loading/failed tile behavior, bounded concurrency and cache sizes,
+request cancellation, stale-result rejection and malformed/oversized input limits.
+Keep deterministic fixture-backed tests and examples as the default.
+
+This is a separate decision: live external-service examples remain deferred by
+project policy. OpenFreeMap is a provider candidate, not a promised service or
+default network dependency. PMTiles/MBTiles, offline downloads, geocoding and route
+calculation are not required for the first slice.
+
+### Evidence and dependency decisions
+
+- [Natural Earth](https://www.naturalearthdata.com/downloads/) supplies generalized
+  world vectors under [public-domain terms](https://www.naturalearthdata.com/about/terms-of-use/).
+  It is not street data; OSM-derived fixtures retain their own attribution/license.
+- [GeoJSON](https://www.rfc-editor.org/rfc/rfc7946.html) is the initial fixture
+  interchange candidate. Support the geometry subset the examples actually use,
+  with explicit rejection/fallback for unsupported input rather than a GIS framework.
+- [MVT](https://github.com/mapbox/vector-tile-spec) defines tiled vectors;
+  [OpenFreeMap](https://openfreemap.org/) is a possible OSM-derived source.
+  [MVTTools](https://github.com/Outdooractive/mvt-tools) is a Swift decoder candidate;
+  compare its dependency/build cost with a narrow adapter using
+  [SwiftProtobuf](https://github.com/apple/swift-protobuf) before selecting a pin.
+  Audit compression/system-library needs and run macOS/Linux consumer checks;
+  neither library choice nor static-musl compatibility has been verified.
+- [MapSCII](https://github.com/rastapasta/mapscii) is a terminal-map UX reference,
+  not a dependency or API to port. The pinned native
+  [Canvas API](https://github.com/SwiftTUI/swift-tui/blob/2d84ac7083993da2ef52e9d3d30255467efb9553/Sources/SwiftTUIPrimitives/Draw/CanvasDrawing.swift)
+  establishes available drawing operations, not map performance.
+
 ## Remaining scope audit
 
-There is no committed follow-on component queue. A real application using Chio
-is the recommended next validation step. Further hardening and a stable release
-are possible directions, not approved numbered phases or completion promises.
+The map proposal above is the next design under consideration; there is no
+committed broader component queue. Real application use remains useful validation.
+Further hardening and a stable release are possible directions, not approved
+numbered phases or completion promises.
 
 Prioritize demonstrated regressions in shipped behavior: focus, selection,
 editing, narrow layout, presentation, responsiveness and supported-platform
