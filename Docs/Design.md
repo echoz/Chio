@@ -14,6 +14,8 @@ SwiftTUI owns rendering, terminal lifecycle, layout, state, input, focus,
 scrolling, scheduling and native presentation. Chio supplies semantic themes,
 native control styles and composed views. One SwiftPM package exports the `Chio`
 library and `chio-dashboard` executable; applications compose SwiftTUI directly.
+Experimental proofs stay under `Spikes/`, with separate executable/test targets;
+their types are internal and do not expand the public Chio API.
 
 A public addition must provide reusable presentation or interaction: readability,
 focus/selection feedback, filtering, editing or navigation. Renaming a primitive
@@ -87,6 +89,7 @@ application work. These examples do not establish product parity.
 | `Sources/Chio/Execution` | Filesystem loading/confirmation checks |
 | `Sources/Chio/Presentation` | Components/environment integration; `Styles` owns native styles |
 | `Examples/AgentDashboard` | Local models, workflows/views and thin entry point |
+| `Spikes/MapRendering`, `Tests/ChioMapSpikeTests` | Experimental offline vector rendering and its model/raster checks |
 | `Tests/ChioTests`, `Tests/ChioDashboardTests` | Library responsibilities and example domain/hosted interactions |
 | `Docs/Site`, `Docs/Media`, `Scripts/docs` | Static showcase, shared terminal assets and assembly without Swift build |
 
@@ -128,7 +131,7 @@ in Releases; avoid duplicating full contracts across documents.
 | [Native integration](Decisions/NativeIntegration.md) | Current limitations and ownership |
 | [Terminal colors](Decisions/TerminalColors.md) | Accepted native detection; conversion experiment shelved |
 | [Table rendering](Decisions/TableRendering.md) | Proposed correction; patches unapplied |
-| <a id="geographic-maps-proposed"></a>[Geographic maps](Decisions/GeographicMaps.md) | Proposed; no implementation |
+| <a id="geographic-maps-proposed"></a>[Geographic maps](Decisions/GeographicMaps.md) | Rendering spike; reusable API remains proposed |
 
 Topic anchors above retain earlier deep links. Historical implementation details
 and original investigations remain in [the v0.1.0 documents](https://github.com/echoz/Chio/tree/v0.1.0/Docs)

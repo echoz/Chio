@@ -1,9 +1,124 @@
 # 2D geographic maps
 
-**Status:** Proposed, 2026-10-08; no implementation or shipped API.
+**Status:** Rendering spike implemented, 2026-10-08. The reusable Chio component
+and its public API remain proposed.
 
 Prove world and street maps from vectors within native SwiftTUI rendering.
-The [active plan](../Plan.md) tracks the next steps.
+The [active plan](../Plan.md) tracks the next steps. Experimental code lives in
+`Spikes/MapRendering`, built as `chio-map-spike`; it is not exported by `Chio`.
+
+## Rendering spike findings
+
+One native `Canvas` renders real Natural Earth world land and an OpenStreetMap
+neighborhood around Singapore's Marina Bay. It combines braille coastlines/roads
+with cell-background area fills; native `Text` supplies labels. Native input,
+focus, resizing and lifecycle own interaction. No new dependency, renderer,
+layout engine or network service was added.
+
+The experiment deliberately compares area fills and labels with `f` and `l`.
+World/Singapore switch with Space; pan, center-based zoom, reset and all three
+Chio themes work in the same view. `--cell-aspect` lets measurements compare cell
+height/width ratios; normal use reads native reported metrics or the estimated
+2:1 fallback. It does not improve native terminal capability detection.
+
+### Data and preparation
+
+- World: 127 polygons, 5,143 source vertices and one hole, 133,553-byte GeoJSON.
+- Singapore: 2,822 features, 20,494 source vertices and 17 holes, 909,635-byte GeoJSON.
+- [Provenance and reproduction](../../Spikes/MapRendering/Fixtures/Provenance.md)
+  retain exact source snapshots, dates, licenses, source pins and a deterministic
+  converter. Natural Earth is public domain; OSM data remains ODbL with visible
+  attribution. The repository's MIT code license does not relicense that data.
+- Checked immutable values reject invalid coordinates, cameras, rings and budgets,
+  including decoding paths. Runtime accepts the fixtures' narrow GeoJSON subset;
+  this is not a general GeoJSON/GIS implementation or topology validator.
+- Preparation projects Web Mercator with the explicit ±85.05112878° cutoff,
+  unwraps ordinary dateline crossings, preserves full-world polar cuts, culls
+  polygons, clips lines and reduces samples within 0.25 cell. Rings/holes retain
+  source geometry; scanline fills intersect only allocated rows.
+- A single Canvas preserves all layers' braille masks. One foreground per cell
+  means the highest-priority road determines the color of every lit dot in a
+  crossing cell. Cell backgrounds preserve fills beneath strokes; holes expose
+  underlying layers. Labels use native Unicode widths, stable priority, edge and
+  collision rejection, and a finite count tied to allocation.
+
+### What the pictures establish
+
+World coastlines and the neighborhood's river, reservoir, parks and roads are
+recognizable at a 100×30 terminal. Default, light and btop preserve hierarchy.
+The full-world Web Mercator view is physically square and letterboxed; high
+latitudes dominate it. That is a projection tradeoff, not stretch caused by
+terminal cell shape. An alternative world overview projection remains worth
+comparing before making a public camera/projection promise.
+
+100×30 includes a 20-row drawing; CLI header/credits/controls consume ten rows.
+Forced drawings at 60×20 and 36×18 retain geography but lose useful street detail.
+The provisional floor is a 32×16 world allocation or 58×16 street allocation;
+60×26 terminals satisfy both with 2:1 cells. Other cell ratios can require more
+space. Below it, the normal UI shows a summary and retains its camera for resize.
+`--inspect-small` bypasses that policy for comparisons, without implying usability.
+
+The street overview is still dense. Offline source filtering, line sample reduction
+and label collisions are useful, but do not establish sufficient cartographic
+detail reduction: short road fragments and small building outlines still compete
+for cells. Before promotion, compare zoom/allocation-based layer admission and
+coalescing of road geometry. Preserve meaningful roads and polygon holes; dropping
+arbitrary samples to obtain a faster frame is not an acceptable policy.
+
+### Measured scope and remaining limits
+
+Local macOS arm64 release measurements use the two bundled datasets and 20 samples
+after one warm-up, with a fresh native renderer per frame. These are **map allocations**,
+not full terminal sizes. Preparation and raster medians in milliseconds:
+
+| Map allocation | World prepare / raster | Street prepare / raster |
+| --- | --- | --- |
+| 100×30 | 0.4 / 3.0 | 3.3 / 21.7 |
+| 60×20 | 0.4 / 2.0 | 3.4 / 11.5 |
+| 36×18 | 0.4 / 1.6 | 3.5 / 7.6 |
+
+These are an exploratory baseline, not a frame-time guarantee. Maximum observed
+prepared geometry reached roughly 9,600 world vertices and 20,700 street vertices
+(including retained fill rings and stroke paths). The timing probe uses uniform
+selected-surface area colors; separate visual checks assess the UI's water/park
+tints in each theme. Maximum observed
+street preparation/raster times were about 3.8/23 ms; a separate child-process
+resource observation peaked near 47.3 MiB RSS. The unstripped release executable
+was about 47.9 MiB; it also needs its SwiftPM fixture resource bundle. No static
+Linux distribution claim follows from this experiment.
+
+The local PTY sequence produced about 223 kB for world/street switching, zoom,
+pan, a theme change, fill/label comparisons, resize and reset. Individual street
+transitions emitted roughly 24–33 kB. The probe records settlement time, including
+deliberate quiet waits; it is not an input-to-pixel latency benchmark. Bandwidth
+is another reason to reduce overview detail before assuming pleasant SSH use.
+
+Input limits make work finite, not predictably fast: 4,000 overlapping full-screen
+polygons could still cause 96 million cell writes at 240×100. Only bounded fixtures
+were performance-tested. A drawing/preparation work budget and overload policy
+are required before accepting arbitrary application-supplied datasets.
+
+Decoding happens once at the CLI boundary. Preparation currently runs synchronously
+when the experimental view changes. This intentionally measures the basic path;
+it does **not** satisfy the proposed asynchronous cancellation/stale-result contract.
+Markers, routes, feature selection, authoritative external bindings, pointer hit
+testing, live tiles, limited-color readability and live Ghostty/Blink SSH behavior
+remain unproved or unimplemented. Do not promote these internal types unchanged.
+
+### Verification of the proof
+
+27 map tests pass in debug and release: checked construction/decoding, projection
+and aspect, clipping, dateline/polar rings, holes, label anchors/collisions/Unicode,
+layer color priority, real fixtures and minimum allocation. Independent review
+found a collapsing polar strip and an edge-anchored road label; both are fixed
+with regressions. The full macOS gate passes, including all existing snapshots
+and terminal workflows, offline fixture reproduction and the added map PTY check.
+
+The showcase has an explicit Experiments category, a 13-second terminal recording
+and three native-raster theme previews. Local Chromium checks cover playback,
+pause, seeking, theme-linked commands, retained navigation, a 390-pixel layout,
+script-free previews and missing-asset fallbacks. These checks do not establish
+appearance in every terminal emulator or browser.
 
 ## Geographic maps (proposed)
 
@@ -58,10 +173,11 @@ dependency is selected by this proposal.
 
 ## Proposed next slice: 2D maps
 
-Planning proposal, 2026-10-08. The user wants world and street maps, vector input,
-detail reduction and a minimum usable size in a flat 2D presentation. Research
-supports a prototype; rendering quality, performance and dependency suitability
-are not yet proved. This proposal adds no shipped API or implementation.
+Delivery gates proposed on 2026-10-08. The user wants world and street maps,
+vector input, detail reduction and a minimum usable size in a flat 2D presentation.
+The findings above record what the rendering experiment establishes and leaves
+open. The gates below remain requirements for the reusable component; the spike
+alone does not deliver that API.
 
 Build one composable map with themed geography, readable labels, locations and
 route overlays. Keep source loading separate from presentation. The proposed

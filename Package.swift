@@ -8,6 +8,7 @@ let package = Package(
     products: [
         .library(name: "Chio", targets: ["Chio"]),
         .executable(name: "chio-dashboard", targets: ["ChioDashboard"]),
+        .executable(name: "chio-map-spike", targets: ["ChioMapSpike"]),
     ],
     dependencies: [
         // Pin the inspected beta API while the first vertical slice is developed.
@@ -56,6 +57,22 @@ let package = Package(
                 "Chio",
                 .product(name: "SwiftTUIRuntime", package: "swift-tui"),
             ]
+        ),
+        .testTarget(
+            name: "ChioMapSpikeTests",
+            dependencies: [
+                "ChioMapSpike",
+                .product(name: "SwiftTUIRuntime", package: "swift-tui"),
+            ]
+        ),
+        .executableTarget(
+            name: "ChioMapSpike",
+            dependencies: [
+                "Chio",
+                .product(name: "SwiftTUI", package: "swift-tui"),
+            ],
+            path: "Spikes/MapRendering",
+            resources: [.copy("Fixtures")]
         ),
         .testTarget(
             name: "ChioDashboardTests",

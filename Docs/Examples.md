@@ -29,6 +29,34 @@ remain part of that recorded session.
 Themes change styling, not terminal color support. For true-color terminals over
 SSH, see [Colors over SSH](#colors-over-ssh).
 
+## Experimental maps
+
+The rendering proof is a separate executable, not a public Chio component:
+
+```sh
+swift run -c release chio-map-spike --scene world
+swift run -c release chio-map-spike --scene street --theme btop
+```
+
+Start at **100 × 30**. Arrows pan, `+`/`-` zoom, Space switches world/Singapore,
+`t` cycles themes, `f` toggles area fills, `l` toggles labels, `r` resets the camera,
+and `q` quits. No network request or API key is needed at runtime. Below the
+provisional map allocation, a resize hint replaces the drawing and retains the
+camera. Try **60 × 26** or larger with ordinary 2:1 terminal cells.
+
+The world uses Natural Earth land; the neighborhood uses real OpenStreetMap
+vectors around Marina Bay. Data credits and license links remain on screen.
+See [fixture provenance](../Spikes/MapRendering/Fixtures/Provenance.md) and the
+[map decision](Decisions/GeographicMaps.md#rendering-spike-findings) for measurements,
+limitations and the work needed before a reusable component. In particular,
+this proof has no feature selection, routes, tile loader or asynchronous preparation.
+
+Inspect smaller drawings with `--inspect-small`, or override cell height/width
+ratio with `--cell-aspect 2`. These are experiment controls, not terminal detection
+overrides for applications. `--snapshot`, `--snapshot-json` and `--benchmark`
+provide deterministic text/cell exports and local preparation/raster timings.
+For a true-color SSH terminal, prefix the launch with `COLORTERM=truecolor`.
+
 ## Dashboard
 
 Use Swift 6.4 or later on macOS 15 or later, matching the pinned upstream requirements:

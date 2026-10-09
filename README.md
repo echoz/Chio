@@ -73,6 +73,8 @@ Add `--choices`, `--text-entry`, `--feedback`, or `--files` to try a focused exa
   and list/detail workspaces.
 - [Hunk](https://www.hunk.dev/) — readable diffs and keyboard-driven review flows;
   the reference for the example-only diff reader prototype.
+- [MapSCII](https://github.com/rastapasta/mapscii) — terminal cartography, explored
+  in the [experimental offline map](Docs/Examples.md#experimental-maps).
 
 Chio adapts these ideas to native SwiftTUI composition and Swift APIs.
 
@@ -83,4 +85,5 @@ Chio adapts these ideas to native SwiftTUI composition and Swift APIs.
 - [Design](Docs/Design.md) — architecture and interaction contracts
 - [Coverage](Docs/Releases/0.1.0.md#component-coverage) · [Plan](Docs/Plan.md) · [Development checks](Docs/Verification.md#running-checks)
 
-[MIT License](LICENSE).
+Code: [MIT License](LICENSE). Experimental map data retains its
+[source licenses](Spikes/MapRendering/Fixtures/Provenance.md).

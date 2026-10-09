@@ -15,7 +15,8 @@ bash Scripts/ci/verify.sh
 
 The gate serializes builds and hosted tests. It runs all tests in release,
 selected tests in debug, a standalone release build, 20 plain-text snapshots and
-15 real pseudo-terminal workflows. Snapshot files are inspection artifacts;
+15 dashboard pseudo-terminal workflows, plus the experimental map's fixture
+reproduction and PTY workflow. Snapshot files are inspection artifacts;
 Swift tests assert the rendering contracts.
 
 The approved debug/release split keeps library controls, domain values, raster
@@ -39,6 +40,14 @@ To exercise an already-built binary:
 python3 Scripts/ci/terminal-smoke.py .build/release/chio-dashboard
 ```
 
+The map experiment additionally runs `Scripts/maps/prepare-fixtures.py --verify`
+and `Scripts/maps/terminal-probe.py` against its release binary. Its `--benchmark`
+mode measures local preparation and native raster work; it does not measure SSH
+latency. `Scripts/maps/render-snapshot.py` converts `--snapshot-json` exports into
+inspection previews with Pillow and explicit text/braille fonts. Its default
+fonts are macOS paths; supply `--font` and `--symbol-font` elsewhere. It is an
+optional capture tool, not a Swift package or CI dependency.
+
 Pass an example flag such as `--choices`, `--inbox` or `--diff` for its workflow;
 [verify.sh](../Scripts/ci/verify.sh) is the complete list. Terminal checks cover
 input/output, raw mode, cursor/alternate-screen restoration and exact original
@@ -52,10 +61,11 @@ the true-color run must preserve authored RGB.
 
 ### Demo site
 
-The [showcase](https://echoz.github.io/Chio/) serves twelve recordings and 36
+The [showcase](https://echoz.github.io/Chio/) serves thirteen recordings and 39
 three-theme previews from `Docs/Media`, using the pinned local asciinema player
 in `Docs/Site`. Its upstream license remains with the vendored assets. Components
-and compositions stay separate; each card identifies Chio APIs, native controls,
+and compositions stay separate; experiments have their own category and make no
+public API claim. Each card identifies Chio APIs, native controls,
 application-owned behavior, source, launch command and keyboard guide.
 
 Each example retains its selected static-preview theme during navigation. The

@@ -9,7 +9,7 @@ live in [0.1.0](Releases/0.1.0.md).
 
 ## Proposed next slice: 2D maps
 
-**Status:** Planned proposal; implementation has not started. The requested
+**Status:** Rendering spike implemented; reusable component remains proposed. The requested
 outcome is one themed, flat 2D component supporting world and street vectors,
 with detail reduction and a measured minimum usable size. The
 [geographic map decision](Decisions/GeographicMaps.md) owns the detailed design,
@@ -21,9 +21,13 @@ research, dependencies and acceptance gates.
 | 2. Reusable offline map | Shared camera, pan/zoom, markers, routes, labels and compact fallback | Model/raster/hosted coverage, authoritative bindings, resizing and stale-work rejection |
 | 3. Verify and publish | Runnable example and matching showcase | Required macOS/Linux and release terminal checks, scoped SSH evidence, recordings/previews and published verification |
 
-The next implementation step is the rendering proof. Keep the first usable
-slice offline, exercising both world and street data. Numeric minimums, layer
-budgets, fill/label strategy and public API shape remain questions for that proof.
+The runnable proof is `chio-map-spike`, under `Spikes/MapRendering`; it adds no
+public library API. [Findings](Decisions/GeographicMaps.md#rendering-spike-findings)
+record native rendering, source budgets, provisional sizes and verification.
+The next work is to reduce street density at overview scales, establish a drawing
+work budget, and then design the reusable offline component. Do not promote the
+experimental types unchanged: camera bindings, asynchronous preparation/stale
+results, markers, routes and selection have not yet been implemented.
 
 Live vector tiles are a later, separate decision. Decoder/provider choices and
 static linking compatibility are unverified; project policy still defers live

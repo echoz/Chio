@@ -39,6 +39,7 @@
             <nav class="demo-categories" aria-label="Example categories">
               <a href="#choices" data-category="components">Components</a>
               <a href="#dashboard" data-category="compositions">Compositions</a>
+              <a href="#maps" data-category="experiments">Experiments</a>
             </nav>
             <span class="recording-label"><span aria-hidden="true">●</span> Recorded in a real terminal</span>
           </div>
@@ -57,6 +58,9 @@
             <a href="#metrics" data-demo="metrics">Metrics</a>
             <a href="#inbox" data-demo="inbox">Review inbox</a>
             <a href="#diff" data-demo="diff">Diff reader</a>
+          </nav>
+          <nav class="demo-options" data-recording-group="experiments" aria-label="Experimental rendering proofs">
+            <a href="#maps" data-demo="maps">Maps</a>
           </nav>
         </div>
 
@@ -573,6 +577,51 @@
               <div><dt>Example code</dt><dd>The normalized local diff fixture, unified/split layout, and hunk navigation.</dd></div>
             </dl>
             <a class="example-source" href="https://github.com/echoz/Chio/blob/main/Examples/AgentDashboard/Presentation/DiffExampleView.swift">View example source <span aria-hidden="true">↗</span></a>
+          </div>
+        </article>
+
+        <article id="maps" class="recording" data-cols="100" data-rows="30">
+          <div class="recording-heading">
+            <h3>World and street vectors, in the terminal</h3>
+            <span class="recording-kind">Experimental rendering proof</span>
+          </div>
+          <div class="theme-preview-controls" hidden>
+            <label for="maps-preview-theme">Static preview
+              <select id="maps-preview-theme" aria-describedby="maps-preview-status">
+                <option value="default" selected>Default</option>
+                <option value="light">Light</option>
+                <option value="btop">btop</option>
+              </select>
+            </label>
+            <button class="play-recording" type="button" hidden><span aria-hidden="true">▶</span> Play original recording</button>
+            <button class="show-theme-preview" type="button" hidden>Show static preview</button>
+            <p id="maps-preview-status" class="preview-status" role="status"></p>
+          </div>
+          <div class="recording-preview">
+            <img class="recording-image" src="recordings/maps.png" alt="An experimental offline street map of Singapore's Marina Bay with roads, water, parks and building outlines.">
+          </div>
+          <div class="player" aria-label="Experimental maps recording"></div>
+          <p class="player-message" role="status" hidden></p>
+          <div class="recording-caption">
+            <p>An offline vector proof draws the world and real Singapore streets through SwiftTUI. Pan, zoom, switch scenes, and compare polygon fills and labels. Static previews export the same native scene; the recording captures a real terminal session. This experiment has no public map API.</p>
+            <a class="download" href="recordings/maps.cast" download>Download recording ↓</a>
+          </div>
+          <div class="recording-run">
+            <div class="run-heading">
+              <h4>Try this experiment</h4>
+              <a href="https://github.com/echoz/Chio/blob/main/Docs/Decisions/GeographicMaps.md">Map proof and decisions <span aria-hidden="true">↗</span></a>
+            </div>
+            <pre><code>swift run -c release chio-map-spike --scene street</code></pre>
+            <p>Arrow keys pan · + / − zoom · Space switches world/street · t changes theme · f toggles fills · l toggles labels · r resets · q quits.</p>
+          </div>
+          <div class="recording-details">
+            <dl class="recording-ingredients">
+              <div><dt>Chio</dt><dd>Existing themes; experimental map code stays in the spike.</dd></div>
+              <div><dt>SwiftTUI</dt><dd>Native drawing, text labels, layout and keyboard input.</dd></div>
+              <div><dt>Spike code</dt><dd>Geographic projection, bounded vector preparation, layer priority and offline fixtures.</dd></div>
+              <div><dt>Map data</dt><dd>Natural Earth <a href="https://www.naturalearthdata.com/about/terms-of-use/">public-domain land</a> · © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> · <a href="https://opendatacommons.org/licenses/odbl/1-0/">ODbL 1.0</a></dd></div>
+            </dl>
+            <a class="example-source" href="https://github.com/echoz/Chio/tree/main/Spikes/MapRendering">View experiment source <span aria-hidden="true">↗</span></a>
           </div>
         </article>
 
