@@ -153,6 +153,94 @@ collection, retention, clocks and units.
 See the [compact metrics example](Examples.md#compact-metrics) for local sample
 updates, missing and empty history, theme changes and adaptive composition.
 
+## Maps
+
+`MapView` draws a north-up world or street map from a retained `MapSource`.
+Supply application-owned camera and marker-selection bindings, plus optional
+location and route overlays:
+
+```swift
+import SwiftTUI
+import Chio
+
+struct PlacesView: View {
+    let source: MapSource
+    let overlays: MapOverlays
+    @Binding var camera: MapCamera
+    @Binding var selection: String?
+    let activate: (MapMarker) -> Void
+
+    var body: some View {
+        MapView(source: source, camera: $camera, selection: $selection,
+                overlays: overlays, detail: .minimal)
+            .mapFills(true)
+            .mapLabels(true)
+            .onActivate { marker in activate(marker) }
+            .frame(width: 100, height: 26)
+            .chioTheme(.default)
+    }
+}
+```
+
+Construct and retain checked geography and overlays at the application boundary:
+
+```swift
+let start = try MapCoordinate(latitude: 1.289, longitude: 103.866)
+let end = try MapCoordinate(latitude: 1.292, longitude: 103.870)
+let camera = try MapCamera(center: start, longitudeSpan: 0.030)
+let marker = try MapMarker(id: "meeting-place", coordinate: start, title: "Meet here")
+let route = try MapRoute(id: "walk", title: "Our walk",
+                         path: MapPolyline(coordinates: [start, end]))
+let overlays = try MapOverlays(markers: [marker], routes: [route])
+```
+
+Coordinates, cameras, source geometry, metadata and overlays are immutable.
+Checked constructors and decoding reject invalid values. Marker IDs and route
+IDs are separate namespaces; IDs must be unique within their own collection.
+Overlays accept at most 256 markers, 64 routes and 200,000 route vertices.
+Use `.empty` when no annotations are needed. An empty marker or route title omits
+its supporting label. Chio paints supplied paths; applications calculate routes.
+
+While the map has native focus, arrows pan and `+`/`-` zoom around the center.
+`n`/`p` cycle through markers in authored order and center the selected location;
+Return calls `onActivate` for the selected marker. The map is one focus stop;
+Tab/Shift-Tab continue native traversal. Camera and selection bindings remain
+authoritative. Unknown selected IDs are retained, and external selection changes
+do not implicitly move the camera or activate a location. `.mapLabels(false)`
+hides background, route and unselected-marker labels; selected-marker labels remain
+enabled and take priority where they fit. Overlapping unselected markers may be
+omitted from the drawing, while remaining keyboard-selectable.
+
+Customize water and park fills through `theme.replacing(map:
+theme.map.replacing(water: color))`. These colors are independent of syntax
+highlighting. Routes and selected markers use `theme.colors.accent`.
+
+Detail is `.silhouette`, `.minimal` (the default), `.abstract`, or `.source`.
+It controls geographic classes, boundary simplification and background labels;
+markers and routes remain independent. A themed native Canvas paints geometry,
+with native text for labels. Preparation runs asynchronously with bounded work;
+obsolete results cannot replace the current request. Overload and compact layouts
+show explicit summaries instead of presenting incomplete geography as complete.
+
+Allow at least 32 × 16 drawing cells at longitude spans of 60 degrees or more,
+or 58 × 16 for closer views, plus the component’s two source-credit rows.
+Smaller layouts retain camera and selection for expansion. Source coverage is a
+separate fact from feature bounds: geometry may extend outside the covered area.
+
+Applications load bytes and construct sources before presentation. For normalized
+GeoJSON, use `MapDataset.decodeGeoJSON(data)` for the supported subset, then
+`MapSource(dataset: dataset, metadata: metadata, coverage: coverage)`. Source
+metadata requires attribution, license and source URLs, and a pinned revision;
+`attributionURL` is optional. `MapView` displays source credits in two rows.
+
+`NormalizedGeoJSONMapAdapter(metadata:coverage:)` adapts normalized GeoJSON bytes.
+`OpenMapTilesAdapter(tile:metadata:)` adapts MVT bytes with an explicit
+`MapTileCoordinate`. Both return the same checked `MapSource` representation;
+neither adapter loads files, makes requests, stitches tiles or chooses provider
+resolution. Applications own acquisition, network policy, caching and data licenses.
+See the [runnable example](Examples.md#maps) and its
+[fixture provenance](../Examples/Maps/Fixtures/Provenance.md).
+
 ## Tabs
 
 Use SwiftTUI's tab declarations with stable values; the theme supplies their style:

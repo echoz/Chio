@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rebuild the offline map spike GeoJSON from the retained, attributed snapshots."""
+"""Rebuild the offline map example GeoJSON from the retained, attributed snapshots."""
 import argparse
 import collections
 import gzip
@@ -9,7 +9,7 @@ import math
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-FIXTURES = ROOT / 'Spikes/MapRendering/Fixtures'
+FIXTURES = ROOT / 'Examples/Maps/Fixtures'
 KINDS = {'land', 'water', 'park', 'building', 'road', 'primaryRoad'}
 
 

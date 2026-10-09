@@ -13,7 +13,8 @@ and launch workflows. [Release records](Releases/0.1.0.md) preserve dated eviden
 SwiftTUI owns rendering, terminal lifecycle, layout, state, input, focus,
 scrolling, scheduling and native presentation. Chio supplies semantic themes,
 native control styles and composed views. One SwiftPM package exports the `Chio`
-library and `chio-dashboard` executable; applications compose SwiftTUI directly.
+library and the `chio-dashboard` and `chio-maps` examples; applications compose
+SwiftTUI directly.
 Experimental proofs stay under `Spikes/`, with separate executable/test targets;
 their types are internal and do not expand the public Chio API.
 
@@ -32,8 +33,8 @@ Owned domain values and view configuration have `let` stored properties and pure
 computed observations. Transformations return replacements and leave inputs
 unchanged; local scratch mutation is permitted. Explicit mutable boundaries are
 SwiftTUI state/binding/focus/namespace/environment wrappers, ArgumentParser command
-options, filesystem resource owners, and live test-session recorders with frames,
-continuations and deadlines.
+options, filesystem resource owners, the serial map preparation actor, and live
+test-session recorders with frames, continuations and deadlines.
 
 Prefer synthesized `Hashable`, `Codable` and `Sendable` where their contracts fit.
 Enforce restricted-value invariants through construction, replacement and decoding;
@@ -53,8 +54,8 @@ neutral defaults; modifier copies retain callbacks and native state identity.
 
 Native `StrokeStyle` is only `Equatable` and `Sendable`, including inaccessible
 state. `ChioTheme` and `Treatments` retain those conformances; `Colors`,
-`SyntaxColors` and `Spacing` also support hashing and coding. Do not clone strokes
-or add lossy coding to gain conformance. Parsed Markdown and report/presentation
+`SyntaxColors`, `MapColors` and `Spacing` also support hashing and coding. Do not
+clone strokes or add lossy coding to gain conformance. Parsed Markdown and report/presentation
 snapshots are immutable, hashable and sendable without a persistence schema:
 native table alignment is not Codable, and reconstructing a report from its agent
 would lose the captured document. Process-relative example timekeeping likewise
@@ -85,11 +86,11 @@ application work. These examples do not establish product parity.
 
 | Path | Responsibility |
 | --- | --- |
-| `Sources/Chio/Domain` | Theme/shortcut values, pure search/membership, pagination, validation visibility, file observations and parsed Markdown |
-| `Sources/Chio/Execution` | Filesystem loading/confirmation checks |
+| `Sources/Chio/Domain` | Theme/shortcut values, pure search/membership, pagination, validation visibility, file observations, parsed Markdown and checked geographic values |
+| `Sources/Chio/Execution` | Filesystem loading/confirmation and serial map preparation |
 | `Sources/Chio/Presentation` | Components/environment integration; `Styles` owns native styles |
 | `Examples/AgentDashboard` | Local models, workflows/views and thin entry point |
-| `Spikes/MapRendering`, `Tests/ChioMapSpikeTests` | Experimental offline vector rendering and its model/raster checks |
+| `Examples/Maps`, `Tests/ChioMapTests` | Offline maps consuming the public API, real fixtures and integration checks |
 | `Tests/ChioTests`, `Tests/ChioDashboardTests` | Library responsibilities and example domain/hosted interactions |
 | `Docs/Site`, `Docs/Media`, `Scripts/docs` | Static showcase, shared terminal assets and assembly without Swift build |
 
@@ -131,7 +132,7 @@ in Releases; avoid duplicating full contracts across documents.
 | [Native integration](Decisions/NativeIntegration.md) | Current limitations and ownership |
 | [Terminal colors](Decisions/TerminalColors.md) | Accepted native detection; conversion experiment shelved |
 | [Table rendering](Decisions/TableRendering.md) | Proposed correction; patches unapplied |
-| <a id="geographic-maps-proposed"></a>[Geographic maps](Decisions/GeographicMaps.md) | Rendering spike; reusable API remains proposed |
+| <a id="geographic-maps-proposed"></a>[Geographic maps](Decisions/GeographicMaps.md) | Accepted offline component; provider comparisons and live acquisition deferred |
 
 Topic anchors above retain earlier deep links. Historical implementation details
 and original investigations remain in [the v0.1.0 documents](https://github.com/echoz/Chio/tree/v0.1.0/Docs)

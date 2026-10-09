@@ -78,10 +78,10 @@ python3 Scripts/ci/terminal-smoke.py "$binary" --metrics
 python3 Scripts/ci/terminal-smoke.py "$binary" --inbox
 python3 Scripts/ci/terminal-smoke.py "$binary" --diff
 
-# Experimental map contracts run with the test targets above. Keep its real-data
-# reproduction and terminal workflow separate from the shipped dashboard checks.
+# Public map contracts run with the test targets above. Exercise the local map
+# example separately from the dashboard, including fixture provenance and raw input.
 python3 Scripts/maps/prepare-fixtures.py --verify
 swift build --force-resolved-versions --jobs "${SWIFT_BUILD_JOBS:-2}" \
-  -c release --product chio-map-spike
-map_binary="$(swift build -c release --show-bin-path)/chio-map-spike"
+  -c release --product chio-maps
+map_binary="$(swift build -c release --show-bin-path)/chio-maps"
 python3 Scripts/maps/terminal-probe.py "$map_binary" --output-dir .build/ci-results/maps

@@ -15,7 +15,7 @@ bash Scripts/ci/verify.sh
 
 The gate serializes builds and hosted tests. It runs all tests in release,
 selected tests in debug, a standalone release build, 20 plain-text snapshots and
-15 dashboard pseudo-terminal workflows, plus the experimental map's fixture
+15 dashboard pseudo-terminal workflows, plus the map example's fixture
 reproduction and PTY workflow. Snapshot files are inspection artifacts;
 Swift tests assert the rendering contracts.
 
@@ -40,15 +40,17 @@ To exercise an already-built binary:
 python3 Scripts/ci/terminal-smoke.py .build/release/chio-dashboard
 ```
 
-The map experiment additionally runs `Scripts/maps/prepare-fixtures.py --verify`
+The map example additionally runs `Scripts/maps/prepare-fixtures.py --verify`
 and `Scripts/maps/terminal-probe.py` against its release binary. The PTY checks
 compare map samples after pan and detail changes, including batched detail keys,
 endpoint limits and cycle wrapping, as well as retained camera text, offline
-coverage status and terminal restoration. Its `--benchmark` mode measures the
-default minimal treatment; use `--detail abstract` (or `silhouette`, `minimal`,
-`source`) to compare a level (`--source-detail` remains an alias). It measures
-local preparation and native raster work; it does not measure SSH
-latency. `Scripts/maps/render-snapshot.py` converts `--snapshot-json` exports into
+coverage status and terminal restoration. Its `--benchmark` mode measures the first completed hosted UI frame, including
+native startup, asynchronous preparation and frame delivery. It uses one warm-up
+and three measured fresh sessions per scene/allocation; small allocations measure
+the compact summary. Fixture I/O is excluded. These measurements replace the
+spike's separate preparation/drawing/raster timings and do not measure SSH latency.
+Use `--detail` and `--source` to choose retained input and presentation.
+`Scripts/maps/render-snapshot.py` converts `--snapshot-json` exports into
 inspection previews with Pillow and explicit text/braille fonts. Its default
 fonts are macOS paths; supply `--font` and `--symbol-font` elsewhere. It is an
 optional capture tool, not a Swift package or CI dependency.
@@ -72,10 +74,10 @@ Source-adapter changes additionally check the pinned raw MVT/TileJSON hashes,
 malformed/truncated protobuf, tag indices, command state, buffered coordinates,
 ring orientation/holes, multipart identities and input/work bounds. Exercise the
 real tile through all four shared detail levels, the three themes and narrow
-allocations. Hosted and PTY checks must preserve camera, detail, theme and native
-focus across source changes, including batched round trips and coverage recovery.
-`--benchmark --source openfreemap` measures the tile with the same preparation/
-drawing path; fixed tile resolution does not establish source-level selection,
+allocations. Hosted checks preserve camera, detail, theme and native focus across application
+source replacements. PTY checks exercise marker selection/activation, rapid input,
+coverage recovery, resizing and restoration. Provider comparisons are shelved.
+`--benchmark --source openfreemap` measures the tile through the same public hosted component; fixed tile resolution does not establish source-level selection,
 network acquisition, tile stitching or arbitrary-provider support.
 
 Pass an example flag such as `--choices`, `--inbox` or `--diff` for its workflow;
@@ -94,8 +96,7 @@ the true-color run must preserve authored RGB.
 The [showcase](https://echoz.github.io/Chio/) serves thirteen recordings and 39
 three-theme previews from `Docs/Media`, using the pinned local asciinema player
 in `Docs/Site`. Its upstream license remains with the vendored assets. Components
-and compositions stay separate; experiments have their own category and make no
-public API claim. Each card identifies Chio APIs, native controls,
+and compositions stay separate; the map component uses the same public API as its local example. Each card identifies Chio APIs, native controls,
 application-owned behavior, source, launch command and keyboard guide.
 
 Each example retains its selected static-preview theme during navigation. The

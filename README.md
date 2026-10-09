@@ -5,7 +5,7 @@
 *Chio* means attractive or pretty in Singlish. Chio is an opinionated, declarative
 framework for polished terminal interfaces, built on [SwiftTUI](https://github.com/SwiftTUI/swift-tui).
 Charm-inspired themes, searchable lists and checklists, form fields, file
-selection, and Markdown compose with native SwiftTUI views. SwiftTUI handles
+selection, maps, and Markdown compose with native SwiftTUI views. SwiftTUI handles
 rendering, layout, input, and focus.
 
 [![Watch Chio's dashboard recording](Docs/Media/dashboard.png)](https://echoz.github.io/Chio/)
@@ -61,6 +61,12 @@ command palette, and `q` to quit. Release mode gives better interactive performa
 For true-color terminals over SSH, prefix the command with `COLORTERM=truecolor`.
 
 Add `--choices`, `--text-entry`, `--feedback`, or `--files` to try a focused example.
+Try world and street maps with locations and routes:
+
+```sh
+swift run -c release chio-maps --map street
+```
+
 [Example controls and launch options →](Docs/Examples.md)
 
 ## Inspiration
@@ -74,7 +80,7 @@ Add `--choices`, `--text-entry`, `--feedback`, or `--files` to try a focused exa
 - [Hunk](https://www.hunk.dev/) — readable diffs and keyboard-driven review flows;
   the reference for the example-only diff reader prototype.
 - [MapSCII](https://github.com/rastapasta/mapscii) — terminal cartography, explored
-  in the [experimental offline map](Docs/Examples.md#experimental-maps).
+  in the [offline map component](Docs/Usage.md#maps).
 
 Chio adapts these ideas to native SwiftTUI composition and Swift APIs.
 
@@ -85,5 +91,5 @@ Chio adapts these ideas to native SwiftTUI composition and Swift APIs.
 - [Design](Docs/Design.md) — architecture and interaction contracts
 - [Coverage](Docs/Releases/0.1.0.md#component-coverage) · [Plan](Docs/Plan.md) · [Development checks](Docs/Verification.md#running-checks)
 
-Code: [MIT License](LICENSE). Experimental map data retains its
-[source licenses](Spikes/MapRendering/Fixtures/Provenance.md).
+Code: [MIT License](LICENSE). Bundled map data retains its
+[source licenses](Examples/Maps/Fixtures/Provenance.md).

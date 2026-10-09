@@ -6,17 +6,20 @@ public struct ChioTheme {
     public let spacing: Spacing
     public let treatments: Treatments
     public let syntax: SyntaxColors
+    public let map: MapColors
 
     public init(
         colors: Colors = .init(),
         spacing: Spacing = .init(),
         treatments: Treatments = .init(),
-        syntax: SyntaxColors = .init()
+        syntax: SyntaxColors = .init(),
+        map: MapColors = .init()
     ) {
         self.colors = colors
         self.spacing = spacing
         self.treatments = treatments
         self.syntax = syntax
+        self.map = map
     }
 
     /// Returns a new theme; omitted components retain their current values.
@@ -24,10 +27,11 @@ public struct ChioTheme {
         colors: Colors? = nil,
         spacing: Spacing? = nil,
         treatments: Treatments? = nil,
-        syntax: SyntaxColors? = nil
+        syntax: SyntaxColors? = nil,
+        map: MapColors? = nil
     ) -> Self {
         Self(colors: colors ?? self.colors, spacing: spacing ?? self.spacing,
-             treatments: treatments ?? self.treatments, syntax: syntax ?? self.syntax)
+             treatments: treatments ?? self.treatments, syntax: syntax ?? self.syntax, map: map ?? self.map)
     }
 
     /// A dark palette inspired by Charm's Huh controls and Bubbles lists.
@@ -51,7 +55,7 @@ public struct ChioTheme {
         string: Color(hexRGB: 0x246641),
         number: Color(hexRGB: 0x825005),
         comment: Color(hexRGB: 0x615968)
-    ))
+    ), map: .init(water: Color(hexRGB: 0xC8D6E4), park: Color(hexRGB: 0xD8E1E1)))
 
     /// A compact dark palette inspired by btop's instrumentation layouts.
     public static let btop = ChioTheme(
@@ -75,8 +79,24 @@ public struct ChioTheme {
             string: Color(hexRGB: 0xA8C58C),
             number: Color(hexRGB: 0xE5BD72),
             comment: Color(hexRGB: 0xA0ACB6)
-        )
+        ),
+        map: .init(water: Color(hexRGB: 0x1F3C43), park: Color(hexRGB: 0x28302B))
     )
+
+    /// Geographic area fills. Roads, routes and markers use the ordinary semantic palette.
+    public struct MapColors {
+        public let water: Color
+        public let park: Color
+
+        public init(water: Color = Color(hexRGB: 0x344754), park: Color = Color(hexRGB: 0x373B40)) {
+            self.water = water
+            self.park = park
+        }
+
+        public func replacing(water: Color? = nil, park: Color? = nil) -> Self {
+            Self(water: water ?? self.water, park: park ?? self.park)
+        }
+    }
 
     /// Code token colors, independent of application success, warning, and error status.
     /// Plain code, punctuation, and operators use the ordinary foreground color.
@@ -264,6 +284,9 @@ public struct ChioTheme {
 
 extension ChioTheme: Equatable {}
 extension ChioTheme: Sendable {}
+extension ChioTheme.MapColors: Hashable {}
+extension ChioTheme.MapColors: Codable {}
+extension ChioTheme.MapColors: Sendable {}
 extension ChioTheme.SyntaxColors: Equatable {}
 extension ChioTheme.SyntaxColors: Hashable {}
 extension ChioTheme.SyntaxColors: Encodable {}

@@ -96,6 +96,19 @@
     }
   }
 
+  function revealSelectedLink() {
+    const selectedLink = links.find(link => link.hasAttribute("aria-current"));
+    if (!selectedLink) return;
+    const selectedGroup = selectedLink.closest("[data-recording-group]");
+    // Scroll only the horizontal chooser, preserving page position and focus.
+    const left = selectedLink.offsetLeft;
+    const right = left + selectedLink.offsetWidth;
+    if (left < selectedGroup.scrollLeft) selectedGroup.scrollLeft = left;
+    else if (right > selectedGroup.scrollLeft + selectedGroup.clientWidth) {
+      selectedGroup.scrollLeft = right - selectedGroup.clientWidth;
+    }
+  }
+
   function selectRecording() {
     const requestedID = location.hash.slice(1);
     const selected = recordings.find(recording => recording.id === requestedID) ?? recordings[0];
@@ -119,13 +132,7 @@
     }
     if (hidesFocus) selectedLink.focus({ preventScroll: true });
 
-    // Reveal the active example in the narrow horizontal menu without moving the page.
-    const left = selectedLink.offsetLeft;
-    const right = left + selectedLink.offsetWidth;
-    if (left < selectedGroup.scrollLeft) selectedGroup.scrollLeft = left;
-    else if (right > selectedGroup.scrollLeft + selectedGroup.clientWidth) {
-      selectedGroup.scrollLeft = right - selectedGroup.clientWidth;
-    }
+    revealSelectedLink();
   }
 
   // Keep the chooser in view; ordinary links still work without JavaScript and
@@ -177,4 +184,5 @@
   }
 
   window.addEventListener("hashchange", selectRecording);
+  window.addEventListener("resize", revealSelectedLink);
 })();

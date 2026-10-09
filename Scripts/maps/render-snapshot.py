@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render chio-map-spike --snapshot-json cells for inspection (requires Pillow).
+"""Render chio-maps --snapshot-json cells for inspection (requires Pillow).
 
 This exports a native SwiftTUI raster, not a screenshot of an emulator. The font
 and cell dimensions are explicit; live-terminal glyph/capability checks are separate.

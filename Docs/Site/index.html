@@ -39,7 +39,6 @@
             <nav class="demo-categories" aria-label="Example categories">
               <a href="#choices" data-category="components">Components</a>
               <a href="#dashboard" data-category="compositions">Compositions</a>
-              <a href="#maps" data-category="experiments">Experiments</a>
             </nav>
             <span class="recording-label"><span aria-hidden="true">●</span> Recorded in a real terminal</span>
           </div>
@@ -52,15 +51,13 @@
             <a href="#forms" data-demo="forms">Form fields</a>
             <a href="#timers" data-demo="timers">Duration labels</a>
             <a href="#markdown" data-demo="markdown">Markdown</a>
+            <a href="#maps" data-demo="maps">Maps</a>
           </nav>
           <nav class="demo-options" data-recording-group="compositions" aria-label="Composed application examples">
             <a href="#dashboard" data-demo="dashboard">Dashboard</a>
             <a href="#metrics" data-demo="metrics">Metrics</a>
             <a href="#inbox" data-demo="inbox">Review inbox</a>
             <a href="#diff" data-demo="diff">Diff reader</a>
-          </nav>
-          <nav class="demo-options" data-recording-group="experiments" aria-label="Experimental rendering proofs">
-            <a href="#maps" data-demo="maps">Maps</a>
           </nav>
         </div>
 
@@ -583,7 +580,7 @@
         <article id="maps" class="recording" data-cols="100" data-rows="30">
           <div class="recording-heading">
             <h3>World and street vectors, in the terminal</h3>
-            <span class="recording-kind">Experimental rendering proof</span>
+            <span class="recording-kind">Component example</span>
           </div>
           <div class="theme-preview-controls" hidden>
             <label for="maps-preview-theme">Static preview
@@ -598,30 +595,30 @@
             <p id="maps-preview-status" class="preview-status" role="status"></p>
           </div>
           <div class="recording-preview">
-            <img class="recording-image" src="recordings/maps.png" alt="A minimal offline map of Singapore's Marina Bay with prominent roads, simplified water boundaries and sparse labels.">
+            <img class="recording-image" src="recordings/maps.png" alt="An offline map of Singapore's Marina Bay with location markers, an authored route, prominent roads and simplified water boundaries.">
           </div>
-          <div class="player" aria-label="Experimental maps recording"></div>
+          <div class="player" aria-label="Maps recording"></div>
           <p class="player-message" role="status" hidden></p>
           <div class="recording-caption">
-            <p>Start with the minimal map: broad coastlines, clear water boundaries and prominent roads. Adjust detail through silhouette, minimal, abstract and full source views. Pan, zoom and switch world/street scenes while retaining your detail level. Press p to compare the Overpass extract with an OpenFreeMap vector tile at the same position and detail. Both offline sources have finite coverage; panning does not fetch new areas. Static previews show the default minimal level; the recording compares all four levels and both street sources in a real terminal session. This experiment has no public map API.</p>
+            <p>Compose Chio’s MapView with your own camera, locations and routes. Pan and zoom through world and street maps; select a location with n or p and press Return to activate it. Adjust detail through silhouette, minimal, abstract and full source views while retaining the camera. Static previews show the default minimal level; the recording demonstrates markers, routes, detail changes and themes in a real terminal session. The bundled data has finite coverage; panning does not fetch new areas.</p>
             <a class="download" href="recordings/maps.cast" download>Download recording ↓</a>
           </div>
           <div class="recording-run">
             <div class="run-heading">
-              <h4>Try this experiment</h4>
-              <a href="https://github.com/echoz/Chio/blob/main/Docs/Decisions/GeographicMaps.md">Map proof and decisions <span aria-hidden="true">↗</span></a>
+              <h4>Try this example</h4>
+              <a href="https://github.com/echoz/Chio/blob/main/Docs/Usage.md#maps">Map API and usage <span aria-hidden="true">↗</span></a>
             </div>
-            <pre><code>swift run -c release chio-map-spike --map street</code></pre>
-            <p>Arrow keys pan · + / − zoom · [ / ] lower/raise detail · d cycles levels · Space switches world/street · p switches street source · t changes theme · f toggles fills · l toggles labels · r resets · q quits. Minimal is the default; use <code>--detail silhouette</code>, <code>abstract</code> or <code>source</code> to start elsewhere. Use <code>--source openfreemap</code> to start with the tile sample.</p>
+            <pre><code>swift run -c release chio-maps --map street</code></pre>
+            <p>Arrow keys pan · + / − zoom · n / p select and center a location · Return activates · Tab moves native focus · [ / ] lower/raise detail · d cycles levels · Space switches world/street · t changes theme · f toggles fills · l toggles labels · r resets · q quits. Minimal is the default; use <code>--detail silhouette</code>, <code>abstract</code> or <code>source</code> to start elsewhere.</p>
           </div>
           <div class="recording-details">
             <dl class="recording-ingredients">
-              <div><dt>Chio</dt><dd>Existing themes; experimental map code stays in the spike.</dd></div>
+              <div><dt>Chio</dt><dd>MapView, checked camera and geography, location markers, route overlays and shared themes.</dd></div>
               <div><dt>SwiftTUI</dt><dd>Native drawing, text labels, layout and keyboard input.</dd></div>
-              <div><dt>Spike code</dt><dd>Geographic projection, terminal detail selection, source adapters with credits and coverage, and offline fixtures.</dd></div>
+              <div><dt>Application</dt><dd>Camera and selection bindings, bundled data, location meaning, authored routes and activation feedback.</dd></div>
               <div><dt>Map data</dt><dd>Natural Earth <a href="https://www.naturalearthdata.com/about/terms-of-use/">public-domain land</a> · © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> · <a href="https://opendatacommons.org/licenses/odbl/1-0/">ODbL 1.0</a> · <a href="https://openfreemap.org/">OpenFreeMap</a> · © <a href="https://openmaptiles.org/">OpenMapTiles</a></dd></div>
             </dl>
-            <a class="example-source" href="https://github.com/echoz/Chio/tree/main/Spikes/MapRendering">View experiment source <span aria-hidden="true">↗</span></a>
+            <a class="example-source" href="https://github.com/echoz/Chio/tree/main/Examples/Maps">View example source <span aria-hidden="true">↗</span></a>
           </div>
         </article>
 

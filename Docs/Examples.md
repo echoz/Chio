@@ -15,10 +15,11 @@ swift run -c release chio-dashboard --inbox --theme light
 swift run -c release chio-dashboard --metrics --theme default
 ```
 
-Press **Ctrl-T** to cycle default → light → btop while retaining your place and
-entered values. The dashboard also accepts `t` while browsing. With no option,
-metrics starts in btop and other examples start in default. `--light` remains an
-alias for `--theme light`; use one option or the other.
+Dashboard examples use **Ctrl-T** to cycle default → light → btop while retaining
+your place and entered values; the dashboard also accepts `t` while browsing.
+The map example uses `t`. With no option, metrics starts in btop and other examples
+start in default. Dashboard examples retain `--light` as an alias for
+`--theme light`; use one option or the other.
 
 The [showcase](https://echoz.github.io/Chio/) provides a **Static preview** theme
 selector beside each example. These previews render the same example state in
@@ -29,68 +30,54 @@ remain part of that recorded session.
 Themes change styling, not terminal color support. For true-color terminals over
 SSH, see [Colors over SSH](#colors-over-ssh).
 
-## Experimental maps
+## Maps
 
-The rendering proof is a separate executable, not a public Chio component:
+The map example composes Chio’s public `MapView` with offline world and street
+sources and a synthetic guide with named locations and an application-authored route:
 
 ```sh
-swift run -c release chio-map-spike --map world
-swift run -c release chio-map-spike --map street --theme btop
-swift run -c release chio-map-spike --map street --detail minimal
-swift run -c release chio-map-spike --map street --source openfreemap
+swift run -c release chio-maps --map world
+swift run -c release chio-maps --map street --theme btop
+swift run -c release chio-maps --map street --detail minimal
 ```
 
-Use `--map` for world/street selection. The earlier experimental `--scene`
-option conflicted with SwiftTUI's reserved web-host scene selector and has been
-renamed; `--scene` retains its native meaning when using `--web`.
+Use `--map` for world/street selection; `--scene` retains SwiftTUI’s native
+web-host scene meaning. Start at **100 × 30**. Arrows pan, `+`/`-` zoom,
+`n`/`p` select and center the next/previous location, and Return activates the
+selected location with local feedback. Tab leaves the map through native focus.
+Space switches world/Singapore, `t` cycles themes, `[` lowers detail, `]` raises
+it, and `d` cycles all four levels. `f` toggles area fills, `l` toggles labels,
+`r` resets the camera, and `q` quits.
 
-Start at **100 × 30**. Arrows pan, `+`/`-` zoom, Space switches world/Singapore,
-`p` switches Overpass/OpenFreeMap street data while retaining position and detail,
-`t` cycles themes, `[` lowers detail, `]` raises it, `d` cycles all four levels,
-`f` toggles area fills,
-`l` toggles labels, `r` resets the camera,
-and `q` quits. No network request or API key is needed at runtime. Below the
-provisional map allocation, a resize hint replaces the drawing and retains the
-camera. Try **60 × 26** or larger with ordinary 2:1 terminal cells.
+Minimal is the default: water, broad coastline shapes and major roads. Choose
+`--detail silhouette`, `minimal`, `abstract`, or `source`. Silhouette shows land
+and water; abstract adds parks and scale-dependent smaller streets; source shows
+all supported source feature classes. Silhouette and minimal simplify boundaries
+at the current terminal scale. Abstract and source retain original polygon shapes.
+Lower levels omit smaller areas and reduce background labels. Locations and routes
+remain application-authored overlays, independent of geographic detail. Brackets
+stop at the ends; `d` wraps. Changes preserve the camera and retained source geometry.
 
-The world uses Natural Earth land; the neighborhood uses real OpenStreetMap
-vectors around Marina Bay. `--source openfreemap` uses a bundled vector tile
-through a second adapter; the default `overpass` uses the normalized GeoJSON
-extract. The OpenFreeMap tile covers a smaller area; zoom in to compare the same
-location. Its source resolution is fixed, and standalone point/label layers are
-outside this proof. Both sources use the same detail policy and themes.
-The default minimal view emphasizes water and major
-roads, with broader coastline shapes and no buildings or minor streets.
-Labels leave more empty space. Choose `--detail silhouette`, `minimal`
-(the default), `abstract`, or `source`. Silhouette shows land and water; minimal
-adds major roads. Abstract adds parks and scale-dependent smaller streets; source includes
-all supported feature classes supplied by the adapter. Lower levels omit smaller areas and show fewer labels.
-Silhouette and minimal also simplify the actual land and water boundaries into
-broader shapes at the current terminal scale. Abstract and source retain the
-original polygon shapes. The header shows the active level, and changes preserve
-the camera. Brackets stop
-at the ends; `d` wraps. `--source-detail` remains an alias that takes precedence
-over `--detail`. No level modifies retained source geometry or merges roads.
+The world uses Natural Earth land; the neighborhood uses OpenStreetMap vectors
+around Marina Bay. The optional `--source openfreemap` selects a bundled vector
+tile instead of the default normalized Overpass extract. No network request or
+API key is needed. Panning does not load new areas; the coverage notice identifies
+when the camera center leaves the bundled extract. Source credits remain visible.
+See [fixture provenance](../Examples/Maps/Fixtures/Provenance.md).
 
-Drawing work is checked before painting. A map that exceeds the allowance shows
-“Too much map detail” with the camera and controls retained; try another scale,
-lower detail, or turn fills off. It never shows a partially drawn map as complete.
+Give the component at least **32 × 16** drawing cells for longitude spans of
+60 degrees or more, or **58 × 16** for closer views, plus two credit rows.
+Smaller allocations show a resize summary while preserving the camera and
+selection. Try **60 × 26** or larger with ordinary 2:1 terminal cells. Drawing
+work is checked before painting; overload shows “Too much map detail” with
+controls retained. Lower detail, change scale or disable fills to recover.
 
-Panning moves across the bundled data; it does not load new areas. The neighborhood
-has finite coverage, indicated in the header, with an explicit notice when the
-camera center leaves the extract. Complete features can extend beyond the query
-box without establishing coverage there. `r` returns to the initial camera.
-Data credits and license links come from each adapted source and remain on screen.
-See [fixture provenance](../Spikes/MapRendering/Fixtures/Provenance.md) and the
-[map decision](Decisions/GeographicMaps.md#rendering-spike-findings) for measurements,
-limitations and the work needed before a reusable component. In particular,
-this proof has no feature selection, routes, tile loader or asynchronous preparation.
-
-Inspect smaller drawings with `--inspect-small`, or override cell height/width
-ratio with `--cell-aspect 2`. These are experiment controls, not terminal detection
-overrides for applications. `--snapshot`, `--snapshot-json` and `--benchmark`
-provide deterministic text/cell exports and local preparation/raster timings.
-For a true-color SSH terminal, prefix the launch with `COLORTERM=truecolor`.
+See [MapView usage](Usage.md#maps) for source adapters, camera and selection
+bindings, overlays and activation. Applications own loading, network policy,
+location meaning and route calculation. The example’s `--snapshot`,
+`--snapshot-json` and `--benchmark` exports support inspection; they do not
+establish live SSH latency or appearance in every terminal. For a true-color
+SSH terminal, prefix the launch with `COLORTERM=truecolor`.
 
 ## Dashboard
 
@@ -504,7 +491,7 @@ and scale, gap and accessibility contracts.
 seeking, and fullscreen playback. These are recorded examples; run the binary to
 interact with the controls yourself.
 
-The gallery groups focused views and native control styles under **Components**.
+The gallery groups reusable views, maps and native control styles under **Components**.
 The dashboard, metrics, inbox, and diff prototype are **Compositions** of those building blocks.
 Each recording lists the Chio APIs, native SwiftTUI controls, and application-owned
 behavior it uses, with a link to its example source.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Probe the experimental map in a real POSIX PTY; optionally capture asciinema v2.
+"""Probe the offline map example in a real POSIX PTY; optionally capture asciinema v2.
 
 The shared dashboard smoke parser checks text transitions. Public native raster tests
 own colors, braille samples and Unicode layout; this is not a terminal emulator or
@@ -84,7 +84,7 @@ def probe(binary, output_dir, record=None):
         # Compare the actual drawing, excluding headers, camera text and credits.
         # Keeping only braille also excludes labels from this movement assertion.
         return tuple(''.join(char if '\u2800' <= char <= '\u28ff' else ' ' for char in row)
-                     for row in current_screen().splitlines()[4:24])
+                     for row in current_screen().splitlines()[3:23])
 
     def recording_pause():
         if not recording:
@@ -101,11 +101,11 @@ def probe(binary, output_dir, record=None):
             action()
         while time.monotonic() < deadline:
             receive(min(0.1, deadline - time.monotonic()))
-            if len(output) > before and all(value in current_screen() for value in expected):
+            if len(output) > before and all(value in current_screen() for value in expected) and "Preparing map" not in current_screen():
                 # Complete queued updates before sending the next user action.
                 while time.monotonic() < deadline and receive(min(0.25, deadline - time.monotonic())):
                     pass
-                if all(value in current_screen() for value in expected):
+                if all(value in current_screen() for value in expected) and "Preparing map" not in current_screen():
                     phases.append({"name": name, "seconds": round(time.monotonic() - phase_started, 6),
                                    "output_bytes": len(output) - before,
                                    "columns": parser.WIDTH, "rows": parser.HEIGHT, "expected": list(expected)})
@@ -142,7 +142,7 @@ def probe(binary, output_dir, record=None):
         for key_name in ("NO_COLOR", "CLICOLOR", "CLICOLOR_FORCE", "FORCE_COLOR"):
             environment.pop(key_name, None)
         process = subprocess.Popen(command, stdin=slave, stdout=slave, stderr=slave, env=environment)
-        observe("world minimal default", ("/ map spike", "World", "detail 2/4 minimal", "span 360.0000"))
+        observe("world minimal default", ("/ maps", "World", "2/4 minimal", "span 360.0000"))
         modes = termios.tcgetattr(slave)
         assert not modes[3] & (termios.ECHO | termios.ICANON | termios.ISIG | termios.IEXTEN), "Terminal is not in raw input mode"
         assert modes[6][termios.VMIN] == 1 and modes[6][termios.VTIME] == 0, "Unexpected raw read timing"
@@ -153,60 +153,47 @@ def probe(binary, output_dir, record=None):
         validations["cursor_hidden"] = True
 
         minimal_world_samples = map_samples()
-        key("world silhouette shapes", b"[", ("World", "detail 1/4 silhouette", "span 360.0000"))
+        key("world silhouette shapes", b"[", ("World", "1/4 silhouette", "span 360.0000"))
         assert map_samples() != minimal_world_samples, "World shape strengths did not change the coastline"
-        key("restore world minimal", b"]", ("World", "detail 2/4 minimal", "span 360.0000"))
+        key("restore world minimal", b"]", ("World", "2/4 minimal", "span 360.0000"))
         assert map_samples() == minimal_world_samples, "World detail did not restore the minimal coastline"
-        key("world abstract shapes", b"]", ("World", "detail 3/4 abstract", "span 360.0000"))
+        key("world abstract shapes", b"]", ("World", "3/4 abstract", "span 360.0000"))
         key("street", b" ", ("Singapore", "span 0.0300"))
         abstract_samples = map_samples()
-        key("minimal detail", b"[", ("detail 2/4 minimal", "Center 1.289, 103.866", "span 0.0300"))
+        key("minimal detail", b"[", ("2/4 minimal", "Center 1.289, 103.866", "span 0.0300"))
         minimal_samples = map_samples()
-        key("silhouette detail", b"[", ("detail 1/4 silhouette", "Center 1.289, 103.866", "span 0.0300"))
+        key("silhouette detail", b"[", ("1/4 silhouette", "Center 1.289, 103.866", "span 0.0300"))
         assert map_samples() != minimal_samples, "Silhouette did not remove road geometry"
-        key("raise detail", b"]]", ("detail 3/4 abstract", "span 0.0300"))
+        key("raise detail", b"]]", ("3/4 abstract", "span 0.0300"))
         assert map_samples() == abstract_samples, "Raising detail did not restore the drawing"
-        key("source detail", b"]", ("detail 4/4 source", "span 0.0300"))
+        key("source detail", b"]", ("4/4 source", "span 0.0300"))
         assert map_samples() != abstract_samples, "Detail comparison did not change the drawing"
-        key("cycle detail", b"d", ("detail 1/4 silhouette", "span 0.0300"))
-        key("abstract detail", b"]]", ("detail 3/4 abstract", "span 0.0300"))
+        key("cycle detail", b"d", ("1/4 silhouette", "span 0.0300"))
+        key("abstract detail", b"]]", ("3/4 abstract", "span 0.0300"))
         assert map_samples() == abstract_samples, "Abstract comparison did not restore the drawing"
         key("zoom", b"+", ("Singapore", "span 0.0210"))
         zoom_samples = map_samples()
         key("pan", b"\x1b[C", ("Center 1.289, 103.869", "span 0.0210"))
         assert map_samples() != zoom_samples, "Pan changed camera text without moving the drawing"
         key("light theme", b"t", ("abstract · light", "span 0.0210"))
-        # Exercise visible label changes on the named Overpass extract. The
-        # supported tile geometry has no placed labels at this camera; toggling
-        # that option correctly need not emit another terminal frame.
+        # Exercise visible label changes on the named Overpass extract.
         key("fills off redraw", b"f", ("Singapore", "abstract · light", "span 0.0210"))
         key("labels off redraw", b"l", ("Singapore", "span 0.0210"))
         key("fills on redraw", b"f", ("Singapore", "span 0.0210"))
         key("labels on redraw", b"l", ("Singapore", "span 0.0210"))
-        extract_samples = map_samples()
-        key("OpenFreeMap source", b"p", ("OpenFreeMap", "detail 3/4 abstract", "Center 1.289, 103.869", "span 0.0210"))
-        assert map_samples() != extract_samples, "Changing real sources did not change geography"
-        tile_samples = map_samples()
-        key("batched source round trip", b"pp", ("OpenFreeMap", "abstract · light", "span 0.0210"))
-        assert map_samples() == tile_samples, "Source round trip changed the retained map"
-        key("tile minimal detail", b"[", ("OpenFreeMap", "detail 2/4 minimal", "span 0.0210"))
-        tile_minimal = map_samples()
-        key("tile silhouette detail", b"[", ("OpenFreeMap", "detail 1/4 silhouette", "span 0.0210"))
-        assert map_samples() != tile_minimal, "Shared detail policy did not remove tile roads"
-        key("tile source detail", b"]]]", ("OpenFreeMap", "detail 4/4 source", "span 0.0210"))
-        assert map_samples() != tile_minimal, "Shared detail policy did not expose tile source geometry"
-        key("restore tile abstract", b"[", ("OpenFreeMap", "abstract · light", "span 0.0210"))
-        assert map_samples() == tile_samples, "Tile abstract geometry did not restore"
-        key("tile fills off redraw", b"f", ("OpenFreeMap", "abstract · light", "span 0.0210"))
-        key("tile fills on redraw", b"f", ("OpenFreeMap", "abstract · light", "span 0.0210"))
-        key("minimal final view", b"[", ("detail 2/4 minimal", "Center 1.289, 103.869", "span 0.0210"))
+        key("select first place", b"n", ("Selected: Merlion", "Center 1.287, 103.855", "span 0.0210"))
+        key("next place", b"n", ("Selected: Gardens by the Bay", "Center 1.282, 103.864"))
+        key("activate place", b"\r", ("Opened Gardens by the Bay",))
+        key("previous place", b"p", ("Selected: Merlion", "Center 1.287, 103.855"))
+        key("reset camera retains selection", b"r", ("Selected: Merlion", "Center 1.289, 103.866", "span 0.0300"))
+        key("minimal final view", b"[", ("2/4 minimal", "Selected: Merlion", "span 0.0300"))
         stop_recording()
 
-        key("lower detail limit", b"[[[", ("detail 1/4 silhouette", "Center 1.289, 103.869", "span 0.0210"))
-        key("upper detail limit", b"]]]]", ("detail 4/4 source", "Center 1.289, 103.869", "span 0.0210"))
-        key("restore abstract detail", b"[", ("detail 3/4 abstract", "span 0.0210"))
+        key("lower detail limit", b"[[[", ("1/4 silhouette", "Center 1.289, 103.866", "span 0.0300"))
+        key("upper detail limit", b"]]]]", ("4/4 source", "Center 1.289, 103.866", "span 0.0300"))
+        key("restore abstract detail", b"[", ("3/4 abstract", "span 0.0300"))
         observe("compact fallback", ("More room for the map",), lambda: resize(36, 18))
-        observe("restored size retains camera and detail", ("Singapore", "detail 3/4 abstract", "Center 1.289, 103.869", "span 0.0210"),
+        observe("restored size retains camera and detail", ("Singapore", "3/4 abstract", "Center 1.289, 103.866", "span 0.0300"),
                 lambda: resize(100, 30))
         assert "More room for the map" not in current_screen(), "Fallback remained after expansion"
         key("leave offline coverage", b"\x1b[C" * 8, ("Outside offline coverage",))
@@ -257,19 +244,19 @@ def probe(binary, output_dir, record=None):
         if record is not None:
             record.parent.mkdir(parents=True, exist_ok=True)
             header = {"version": 2, "width": 100, "height": 30,
-                      "title": "Chio map rendering spike · offline world and Singapore",
+                      "title": "Chio maps · offline world and Singapore",
                       "env": {"TERM": "xterm-256color", "COLORTERM": "truecolor"}}
             with record.open("w", encoding="utf-8") as cast:
                 for item in [header, *events]:
                     cast.write(json.dumps(item, ensure_ascii=False) + "\n")
         os.close(master)
         os.close(slave)
-    print(f"PASS: map drawing pan/zoom, detail levels and limits, theme, fills/labels, offline coverage, resize and clean exit ({len(output)} bytes)")
+    print(f"PASS: map pan/zoom, detail limits, marker selection/activation, theme, fills/labels, coverage, resize and clean exit ({len(output)} bytes)")
 
 
 def main():
     arguments = argparse.ArgumentParser(description=__doc__)
-    arguments.add_argument("binary", type=Path, help="Path to an already-built chio-map-spike executable")
+    arguments.add_argument("binary", type=Path, help="Path to an already-built chio-maps executable")
     arguments.add_argument("--output-dir", type=Path, default=Path(".build/maps"), help="Raw PTY log and timing report directory")
     arguments.add_argument("--record", type=Path, help="Optional asciinema v2 output; meaningful 100x30 frames only")
     options = arguments.parse_args()
