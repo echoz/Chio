@@ -263,7 +263,10 @@ struct MapHTTPClientTests {
             }
         }
         private static let script = #"""
-import gzip, http.server, threading, time
+import sys
+print('fixture: entered; python=%s' % sys.executable, file=sys.stderr, flush=True)
+import gzip, http.server, socketserver, threading, time
+print('fixture: imports complete', file=sys.stderr, flush=True)
 started = threading.Event()
 class Handler(http.server.BaseHTTPRequestHandler):
     def log_message(self, *args): pass
@@ -292,8 +295,16 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if path == '/slow': started.set(); time.sleep(4); body = b'x'
         try: self.wfile.write(body)
         except (BrokenPipeError, ConnectionResetError): pass
-class Server(http.server.ThreadingHTTPServer): daemon_threads = True
+class Server(http.server.ThreadingHTTPServer):
+    daemon_threads = True
+    def server_bind(self):
+        # HTTPServer otherwise reverse-resolves even numeric loopback. This
+        # fixture needs the bound address and port, with no DNS dependency.
+        socketserver.TCPServer.server_bind(self)
+        self.server_name, self.server_port = self.server_address[:2]
+print('fixture: binding numeric loopback', file=sys.stderr, flush=True)
 server = Server(('127.0.0.1',0), Handler)
+print('fixture: ready', file=sys.stderr, flush=True)
 print('http://127.0.0.1:%s/' % server.server_port, flush=True)
 server.serve_forever()
 """#

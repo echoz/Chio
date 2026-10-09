@@ -6,6 +6,7 @@ import hashlib
 import json
 from pathlib import Path
 import signal
+import socketserver
 import sys
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -91,6 +92,12 @@ def serve(manifest, routes, args):
 
     class Server(ThreadingHTTPServer):
         daemon_threads = True
+
+        def server_bind(self):
+            # HTTPServer otherwise reverse-resolves even numeric loopback. Replay
+            # needs the bound address and port, with no DNS dependency.
+            socketserver.TCPServer.server_bind(self)
+            self.server_name, self.server_port = self.server_address[:2]
 
         def handle_error(self, request, client_address):
             pass  # Disconnected clients must not emit request information.

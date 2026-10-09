@@ -97,6 +97,11 @@ source/focus, compact recovery and independent detail/theme changes. CI uses no
 live provider. Separately inspect bounded OpenFreeMap acquisition and adjacent
 tile rendering; this is integration evidence, not an availability guarantee.
 
+Both HTTP fixtures bind numeric loopback directly, preserving the OS-selected
+ephemeral port without Python HTTPServer's reverse-DNS lookup. Fixture readiness
+must not depend on the runner's DNS configuration. Startup failure diagnostics
+retain bounded child output and identify progress through imports and binding.
+
 Pass an example flag such as `--choices`, `--inbox` or `--diff` for its workflow;
 [verify.sh](../Scripts/ci/verify.sh) is the complete list. Terminal checks cover
 input/output, raw mode, cursor/alternate-screen restoration and exact original
