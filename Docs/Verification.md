@@ -19,6 +19,11 @@ selected tests in debug, a standalone release build, 20 plain-text snapshots and
 reproduction and PTY workflow. Snapshot files are inspection artifacts;
 Swift tests assert the rendering contracts.
 
+A focused debug preflight first checks real map HTTP transport and the online
+view lifecycle. SwiftPM continues other test targets after one executable fails;
+this exposes acquisition regressions before the longer composition suites. The
+normal debug/release suites still include these checks.
+
 The approved debug/release split keeps library controls, domain values, raster
 layouts and focused examples in debug. `CreateAgentTests`, `DashboardPaletteTests`,
 `AgentReportInteractionTests` and the selected inbox/diff composition interactions

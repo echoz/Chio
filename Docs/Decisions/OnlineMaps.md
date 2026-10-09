@@ -91,6 +91,17 @@ cancels the task because FoundationNetworking's response-disposition handling
 differs from Darwin's. Empty HTTP 200 tiles remain valid empty geometry; HTTP
 errors do not become empty tiles.
 
+Redirect decisions are queued before Chio requests cancellation. Reversing that
+order triggered a FoundationNetworking waiting-state trap on Linux. The transfer
+lock orders Chio-owned decisions and cancellation; an already-cancelled corelibs
+redirect callback is left stale because cancellation independently delivers the
+terminal acknowledgement. Darwin still receives the nil redirect decision.
+This is a narrow compatibility workaround for
+[corelibs' redirect state machine](https://github.com/swiftlang/swift-corelibs-foundation/blob/main/Sources/FoundationNetworking/URLSession/HTTP/HTTPURLProtocol.swift),
+not a general permission to omit active URLSession delegate completions. A native
+Foundation deadline can change its internal protocol state independently of this
+lock; races with that upstream transition remain a limitation.
+
 ## Provider evidence and remaining limits
 
 OpenFreeMap's public service needs no API key and supports interactive map use.

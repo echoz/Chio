@@ -13,6 +13,11 @@ if [[ "$(uname -s)" == Darwin ]]; then
 fi
 
 mkdir -p .build/ci-results
+# Check the real transport and online lifecycle before the longer composition
+# suites. A failed test executable does not stop SwiftPM running other targets.
+swift test --force-resolved-versions --jobs "${SWIFT_BUILD_JOBS:-2}" \
+  --no-parallel --filter 'MapHTTPClientTests|OnlineMapInteractionTests' \
+  --xunit-output .build/ci-results/online-preflight.xml ${testing_flags[@]+"${testing_flags[@]}"}
 # Keep debug checks for library controls, domain values, raster layouts, and the
 # focused examples. Run dashboard, inbox and diff compositions in release below:
 # their five-second waits are not benchmarks of unoptimized rendering.

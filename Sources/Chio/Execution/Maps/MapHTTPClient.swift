@@ -16,10 +16,12 @@ struct MapHTTPClient {
     typealias Transport = @Sendable (URL, Resource) async throws -> Response
 
     static func fetch(_ url: URL, resource: Resource, timeout: TimeInterval = 20,
-                      onTerminalAcknowledgement: @escaping @Sendable () -> Void = {}) async throws -> Response {
+                      onTerminalAcknowledgement: @escaping @Sendable () -> Void = {},
+                      beforeRedirectDecision: @escaping @Sendable (URLSessionTask) -> Void = { _ in }) async throws -> Response {
         guard timeout.isFinite, timeout > 0, timeout <= 20 else { throw MapTileLoader.LoadingError.invalidResponse }
         let transfer = Transfer(url: url, resource: resource, timeout: timeout,
-                                onTerminalAcknowledgement: onTerminalAcknowledgement)
+                                onTerminalAcknowledgement: onTerminalAcknowledgement,
+                                beforeRedirectDecision: beforeRedirectDecision)
         return try await withTaskCancellationHandler {
             try Task.checkCancellation()
             return try await withCheckedThrowingContinuation { transfer.start($0) }
@@ -54,11 +56,14 @@ struct MapHTTPClient {
         let resource: Resource
         let timeout: TimeInterval
         private let onTerminalAcknowledgement: @Sendable () -> Void
+        private let beforeRedirectDecision: @Sendable (URLSessionTask) -> Void
 
         init(url: URL, resource: Resource, timeout: TimeInterval,
-             onTerminalAcknowledgement: @escaping @Sendable () -> Void) {
+             onTerminalAcknowledgement: @escaping @Sendable () -> Void,
+             beforeRedirectDecision: @escaping @Sendable (URLSessionTask) -> Void) {
             self.url = url; self.resource = resource; self.timeout = timeout
             self.onTerminalAcknowledgement = onTerminalAcknowledgement
+            self.beforeRedirectDecision = beforeRedirectDecision
         }
 
         func start(_ continuation: CheckedContinuation<Response, any Error>) {
@@ -201,16 +206,35 @@ extension MapHTTPClient.Transfer: URLSessionDataDelegate {
     func urlSession(_ session: URLSession, task: URLSessionTask,
                     willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest,
                     completionHandler: @escaping @Sendable (URLRequest?) -> Void) {
+        beforeRedirectDecision(task)
         let destination = request.url
         let allowed = destination.map { MapHTTPClient.sameOrigin($0, url) && $0.user == nil && $0.password == nil } ?? false
         lock.lock()
-        state.redirects += 1
-        let permitted = allowed && state.redirects <= 3 && !state.completed && state.firstFailure == nil
-        lock.unlock()
-        guard permitted else {
-            reject(MapTileLoader.LoadingError.rejectedRedirect); completionHandler(nil); return
+        // corelibs can deliver a queued redirect callback after cancellation.
+        // cancel() independently stops the protocol and acknowledges completion;
+        // its pending redirect handler must not re-enter the completed protocol.
+        let taskState = task.state
+        if state.cancelled || state.firstFailure != nil || state.completed
+            || taskState == .canceling || taskState == .completed {
+            #if canImport(FoundationNetworking)
+            lock.unlock()
+            return
+            #else
+            completionHandler(nil)
+            lock.unlock()
+            return
+            #endif
         }
-        completionHandler(request)
+        state.redirects += 1
+        let permitted = allowed && state.redirects <= 3
+        if !permitted { state.firstFailure = MapTileLoader.LoadingError.rejectedRedirect }
+        // Invoking the handler queues corelibs' redirect decision. Keep that
+        // enqueue ordered before external cancellation can record its flag, and
+        // before this rejection requests task/session cancellation. Reversing the
+        // order makes HTTPURLProtocol's waiting-state guard trap on Linux.
+        completionHandler(permitted ? request : nil)
+        lock.unlock()
+        if !permitted { reject(MapTileLoader.LoadingError.rejectedRedirect) }
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask,

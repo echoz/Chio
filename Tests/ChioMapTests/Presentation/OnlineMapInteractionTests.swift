@@ -68,7 +68,15 @@ struct OnlineMapInteractionTests {
                 $0.onlineReady && $0.onlineText.contains("Lon=103.888")
             }
             #expect(moved.focusedIdentity == initial.focusedIdentity)
-            #expect(await transport.paths(after: initialCount) == movedPaths)
+            // Native input/rendering may span the 150 ms coalescing interval.
+            // Earlier cameras may therefore start valid, superseded loads. The
+            // no-store fixture and drained replacements make the final four
+            // requests belong to the completed final viewport, with no new input.
+            let panPaths = await transport.orderedPaths(after: initialCount)
+            let finalPaths = Set(panPaths.suffix(movedPaths.count))
+            #expect(finalPaths == movedPaths, "Pan requests: \(panPaths)")
+            #expect(Set(panPaths).isSubset(of: initialPaths.union(movedPaths)),
+                    "Unexpected intermediate pan requests: \(panPaths)")
 
             await transport.setFailure(true)
             session.send(.key(.arrowRight))
@@ -213,7 +221,8 @@ private actor OnlineTransport {
         for continuation in continuations { continuation.resume() }
     }
 
-    func paths(after count: Int = 0) -> Set<String> { Set(urls.dropFirst(count).map(\.path)) }
+    func orderedPaths(after count: Int = 0) -> [String] { urls.dropFirst(count).map(\.path) }
+    func paths(after count: Int = 0) -> Set<String> { Set(orderedPaths(after: count)) }
 
     func waitForRequests(_ count: Int) async throws {
         let deadline = ContinuousClock.now.advanced(by: .seconds(5))

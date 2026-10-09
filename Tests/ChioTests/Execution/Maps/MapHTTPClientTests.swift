@@ -1,6 +1,9 @@
 @testable import Chio
 import Dispatch
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 import Synchronization
 import Testing
 #if canImport(Darwin)
@@ -14,12 +17,12 @@ struct MapHTTPClientTests {
     func boundedHTTP() async throws {
         let server = try Server()
         defer { server.stop() }
-        let valid = try await MapHTTPClient.fetch(server.url("/empty"), resource: .tile)
+        let valid = try await bounded("empty HTTP 200") { try await MapHTTPClient.fetch(server.url("/empty"), resource: .tile) }
         #expect(valid.data.isEmpty)
         #expect(valid.headers["cache-control"] == "max-age=60")
-        let tile = try await MapHTTPClient.fetch(server.url("/tile"), resource: .tile)
+        let tile = try await bounded("nonempty HTTP 200") { try await MapHTTPClient.fetch(server.url("/tile"), resource: .tile) }
         #expect(tile.data == Data([0x08, 0x00]))
-        let redirected = try await MapHTTPClient.fetch(server.url("/redirect"), resource: .tile)
+        let redirected = try await bounded("permitted same-origin redirect") { try await MapHTTPClient.fetch(server.url("/redirect"), resource: .tile) }
         #expect(redirected.data.isEmpty)
         for (path, expected) in [
             ("/status", MapTileLoader.LoadingError.httpStatus(503)),
@@ -29,7 +32,7 @@ struct MapHTTPClientTests {
         ] {
             let terminalCount = Mutex(0)
             await #expect(throws: expected) {
-                try await bounded {
+                try await bounded("reject \(path)") {
                     try await MapHTTPClient.fetch(server.url(path), resource: .tile,
                         onTerminalAcknowledgement: { terminalCount.withLock { $0 += 1 } })
                 }
@@ -39,7 +42,7 @@ struct MapHTTPClientTests {
         // The compressed Content-Length is below the catalog limit, while the
         // decompressed delegate bytes exceed it. This is real URLSession gzip.
         await #expect(throws: MapTileLoader.LoadingError.responseTooLarge) {
-            try await bounded { try await MapHTTPClient.fetch(server.url("/gzip"), resource: .catalog) }
+            try await bounded("decompressed catalog overflow") { try await MapHTTPClient.fetch(server.url("/gzip"), resource: .catalog) }
         }
         let terminalCount = Mutex(0)
         let pending = Task {
@@ -47,7 +50,7 @@ struct MapHTTPClientTests {
                 onTerminalAcknowledgement: { terminalCount.withLock { $0 += 1 } })
         }
         defer { pending.cancel() }
-        try await bounded {
+        try await bounded("slow fixture request entered") {
             while true {
                 let status = try await MapHTTPClient.fetch(server.url("/started"), resource: .catalog)
                 if String(data: status.data, encoding: .utf8) == "true" { return }
@@ -55,17 +58,45 @@ struct MapHTTPClientTests {
             }
         }
         pending.cancel()
-        await #expect(throws: CancellationError.self) { try await bounded { try await pending.value } }
+        await #expect(throws: CancellationError.self) { try await bounded("in-flight cancellation acknowledgment") { try await pending.value } }
         #expect(terminalCount.withLock { $0 } == 1)
         do {
-            _ = try await bounded { try await MapHTTPClient.fetch(server.url("/slow"), resource: .tile, timeout: 0.2) }
+            _ = try await bounded("native resource timeout") { try await MapHTTPClient.fetch(server.url("/slow"), resource: .tile, timeout: 0.2) }
             Issue.record("Slow HTTP resource did not time out")
         } catch let error as URLError { #expect(error.code == .timedOut) }
         let cancelled = Task {
             withUnsafeCurrentTask { $0?.cancel() }
             return try await MapHTTPClient.fetch(server.url("/empty"), resource: .tile)
         }
-        await #expect(throws: CancellationError.self) { try await bounded { try await cancelled.value } }
+        await #expect(throws: CancellationError.self) { try await bounded("cancel before registration") { try await cancelled.value } }
+    }
+
+    @Test("Cancellation queued before a redirect decision still acknowledges exactly once")
+    func cancelledPendingRedirect() async throws {
+        let server = try Server()
+        defer { server.stop() }
+        let control = RedirectGate()
+        let acknowledgments = Mutex(0)
+        let pending = Task {
+            try await MapHTTPClient.fetch(server.url("/redirect"), resource: .tile,
+                onTerminalAcknowledgement: { acknowledgments.withLock { $0 += 1 } },
+                beforeRedirectDecision: { control.intercept($0) })
+        }
+        defer { pending.cancel(); control.release() }
+        try await bounded("redirect callback entered") {
+            while !control.entered { try await Task.sleep(for: .milliseconds(1)) }
+        }
+        pending.cancel()
+        // Observe the real Foundation task state, not a timed guess that caller
+        // cancellation has reached the transport. The decision remains withheld.
+        try await bounded("real pending-redirect transport cancellation") {
+            while !control.transportCancelled { try await Task.sleep(for: .milliseconds(1)) }
+        }
+        control.release()
+        await #expect(throws: CancellationError.self) {
+            try await bounded("pending-redirect terminal acknowledgment") { try await pending.value }
+        }
+        #expect(acknowledgments.withLock { $0 } == 1)
     }
 
     @Test("Same-origin redirects normalize implicit HTTP and HTTPS ports")
@@ -97,15 +128,31 @@ struct MapHTTPClientTests {
         }
     }
 
-    private func bounded<T: Sendable>(_ operation: @escaping @Sendable () async throws -> T) async throws -> T {
+    private func bounded<T: Sendable>(_ phase: String, _ operation: @escaping @Sendable () async throws -> T) async throws -> T {
         try await withThrowingTaskGroup(of: T.self) { group in
             group.addTask(operation: operation)
-            group.addTask { try await Task.sleep(for: .seconds(5)); throw WaitError.timeout }
+            group.addTask { try await Task.sleep(for: .seconds(5)); throw WaitError.timeout(phase) }
             defer { group.cancelAll() }
             return try await group.next()!
         }
     }
-    private enum WaitError: Error { case timeout }
+    private enum WaitError: Error { case timeout(String), fixtureStartup(String) }
+
+    private final class RedirectGate: Sendable {
+        private let task = Mutex<URLSessionTask?>(nil)
+        private let releaseSignal = DispatchSemaphore(value: 0)
+        var entered: Bool { task.withLock { $0 != nil } }
+        var transportCancelled: Bool {
+            task.withLock { $0?.state == .canceling || $0?.state == .completed }
+        }
+        func intercept(_ task: URLSessionTask) {
+            self.task.withLock { $0 = task }
+            if releaseSignal.wait(timeout: .now() + 5) != .success {
+                Issue.record("Pending redirect fixture was not released within five seconds")
+            }
+        }
+        func release() { releaseSignal.signal() }
+    }
 
     /// Sole test owner of a localhost subprocess. Startup and teardown are bounded;
     /// handlers use daemon threads so disconnected clients cannot retain the child.
@@ -114,12 +161,20 @@ struct MapHTTPClientTests {
         private let base: URL
         private let stopped = Mutex(false)
         init() throws {
-            let process = Process(), pipe = Pipe()
+            let process = Process(), pipe = Pipe(), errorPipe = Pipe()
+            let errors = Mutex(Data())
             process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
             process.arguments = ["python3", "-u", "-c", Self.script]
             process.standardOutput = pipe
-            process.standardError = FileHandle.nullDevice
-            try process.run()
+            process.standardError = errorPipe
+            do { try process.run() }
+            catch { throw WaitError.fixtureStartup("Could not launch fixed Python HTTP fixture: \(error)") }
+            let errorHandle = errorPipe.fileHandleForReading
+            DispatchQueue.global().async {
+                while let chunk = try? errorHandle.read(upToCount: 1_024), !chunk.isEmpty {
+                    errors.withLock { bytes in bytes.append(chunk.prefix(max(0, 8_192 - bytes.count))) }
+                }
+            }
             self.process = process
             let output = Mutex<Data?>(nil), ready = DispatchSemaphore(value: 0)
             let handle = pipe.fileHandleForReading
@@ -128,16 +183,20 @@ struct MapHTTPClientTests {
                 while bytes.count < 256 {
                     guard let byte = try? handle.read(upToCount: 1), !byte.isEmpty else { break }
                     bytes.append(byte)
+                    output.withLock { $0 = bytes }
                     if byte.last == 10 { break }
                 }
                 output.withLock { $0 = bytes }
                 ready.signal()
             }
-            guard ready.wait(timeout: .now() + 5) == .success,
-                  let data = output.withLock({ $0 }),
-                  let text = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
-                  let url = URL(string: text), url.host == "127.0.0.1" else {
-                Self.terminate(process); throw WaitError.timeout
+            let readyInTime = ready.wait(timeout: .now() + 5) == .success
+            let data = output.withLock { $0 } ?? Data()
+            let text = String(decoding: data, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+            guard readyInTime, let url = URL(string: text), url.host == "127.0.0.1" else {
+                let status = process.isRunning ? "still running" : "exited \(process.terminationStatus)"
+                Self.terminate(process)
+                let stderr = errors.withLock { String(decoding: $0, as: UTF8.self) }
+                throw WaitError.fixtureStartup("Python HTTP fixture startup \(readyInTime ? "invalid readiness" : "timed out after five seconds"); child \(status); stdout=\(text.debugDescription); stderr=\(stderr.debugDescription)")
             }
             self.base = url
         }
