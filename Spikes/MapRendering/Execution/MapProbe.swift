@@ -5,7 +5,8 @@ import SwiftTUI
 /// Explicit measurement/export effects for the spike, not part of geographic values.
 @MainActor
 enum MapProbe {
-    static func run(fixtures: MapFixtures, appearance: MapSpikeCommand.Appearance, aspect: Double) throws {
+    static func run(fixtures: MapFixtures, appearance: MapSpikeCommand.Appearance, aspect: Double,
+                    detail: MapDetail = .abstract) throws {
         let clock = ContinuousClock()
         var results: [Measurement] = []
         for scene in MapFixtures.Scene.allCases {
@@ -20,11 +21,11 @@ enum MapProbe {
                 for iteration in 0..<21 {
                     let camera = try scene.camera.panned(longitudeFraction: Double(iteration) / 1000, latitudeFraction: 0)
                     let before = clock.now
-                    let map = try MapPreparation.prepare(dataset: dataset, camera: camera, viewport: viewport)
+                    let map = try MapPreparation.prepare(dataset: dataset, camera: camera, viewport: viewport, detail: detail)
                     let prepared = clock.now
                     let theme = appearance.theme
                     let view = MapCanvasView(map: map, viewport: viewport, theme: theme, fills: true, labels: true,
-                                             waterColor: theme.colors.selectedSurface, parkColor: theme.colors.selectedSurface)
+                                             waterColor: theme.colors.selectedSurface, parkColor: theme.colors.selectedSurface, detail: detail)
                     let snapshot = DefaultRenderer().render(view, proposal: .init(width: columns, height: rows), frameInstant: .zero)
                     guard snapshot.rasterSurface.size == CellSize(width: columns, height: rows) else {
                         throw ValidationError("The map did not receive the requested allocation.")
@@ -35,9 +36,11 @@ enum MapProbe {
                     }
                     vertices = max(vertices, map.statistics.preparedVertices)
                     features = max(features, map.statistics.visibleFeatures)
-                    visibleLabels = max(visibleLabels, MapLabels(candidates: map.labels, columns: columns, rows: rows, enabled: true).labels.count)
+                    visibleLabels = max(visibleLabels, MapLabels(candidates: map.labels, columns: columns, rows: rows,
+                                                                 enabled: true, detail: detail).labels.count)
                 }
-                results.append(Measurement(scene: scene.rawValue, columns: columns, rows: rows, cellAspect: aspect,
+                results.append(Measurement(scene: scene.rawValue, detail: detail == .abstract ? "abstract" : "source",
+                                           columns: columns, rows: rows, cellAspect: aspect,
                                            sourceFeatures: dataset.features.count, sourceVertices: dataset.vertexCount,
                                            peakPreparedVertices: vertices, peakVisibleFeatures: features, peakLabels: visibleLabels,
                                            preparationMedianMS: median(preparation), preparationMaxMS: preparation.max()!,
@@ -73,6 +76,7 @@ enum MapProbe {
 
     private struct Measurement: Encodable {
         let scene: String
+        let detail: String
         let columns: Int
         let rows: Int
         let cellAspect: Double

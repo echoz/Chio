@@ -41,8 +41,11 @@ python3 Scripts/ci/terminal-smoke.py .build/release/chio-dashboard
 ```
 
 The map experiment additionally runs `Scripts/maps/prepare-fixtures.py --verify`
-and `Scripts/maps/terminal-probe.py` against its release binary. Its `--benchmark`
-mode measures local preparation and native raster work; it does not measure SSH
+and `Scripts/maps/terminal-probe.py` against its release binary. The PTY checks
+compare map samples after pan and detail changes, as well as camera text, offline
+coverage status and terminal restoration. Its `--benchmark` mode measures the
+default abstract treatment; add `--source-detail` for a comparison. It measures
+local preparation and native raster work; it does not measure SSH
 latency. `Scripts/maps/render-snapshot.py` converts `--snapshot-json` exports into
 inspection previews with Pillow and explicit text/braille fonts. Its default
 fonts are macOS paths; supply `--font` and `--symbol-font` elsewhere. It is an

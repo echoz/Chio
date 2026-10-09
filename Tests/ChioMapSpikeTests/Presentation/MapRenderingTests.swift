@@ -107,6 +107,25 @@ struct MapRenderingTests {
         }
     }
 
+    @Test("Abstract labels leave breathing room and a small allocation-scaled label budget")
+    func abstractLabelDensity() {
+        let candidates: [PreparedMap.Label] = (0..<20).map { index in
+            let column: Int = 10 + (index % 5) * 18
+            let row: Int = 2 + (index / 5) * 5
+            let position = PreparedMap.Point(x: Double(column), y: Double(row))
+            return PreparedMap.Label(featureID: "place-\(index)", kind: .primaryRoad,
+                                     text: "Place \(index)", position: position)
+        }
+        let abstract = MapLabels(candidates: candidates, columns: 100, rows: 20, enabled: true, detail: .abstract)
+        let source = MapLabels(candidates: candidates, columns: 100, rows: 20, enabled: true, detail: .source)
+        #expect(abstract.labels.count == 6)
+        #expect(source.labels.count > abstract.labels.count)
+        #expect(MapLabels(candidates: Array(candidates.reversed()), columns: 100, rows: 20,
+                          enabled: true, detail: .abstract) == abstract)
+        #expect(MapLabels(candidates: candidates, columns: 100, rows: 20,
+                          enabled: false, detail: .abstract).labels.isEmpty)
+    }
+
     @Test("A named road crossing the viewport receives a visible native Text label")
     func clippedRoadLabel() throws {
         let source = try MapDataset(features: [MapFeature(id: "road", kind: .road, name: "Road",
@@ -171,6 +190,20 @@ struct MapRenderingTests {
                 #expect(hasBraille != isSmall)
             }
         }
+    }
+
+    @Test("Map UI credits and coverage follow the adapted source rather than the selected scene name")
+    func adaptedSourcePresentation() throws {
+        let loaded = try MapFixtures.load()
+        let swapped = MapFixtures(worldSource: loaded.streetSource, streetSource: loaded.worldSource)
+        let view = MapSpikeView(fixtures: swapped, scene: .world, appearance: .default)
+            .environment(\.terminalSize, CellSize(width: 100, height: 30))
+        let frame = DefaultRenderer().render(view, proposal: .init(width: 100, height: 30), frameInstant: .zero)
+        let text = frame.rasterSurface.lines.joined(separator: "\n")
+        #expect(text.contains("OpenStreetMap contributors"))
+        #expect(text.contains("ODbL 1.0"))
+        #expect(text.contains("Outside offline coverage"))
+        #expect(!text.contains("Made with Natural Earth"))
     }
 
     private func render(_ map: PreparedMap, columns: Int, rows: Int, theme: ChioTheme,

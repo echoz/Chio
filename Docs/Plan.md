@@ -24,12 +24,16 @@ research, dependencies and acceptance gates.
 The runnable proof is `chio-map-spike`, under `Spikes/MapRendering`; it adds no
 public library API. [Findings](Decisions/GeographicMaps.md#rendering-spike-findings)
 record native rendering, source budgets, provisional sizes and verification.
-The next work is to reduce street density at overview scales, establish a drawing
-work budget, and then design the reusable offline component. Do not promote the
+The experiment now defaults to abstract geography and has an internal adapter
+boundary carrying source credits and explicit coverage. Compare source detail
+with `d`; validate the visual direction before expanding acquisition. The next
+work is to assess that treatment in use, establish a drawing work budget, and
+then design the reusable offline component. Do not promote the
 experimental types unchanged: camera bindings, asynchronous preparation/stale
 results, markers, routes and selection have not yet been implemented.
 
-Live vector tiles are a later, separate decision. Decoder/provider choices and
+Acquisition remains deferred while the look is refined. Live vector tiles are a
+later, separate decision. Decoder/provider choices and
 static linking compatibility are unverified; project policy still defers live
 external-service examples. See the [tile-loading proposal](Decisions/GeographicMaps.md#later-proposal-vector-tile-loading).
 

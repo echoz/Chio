@@ -1,7 +1,8 @@
 # Offline vector fixtures
 
 These are real source geometries, retained for the experimental rendering spike.
-Runtime uses only `world.geojson` and `singapore.geojson`; it performs no fetch.
+Runtime reads `world.geojson`, `singapore.geojson` and their `provenance.json`
+metadata; it performs no fetch.
 Machine-readable source pins, snapshot times, SHA-256 hashes, bounds and feature/
 vertex/hole counts are in [provenance.json](provenance.json).
 
@@ -49,7 +50,10 @@ complete footprint. Standalone named building ways remain selected.
 
 To bound street detail, service roads, footways, paths, cycleways and living streets
 are omitted. Other queried road classes remain actual LineStrings; motorway,
-trunk, primary, secondary and tertiary classes (including links) are `primaryRoad`.
+trunk and primary classes (including links) are `primaryRoad`. Secondary and
+tertiary streets belong to `road`, keeping provider classification separate from
+the terminal's detail policy. The abstract presentation can omit these roads and
+buildings without deleting them from the fixture.
 Large East Coast Park is omitted because most of it lies outside the neighborhood.
 No polygon/road clipping is applied, preserving complete relations and holes.
 The retained source is broader than the runtime fixture, so these filters are

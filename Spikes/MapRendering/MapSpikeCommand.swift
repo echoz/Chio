@@ -10,6 +10,7 @@ struct MapSpikeCommand {
     @Flag(help: "Export native raster cells as JSON for visual inspection.") var snapshotJSON = false
     @Flag(help: "Measure preparation and native raster time at three allocations.") var benchmark = false
     @Flag(help: "Render below the provisional minimum size to assess readability.") var inspectSmall = false
+    @Flag(help: "Show source detail for comparison with the default abstract map.") var sourceDetail = false
     @Option(help: "Snapshot width, 20...240 columns.") var width = 100
     @Option(help: "Snapshot height, 12...100 rows.") var height = 30
     @Option(help: "Override cell height/width, 0.5...4. Defaults to reported metrics interactively, estimated 2 for snapshots.")
@@ -59,13 +60,14 @@ extension MapSpikeCommand: AsyncParsableCommand {
     @MainActor
     mutating func run() async throws {
         let fixtures = try MapFixtures.load()
+        let detail: MapDetail = sourceDetail ? .source : .abstract
         if benchmark {
-            try MapProbe.run(fixtures: fixtures, appearance: theme, aspect: cellAspect ?? 2)
+            try MapProbe.run(fixtures: fixtures, appearance: theme, aspect: cellAspect ?? 2, detail: detail)
         } else if snapshot || snapshotJSON {
             let metrics = CellPixelMetrics(width: 100, height: Int((cellAspect ?? 2) * 100),
                                            source: cellAspect == nil ? .estimated : .reported)
             let frame = DefaultRenderer().render(
-                MapSpikeView(fixtures: fixtures, scene: scene, appearance: theme, inspectSmall: inspectSmall)
+                MapSpikeView(fixtures: fixtures, scene: scene, appearance: theme, inspectSmall: inspectSmall, detail: detail)
                     .environment(\.terminalSize, CellSize(width: width, height: height))
                     .environment(\.cellPixelMetrics, metrics),
                 proposal: ProposedSize(width: width, height: height), frameInstant: .zero)
@@ -75,7 +77,7 @@ extension MapSpikeCommand: AsyncParsableCommand {
             } else { print(frame.rasterSurface.lines.joined(separator: "\n")) }
         } else {
             try await WebHostCLIRunner.run(MapSpikeApplication(fixtures: fixtures, scene: scene, appearance: theme,
-                                                               inspectSmall: inspectSmall, cellAspect: cellAspect),
+                                                               inspectSmall: inspectSmall, cellAspect: cellAspect, detail: detail),
                                           configuration: swiftTUIOptions.runtimeConfiguration())
         }
     }

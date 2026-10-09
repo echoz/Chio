@@ -1,37 +1,39 @@
 import SwiftTUI
 
 struct MapSpikeApplication {
-    let fixtures: MapFixtures
-    let scene: MapFixtures.Scene
-    let appearance: MapSpikeCommand.Appearance
-    let inspectSmall: Bool
-    let cellAspect: Double?
+    private let launch: Launch
 
-    nonisolated init() {
-        // Required by App. Actual CLI loading is explicit and uses the initializer below.
-        let empty = try! MapDataset(features: [])
-        self.init(fixtures: MapFixtures(world: empty, street: empty), scene: .world, appearance: .default,
-                  inspectSmall: false, cellAspect: nil)
-    }
+    /// Native App requires a default initializer; it has no loaded source to display.
+    nonisolated init() { launch = .unconfigured }
 
     nonisolated init(fixtures: MapFixtures, scene: MapFixtures.Scene, appearance: MapSpikeCommand.Appearance,
-                     inspectSmall: Bool = false, cellAspect: Double? = nil) {
-        self.fixtures = fixtures
-        self.scene = scene
-        self.appearance = appearance
-        self.inspectSmall = inspectSmall
-        self.cellAspect = cellAspect
+                     inspectSmall: Bool = false, cellAspect: Double? = nil, detail: MapDetail = .abstract) {
+        launch = .map(fixtures: fixtures, scene: scene, appearance: appearance,
+                      inspectSmall: inspectSmall, cellAspect: cellAspect, detail: detail)
+    }
+
+    private enum Launch {
+        case unconfigured
+        case map(fixtures: MapFixtures, scene: MapFixtures.Scene, appearance: MapSpikeCommand.Appearance,
+                 inspectSmall: Bool, cellAspect: Double?, detail: MapDetail)
     }
 }
 
 extension MapSpikeApplication: SwiftTUIRuntime.App {
     var body: some Scene {
         WindowGroup("Chio map rendering spike") {
-            if let cellAspect {
-                MapSpikeView(fixtures: fixtures, scene: scene, appearance: appearance, inspectSmall: inspectSmall)
-                    .environment(\.cellPixelMetrics, CellPixelMetrics(width: 100, height: Int(cellAspect * 100), source: .reported))
-            } else {
-                MapSpikeView(fixtures: fixtures, scene: scene, appearance: appearance, inspectSmall: inspectSmall)
+            switch launch {
+            case .unconfigured:
+                Text("Run chio-map-spike to load the offline examples.")
+            case .map(let fixtures, let scene, let appearance, let inspectSmall, let cellAspect, let detail):
+                if let cellAspect {
+                    MapSpikeView(fixtures: fixtures, scene: scene, appearance: appearance,
+                                 inspectSmall: inspectSmall, detail: detail)
+                        .environment(\.cellPixelMetrics, CellPixelMetrics(width: 100, height: Int(cellAspect * 100), source: .reported))
+                } else {
+                    MapSpikeView(fixtures: fixtures, scene: scene, appearance: appearance,
+                                 inspectSmall: inspectSmall, detail: detail)
+                }
             }
         }
     }

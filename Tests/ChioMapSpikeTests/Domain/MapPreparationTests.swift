@@ -83,34 +83,34 @@ struct MapPreparationTests {
         #expect(dataset.features[0].geometry.vertexCount == 10)
     }
 
-    @Test("World polar-cap rings preserve their explicit full-width longitude cut")
-    func polarCap() throws {
+    @Test("World polar-cap rings preserve their explicit full-width longitude cut", arguments: [MapDetail.source, .abstract])
+    func polarCap(detail: MapDetail) throws {
         let ring = try MapRing(coordinates: [coordinate(-180, -90), coordinate(180, -90), coordinate(180, -80), coordinate(0, -80), coordinate(-180, -80), coordinate(-180, -90)])
         let dataset = try MapDataset(features: [MapFeature(id: "antarctica", kind: .land, geometry: .polygon(MapPolygon(rings: [ring])))])
         let prepared = try MapPreparation.prepare(dataset: dataset,
                                                   camera: MapCamera(center: coordinate(0, -75), longitudeSpan: 360),
-                                                  viewport: MapViewport(columns: 100, rows: 40))
+                                                  viewport: MapViewport(columns: 100, rows: 40), detail: detail)
         let polygon = try #require(prepared.polygons.first { $0.rings[0][0].x == 0 })
         #expect(polygon.rings[0][1].x == 100)
         #expect(polygon.rings[0].first == polygon.rings[0].last)
     }
 
-    @Test("A full-width polar strip keeps its source longitude cut even when shortest unwrap closes")
-    func polarStrip() throws {
+    @Test("A full-width polar strip keeps its source longitude cut even when shortest unwrap closes", arguments: [MapDetail.source, .abstract])
+    func polarStrip(detail: MapDetail) throws {
         let ring = try MapRing(coordinates: [coordinate(-180, -90), coordinate(180, -90),
                                             coordinate(180, -80), coordinate(-180, -80), coordinate(-180, -90)])
         let dataset = try MapDataset(features: [MapFeature(id: "strip", kind: .land,
                                                            geometry: .polygon(MapPolygon(rings: [ring])))])
         let prepared = try MapPreparation.prepare(dataset: dataset,
                                                   camera: MapCamera(center: coordinate(0, -75), longitudeSpan: 360),
-                                                  viewport: MapViewport(columns: 100, rows: 40))
+                                                  viewport: MapViewport(columns: 100, rows: 40), detail: detail)
         let polygon = try #require(prepared.polygons.first { $0.rings[0][0].x == 0 })
         #expect(polygon.rings[0].map(\.x) == [0, 100, 100, 0, 0])
         #expect(polygon.rings[0][0].y > polygon.rings[0][2].y)
     }
 
-    @Test("Ordinary dateline polygons retain a short longitude branch and all hole rings")
-    func datelinePolygon() throws {
+    @Test("Ordinary dateline polygons retain a short longitude branch and all hole rings", arguments: [MapDetail.source, .abstract])
+    func datelinePolygon(detail: MapDetail) throws {
         let ring = try MapRing(coordinates: [coordinate(178, -2), coordinate(-178, -2),
                                             coordinate(-178, 2), coordinate(178, 2), coordinate(178, -2)])
         let hole = try MapRing(coordinates: [coordinate(179, -1), coordinate(-179, -1),
@@ -119,7 +119,7 @@ struct MapPreparationTests {
                                                            geometry: .polygon(MapPolygon(rings: [ring, hole])))])
         let prepared = try MapPreparation.prepare(dataset: dataset,
                                                   camera: MapCamera(center: coordinate(179, 0), longitudeSpan: 20),
-                                                  viewport: MapViewport(columns: 100, rows: 40))
+                                                  viewport: MapViewport(columns: 100, rows: 40), detail: detail)
         #expect(prepared.polygons.count == 1)
         #expect(prepared.polygons[0].rings[0].map(\.x) == [45, 65, 65, 45, 45])
         #expect(prepared.polygons[0].rings[1].map(\.x) == [50, 60, 60, 50, 50])

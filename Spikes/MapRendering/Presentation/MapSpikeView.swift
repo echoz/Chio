@@ -12,19 +12,33 @@ struct MapSpikeView {
     @State private var appearance: MapSpikeCommand.Appearance
     @State private var fills = true
     @State private var labels = true
+    @State private var detail: MapDetail
     private let fixtures: MapFixtures
     private let inspectSmall: Bool
 
     init(fixtures: MapFixtures, scene: MapFixtures.Scene, appearance: MapSpikeCommand.Appearance,
-         inspectSmall: Bool = false) {
+         inspectSmall: Bool = false, detail: MapDetail = .abstract) {
         self.fixtures = fixtures
         self.inspectSmall = inspectSmall
         _scene = State(wrappedValue: scene)
         _camera = State(wrappedValue: scene.camera)
         _appearance = State(wrappedValue: appearance)
+        _detail = State(wrappedValue: detail)
     }
 
     private var theme: ChioTheme { appearance.theme }
+    private var source: MapSource { fixtures.source(for: scene) }
+    private var sourceDescription: String {
+        switch source.coverage {
+        case .worldwide: "Offline world"
+        case .boundedOfflineExtract:
+            source.coverage.contains(camera.center) ? "Offline extract" : "Outside offline coverage · r reset"
+        }
+    }
+    private var licenseText: String {
+        let link = source.metadata.attributionURL ?? source.metadata.licenseURL
+        return "\(source.metadata.license) · \(link.host ?? "")\(link.path)"
+    }
     private var viewport: MapViewport {
         // Full-world Mercator is square in physical space. Letterboxing preserves
         // the poles' projection cutoff instead of stretching or cropping the world.
@@ -59,11 +73,11 @@ struct MapSpikeView {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         } else {
             switch Result(catching: { try MapPreparation.prepare(dataset: fixtures.dataset(for: scene),
-                                                                 camera: camera, viewport: viewport) }) {
+                                                                 camera: camera, viewport: viewport, detail: detail) }) {
             case .success(let map):
                 MapCanvasView(map: map, viewport: viewport, theme: theme, fills: fills, labels: labels,
                               waterColor: tint(theme.syntax.type, amount: 0.22),
-                              parkColor: tint(theme.syntax.string, amount: 0.16))
+                              parkColor: tint(theme.syntax.string, amount: 0.16), detail: detail)
             case .failure(let error):
                 Text("Map preparation failed: \(error)").foregroundStyle(theme.colors.error)
             }
@@ -80,6 +94,7 @@ struct MapSpikeView {
         case .character("t"): appearance = appearance.next
         case .character("f"): fills.toggle()
         case .character("l"): labels.toggle()
+        case .character("d"): detail = detail == .abstract ? .source : .abstract
         case .character("r"): camera = scene.camera
         case .character("+"), .character("="): camera = try! camera.zoomed(by: 1 / 0.7)
         case .character("-"): camera = try! camera.zoomed(by: 0.7)
@@ -100,7 +115,7 @@ extension MapSpikeView: View {
                 Text("chio").bold().foregroundStyle(theme.colors.accent)
                 Text("/ map spike · \(scene.title)")
             }.frame(height: 1, alignment: .leading)
-            Text("Local vectors · Web Mercator · \(appearance.rawValue)")
+            Text("\(sourceDescription) · \(detail == .abstract ? "abstract" : "source detail") · \(appearance.rawValue)")
                 .foregroundStyle(theme.colors.mutedText).frame(height: 1, alignment: .leading)
             Spacer().frame(height: 1)
             mapView.frame(width: max(1, terminalSize.width - 2), height: viewport.rows, alignment: .center)
@@ -108,11 +123,13 @@ extension MapSpikeView: View {
             Text(String(format: "Center %.3f, %.3f · span %.4f°", camera.center.latitude,
                         camera.center.longitude, camera.longitudeSpan))
                 .foregroundStyle(theme.colors.secondaryText).frame(height: 1, alignment: .leading)
-            Text(scene.attribution).foregroundStyle(theme.colors.mutedText).frame(height: 1, alignment: .leading)
-            Text(scene.license).foregroundStyle(theme.colors.mutedText).frame(height: 1, alignment: .leading)
+            Text(source.metadata.attribution).foregroundStyle(theme.colors.mutedText).frame(height: 1, alignment: .leading)
+            Text(licenseText).foregroundStyle(theme.colors.mutedText).frame(height: 1, alignment: .leading)
             Text(terminalSize.width >= 76
-                 ? "↑↓←→ pan  +/- zoom  space map  t theme  f fill  l labels  r reset  q quit"
-                 : "q quit  +/- zoom  space map")
+                 ? "↑↓←→ pan  +/- zoom  space map  t theme  d detail  f fill  l labels  r reset  q quit"
+                 : terminalSize.width >= 58
+                    ? "↑↓←→ pan  +/- zoom  d detail  space map  q quit"
+                    : "q quit  +/- zoom  space map")
                 .foregroundStyle(theme.colors.accent).frame(height: 1, alignment: .leading)
         }
         .padding(1)

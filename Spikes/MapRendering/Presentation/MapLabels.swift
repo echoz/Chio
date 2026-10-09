@@ -12,7 +12,8 @@ struct MapLabels {
         let width: Int
     }
 
-    init(candidates: [PreparedMap.Label], columns: Int, rows: Int, enabled: Bool) {
+    init(candidates: [PreparedMap.Label], columns: Int, rows: Int, enabled: Bool,
+         detail: MapDetail = .source) {
         guard enabled else { labels = []; return }
         var accepted: [Label] = []
         var names: Set<String> = []
@@ -30,11 +31,15 @@ struct MapLabels {
             let y = Int(candidate.position.y.rounded())
             guard x >= 1, y >= 1, x + width < columns, y < rows - 1 else { continue }
             guard !accepted.contains(where: {
-                abs($0.row - y) <= 1 && x < $0.column + $0.width + 2 && x + width + 2 > $0.column
+                abs($0.row - y) <= (detail == .abstract ? 2 : 1)
+                    && x < $0.column + $0.width + (detail == .abstract ? 4 : 2)
+                    && x + width + (detail == .abstract ? 4 : 2) > $0.column
             }) else { continue }
             accepted.append(Label(id: candidate.featureID, text: text, column: x, row: y, width: width))
             names.insert(text)
-            if accepted.count >= max(1, columns * rows / 100) { break }
+            let limit = detail == .abstract ? min(8, max(1, columns * rows / 300))
+                : max(1, columns * rows / 100)
+            if accepted.count >= limit { break }
         }
         labels = accepted
     }

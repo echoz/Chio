@@ -80,6 +80,12 @@ def probe(binary, output_dir, record=None):
     def current_screen():
         return parser.screen(output)
 
+    def map_samples():
+        # Compare the actual drawing, excluding headers, camera text and credits.
+        # Keeping only braille also excludes labels from this movement assertion.
+        return tuple(''.join(char if '\u2800' <= char <= '\u28ff' else ' ' for char in row)
+                     for row in current_screen().splitlines()[4:24])
+
     def recording_pause():
         if not recording:
             return
@@ -147,10 +153,17 @@ def probe(binary, output_dir, record=None):
         validations["cursor_hidden"] = True
 
         key("street", b" ", ("Singapore", "span 0.0300"))
+        abstract_samples = map_samples()
+        key("source detail", b"d", ("source detail", "span 0.0300"))
+        assert map_samples() != abstract_samples, "Detail comparison did not change the drawing"
+        key("abstract detail", b"d", ("abstract", "span 0.0300"))
+        assert map_samples() == abstract_samples, "Abstract comparison did not restore the drawing"
         key("zoom", b"+", ("Singapore", "span 0.0210"))
+        zoom_samples = map_samples()
         key("pan", b"\x1b[C", ("Center 1.289, 103.859", "span 0.0210"))
-        key("light theme", b"t", ("Web Mercator · light", "span 0.0210"))
-        key("fills off redraw", b"f", ("Singapore", "Web Mercator · light", "span 0.0210"))
+        assert map_samples() != zoom_samples, "Pan changed camera text without moving the drawing"
+        key("light theme", b"t", ("abstract · light", "span 0.0210"))
+        key("fills off redraw", b"f", ("Singapore", "abstract · light", "span 0.0210"))
         key("labels off redraw", b"l", ("Singapore", "span 0.0210"))
         key("fills on redraw", b"f", ("Singapore", "span 0.0210"))
         key("labels on redraw", b"l", ("Singapore", "span 0.0210"))
@@ -160,7 +173,9 @@ def probe(binary, output_dir, record=None):
         observe("restored size retains camera", ("Singapore", "Center 1.289, 103.859", "span 0.0210"),
                 lambda: resize(100, 30))
         assert "More room for the map" not in current_screen(), "Fallback remained after expansion"
+        key("leave offline coverage", b"\x1b[C" * 8, ("Outside offline coverage",))
         key("reset", b"r", ("Center 1.289, 103.856", "span 0.0300"))
+        assert "Outside offline coverage" not in current_screen(), "Coverage status did not reset"
 
         before = len(output)
         exit_started = time.monotonic()
@@ -213,7 +228,7 @@ def probe(binary, output_dir, record=None):
                     cast.write(json.dumps(item, ensure_ascii=False) + "\n")
         os.close(master)
         os.close(slave)
-    print(f"PASS: map scene, pan/zoom, theme, fills/labels, resize, reset and clean exit ({len(output)} bytes)")
+    print(f"PASS: map drawing pan/zoom, abstraction, theme, fills/labels, offline coverage, resize and clean exit ({len(output)} bytes)")
 
 
 def main():

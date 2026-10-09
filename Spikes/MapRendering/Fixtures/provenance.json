@@ -40,8 +40,8 @@
         "kinds": {
           "building": 557,
           "park": 35,
-          "primaryRoad": 1285,
-          "road": 908,
+          "primaryRoad": 751,
+          "road": 1442,
           "water": 37
         },
         "bounds": [
@@ -51,8 +51,8 @@
           1.3110489
         ]
       },
-      "bytes": 909635,
-      "sha256": "cc41e02336cd333885d4bfc637239475f8ac3013e7e20a25a13b836afa7425e2",
+      "bytes": 905897,
+      "sha256": "a66ac5a0e2ab151382b4cef84739267ea2a9031a18b9edc0db9308795ca41772",
       "sourceArchive": "singapore-source.json.gz",
       "sourceArchiveBytes": 793650,
       "sourceArchiveSHA256": "867f97e161ecf892a01fc25146f8e102855747b1efe0d9988c86a9971e3b4707",

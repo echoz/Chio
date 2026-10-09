@@ -3,20 +3,29 @@ import SwiftTUI
 
 /// Bundled data is loaded once at the executable boundary, never by a view or value transform.
 struct MapFixtures {
-    let world: MapDataset
-    let street: MapDataset
+    let worldSource: MapSource
+    let streetSource: MapSource
+
+    var world: MapDataset { worldSource.dataset }
+    var street: MapDataset { streetSource.dataset }
 
     static func load() throws -> Self {
-        func dataset(_ name: String) throws -> MapDataset {
-            guard let url = Bundle.module.url(forResource: name, withExtension: "geojson", subdirectory: "Fixtures") else {
+        func read(_ name: String, extension fileExtension: String) throws -> Data {
+            guard let url = Bundle.module.url(forResource: name, withExtension: fileExtension, subdirectory: "Fixtures") else {
                 throw CocoaError(.fileNoSuchFile)
             }
-            return try MapDataset.decodeGeoJSON(Data(contentsOf: url))
+            return try Data(contentsOf: url)
         }
-        return try Self(world: dataset("world"), street: dataset("singapore"))
+        let manifest = try JSONDecoder().decode(MapFixtureManifest.self, from: read("provenance", extension: "json"))
+        let worldAdapter = NormalizedGeoJSONMapAdapter(metadata: manifest.worldMetadata, coverage: .worldwide)
+        let streetAdapter = NormalizedGeoJSONMapAdapter(metadata: manifest.streetMetadata,
+                                                      coverage: .boundedOfflineExtract(manifest.streetBounds))
+        return try Self(worldSource: worldAdapter.adapt(read("world", extension: "geojson")),
+                        streetSource: streetAdapter.adapt(read("singapore", extension: "geojson")))
     }
 
-    func dataset(for scene: Scene) -> MapDataset { scene == .world ? world : street }
+    func source(for scene: Scene) -> MapSource { scene == .world ? worldSource : streetSource }
+    func dataset(for scene: Scene) -> MapDataset { source(for: scene).dataset }
 
     enum Scene: String {
         case world, street
@@ -29,12 +38,6 @@ struct MapFixtures {
             case .world: try! MapCamera(center: MapCoordinate(latitude: 0, longitude: 0), longitudeSpan: 360)
             case .street: try! MapCamera(center: MapCoordinate(latitude: 1.289, longitude: 103.856), longitudeSpan: 0.030)
             }
-        }
-        var attribution: String {
-            self == .world ? "Natural Earth · public domain" : "© OpenStreetMap contributors"
-        }
-        var license: String {
-            self == .world ? "naturalearthdata.com" : "ODbL · openstreetmap.org/copyright"
         }
     }
 }

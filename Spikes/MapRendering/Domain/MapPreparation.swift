@@ -2,7 +2,8 @@ import Foundation
 
 /// Pure bounded preparation; native SwiftTUI still owns all cell rasterization.
 enum MapPreparation {
-    static func prepare(dataset: MapDataset, camera: MapCamera, viewport: MapViewport) throws -> PreparedMap {
+    static func prepare(dataset: MapDataset, camera: MapCamera, viewport: MapViewport,
+                        detail: MapDetail = .source) throws -> PreparedMap {
         var lines: [PreparedMap.Line] = []
         var polygons: [PreparedMap.Polygon] = []
         var labels: [PreparedMap.Label] = []
@@ -17,6 +18,7 @@ enum MapPreparation {
         }.map(\.element)
 
         for feature in ordered {
+            guard detail.admits(feature.kind, camera: camera, viewport: viewport) else { continue }
             var anchor: PreparedMap.Point?
             switch feature.geometry {
             case .polyline(let line):
@@ -47,12 +49,14 @@ enum MapPreparation {
                 for shift in [-1.0, 0, 1] {
                     let shiftedRings = rings.map { shifted($0, by: shift * wrapWidth) }
                     guard intersects(shiftedRings[0], viewport: viewport) else { continue }
+                    guard detail == .source || detail.admitsArea(visibleArea(shiftedRings, viewport: viewport),
+                                                                kind: feature.kind) else { continue }
                     // Retain every ring and vertex. Filling only viewport scanlines bounds work
                     // without introducing clipped border edges or destroying hole topology.
                     preparedVertices += shiftedRings.reduce(0) { $0 + $1.count }
                     guard preparedVertices <= MapLimits.preparedVertices else { throw MapValidationError.budgetExceeded }
                     polygons.append(.init(featureID: feature.id, kind: feature.kind, rings: shiftedRings))
-                    for ring in shiftedRings {
+                    for ring in shiftedRings where detail.outlines(feature.kind) {
                         for path in clipped(ring, viewport: viewport) {
                             let outline = simplify(path)
                             guard outline.count >= 2 else { continue }
@@ -143,6 +147,43 @@ enum MapPreparation {
         }
         if path.count >= 2 { paths.append(path) }
         return paths
+    }
+
+    /// Clip temporary copies only to measure visible area for admission. The prepared
+    /// polygons keep every original ring: this never creates borders or changes holes.
+    private static func visibleArea(_ rings: [[PreparedMap.Point]], viewport: MapViewport) -> Double {
+        func area(_ ring: [PreparedMap.Point]) -> Double {
+            var points = Array(ring.dropLast())
+            for (horizontal, boundary, greater) in [(true, 0.0, true), (true, Double(viewport.columns), false),
+                                                   (false, 0.0, true), (false, Double(viewport.rows), false)] {
+                guard !points.isEmpty else { return 0 }
+                func value(_ point: PreparedMap.Point) -> Double { horizontal ? point.x : point.y }
+                func inside(_ point: PreparedMap.Point) -> Bool {
+                    greater ? value(point) >= boundary : value(point) <= boundary
+                }
+                var output: [PreparedMap.Point] = []
+                var previous = points[points.count - 1]
+                for point in points {
+                    if inside(previous) != inside(point) {
+                        let fraction = (boundary - value(previous)) / (value(point) - value(previous))
+                        output.append(.init(x: previous.x + (point.x - previous.x) * fraction,
+                                            y: previous.y + (point.y - previous.y) * fraction))
+                    }
+                    if inside(point) { output.append(point) }
+                    previous = point
+                }
+                points = output
+            }
+            guard let last = points.last else { return 0 }
+            var previous = last
+            var twiceArea = 0.0
+            for point in points {
+                twiceArea += previous.x * point.y - point.x * previous.y
+                previous = point
+            }
+            return abs(twiceArea) / 2
+        }
+        return max(0, area(rings[0]) - rings.dropFirst().reduce(0) { $0 + area($1) })
     }
 
     /// Liang-Barsky: native line calls receive only finite viewport-bounded endpoints.

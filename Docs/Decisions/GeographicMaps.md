@@ -9,6 +9,59 @@ The [active plan](../Plan.md) tracks the next steps. Experimental code lives in
 
 ## Rendering spike findings
 
+### Abstract presentation and source adapters
+
+The default experiment now uses an abstract cartographic treatment. Buildings are
+omitted, major roads keep their connected source paths, and minor roads appear
+only at at most 12 ground metres per column with a 58×16 or larger allocation.
+The source converter classifies motorway/trunk/primary roads, including links,
+as major; secondary and tertiary streets remain in the ordinary-road category.
+Small visible areas are omitted using filled area after viewport intersection,
+with holes deducted. Admitted rings and holes retain their source geometry.
+Parks use quiet fills without outlines. Abstract labels have wider spacing and
+a budget of one per 300 cells, capped at eight. These are experimental defaults,
+not a promise of a finished map style or general-purpose level-of-detail engine.
+
+`d` compares the abstract presentation with source detail, and `--source-detail`
+starts that comparison mode. Themes supply color; the semantic detail policy is
+independent of both the theme and the provider. Low-level preparation defaults to
+source mode for geometric contract tests; the executable explicitly chooses the
+abstract mode. Panning and detail changes retain the camera.
+
+An internal synchronous `MapSourceAdapter` normalizes a typed input into
+`MapSource`: the existing checked `MapDataset` composed with required source
+metadata and explicit geographic coverage. `NormalizedGeoJSONMapAdapter` accepts
+the spike's existing bounded GeoJSON schema; it is not an arbitrary provider's
+GeoJSON decoder. Fixture I/O occurs once at the command boundary. The provenance
+manifest supplies attribution, license, source URL and revision rather than
+duplicating those facts in a scene's presentation.
+
+Coverage distinguishes worldwide data from a checked, nonwrapping offline query
+box. Singapore coverage is the query box, not the extent of complete geometries
+that happen to cross it. The UI identifies the offline extract and reports when
+the camera center leaves it; this is a center-based notice, not proof that every
+visible cell is covered. It neither clamps the camera nor requests more data.
+The source adapter owns normalization; acquisition, tile caching, cancellation
+and asynchronous preparation remain deferred. No public library API or network
+dependency is added by this seam.
+
+A local release comparison uses the same retained street dataset and 20 timed
+samples after warm-up. At a **100×30 map allocation**, abstract preparation retains
+at most 643 visible features and 3,614 prepared vertices, compared with 2,212 and
+19,761 in source mode. Preparation/raster medians are about 0.9/5.9 ms versus
+3.0/19.8 ms. At 60×20 and 36×18 map allocations the abstract raster medians are
+about 3.3 and 2.2 ms. As in the initial probe below, timing uses uniform area colors;
+the native UI's three-theme captures are checked separately. These observations
+do not establish worst-case budgets or SSH latency.
+
+The full 100×30 **terminal UI** has a 98×20 street allocation and six abstract
+labels. A 60×26 terminal keeps a readable map with three labels and compact pan,
+detail, zoom and scene hints. The updated recording compares both detail modes
+and ends on the final complete UI frame. Terminal verification compares drawing
+samples after panning and toggling detail, and checks the outside-coverage notice.
+
+### Initial rendering proof
+
 One native `Canvas` renders real Natural Earth world land and an OpenStreetMap
 neighborhood around Singapore's Marina Bay. It combines braille coastlines/roads
 with cell-background area fills; native `Text` supplies labels. Native input,
@@ -24,7 +77,9 @@ height/width ratios; normal use reads native reported metrics or the estimated
 ### Data and preparation
 
 - World: 127 polygons, 5,143 source vertices and one hole, 133,553-byte GeoJSON.
-- Singapore: 2,822 features, 20,494 source vertices and 17 holes, 909,635-byte GeoJSON.
+- Singapore: 2,822 features, 20,494 source vertices and 17 holes. Road reclassification
+  changes the normalized GeoJSON bytes without changing geometry; the manifest
+  records current byte counts and hashes.
 - [Provenance and reproduction](../../Spikes/MapRendering/Fixtures/Provenance.md)
   retain exact source snapshots, dates, licenses, source pins and a deterministic
   converter. Natural Earth is public domain; OSM data remains ODbL with visible
@@ -58,7 +113,7 @@ The provisional floor is a 32×16 world allocation or 58×16 street allocation;
 space. Below it, the normal UI shows a summary and retains its camera for resize.
 `--inspect-small` bypasses that policy for comparisons, without implying usability.
 
-The street overview is still dense. Offline source filtering, line sample reduction
+The initial street overview was too dense. Offline source filtering, line sample reduction
 and label collisions are useful, but do not establish sufficient cartographic
 detail reduction: short road fragments and small building outlines still compete
 for cells. Before promotion, compare zoom/allocation-based layer admission and
@@ -67,7 +122,7 @@ arbitrary samples to obtain a faster frame is not an acceptable policy.
 
 ### Measured scope and remaining limits
 
-Local macOS arm64 release measurements use the two bundled datasets and 20 samples
+The initial `ea624b7` macOS arm64 release measurements use the two bundled datasets and 20 samples
 after one warm-up, with a fresh native renderer per frame. These are **map allocations**,
 not full terminal sizes. Preparation and raster medians in milliseconds:
 
@@ -107,7 +162,7 @@ remain unproved or unimplemented. Do not promote these internal types unchanged.
 
 ### Verification of the proof
 
-27 map tests pass in debug and release: checked construction/decoding, projection
+The initial proof's 27 map tests passed in debug and release: checked construction/decoding, projection
 and aspect, clipping, dateline/polar rings, holes, label anchors/collisions/Unicode,
 layer color priority, real fixtures and minimum allocation. Independent review
 found a collapsing polar strip and an edge-anchored road label; both are fixed

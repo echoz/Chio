@@ -77,7 +77,7 @@ def osm_kind(tags):
         return 'building'
     if tags.get('highway'):
         return 'primaryRoad' if tags['highway'].split('_')[0] in {
-            'motorway', 'trunk', 'primary', 'secondary', 'tertiary'} else 'road'
+            'motorway', 'trunk', 'primary'} else 'road'
     return None
 
 
