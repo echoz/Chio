@@ -65,6 +65,7 @@ Try world and street maps with locations and routes:
 
 ```sh
 swift run -c release chio-maps --map street
+# Add --online to load neighboring OpenFreeMap tiles as you pan.
 ```
 
 [Example controls and launch options →](Docs/Examples.md)
@@ -80,7 +81,7 @@ swift run -c release chio-maps --map street
 - [Hunk](https://www.hunk.dev/) — readable diffs and keyboard-driven review flows;
   the reference for the example-only diff reader prototype.
 - [MapSCII](https://github.com/rastapasta/mapscii) — terminal cartography, explored
-  in the [offline map component](Docs/Usage.md#maps).
+  in the [map component](Docs/Usage.md#maps).
 
 Chio adapts these ideas to native SwiftTUI composition and Swift APIs.
 

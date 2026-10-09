@@ -7,35 +7,33 @@ live in [Design](Design.md) and its decision index; implementation and showcase
 checks live in [Verification](Verification.md). Completed release scope and results
 live in [0.1.0](Releases/0.1.0.md).
 
-## Latest slice: public offline maps
+## Latest slice: online maps
 
-**Status:** Public component implemented; no longer an experimental target.
-The adapter proof is accepted. Provider comparison refinements are shelved at the
-user's direction; they do not block the reusable offline component.
+**Status:** Accepted implementation. Provider comparisons remain shelved.
 
-The public `MapView` composes checked source geometry, an application-owned camera
-and marker selection, markers, route overlays, shared detail and theme values.
-Preparation runs on a serial worker with cancellation and stale-result rejection;
-SwiftTUI owns actual allocation, focus, input, drawing and terminal lifecycle.
-`chio-maps` in `Examples/Maps` consumes the same public API as downstream apps.
-[Geographic maps](Decisions/GeographicMaps.md) owns its contracts and limitations.
+The explicit loader and opt-in online example are implemented. Current contracts
+live in [online tile acquisition](Decisions/OnlineMaps.md), with rendering owned by
+[geographic maps](Decisions/GeographicMaps.md). Offline launches remain the default;
+online views retain the bundled world overview and acquire regional/street tiles.
 
-Required verification:
+Required verification for this slice:
 
-- Checked public values/codecs and adapter errors; bounded geometry and overlays.
-- Model, raster and hosted tests for cancellation, authoritative bindings,
-  selection, native focus, resizing, themes and compact/overload recovery.
-- Release example, PTY workflow, current recordings/previews and published QA.
-- Required macOS/Linux CI on the integrated revision, with independent review.
+- Verify checked values, acquisition lifecycle and exact marker fixtures, plus
+  required macOS/Linux CI. CI uses deterministic local data.
+- Run a separate bounded live-provider probe and adjacent-tile inspection.
+  These establish integration, not provider availability or universal coverage.
+- Capture the verified release recording, theme previews and showcase checks;
+  deploy and inspect the published result before declaring the slice complete.
 
-Runtime acquisition remains deferred. The OpenFreeMap adapter decodes a pinned
-local MVT response; it does not stitch or fetch neighboring tiles. Do not expand
-this slice into provider parity, caching, routing services or a general GIS engine.
+Disk caches, tile packs, credentials, arbitrary schemas, routing/geocoding and
+provider parity remain outside this slice. Existing polygon cut-edge limitations
+remain explicit. Keep revision-specific results in release records rather than
+expanding this active plan with completed implementation history.
 
 ## Remaining scope audit
 
 There is no committed broader component queue. Real application use of the
-public offline map remains useful validation.
+public map remains useful validation.
 Further hardening and a stable release are possible directions, not approved
 numbered phases or completion promises.
 

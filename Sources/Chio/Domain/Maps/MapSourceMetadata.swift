@@ -8,7 +8,8 @@ public struct MapSourceMetadata {
     public let license: String
     public let licenseURL: URL
     public let sourceURL: URL
-    /// The source's pinned version, commit or snapshot timestamp.
+    /// A version, commit, snapshot timestamp or observed provider template.
+    /// An online provider may serve changing bytes under the same revision path.
     public let sourceRevision: String
 
     public init(attribution: String, attributionURL: URL? = nil, license: String,

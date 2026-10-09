@@ -1,6 +1,6 @@
 import Foundation
 
-/// Checked XYZ address for an offline Web Mercator tile.
+/// Checked XYZ address for a Web Mercator tile.
 public struct MapTileCoordinate {
     public let zoom: Int
     public let x: Int

@@ -1,7 +1,7 @@
 import Foundation
 import SwiftTUIViews
 
-/// A themed, north-up offline map with application-owned camera and marker selection.
+/// A themed, north-up map with application-owned source, camera and marker selection.
 ///
 /// Arrow keys pan; +/− zoom. N/P select the next/previous marker and centre it.
 /// Return activates the selected marker. Tab leaves the map through native focus.
@@ -18,6 +18,7 @@ public struct MapView {
     private let fills: Bool
     private let labels: Bool
     private let activation: @MainActor (MapMarker) -> Void
+    private let viewportChange: @MainActor (MapViewport?) -> Void
     @Environment(\.chioTheme) private var theme
     @Environment(\.isEnabled) private var enabled
     @FocusState private var focused: Bool
@@ -34,10 +35,12 @@ public struct MapView {
         fills = true
         labels = true
         activation = { _ in }
+        viewportChange = { _ in }
     }
 
     private init(copying value: Self, fills: Bool? = nil, labels: Bool? = nil,
-                 activation: (@MainActor (MapMarker) -> Void)? = nil) {
+                 activation: (@MainActor (MapMarker) -> Void)? = nil,
+                 viewportChange: (@MainActor (MapViewport?) -> Void)? = nil) {
         source = value.source
         camera = value.camera
         selection = value.selection
@@ -46,6 +49,7 @@ public struct MapView {
         self.fills = fills ?? value.fills
         self.labels = labels ?? value.labels
         self.activation = activation ?? value.activation
+        self.viewportChange = viewportChange ?? value.viewportChange
         _theme = value._theme
         _enabled = value._enabled
         _focused = value._focused
@@ -62,6 +66,29 @@ public struct MapView {
     /// Activation is explicit; merely selecting or replacing a source never calls it.
     public func onActivate(_ action: @escaping @MainActor (MapMarker) -> Void) -> Self {
         Self(copying: self, activation: action)
+    }
+
+    /// Reports the actual drawing allocation after layout, including its initial value.
+    /// Nil means the compact fallback is visible. Pair a viewport with the current
+    /// camera when explicitly requesting online tiles; observing never fetches data.
+    public func onViewportChange(_ action: @escaping @MainActor (MapViewport?) -> Void) -> Self {
+        Self(copying: self, viewportChange: action)
+    }
+
+    private func coverageNotice(camera: MapCamera, viewport: MapViewport?) -> String {
+        let covered: Bool
+        let unavailable: String
+        switch source.coverage {
+        case .tiled(let coverage):
+            covered = viewport.map { coverage.covers(MapTileRequest(camera: camera, viewport: $0)) } ?? true
+            unavailable = "Outside loaded coverage"
+        default:
+            covered = source.coverage.contains(camera.center)
+            unavailable = "Outside offline coverage"
+        }
+        return covered
+            ? "\(source.metadata.license) · \((source.metadata.attributionURL ?? source.metadata.licenseURL).absoluteString)"
+            : "\(unavailable) · \(source.metadata.license)"
     }
 
     private struct Completion {
@@ -188,30 +215,24 @@ public struct MapView {
 extension MapView: View {
     public var body: some View {
         GeometryReader { geometry in
-            let aspect = geometry.cellPixelMetrics.aspectRatio
-            let ratio = (0.5...4).contains(aspect) ? aspect : 2
-            let rows = max(1, min(MapLimits.rows, geometry.size.height - 2))
-            let available = max(1, min(MapLimits.columns, geometry.size.width))
             let current = camera.wrappedValue
-            let columns = current.longitudeSpan >= 180 ? min(available, max(1, Int(Double(rows) * ratio))) : available
-            let viewport = try! MapViewport(columns: columns, rows: rows, cellAspectRatio: ratio)
-            let small = columns < (current.longitudeSpan >= 60 ? 32 : 58) || rows < 16
-            let request: MapPreparationRequest? = small ? nil : .init(dataset: source.dataset, camera: current,
-                viewport: viewport, detail: detail, routes: overlays.routes, fills: fills)
+            let viewport = MapViewport.fitting(width: geometry.size.width, height: geometry.size.height,
+                cellAspectRatio: geometry.cellPixelMetrics.aspectRatio, camera: current)
+            let request = viewport.map { MapPreparationRequest(dataset: source.dataset, camera: current,
+                viewport: $0, detail: detail, routes: overlays.routes, fills: fills) }
             VStack(alignment: .leading, spacing: 0) {
-                content(request, small: small)
+                content(request, small: viewport == nil)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 HStack(spacing: 1) {
                     Text(focused ? "›" : " ").foregroundStyle(theme.colors.accent)
                     Text(source.metadata.attribution).foregroundStyle(theme.colors.mutedText)
                 }.frame(height: 1, alignment: .leading).clipped()
-                Text(source.coverage.contains(current.center)
-                     ? "\(source.metadata.license) · \((source.metadata.attributionURL ?? source.metadata.licenseURL).absoluteString)"
-                     : "Outside offline coverage · \(source.metadata.license)")
+                Text(coverageNotice(camera: current, viewport: viewport))
                     .foregroundStyle(theme.colors.mutedText).frame(height: 1, alignment: .leading).clipped()
             }
             .frame(width: geometry.size.width, height: geometry.size.height, alignment: .topLeading)
             .clipped()
+            .onChange(of: viewport, initial: true) { _, value in viewportChange(value) }
             .task(id: request) {
                 guard let request else { completion = nil; return }
                 // Construct resources after mounting, so separate mounts own separate workers.

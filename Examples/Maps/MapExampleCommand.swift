@@ -8,6 +8,10 @@ struct MapExampleCommand {
     var scene: MapFixtures.Scene = .world
     @Option(help: "Street source: overpass or openfreemap; retained while viewing world.")
     var source: MapFixtures.StreetSource = .overpass
+    @Flag(help: "Load OpenFreeMap tiles online for regions and streets; the world overview stays bundled.")
+    var online = false
+    @Option(help: "Optional JSON OpenMapTilesSource file for --online; otherwise discover OpenFreeMap.")
+    var tileSource = ""
     @Option(help: "Theme: default, light or btop.") var theme: Appearance = .default
     @Flag(help: "Print a deterministic native raster as text.") var snapshot = false
     @Flag(help: "Export native raster cells as JSON for visual inspection.") var snapshotJSON = false
@@ -49,7 +53,7 @@ extension MapDetail: ExpressibleByArgument {}
 
 extension MapExampleCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(commandName: "chio-maps",
-                                                     abstract: "Offline world and street examples using Chio MapView.")
+                                                     abstract: "World and street examples using Chio MapView; offline unless --online is supplied.")
     mutating func validate() throws {
         guard (20...240).contains(width), (12...100).contains(height) else {
             throw ValidationError("Use width 20...240 and height 12...100.")
@@ -60,12 +64,23 @@ extension MapExampleCommand: AsyncParsableCommand {
         guard [snapshot, snapshotJSON, benchmark].filter({ $0 }).count <= 1 else {
             throw ValidationError("Choose one output mode: snapshot, snapshot-json or benchmark.")
         }
+        guard !online || !(snapshot || snapshotJSON || benchmark) else {
+            throw ValidationError("Online mode is interactive. Snapshot and benchmark modes use bundled data.")
+        }
+        guard !online || source == .overpass else {
+            throw ValidationError("--source selects a bundled fixture. Use --online on its own for live OpenFreeMap tiles.")
+        }
+        guard online || tileSource.isEmpty else {
+            throw ValidationError("--tile-source requires --online.")
+        }
     }
 
     @MainActor
     mutating func run() async throws {
         let fixtures = try MapFixtures.load()
         let detail: MapDetail = sourceDetail ? .source : self.detail
+        let acquisition: MapExampleAcquisition = online
+            ? (tileSource.isEmpty ? .openFreeMap : try .configured(file: tileSource)) : .offline
         if benchmark {
             try await MapCapture.benchmark(fixtures: fixtures, appearance: theme, cellAspect: cellAspect,
                                            detail: detail, streetSource: source)
@@ -80,7 +95,7 @@ extension MapExampleCommand: AsyncParsableCommand {
         } else {
             try await WebHostCLIRunner.run(MapExampleApplication(fixtures: fixtures, scene: scene, appearance: theme,
                                                                cellAspect: cellAspect,
-                                                               detail: detail, streetSource: source),
+                                                               detail: detail, streetSource: source, acquisition: acquisition),
                                           configuration: swiftTUIOptions.runtimeConfiguration())
         }
     }

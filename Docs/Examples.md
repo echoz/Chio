@@ -65,6 +65,30 @@ API key is needed. Panning does not load new areas; the coverage notice identifi
 when the camera center leaves the bundled extract. Source credits remain visible.
 See [fixture provenance](../Examples/Maps/Fixtures/Provenance.md).
 
+To load new areas as you pan, explicitly enable online acquisition:
+
+```sh
+swift run -c release chio-maps --online --map street
+```
+
+This discovers OpenFreeMap without a key, requests the visible tiles, and retains
+previous coverage while replacements load. The status row reports loading,
+failure, or reduced source resolution when data exceeds geometry budgets. Press
+`e` to retry using the loader's cache policy. The world overview stays bundled;
+zooming into spans below 45 degrees enables online tiles. `--source` selects an
+offline fixture and is not needed online. Detail and theme changes do not fetch
+new data. No disk cache or background download is created. Online snapshots and
+benchmarks are rejected so the inspection modes remain deterministic.
+
+Use `--online --tile-source source.json` to load an explicitly configured
+OpenMapTiles-compatible endpoint. The file is a JSON-encoded `OpenMapTilesSource`
+(up to 16 KiB), including attribution and supported zooms. This bypasses discovery.
+For a reproducible local HTTP replay, run
+`python3 Scripts/maps/online-fixture-server.py --config-file .build/maps-source.json`
+in one terminal, then add `--tile-source .build/maps-source.json` to the online
+launch in another. The replay configuration uses three retained z12 tiles and deliberately
+returns an error outside that coverage; it never accesses the Internet.
+
 Give the component at least **32 × 16** drawing cells for longitude spans of
 60 degrees or more, or **58 × 16** for closer views, plus two credit rows.
 Smaller allocations show a resize summary while preserving the camera and

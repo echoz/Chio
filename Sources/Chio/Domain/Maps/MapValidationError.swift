@@ -9,4 +9,8 @@ public enum MapValidationError: Error, Equatable, Sendable {
     case unsupportedGeoJSON
     case budgetExceeded
     case drawingBudgetExceeded
+    case invalidTileSource
+    case invalidTileCoverage
+    case invalidTileSnapshot
+    case tileLimitExceeded
 }

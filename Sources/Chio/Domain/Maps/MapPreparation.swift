@@ -2,6 +2,26 @@ import Foundation
 
 /// Pure bounded preparation; native SwiftTUI still owns all cell rasterization.
 enum MapPreparation {
+    /// Conservative spatial admission for acquisition. Reuse the renderer's
+    /// longitude branches and inclusive bounds; retain whole parts and holes.
+    /// False positives are safe. This does not simplify or clip geometry.
+    static func mayIntersect(_ geometry: MapGeometry, request: MapTileRequest) throws -> Bool {
+        let coordinates: [MapCoordinate]
+        switch geometry {
+        case .polyline(let line): coordinates = line.coordinates
+        case .polygon(let polygon): coordinates = polygon.rings[0].coordinates
+        }
+        let cancellation = Cancellation(isCancelled: { false })
+        let points = try project(coordinates, camera: request.camera, viewport: request.viewport,
+                                 cancellation: cancellation)
+        let wrap = 360 * Double(request.viewport.columns) / request.camera.longitudeSpan
+        for shift in [-1.0, 0, 1] {
+            if try intersects(shifted(points, by: shift * wrap, cancellation: cancellation),
+                              viewport: request.viewport, cancellation: cancellation) { return true }
+        }
+        return false
+    }
+
     /// The effect owner supplies cancellation. A cancelled request throws before
     /// returning any snapshot; the default keeps synchronous callers deterministic.
     static func prepare(dataset: MapDataset, camera: MapCamera, viewport: MapViewport,

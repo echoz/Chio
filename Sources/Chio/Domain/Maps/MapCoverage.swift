@@ -2,10 +2,12 @@
 public enum MapCoverage {
     case worldwide
     case boundedOfflineExtract(Bounds)
+    case tiled(MapTileCoverage)
 
     public func contains(_ coordinate: MapCoordinate) -> Bool {
         switch self {
         case .worldwide: true
+        case .tiled(let coverage): coverage.contains(coordinate)
         case .boundedOfflineExtract(let bounds):
             (bounds.southwest.longitude...bounds.northeast.longitude).contains(coordinate.longitude)
                 && (bounds.southwest.latitude...bounds.northeast.latitude).contains(coordinate.latitude)

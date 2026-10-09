@@ -33,7 +33,8 @@ Owned domain values and view configuration have `let` stored properties and pure
 computed observations. Transformations return replacements and leave inputs
 unchanged; local scratch mutation is permitted. Explicit mutable boundaries are
 SwiftTUI state/binding/focus/namespace/environment wrappers, ArgumentParser command
-options, filesystem resource owners, the serial map preparation actor, and live
+options, filesystem resource owners, the serial map preparation actor, the online
+tile loader actor and its locked URLSession delegate resource owner, and live
 test-session recorders with frames, continuations and deadlines.
 
 Prefer synthesized `Hashable`, `Codable` and `Sendable` where their contracts fit.
@@ -87,10 +88,10 @@ application work. These examples do not establish product parity.
 | Path | Responsibility |
 | --- | --- |
 | `Sources/Chio/Domain` | Theme/shortcut values, pure search/membership, pagination, validation visibility, file observations, parsed Markdown and checked geographic values |
-| `Sources/Chio/Execution` | Filesystem loading/confirmation and serial map preparation |
+| `Sources/Chio/Execution` | Filesystem loading/confirmation, serial map preparation and explicit bounded tile acquisition |
 | `Sources/Chio/Presentation` | Components/environment integration; `Styles` owns native styles |
 | `Examples/AgentDashboard` | Local models, workflows/views and thin entry point |
-| `Examples/Maps`, `Tests/ChioMapTests` | Offline maps consuming the public API, real fixtures and integration checks |
+| `Examples/Maps`, `Tests/ChioMapTests` | Maps consuming the public API, offline fixtures, opt-in online acquisition and integration checks |
 | `Tests/ChioTests`, `Tests/ChioDashboardTests` | Library responsibilities and example domain/hosted interactions |
 | `Docs/Site`, `Docs/Media`, `Scripts/docs` | Static showcase, shared terminal assets and assembly without Swift build |
 
@@ -129,10 +130,11 @@ in Releases; avoid duplicating full contracts across documents.
 | <a id="read-only-diff-prototype"></a>[Read-only diff prototype](Decisions/DiffReader.md) | Accepted example scope |
 | <a id="markdown-and-agent-reports"></a>[Markdown, code and interactive links](Decisions/Markdown.md) | Accepted |
 | <a id="references-and-boundaries"></a>[Dependencies and distribution](Decisions/Dependencies.md) | Current pins, toolchain findings and static Linux blocker |
+| [Online tile acquisition](Decisions/OnlineMaps.md) | Accepted explicit loader and opt-in online example |
 | [Native integration](Decisions/NativeIntegration.md) | Current limitations and ownership |
 | [Terminal colors](Decisions/TerminalColors.md) | Accepted native detection; conversion experiment shelved |
 | [Table rendering](Decisions/TableRendering.md) | Proposed correction; patches unapplied |
-| <a id="geographic-maps-proposed"></a>[Geographic maps](Decisions/GeographicMaps.md) | Accepted offline component; provider comparisons and live acquisition deferred |
+| <a id="geographic-maps-proposed"></a>[Geographic maps](Decisions/GeographicMaps.md) | Accepted component; provider comparisons shelved |
 
 Topic anchors above retain earlier deep links. Historical implementation details
 and original investigations remain in [the v0.1.0 documents](https://github.com/echoz/Chio/tree/v0.1.0/Docs)

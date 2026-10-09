@@ -1,6 +1,6 @@
 # 2D geographic maps
 
-**Status:** Accepted public offline component, 2026-10-09. Implementation is in
+**Status:** Accepted public component, 2026-10-09. Implementation is in
 `Sources/Chio`; `chio-maps` in `Examples/Maps` consumes the public API.
 [Plan](../Plan.md) tracks integrated verification and delivery status.
 
@@ -11,6 +11,8 @@ map. The application supplies a `MapSource`, authoritative camera/selection
 bindings and optional `MapOverlays`; minimal detail is the default. `mapFills`,
 `mapLabels` and `onActivate` configure presentation and explicit marker activation.
 No provider, network request, timer or route calculation is hidden in the view.
+Explicit [online acquisition](OnlineMaps.md) is a separate effect boundary;
+`onViewportChange` reports the drawable allocation to its application owner.
 
 SwiftTUI owns allocation, cell metrics, focus, gestures, input, lifecycle and native
 Canvas/Text rendering. Chio supplies checked geographic values, projection,
@@ -48,7 +50,8 @@ split or general map DSL. [Usage](../Usage.md#maps) has the consumer recipe.
 Owned values have immutable stored properties, synthesized equality/hashing and
 sendability where applicable, and checked decoding. Construction, replacement and
 coding preserve the same restrictions. Source loading remains at an application
-effect boundary; the example reads its bundled fixtures once.
+effect boundary; the example reads its bundled fixtures once, and `--online` explicitly opts
+into tile acquisition.
 
 ### Bindings, focus and annotations
 
@@ -167,6 +170,15 @@ within the documented ±8-extent allowance. Half-world or longer tile-space edge
 reject before longitude wrapping. Multipart parts receive snapshot-local IDs;
 those IDs are not stable across provider revisions or neighboring tiles.
 
+Online integration exposed a multipart admission mistake: the decoder previously
+applied the 256-rings-per-polygon allowance to all paths in an MVT record, including
+independent roads and buildings. Records now have a separate 4,000-path and
+200,000-vertex allowance, counted in linear time. Each actual polygon still permits
+at most 256 rings and 20,000 total vertices; each path retains its 20,000-vertex
+bound. This deliberately expands accepted multipart input without changing the
+canonical dataset or drawing limits. Exact and over-boundary tests cover both
+record paths and individual polygon rings.
+
 ## Coverage and deferred provider work
 
 The adapter proof is accepted. On 2026-10-09 the user explicitly shelved provider
@@ -175,27 +187,27 @@ provider parity, distinct no-data painting and artificial tile-edge treatment ar
 not completion gates for this slice. Keep these limitations explicit:
 
 - `worldwide` or a checked nonwrapping offline query box describes availability.
-  The current notice checks the camera centre, not complete viewport coverage.
-  Uncovered space still uses the base surface. Panning never loads more vectors.
+  Offline notices check the camera centre. Acquired `.tiled` coverage describes
+  acquired XYZ tiles and their retained region, and checks the whole viewport. Uncovered space still
+  uses the base surface. Offline panning never loads more vectors.
 - The retained OpenFreeMap example is one z14 tile, with buffered/clipped rings.
   Cut edges can still be outlined as geographic boundaries. There is no stitching.
 - OpenMapTiles water/building/park and selected green-space landuse polygons,
   plus selected transportation classes, normalize into the shared model.
-  Standalone point/label layers, generic landcover, waterways and service/path
+  Park POINT labels and standalone point/label layers, generic landcover, waterways and service/path
   roads are outside this adapter's subset. A provider may therefore show different
   names/classes even when the underlying OSM geometry agrees.
 - The retained eastern tile has 384 canonical features. Its denser western neighbor
   expands to 4,797 and exceeds the feature allowance; it is not silently truncated.
 
 <a id="later-proposal-vector-tile-loading"></a>
-### Later acquisition work
+### Acquisition boundary
 
-Live tile loading, neighboring coverage, caches, cancellation of network work,
-credentials, PMTiles/MBTiles, geocoding and routing services remain deferred.
-Any later loader needs explicit missing/loading/failed tile behavior, bounded
-concurrency/cache sizes, attribution and stale-result handling. The current adapter
-normalizes supplied bytes and performs no I/O. No additional package dependency
-was introduced; existing static Linux limitations remain in
+The former deferred-loading proposal is superseded by the authorized
+[online acquisition slice](OnlineMaps.md). The adapter remains a pure decoder;
+`MapTileLoader` explicitly owns bounded acquisition and caching. Credentials,
+PMTiles/MBTiles, geocoding and routing services remain deferred. No new Swift
+package dependency is introduced; existing static Linux limitations remain in
 [Dependencies](Dependencies.md#static-linux-blocker).
 
 <a id="rendering-spike-findings"></a>
@@ -212,7 +224,8 @@ not general provider parity or global topology correctness.
 Natural Earth, Overpass and OpenFreeMap sources, hashes and licenses. Natural
 Earth is public domain; OSM-derived inputs retain ODbL and provider attribution.
 OpenFreeMap supplies the OpenMapTiles schema; neither schema nor source format
-becomes the public view API. The example uses only bundled local data.
+becomes the public view API. The default example and deterministic captures use bundled local data; `--online`
+selects the explicit acquisition workflow.
 
 Verification follows [Verification](../Verification.md): checked construction and
 incremental decoding, projection/holes/dateline/work limits, marker/route raster

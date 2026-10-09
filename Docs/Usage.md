@@ -230,16 +230,53 @@ separate fact from feature bounds: geometry may extend outside the covered area.
 Applications load bytes and construct sources before presentation. For normalized
 GeoJSON, use `MapDataset.decodeGeoJSON(data)` for the supported subset, then
 `MapSource(dataset: dataset, metadata: metadata, coverage: coverage)`. Source
-metadata requires attribution, license and source URLs, and a pinned revision;
+metadata requires attribution, license and source URLs, and a source revision;
 `attributionURL` is optional. `MapView` displays source credits in two rows.
 
 `NormalizedGeoJSONMapAdapter(metadata:coverage:)` adapts normalized GeoJSON bytes.
 `OpenMapTilesAdapter(tile:metadata:)` adapts MVT bytes with an explicit
 `MapTileCoordinate`. Both return the same checked `MapSource` representation;
 neither adapter loads files, makes requests, stitches tiles or chooses provider
-resolution. Applications own acquisition, network policy, caching and data licenses.
+resolution. Applications choose when to acquire sources and retain responsibility
+for provider choice and data licenses.
 See the [runnable example](Examples.md#maps) and its
 [fixture provenance](../Examples/Maps/Fixtures/Provenance.md).
+
+### Online vectors
+
+Opt into networking at the application boundary. The view itself stays offline:
+
+```swift
+let endpoint = try await OpenMapTilesSource.fetchOpenFreeMap()
+let loader = MapTileLoader(source: endpoint) // Retain one loader per map consumer.
+let request = MapTileRequest(camera: camera, viewport: viewport)
+let snapshot = try await loader.load(request)
+// Publish snapshot.source only if request still matches the current camera/allocation.
+```
+
+Get the actual drawable allocation with `.onViewportChange { viewport = $0 }`.
+Nil means the compact fallback is visible. Use SwiftTUI's `.task(id:)` to load
+when the camera/allocation changes, retain the previous source during loading,
+and check cancellation before publication. See the complete
+[online example composition](../Examples/Maps/Presentation/OnlineMapContent.swift).
+Changing theme or `MapDetail` does not change a tile request.
+
+For another OpenMapTiles-compatible service, construct
+`OpenMapTilesSource(template:zoomRange:metadata:)` with a path such as
+`https://your-host.example/tiles/{z}/{x}/{y}.pbf`. Placeholders must occur exactly
+once in the path; source metadata and zoom limits are required. URL construction
+is pure. Discovery and `load` are explicit async operations.
+
+The loader acquires the whole viewport with at most two concurrent requests and
+16 tiles. It retains a bounded memory cache, cancels superseded work, and fails
+instead of returning partial coverage. It validates selected source parts and
+retains complete parts whose bounds could intersect the viewport; coverage describes
+that retained region, even when whole raw tiles are cached. Geometry-budget failures may retry two
+lower source zooms; compare `requestedZoom` and `attainedZoom` to disclose that
+fallback. Empty successful tiles remain empty; HTTP failures remain errors.
+Source zoom 3 is the online minimum; use a bundled world overview for broad views.
+Buffered/clipped polygon seams are still possible. See
+[online acquisition contracts](Decisions/OnlineMaps.md) for limits and lifecycle.
 
 ## Tabs
 

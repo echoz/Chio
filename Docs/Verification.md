@@ -80,6 +80,18 @@ coverage recovery, resizing and restoration. Provider comparisons are shelved.
 `--benchmark --source openfreemap` measures the tile through the same public hosted component; fixed tile resolution does not establish source-level selection,
 network acquisition, tile stitching or arbitrary-provider support.
 
+Online acquisition additionally requires complete XYZ coverage/model tests,
+viewport admission with whole crossing/enclosing parts and holes, invalid offscreen
+selected-data rejection, and retained-region coverage across same-tile pans,
+controlled transport/clock checks for cache freshness, two-request admission,
+replacement cancellation, budget-only fallback and current-result publication.
+A bounded localhost HTTP fixture exercises URLSession response status, MIME,
+redirects, decompressed-byte limits and cancellation on macOS/Linux. Python 3 is
+required for that fixture. Hosted tests verify loading/failure/retry, retained
+source/focus, compact recovery and independent detail/theme changes. CI uses no
+live provider. Separately inspect bounded OpenFreeMap acquisition and adjacent
+tile rendering; this is integration evidence, not an availability guarantee.
+
 Pass an example flag such as `--choices`, `--inbox` or `--diff` for its workflow;
 [verify.sh](../Scripts/ci/verify.sh) is the complete list. Terminal checks cover
 input/output, raw mode, cursor/alternate-screen restoration and exact original

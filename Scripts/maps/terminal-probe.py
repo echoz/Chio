@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Probe the offline map example in a real POSIX PTY; optionally capture asciinema v2.
+"""Probe the offline or fixed-local-HTTP online map example in a real POSIX PTY; optionally capture asciinema v2.
 
 The shared dashboard smoke parser checks text transitions. Public native raster tests
 own colors, braille samples and Unicode layout; this is not a terminal emulator or
@@ -40,7 +40,7 @@ def shared_parser():
     return module
 
 
-def probe(binary, output_dir, record=None):
+def probe(binary, output_dir, record=None, online_source=None):
     parser = shared_parser()
     master, slave = pty.openpty()
     original_modes = termios.tcgetattr(slave)
@@ -56,6 +56,8 @@ def probe(binary, output_dir, record=None):
     validations = {}
     recording_completed = False
     command = [str(binary), "--map", "world", "--theme", "default"]
+    if online_source is not None:
+        command.extend(["--online", "--tile-source", str(online_source)])
 
     def receive(timeout=0.1):
         nonlocal last_recorded_time
@@ -93,24 +95,30 @@ def probe(binary, output_dir, record=None):
         while time.monotonic() < deadline:
             receive(min(0.1, deadline - time.monotonic()))
 
-    def observe(name, expected, action=None):
+    def observe(name, expected, action=None, transitions=()):
         before = len(output)
         phase_started = time.monotonic()
         deadline = phase_started + PHASE_TIMEOUT
+        seen_transitions = set()
         if action is not None:
             action()
         while time.monotonic() < deadline:
             receive(min(0.1, deadline - time.monotonic()))
+            seen_transitions.update(value for value in transitions if value in current_screen())
             if len(output) > before and all(value in current_screen() for value in expected) and "Preparing map" not in current_screen():
                 # Complete queued updates before sending the next user action.
                 while time.monotonic() < deadline and receive(min(0.25, deadline - time.monotonic())):
-                    pass
+                    seen_transitions.update(value for value in transitions if value in current_screen())
                 if all(value in current_screen() for value in expected) and "Preparing map" not in current_screen():
+                    assert seen_transitions == set(transitions), f"Missing transitions in {name}: {set(transitions) - seen_transitions}"
                     phases.append({"name": name, "seconds": round(time.monotonic() - phase_started, 6),
                                    "output_bytes": len(output) - before,
                                    "columns": parser.WIDTH, "rows": parser.HEIGHT, "expected": list(expected)})
                     print("Observed:", name, flush=True)
                     recording_pause()
+                    phases[-1].update(screen=current_screen(),
+                                      recording_seconds=round(time.monotonic() - started, 6) if recording else None,
+                                      observed_transitions=sorted(seen_transitions))
                     return
             if process.poll() is not None:
                 break
@@ -152,53 +160,104 @@ def probe(binary, output_dir, record=None):
         validations["alternate_screen_entered"] = True
         validations["cursor_hidden"] = True
 
-        minimal_world_samples = map_samples()
-        key("world silhouette shapes", b"[", ("World", "1/4 silhouette", "span 360.0000"))
-        assert map_samples() != minimal_world_samples, "World shape strengths did not change the coastline"
-        key("restore world minimal", b"]", ("World", "2/4 minimal", "span 360.0000"))
-        assert map_samples() == minimal_world_samples, "World detail did not restore the minimal coastline"
-        key("world abstract shapes", b"]", ("World", "3/4 abstract", "span 360.0000"))
-        key("street", b" ", ("Singapore", "span 0.0300"))
-        abstract_samples = map_samples()
-        key("minimal detail", b"[", ("2/4 minimal", "Center 1.289, 103.866", "span 0.0300"))
-        minimal_samples = map_samples()
-        key("silhouette detail", b"[", ("1/4 silhouette", "Center 1.289, 103.866", "span 0.0300"))
-        assert map_samples() != minimal_samples, "Silhouette did not remove road geometry"
-        key("raise detail", b"]]", ("3/4 abstract", "span 0.0300"))
-        assert map_samples() == abstract_samples, "Raising detail did not restore the drawing"
-        key("source detail", b"]", ("4/4 source", "span 0.0300"))
-        assert map_samples() != abstract_samples, "Detail comparison did not change the drawing"
-        key("cycle detail", b"d", ("1/4 silhouette", "span 0.0300"))
-        key("abstract detail", b"]]", ("3/4 abstract", "span 0.0300"))
-        assert map_samples() == abstract_samples, "Abstract comparison did not restore the drawing"
-        key("zoom", b"+", ("Singapore", "span 0.0210"))
-        zoom_samples = map_samples()
-        key("pan", b"\x1b[C", ("Center 1.289, 103.869", "span 0.0210"))
-        assert map_samples() != zoom_samples, "Pan changed camera text without moving the drawing"
-        key("light theme", b"t", ("abstract · light", "span 0.0210"))
-        # Exercise visible label changes on the named Overpass extract.
-        key("fills off redraw", b"f", ("Singapore", "abstract · light", "span 0.0210"))
-        key("labels off redraw", b"l", ("Singapore", "span 0.0210"))
-        key("fills on redraw", b"f", ("Singapore", "span 0.0210"))
-        key("labels on redraw", b"l", ("Singapore", "span 0.0210"))
-        key("select first place", b"n", ("Selected: Merlion", "Center 1.287, 103.855", "span 0.0210"))
-        key("next place", b"n", ("Selected: Gardens by the Bay", "Center 1.282, 103.864"))
-        key("activate place", b"\r", ("Opened Gardens by the Bay",))
-        key("previous place", b"p", ("Selected: Merlion", "Center 1.287, 103.855"))
-        key("reset camera retains selection", b"r", ("Selected: Merlion", "Center 1.289, 103.866", "span 0.0300"))
-        key("minimal final view", b"[", ("2/4 minimal", "Selected: Merlion", "span 0.0300"))
-        stop_recording()
+        if online_source is not None:
+            assert "World overview · bundled Natural Earth" in current_screen(), "Online world overview did not use bundled geometry"
+            assert "Online · z" not in current_screen(), "World overview unexpectedly displayed online tiles"
+            validations["bundled_world_overview"] = True
+            observe("online street default ready", ("Singapore", "2/4 minimal · default", "Online · z12",
+                    "Center 1.289, 103.866", "span 0.0300"), lambda: os.write(master, b" "),
+                    transitions=("Loading tiles",))
+            initial_street_samples = map_samples()
+            assert sum(char not in (" ", "\u2800") for row in initial_street_samples for char in row) > 100, "Online ready frame lacks actual braille geography"
+            validations["online_loading_and_braille"] = True
+            key("online pan crosses adjacent tile boundary", b"\x1b[C" * 8,
+                ("Online · z12", "Center 1.289, 103.895", "span 0.0300"))
+            assert map_samples() != initial_street_samples, "Online pan changed camera text without moving geography"
+            assert sum(char not in (" ", "\u2800") for row in map_samples() for char in row) > 100, "Adjacent online tile lacks braille geography"
+            validations["adjacent_tile_pan_and_focus"] = True
+            key("online outside fixed fixture", b"\x1b[C" * 24,
+                ("Could not load this area", "showing previous coverage", "Center 1.289, 103.981", "span 0.0300"))
+            observe("online retry retains failed camera and previous coverage",
+                    ("Could not load this area", "showing previous coverage", "Center 1.289, 103.981"),
+                    lambda: os.write(master, b"e"), transitions=("Loading tiles",))
+            key("online reset recovers", b"r", ("Online · z12", "Center 1.289, 103.866", "span 0.0300"))
+            assert "Could not load" not in current_screen(), "Online failure status did not reset"
+            assert map_samples() == initial_street_samples, "Reset did not restore accepted online geography"
+            validations["failed_coverage_retry_and_recovery"] = True
+            key("online select first place", b"n", ("Online · z12", "Selected: Merlion", "Center 1.287, 103.855"))
+            key("online next place", b"n", ("Online · z12", "Selected: Gardens by the Bay", "Center 1.282, 103.864"))
+            key("online activate place", b"\r", ("Online · z12", "Opened Gardens by the Bay"))
+            selected_minimal_samples = map_samples()
+            key("online silhouette detail", b"[", ("1/4 silhouette", "Online · z12", "Center 1.282, 103.864"))
+            assert map_samples() != selected_minimal_samples, "Online silhouette did not change the drawing"
+            key("online batched raise detail", b"]]", ("3/4 abstract", "Online · z12", "Center 1.282, 103.864"))
+            key("online upper detail limit", b"]]]]", ("4/4 source", "Online · z12", "Center 1.282, 103.864"))
+            key("online lower detail limit", b"[[[[", ("1/4 silhouette", "Online · z12", "Center 1.282, 103.864"))
+            key("online minimal detail", b"]", ("2/4 minimal", "Online · z12", "Center 1.282, 103.864"))
+            assert map_samples() == selected_minimal_samples, "Online minimal detail did not restore the drawing"
+            validations["online_detail_and_marker_focus"] = True
+            key("online reset retains selected place", b"r", ("Online · z12", "Selected: Gardens by the Bay", "Center 1.289, 103.866"))
+            key("online street light ready", b"t", ("2/4 minimal · light", "Online · z12", "Center 1.289, 103.866", "span 0.0300"))
+            key("online street btop ready", b"t", ("2/4 minimal · btop", "Online · z12", "Center 1.289, 103.866", "span 0.0300"))
+            key("online final street default ready", b"t", ("2/4 minimal · default", "Online · z12", "Center 1.289, 103.866", "span 0.0300"))
+            assert "Could not load" not in current_screen(), "Final online street frame retained failure status"
+            stop_recording()
+            observe("online compact paused", ("More room for the map", "Online paused"), lambda: resize(36, 18))
+            observe("online restored size retains camera detail selection and focus",
+                    ("Online · z12", "2/4 minimal · default", "Selected: Gardens by the Bay", "Center 1.289, 103.866", "span 0.0300"),
+                    lambda: resize(100, 30))
+            assert "More room for the map" not in current_screen(), "Online fallback remained after expansion"
+            key("online restored map still receives pan input", b"\x1b[C",
+                ("Online · z12", "Center 1.289, 103.870", "Selected: Gardens by the Bay"))
+            validations["online_compact_pause_and_recovery"] = True
+        else:
+            minimal_world_samples = map_samples()
+            key("world silhouette shapes", b"[", ("World", "1/4 silhouette", "span 360.0000"))
+            assert map_samples() != minimal_world_samples, "World shape strengths did not change the coastline"
+            key("restore world minimal", b"]", ("World", "2/4 minimal", "span 360.0000"))
+            assert map_samples() == minimal_world_samples, "World detail did not restore the minimal coastline"
+            key("world abstract shapes", b"]", ("World", "3/4 abstract", "span 360.0000"))
+            key("street", b" ", ("Singapore", "span 0.0300"))
+            abstract_samples = map_samples()
+            key("minimal detail", b"[", ("2/4 minimal", "Center 1.289, 103.866", "span 0.0300"))
+            minimal_samples = map_samples()
+            key("silhouette detail", b"[", ("1/4 silhouette", "Center 1.289, 103.866", "span 0.0300"))
+            assert map_samples() != minimal_samples, "Silhouette did not remove road geometry"
+            key("raise detail", b"]]", ("3/4 abstract", "span 0.0300"))
+            assert map_samples() == abstract_samples, "Raising detail did not restore the drawing"
+            key("source detail", b"]", ("4/4 source", "span 0.0300"))
+            assert map_samples() != abstract_samples, "Detail comparison did not change the drawing"
+            key("cycle detail", b"d", ("1/4 silhouette", "span 0.0300"))
+            key("abstract detail", b"]]", ("3/4 abstract", "span 0.0300"))
+            assert map_samples() == abstract_samples, "Abstract comparison did not restore the drawing"
+            key("zoom", b"+", ("Singapore", "span 0.0210"))
+            zoom_samples = map_samples()
+            key("pan", b"\x1b[C", ("Center 1.289, 103.869", "span 0.0210"))
+            assert map_samples() != zoom_samples, "Pan changed camera text without moving the drawing"
+            key("light theme", b"t", ("abstract · light", "span 0.0210"))
+            # Exercise visible label changes on the named Overpass extract.
+            key("fills off redraw", b"f", ("Singapore", "abstract · light", "span 0.0210"))
+            key("labels off redraw", b"l", ("Singapore", "span 0.0210"))
+            key("fills on redraw", b"f", ("Singapore", "span 0.0210"))
+            key("labels on redraw", b"l", ("Singapore", "span 0.0210"))
+            key("select first place", b"n", ("Selected: Merlion", "Center 1.287, 103.855", "span 0.0210"))
+            key("next place", b"n", ("Selected: Gardens by the Bay", "Center 1.282, 103.864"))
+            key("activate place", b"\r", ("Opened Gardens by the Bay",))
+            key("previous place", b"p", ("Selected: Merlion", "Center 1.287, 103.855"))
+            key("reset camera retains selection", b"r", ("Selected: Merlion", "Center 1.289, 103.866", "span 0.0300"))
+            key("minimal final view", b"[", ("2/4 minimal", "Selected: Merlion", "span 0.0300"))
+            stop_recording()
 
-        key("lower detail limit", b"[[[", ("1/4 silhouette", "Center 1.289, 103.866", "span 0.0300"))
-        key("upper detail limit", b"]]]]", ("4/4 source", "Center 1.289, 103.866", "span 0.0300"))
-        key("restore abstract detail", b"[", ("3/4 abstract", "span 0.0300"))
-        observe("compact fallback", ("More room for the map",), lambda: resize(36, 18))
-        observe("restored size retains camera and detail", ("Singapore", "3/4 abstract", "Center 1.289, 103.866", "span 0.0300"),
-                lambda: resize(100, 30))
-        assert "More room for the map" not in current_screen(), "Fallback remained after expansion"
-        key("leave offline coverage", b"\x1b[C" * 8, ("Outside offline coverage",))
-        key("reset", b"r", ("Center 1.289, 103.866", "span 0.0300"))
-        assert "Outside offline coverage" not in current_screen(), "Coverage status did not reset"
+            key("lower detail limit", b"[[[", ("1/4 silhouette", "Center 1.289, 103.866", "span 0.0300"))
+            key("upper detail limit", b"]]]]", ("4/4 source", "Center 1.289, 103.866", "span 0.0300"))
+            key("restore abstract detail", b"[", ("3/4 abstract", "span 0.0300"))
+            observe("compact fallback", ("More room for the map",), lambda: resize(36, 18))
+            observe("restored size retains camera and detail", ("Singapore", "3/4 abstract", "Center 1.289, 103.866", "span 0.0300"),
+                    lambda: resize(100, 30))
+            assert "More room for the map" not in current_screen(), "Fallback remained after expansion"
+            key("leave offline coverage", b"\x1b[C" * 8, ("Outside offline coverage",))
+            key("reset", b"r", ("Center 1.289, 103.866", "span 0.0300"))
+            assert "Outside offline coverage" not in current_screen(), "Coverage status did not reset"
 
         before = len(output)
         exit_started = time.monotonic()
@@ -217,8 +276,10 @@ def probe(binary, output_dir, record=None):
         assert b"\x1b[?25h" in output, "Cursor was not restored"
         assert termios.tcgetattr(slave) == original_modes, "Exact original terminal attributes were not restored"
         assert b"runtime warning" not in output.lower(), "Map emitted runtime warnings"
+        assert b"runtime error" not in output.lower(), "Map emitted runtime errors"
+        assert b"swifttui runtime" not in output.lower(), "Map emitted runtime diagnostics or deferred logs"
         validations.update(exit_zero=True, alternate_screen_restored=True, cursor_restored=True,
-                           exact_terminal_attributes_restored=True, no_runtime_warnings=True)
+                           exact_terminal_attributes_restored=True, no_runtime_warnings=True, no_runtime_errors_or_logs=True)
     except Exception as error:
         failure = f"{type(error).__name__}: {error}"
         print("Last terminal screen:\n" + current_screen(), file=sys.stderr)
@@ -244,14 +305,22 @@ def probe(binary, output_dir, record=None):
         if record is not None:
             record.parent.mkdir(parents=True, exist_ok=True)
             header = {"version": 2, "width": 100, "height": 30,
-                      "title": "Chio maps · offline world and Singapore",
+                      "title": ("Chio maps · fixed local HTTP replay of real provider geometry"
+                                if online_source is not None else "Chio maps · offline world and Singapore"),
                       "env": {"TERM": "xterm-256color", "COLORTERM": "truecolor"}}
+            if online_source is not None:
+                header["description"] = ("Fixed local HTTP fixture replay of real OpenFreeMap provider geometry; "
+                                         "actual HTTP loading, adjacent tile pan, failure/retry, native focus, "
+                                         "marker activation, detail and themes. No live-provider availability claim.")
             with record.open("w", encoding="utf-8") as cast:
                 for item in [header, *events]:
                     cast.write(json.dumps(item, ensure_ascii=False) + "\n")
         os.close(master)
         os.close(slave)
-    print(f"PASS: map pan/zoom, detail limits, marker selection/activation, theme, fills/labels, coverage, resize and clean exit ({len(output)} bytes)")
+    workflow = ("online HTTP loading, adjacent tiles, failure/retry, native focus, detail, themes, compact recovery"
+                if online_source is not None else
+                "map pan/zoom, detail limits, marker selection/activation, theme, fills/labels, coverage, resize")
+    print(f"PASS: {workflow} and clean exit ({len(output)} bytes)")
 
 
 def main():
@@ -259,8 +328,11 @@ def main():
     arguments.add_argument("binary", type=Path, help="Path to an already-built chio-maps executable")
     arguments.add_argument("--output-dir", type=Path, default=Path(".build/maps"), help="Raw PTY log and timing report directory")
     arguments.add_argument("--record", type=Path, help="Optional asciinema v2 output; meaningful 100x30 frames only")
+    arguments.add_argument("--online-source", type=Path,
+                           help="Configured source JSON for the fixed z12 local HTTP fixture workflow")
     options = arguments.parse_args()
-    probe(options.binary.resolve(), options.output_dir, options.record)
+    probe(options.binary.resolve(), options.output_dir, options.record,
+          options.online_source.resolve() if options.online_source is not None else None)
 
 
 if __name__ == "__main__":

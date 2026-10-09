@@ -15,14 +15,17 @@ struct MapExampleView {
     @State private var labels = true
     @State private var detail: MapDetail
     @State private var activation = "Return opens the selected place"
+    @State private var retry = 0
     private let fixtures: MapFixtures
     private let streetSource: MapFixtures.StreetSource
+    private let acquisition: MapExampleAcquisition
 
     init(fixtures: MapFixtures, scene: MapFixtures.Scene, appearance: MapExampleCommand.Appearance,
          detail: MapDetail = .minimal,
-         streetSource: MapFixtures.StreetSource = .overpass) {
+         streetSource: MapFixtures.StreetSource = .overpass, acquisition: MapExampleAcquisition = .offline) {
         self.fixtures = fixtures
         self.streetSource = streetSource
+        self.acquisition = acquisition
         _scene = State(wrappedValue: scene)
         _camera = State(wrappedValue: scene.camera)
         _selection = State(wrappedValue: nil)
@@ -37,6 +40,7 @@ struct MapExampleView {
         overlays.markers.first(where: { $0.id == selection })?.title ?? "None"
     }
     private var context: String {
+        if acquisition.isOnline { return "Online · \(detail.levelNumber)/\(MapDetail.allCases.count) \(detail.rawValue) · \(appearance.rawValue) · synthetic guide" }
         let sourceTitle = scene == .world ? "Natural Earth" : streetSource.title
         return "Offline · \(sourceTitle) · \(detail.levelNumber)/\(MapDetail.allCases.count) \(detail.rawValue) · \(appearance.rawValue) · synthetic guide"
     }
@@ -58,6 +62,7 @@ struct MapExampleView {
         case .character("f"): fills.toggle()
         case .character("l"): labels.toggle()
         case .character("r"): camera = scene.camera
+        case .character("e") where acquisition.isOnline: retry &+= 1
         default: return .ignored
         }
         return .handled
@@ -73,12 +78,20 @@ extension MapExampleView: View {
             }.frame(height: 1, alignment: .leading)
             Text(context).foregroundStyle(theme.colors.mutedText)
                 .frame(height: 1, alignment: .leading)
-            MapView(source: source, camera: $camera, selection: $selection,
-                    overlays: overlays, detail: detail)
-                .mapFills(fills)
-                .mapLabels(labels)
-                .onActivate { marker in activation = "Opened \(marker.title)" }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            if acquisition.isOnline {
+                OnlineMapContent(fallback: fixtures.source(for: .world), camera: $camera,
+                    selection: $selection, overlays: overlays, detail: detail, fills: fills,
+                    labels: labels, retry: retry, activate: { activation = "Opened \($0.title)" },
+                    makeLoader: { try await acquisition.makeLoader() })
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                MapView(source: source, camera: $camera, selection: $selection,
+                        overlays: overlays, detail: detail)
+                    .mapFills(fills)
+                    .mapLabels(labels)
+                    .onActivate { marker in activation = "Opened \(marker.title)" }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
             Text(String(format: "Center %.3f, %.3f · span %.4f°", camera.center.latitude,
                         camera.center.longitude, camera.longitudeSpan))
                 .foregroundStyle(theme.colors.secondaryText)

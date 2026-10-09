@@ -1,6 +1,6 @@
 import Foundation
 
-/// Explicit OpenMapTiles presentation subset for one offline XYZ tile.
+/// Explicit OpenMapTiles presentation subset for one supplied XYZ tile.
 /// No tile stitching, label-layer joining, repair or acquisition happens here.
 public struct OpenMapTilesAdapter {
     /// Invalid wire data, unsupported schema details and bounded decoder failures.
@@ -31,7 +31,9 @@ public struct OpenMapTilesAdapter {
         switch layer {
         case "water": return .water
         case "building": return .building
-        case "park": return .park
+        // OpenMapTiles also places park name/rank POINT labels in this layer.
+        // They are outside our area subset, not malformed polygon geometry.
+        case "park": return feature.type == 1 ? nil : .park
         case "landuse":
             return ["park", "recreation_ground", "village_green", "garden"].contains(sourceClass) ? .park : nil
         case "transportation":
@@ -46,6 +48,16 @@ public struct OpenMapTilesAdapter {
 
 extension OpenMapTilesAdapter: MapSourceAdapter {
     public func adapt(_ input: Data) throws -> MapSource {
+        try MapSource(dataset: dataset(input, admits: { _ in true }), metadata: metadata, coverage: tile.coverage)
+    }
+
+    /// Acquisition retains complete validated parts that may intersect the requested
+    /// region. Its caller must describe that region, not the whole tile, as coverage.
+    func adapt(_ input: Data, intersecting request: MapTileRequest) throws -> MapDataset {
+        try dataset(input, admits: { try MapPreparation.mayIntersect($0, request: request) })
+    }
+
+    private func dataset(_ input: Data, admits: (MapGeometry) throws -> Bool) throws -> MapDataset {
         let layers = try MapboxVectorTileDecoder.decode(input)
         var features: [MapFeature] = []
         var vertices = 0
@@ -78,14 +90,17 @@ extension OpenMapTilesAdapter: MapSourceAdapter {
                     }
                 }
                 for (part, geometry) in geometries.enumerated() {
+                    // Validate names/identities as well as geometry even offscreen.
+                    let candidate = try MapFeature(id: "\(prefix)/\(part)", kind: kind, name: name, geometry: geometry)
+                    guard try admits(geometry) else { continue }
                     vertices += geometry.vertexCount
                     guard features.count < MapLimits.features, vertices <= MapLimits.sourceVertices
                     else { throw MapValidationError.budgetExceeded }
-                    features.append(try MapFeature(id: "\(prefix)/\(part)", kind: kind, name: name, geometry: geometry))
+                    features.append(candidate)
                 }
             }
         }
-        return try MapSource(dataset: MapDataset(features: features), metadata: metadata, coverage: tile.coverage)
+        return try MapDataset(features: features)
     }
 }
 

@@ -44,6 +44,28 @@ struct OpenMapTilesAdapterTests {
         }
     }
 
+    @Test("Park point labels are excluded while park polygons retain strict geometry validation")
+    func parkLabels() throws {
+        let adapter = OpenMapTilesAdapter(tile: try .init(zoom: 12, x: 3229, y: 2033), metadata: try credit())
+        // Exact geometry words from the retained Central Catchment Nature Reserve label.
+        let point = integer(3, 1) + message(4, [UInt32(9),590,5441].flatMap { varint(UInt64($0)) })
+        let polygon = integer(3, 3) + message(4, [UInt32(9),0,0,18,2,0,0,2,15].flatMap { varint(UInt64($0)) })
+        let mixed = message(3, integer(15, 2) + message(1, Array("park".utf8)) + integer(5, 4096)
+                            + message(2, point) + message(2, polygon))
+        let source = try adapter.adapt(Data(mixed))
+        #expect(source.dataset.features.count == 1)
+        #expect(source.dataset.features.first?.kind == .park)
+        #expect(source.dataset.features.first?.id == "mvt/12/3229/2033/park/1/absent/0")
+        #expect(throws: OpenMapTilesAdapter.ValidationError.invalidGeometry) {
+            try adapter.adapt(Data(layer("park", type: 2, words: [9,0,0,10,2,2])))
+        }
+        #expect(throws: OpenMapTilesAdapter.ValidationError.invalidTags) {
+            let invalidPointTags = point + message(2, [0,0]) // No key/value tables.
+            _ = try adapter.adapt(Data(message(3, integer(15, 2) + message(1, Array("park".utf8))
+                + integer(5, 4096) + message(2, invalidPointTags))))
+        }
+    }
+
     @Test("Real bundled OpenFreeMap bytes adapt without a GeoJSON intermediate")
     func realFixture() throws {
         let url = try #require(Bundle.module.url(forResource: "openfreemap-singapore", withExtension: "pbf",
@@ -94,6 +116,109 @@ struct OpenMapTilesAdapterTests {
         #expect(throws: MapValidationError.budgetExceeded) { try adapter.adapt(over) }
     }
 
+    @Test("Acquisition admits whole visible parts after validating over 4000 offscreen parts")
+    func regionalAdmissionBudget() throws {
+        let tile = try MapTileCoordinate(zoom: 14, x: 12919, y: 8133)
+        let adapter = OpenMapTilesAdapter(tile: tile, metadata: try credit())
+        let request = try centeredRequest(tile: tile)
+        let outside: [UInt32] = [9,0,0,10,2,2] // (0,0) to (1,1), far outside the requested centre.
+        let visible: [UInt32] = [9,3800,4096,10,600,0] // (1900,2048) to (2200,2048).
+        let input = Data(layer("transportation", type: 2,
+                               featureWords: Array(repeating: outside, count: 4_001) + [visible], sourceClass: "primary"))
+        #expect(throws: MapValidationError.budgetExceeded) { try adapter.adapt(input) }
+        let selected = try adapter.adapt(input, intersecting: request)
+        #expect(selected.features.count == 1 && selected.vertexCount == 2)
+        #expect(selected.features.first?.id == "mvt/14/12919/8133/transportation/4001/1/0")
+        guard case .polyline(let retained) = try #require(selected.features.first).geometry else {
+            Issue.record("Expected the whole visible road"); return
+        }
+        let coordinates = try [tile.coordinate(x: 1900, y: 2048, extent: 4096),
+                               tile.coordinate(x: 2200, y: 2048, extent: 4096)]
+        #expect(retained.coordinates == coordinates)
+        let visibleOver = Data(layer("transportation", type: 2, words: visible,
+                                     sourceClass: "primary", featureCopies: 4_001))
+        #expect(throws: MapValidationError.budgetExceeded) { try adapter.adapt(visibleOver, intersecting: request) }
+    }
+
+    @Test("Selected offscreen geometry and feature names still validate before spatial admission")
+    func invalidOffscreenCandidate() throws {
+        let tile = try MapTileCoordinate(zoom: 14, x: 12919, y: 8133)
+        let adapter = OpenMapTilesAdapter(tile: tile, metadata: try credit())
+        let request = try centeredRequest(tile: tile)
+        let visible: [UInt32] = [9,3800,4096,10,600,0]
+        for malformed in [[UInt32(9),0,0], [9,0,0,10,0,0]] {
+            let input = Data(layer("transportation", type: 2, featureWords: [visible, malformed], sourceClass: "primary"))
+            #expect(throws: OpenMapTilesAdapter.ValidationError.invalidGeometry) {
+                try adapter.adapt(input, intersecting: request)
+            }
+        }
+        for invalidName in ["Bad\nname", String(repeating: "a", count: 257)] {
+            let input = Data(layer("transportation", type: 2, featureWords: [visible, [9,0,0,10,2,2]],
+                                   sourceClass: "primary", names: ["Visible", invalidName]))
+            #expect(throws: MapValidationError.invalidIdentity) { try adapter.adapt(input, intersecting: request) }
+        }
+        // A valid offscreen line in an area layer must still reject its schema mismatch.
+        let wrongType = Data(layer("water", type: 2, words: [9,0,0,10,2,2]))
+        #expect(throws: OpenMapTilesAdapter.ValidationError.invalidGeometry) {
+            try adapter.adapt(wrongType, intersecting: request)
+        }
+    }
+
+    @Test("Spatial admission retains a crossing road and an enclosing polygon with all original holes")
+    func crossingAndEnclosingGeometry() throws {
+        let tile = try MapTileCoordinate(zoom: 14, x: 12919, y: 8133)
+        let adapter = OpenMapTilesAdapter(tile: tile, metadata: try credit())
+        let request = try centeredRequest(tile: tile)
+        // Endpoints (1000,2048)/(3000,2048) both lie outside the centre viewport.
+        let crossing: [UInt32] = [9,2000,4096,10,4000,0]
+        // Exterior (1000,1000)..(3000,3000) encloses the viewport with no vertex in it.
+        // Interior (1800,1800)..(2200,2200) is a counterclockwise hole.
+        let enclosing: [UInt32] = [9,2000,2000,26,4000,0,0,4000,3999,0,15,
+                                   9,1600,2399,26,0,800,800,0,0,799,15]
+        let input = Data(layer("transportation", type: 2, words: crossing, sourceClass: "primary")
+                         + layer("water", type: 3, words: enclosing))
+        let whole = try adapter.adapt(input).dataset
+        let selected = try adapter.adapt(input, intersecting: request)
+        #expect(selected == whole && selected.features.count == 2 && selected.vertexCount == 12)
+        guard case .polygon(let polygon) = try #require(selected.features.last).geometry,
+              case .polyline(let road) = try #require(selected.features.first).geometry else {
+            Issue.record("Expected complete water and road geometry"); return
+        }
+        #expect(polygon.rings.count == 2 && polygon.rings.allSatisfy { $0.coordinates.count == 5 })
+        #expect(!road.coordinates.contains { request.contains($0) })
+        #expect(!polygon.rings[0].coordinates.contains { request.contains($0) })
+        #expect(try MapPreparation.mayIntersect(.polyline(road), request: request))
+        #expect(try MapPreparation.mayIntersect(.polygon(polygon), request: request))
+    }
+
+    @Test("Culling one multipart path preserves the surviving original part identity")
+    func multipartAdmissionIdentity() throws {
+        let tile = try MapTileCoordinate(zoom: 14, x: 12919, y: 8133)
+        let adapter = OpenMapTilesAdapter(tile: tile, metadata: try credit())
+        let request = try centeredRequest(tile: tile)
+        // The second MoveTo is relative to the first path's last LineTo (1,1).
+        let words: [UInt32] = [9,0,0,10,2,2,9,3798,4094,10,600,0]
+        let input = Data(layer("transportation", type: 2, words: words, sourceClass: "primary"))
+        let whole = try adapter.adapt(input).dataset
+        let selected = try adapter.adapt(input, intersecting: request)
+        #expect(selected.features == Array(whole.features.dropFirst()))
+        #expect(selected.features.first?.id == "mvt/14/12919/8133/transportation/0/1/1")
+        #expect(try !MapPreparation.mayIntersect(whole.features[0].geometry, request: request))
+    }
+
+    @Test("Spatial admission uses the renderer's longitude branch across the dateline")
+    func datelineAdmission() throws {
+        let line = try MapGeometry.polyline(.init(coordinates: [.init(latitude: 0, longitude: 178),
+                                                               .init(latitude: 0, longitude: -178)]))
+        let viewport = try MapViewport(columns: 100, rows: 50)
+        let seam = try MapTileRequest(camera: .init(center: .init(latitude: 0, longitude: 179), longitudeSpan: 4),
+                                      viewport: viewport)
+        let distant = try MapTileRequest(camera: .init(center: .init(latitude: 0, longitude: 0), longitudeSpan: 4),
+                                         viewport: viewport)
+        #expect(try MapPreparation.mayIntersect(line, request: seam))
+        #expect(try !MapPreparation.mayIntersect(line, request: distant))
+    }
+
     @Test("Tile segments outside the shortest-edge geographic subset reject instead of collapsing")
     func wideEdges() throws {
         let adapter = OpenMapTilesAdapter(tile: try .init(zoom: 0, x: 0, y: 0), metadata: try credit())
@@ -110,6 +235,31 @@ struct OpenMapTilesAdapterTests {
         let url = try #require(URL(string: "https://example.test/source"))
         return try MapSourceMetadata(attribution: "Test provider", license: "Test license", licenseURL: url,
                                      sourceURL: url, sourceRevision: "snapshot")
+    }
+
+    private func centeredRequest(tile: MapTileCoordinate) throws -> MapTileRequest {
+        try .init(camera: .init(center: tile.coordinate(x: 2048, y: 2048, extent: 4096),
+                                longitudeSpan: 360 / Double(1 << tile.zoom) / 4),
+                  viewport: .init(columns: 100, rows: 50))
+    }
+
+    private func layer(_ name: String, type: UInt64, featureWords: [[UInt32]],
+                       sourceClass: String = "", names: [String] = []) -> [UInt8] {
+        var values = [sourceClass]
+        var features: [UInt8] = []
+        for (ordinal, words) in featureWords.enumerated() {
+            let name = names.isEmpty ? "" : names[ordinal]
+            let index: Int
+            if let existing = values.firstIndex(of: name) { index = existing }
+            else { index = values.count; values.append(name) }
+            let tags = [UInt64(0),0,1,UInt64(index)].flatMap { varint($0) }
+            let feature = integer(1, 1) + integer(3, type) + message(2, tags)
+                + message(4, words.flatMap { varint(UInt64($0)) })
+            features += message(2, feature)
+        }
+        let tables = ["class", "name"].flatMap { message(3, Array($0.utf8)) }
+            + values.flatMap { message(4, message(1, Array($0.utf8))) }
+        return message(3, integer(15, 2) + message(1, Array(name.utf8)) + integer(5, 4096) + tables + features)
     }
 
     private func layer(_ name: String, type: UInt64, words: [UInt32], sourceClass: String = "", name label: String = "", featureCopies: Int = 1) -> [UInt8] {

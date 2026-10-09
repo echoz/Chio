@@ -127,3 +127,9 @@ For historical OSM retrieval on an attic-enabled server, insert
 snapshot is the authoritative exact-reproduction input; remote response whitespace
 and server metadata can change even when historical geometry agrees. Refreshing
 snapshots must update fixture hashes and source metadata after verification.
+
+## Online workflow replay
+
+[OnlineTiles/Provenance.md](OnlineTiles/Provenance.md) records the small adjacent
+tile extract used by the local HTTP replay. Its separate manifest pins the actual
+retained bytes; a dated provider URL alone does not establish immutability.

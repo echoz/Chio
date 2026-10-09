@@ -7,6 +7,7 @@ enum MapboxVectorTileDecoder {
     static let maximumBytes = 16 * 1_024 * 1_024
     static let maximumLayers = 64
     static let maximumFeatures = 20_000
+    static let maximumPathsPerFeature = 4_000
     static let maximumTableEntries = 65_536
     static let maximumWords = 1_000_000
     static let maximumTextBytes = 2 * 1_024 * 1_024
@@ -68,6 +69,7 @@ enum MapboxVectorTileDecoder {
         var offset = 0
         var cursor = Point(x: 0, y: 0)
         var paths: [[Point]] = []
+        var vertices = 0
         let bound = Int64(extent) * 8
         func command() throws -> (UInt32, Int) {
             guard offset < feature.words.count else { throw ValidationError.invalidGeometry }
@@ -112,8 +114,9 @@ enum MapboxVectorTileDecoder {
                 path.append(path[0])
                 // ClosePath leaves cursor at the last LineTo, not at the first vertex.
             }
-            guard paths.count < MapLimits.polygonRings,
-                  paths.reduce(0, { $0 + $1.count }) + path.count <= MapLimits.sourceVertices
+            vertices += path.count
+            guard paths.count < maximumPathsPerFeature,
+                  vertices <= MapLimits.sourceVertices
             else { throw ValidationError.budgetExceeded }
             paths.append(path)
         }
@@ -131,6 +134,8 @@ enum MapboxVectorTileDecoder {
                 polygons.append([ring])
             } else {
                 guard !polygons.isEmpty else { throw ValidationError.invalidGeometry }
+                guard polygons[polygons.count - 1].count < MapLimits.polygonRings
+                else { throw ValidationError.budgetExceeded }
                 polygons[polygons.count - 1].append(ring)
             }
         }

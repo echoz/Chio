@@ -19,8 +19,8 @@ Update each owning document instead of duplicating contracts or history here.
   Follow the value contracts and explicit state-owner exceptions in
   [Design.md](Docs/Design.md#value-contracts).
 - Keep one package and one public `Chio` library until real dependency boundaries
-  justify more products. Keep examples local; external service integrations
-  remain deferred.
+  justify more products. Examples default to local fixtures. Online map acquisition
+  is an explicit opt-in; other external service integrations remain deferred.
 - Apply themes through the environment. Keep behavior in component options and
   application layout in SwiftTUI composition. Do not use private upstream APIs to
   conceal styling or focus limitations.

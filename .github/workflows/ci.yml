@@ -36,7 +36,7 @@ jobs:
             ci-verification.log
             .build/ci-results/*.txt
             .build/ci-results/*.xml
-            .build/ci-results/maps/*
+            .build/ci-results/maps/**
 
   linux:
     runs-on: ubuntu-24.04
@@ -60,4 +60,4 @@ jobs:
             ci-verification.log
             .build/ci-results/*.txt
             .build/ci-results/*.xml
-            .build/ci-results/maps/*
+            .build/ci-results/maps/**

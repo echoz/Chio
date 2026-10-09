@@ -85,3 +85,28 @@ swift build --force-resolved-versions --jobs "${SWIFT_BUILD_JOBS:-2}" \
   -c release --product chio-maps
 map_binary="$(swift build -c release --show-bin-path)/chio-maps"
 python3 Scripts/maps/terminal-probe.py "$map_binary" --output-dir .build/ci-results/maps
+
+# Real HTTP acquisition against retained bytes, never a live provider in CI.
+python3 Scripts/maps/online-fixture-server.py --verify
+online_directory=.build/ci-results/maps/online
+mkdir -p "$online_directory"
+rm -f "$online_directory/ready.json"
+python3 Scripts/maps/online-fixture-server.py \
+  --config-file "$online_directory/source.json" --ready-file "$online_directory/ready.json" \
+  > "$online_directory/server.log" 2>&1 &
+online_server_pid=$!
+stop_online_server() {
+  kill "$online_server_pid" 2>/dev/null || true
+  wait "$online_server_pid" 2>/dev/null || true
+}
+trap stop_online_server EXIT
+for attempt in {1..50}; do
+  [[ -s "$online_directory/ready.json" ]] && break
+  kill -0 "$online_server_pid" 2>/dev/null || { cat "$online_directory/server.log"; exit 1; }
+  sleep 0.1
+done
+[[ -s "$online_directory/ready.json" ]] || { echo "Online fixture did not start within five seconds"; exit 1; }
+python3 Scripts/maps/terminal-probe.py "$map_binary" \
+  --online-source "$online_directory/source.json" --output-dir "$online_directory"
+stop_online_server
+trap - EXIT
