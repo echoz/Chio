@@ -25,8 +25,9 @@ The runnable proof is `chio-map-spike`, under `Spikes/MapRendering`; it adds no
 public library API. [Findings](Decisions/GeographicMaps.md#rendering-spike-findings)
 record native rendering, source budgets, provisional sizes and verification.
 The experiment now defaults to abstract geography and has an internal adapter
-boundary carrying source credits and explicit coverage. Compare source detail
-with `d`; validate the visual direction before expanding acquisition. The next
+boundary carrying source credits and explicit coverage. Adjust silhouette,
+minimal, abstract and source detail with `[` / `]`, or cycle with `d`; validate
+the visual direction before expanding acquisition. The next
 work is to assess that treatment in use, establish a drawing work budget, and
 then design the reusable offline component. Do not promote the
 experimental types unchanged: camera bindings, asynchronous preparation/stale

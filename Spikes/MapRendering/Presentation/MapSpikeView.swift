@@ -94,7 +94,9 @@ struct MapSpikeView {
         case .character("t"): appearance = appearance.next
         case .character("f"): fills.toggle()
         case .character("l"): labels.toggle()
-        case .character("d"): detail = detail == .abstract ? .source : .abstract
+        case .character("["): detail = detail.less
+        case .character("]"): detail = detail.more
+        case .character("d"): detail = detail.next
         case .character("r"): camera = scene.camera
         case .character("+"), .character("="): camera = try! camera.zoomed(by: 1 / 0.7)
         case .character("-"): camera = try! camera.zoomed(by: 0.7)
@@ -115,7 +117,7 @@ extension MapSpikeView: View {
                 Text("chio").bold().foregroundStyle(theme.colors.accent)
                 Text("/ map spike · \(scene.title)")
             }.frame(height: 1, alignment: .leading)
-            Text("\(sourceDescription) · \(detail == .abstract ? "abstract" : "source detail") · \(appearance.rawValue)")
+            Text("\(sourceDescription) · detail \(detail.levelNumber)/\(MapDetail.allCases.count) \(detail.rawValue) · \(appearance.rawValue)")
                 .foregroundStyle(theme.colors.mutedText).frame(height: 1, alignment: .leading)
             Spacer().frame(height: 1)
             mapView.frame(width: max(1, terminalSize.width - 2), height: viewport.rows, alignment: .center)
@@ -125,10 +127,10 @@ extension MapSpikeView: View {
                 .foregroundStyle(theme.colors.secondaryText).frame(height: 1, alignment: .leading)
             Text(source.metadata.attribution).foregroundStyle(theme.colors.mutedText).frame(height: 1, alignment: .leading)
             Text(licenseText).foregroundStyle(theme.colors.mutedText).frame(height: 1, alignment: .leading)
-            Text(terminalSize.width >= 76
-                 ? "↑↓←→ pan  +/- zoom  space map  t theme  d detail  f fill  l labels  r reset  q quit"
+            Text(terminalSize.width >= 96
+                 ? "↑↓←→ pan  +/- zoom  [ ] detail  d cycle  space map  t theme  f fill  l labels  r reset  q quit"
                  : terminalSize.width >= 58
-                    ? "↑↓←→ pan  +/- zoom  d detail  space map  q quit"
+                    ? "↑↓←→ pan  +/- zoom  [ ] detail  space map  q quit"
                     : "q quit  +/- zoom  space map")
                 .foregroundStyle(theme.colors.accent).frame(height: 1, alignment: .leading)
         }

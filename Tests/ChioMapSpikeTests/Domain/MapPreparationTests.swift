@@ -83,7 +83,7 @@ struct MapPreparationTests {
         #expect(dataset.features[0].geometry.vertexCount == 10)
     }
 
-    @Test("World polar-cap rings preserve their explicit full-width longitude cut", arguments: [MapDetail.source, .abstract])
+    @Test("World polar-cap rings preserve their explicit full-width longitude cut", arguments: MapDetail.allCases)
     func polarCap(detail: MapDetail) throws {
         let ring = try MapRing(coordinates: [coordinate(-180, -90), coordinate(180, -90), coordinate(180, -80), coordinate(0, -80), coordinate(-180, -80), coordinate(-180, -90)])
         let dataset = try MapDataset(features: [MapFeature(id: "antarctica", kind: .land, geometry: .polygon(MapPolygon(rings: [ring])))])
@@ -95,7 +95,7 @@ struct MapPreparationTests {
         #expect(polygon.rings[0].first == polygon.rings[0].last)
     }
 
-    @Test("A full-width polar strip keeps its source longitude cut even when shortest unwrap closes", arguments: [MapDetail.source, .abstract])
+    @Test("A full-width polar strip keeps its source longitude cut even when shortest unwrap closes", arguments: MapDetail.allCases)
     func polarStrip(detail: MapDetail) throws {
         let ring = try MapRing(coordinates: [coordinate(-180, -90), coordinate(180, -90),
                                             coordinate(180, -80), coordinate(-180, -80), coordinate(-180, -90)])
@@ -109,7 +109,7 @@ struct MapPreparationTests {
         #expect(polygon.rings[0][0].y > polygon.rings[0][2].y)
     }
 
-    @Test("Ordinary dateline polygons retain a short longitude branch and all hole rings", arguments: [MapDetail.source, .abstract])
+    @Test("Ordinary dateline polygons retain a short longitude branch and all hole rings", arguments: MapDetail.allCases)
     func datelinePolygon(detail: MapDetail) throws {
         let ring = try MapRing(coordinates: [coordinate(178, -2), coordinate(-178, -2),
                                             coordinate(-178, 2), coordinate(178, 2), coordinate(178, -2)])

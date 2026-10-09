@@ -31,14 +31,13 @@ struct MapLabels {
             let y = Int(candidate.position.y.rounded())
             guard x >= 1, y >= 1, x + width < columns, y < rows - 1 else { continue }
             guard !accepted.contains(where: {
-                abs($0.row - y) <= (detail == .abstract ? 2 : 1)
-                    && x < $0.column + $0.width + (detail == .abstract ? 4 : 2)
-                    && x + width + (detail == .abstract ? 4 : 2) > $0.column
+                abs($0.row - y) <= detail.labelRowGap
+                    && x < $0.column + $0.width + detail.labelColumnGap
+                    && x + width + detail.labelColumnGap > $0.column
             }) else { continue }
             accepted.append(Label(id: candidate.featureID, text: text, column: x, row: y, width: width))
             names.insert(text)
-            let limit = detail == .abstract ? min(8, max(1, columns * rows / 300))
-                : max(1, columns * rows / 100)
+            let limit = detail.labelLimit(columns: columns, rows: rows)
             if accepted.count >= limit { break }
         }
         labels = accepted

@@ -13,7 +13,7 @@ The [active plan](../Plan.md) tracks the next steps. Experimental code lives in
 
 The default experiment now uses an abstract cartographic treatment. Buildings are
 omitted, major roads keep their connected source paths, and minor roads appear
-only at at most 12 ground metres per column with a 58×16 or larger allocation.
+only at scales of at most 12 ground metres per column with a 58×16 or larger allocation.
 The source converter classifies motorway/trunk/primary roads, including links,
 as major; secondary and tertiary streets remain in the ordinary-road category.
 Small visible areas are omitted using filled area after viewport intersection,
@@ -22,8 +22,26 @@ Parks use quiet fills without outlines. Abstract labels have wider spacing and
 a budget of one per 300 cells, capped at eight. These are experimental defaults,
 not a promise of a finished map style or general-purpose level-of-detail engine.
 
-`d` compares the abstract presentation with source detail, and `--source-detail`
-starts that comparison mode. Themes supply color; the semantic detail policy is
+The live detail control has four ordered levels, selected with `[` / `]`:
+
+| Level | Presentation |
+| --- | --- |
+| 1. `silhouette` | Land and water; omit areas below 2 and 4 cells² respectively; at most two labels |
+| 2. `minimal` | The same land/water policy plus major roads; at most four labels |
+| 3. `abstract` | The existing default: major roads, quiet parks, scale-dependent minor roads and at most eight labels |
+| 4. `source` | All available feature classes and the original denser label policy |
+
+The two lower levels use wider label spacing, with one label per 800/500 cells
+respectively and a minimum budget of one. Brackets stop at the endpoints; `d`
+cycles and wraps. The header shows the level number and name. `--detail` chooses
+the initial level, including in snapshots and benchmarks; `--source-detail`
+remains a compatibility alias that takes precedence. The default abstract and
+source treatments are unchanged. These are discrete semantic presets for the
+spike, not a continuous simplification tolerance or public API commitment. They
+do not merge parallel roads, remove individual junction branches, distort
+geography or fetch additional vectors.
+
+Themes supply color; the semantic detail policy is
 independent of both the theme and the provider. Low-level preparation defaults to
 source mode for geometric contract tests; the executable explicitly chooses the
 abstract mode. Panning and detail changes retain the camera.
@@ -56,7 +74,7 @@ do not establish worst-case budgets or SSH latency.
 
 The full 100×30 **terminal UI** has a 98×20 street allocation and six abstract
 labels. A 60×26 terminal keeps a readable map with three labels and compact pan,
-detail, zoom and scene hints. The updated recording compares both detail modes
+detail, zoom and scene hints. The updated recording compares all four detail levels
 and ends on the final complete UI frame. Terminal verification compares drawing
 samples after panning and toggling detail, and checks the outside-coverage notice.
 

@@ -10,7 +10,8 @@ struct MapSpikeCommand {
     @Flag(help: "Export native raster cells as JSON for visual inspection.") var snapshotJSON = false
     @Flag(help: "Measure preparation and native raster time at three allocations.") var benchmark = false
     @Flag(help: "Render below the provisional minimum size to assess readability.") var inspectSmall = false
-    @Flag(help: "Show source detail for comparison with the default abstract map.") var sourceDetail = false
+    @Option(help: "Detail: silhouette, minimal, abstract or source.") var detail: MapDetail = .abstract
+    @Flag(help: "Alias for --detail source; takes precedence over --detail.") var sourceDetail = false
     @Option(help: "Snapshot width, 20...240 columns.") var width = 100
     @Option(help: "Snapshot height, 12...100 rows.") var height = 30
     @Option(help: "Override cell height/width, 0.5...4. Defaults to reported metrics interactively, estimated 2 for snapshots.")
@@ -42,6 +43,8 @@ extension MapSpikeCommand.Appearance: Hashable {}
 extension MapSpikeCommand.Appearance: Codable {}
 extension MapSpikeCommand.Appearance: Sendable {}
 
+extension MapDetail: ExpressibleByArgument {}
+
 extension MapSpikeCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(commandName: "chio-map-spike",
                                                      abstract: "Experimental offline world/street rendering proof. No public map API.")
@@ -60,7 +63,7 @@ extension MapSpikeCommand: AsyncParsableCommand {
     @MainActor
     mutating func run() async throws {
         let fixtures = try MapFixtures.load()
-        let detail: MapDetail = sourceDetail ? .source : .abstract
+        let detail: MapDetail = sourceDetail ? .source : self.detail
         if benchmark {
             try MapProbe.run(fixtures: fixtures, appearance: theme, aspect: cellAspect ?? 2, detail: detail)
         } else if snapshot || snapshotJSON {

@@ -3,6 +3,60 @@ import Foundation
 import Testing
 
 struct MapDetailTests {
+    @Test("Detail levels are ordered, bounded in either direction and cyclic when advanced")
+    func steps() throws {
+        let levels: [MapDetail] = [.silhouette, .minimal, .abstract, .source]
+        #expect(MapDetail.allCases == levels)
+        #expect(levels.map(\.levelNumber) == [1, 2, 3, 4])
+        #expect(levels.map(\.less) == [.silhouette, .silhouette, .minimal, .abstract])
+        #expect(levels.map(\.more) == [.minimal, .abstract, .source, .source])
+        #expect(levels.map(\.next) == [.minimal, .abstract, .source, .silhouette])
+        for level in levels {
+            #expect(try JSONDecoder().decode(MapDetail.self, from: JSONEncoder().encode(level)) == level)
+            #expect(MapDetail(rawValue: level.rawValue) == level)
+        }
+    }
+
+    @Test("Silhouette and minimal admit geography while only minimal retains major roads")
+    func reducedLayers() throws {
+        let features = try [polygon("land", kind: .land, rings: [rectangle(10, 10, 20, 20)]),
+                            polygon("water", kind: .water, rings: [rectangle(30, 10, 40, 20)]),
+                            polygon("park", kind: .park, rings: [rectangle(50, 10, 60, 20)]),
+                            polygon("building", kind: .building, rings: [rectangle(70, 10, 80, 20)]),
+                            road("major", kind: .primaryRoad), road("minor", kind: .road)]
+        let dataset = try MapDataset(features: features)
+        let silhouette = try prepare(dataset, detail: .silhouette)
+        let minimal = try prepare(dataset, detail: .minimal)
+        #expect(Set(silhouette.polygons.map(\.featureID)) == ["land", "water"])
+        #expect(Set(minimal.polygons.map(\.featureID)) == ["land", "water"])
+        #expect(Set(silhouette.lines.map(\.kind)) == [.land, .water])
+        #expect(Set(minimal.lines.map(\.kind)) == [.land, .water, .primaryRoad])
+        #expect(Set(silhouette.labels.map(\.featureID)) == ["land", "water"])
+        #expect(Set(minimal.labels.map(\.featureID)) == ["land", "water", "major"])
+    }
+
+    @Test("Reduced geography admission measures visible fill after clipping and hole subtraction",
+          arguments: [MapDetail.silhouette, .minimal])
+    func reducedAreas(detail: MapDetail) throws {
+        let dataset = try MapDataset(features: [
+            polygon("land-large", kind: .land, rings: [rectangle(10, 10, 13, 11)]),
+            polygon("land-small", kind: .land, rings: [rectangle(20, 10, 21, 11)]),
+            polygon("water-large", kind: .water, rings: [rectangle(30, 10, 33, 12)]),
+            polygon("water-small", kind: .water, rings: [rectangle(40, 10, 43, 11)]),
+            polygon("water-hole", kind: .water,
+                    rings: [rectangle(50, 10, 54, 14), rectangle(50.1, 10.1, 53.9, 13.9)]),
+            polygon("water-offscreen", kind: .water, rings: [rectangle(-100, 20, 0.1, 24)]),
+        ])
+        let reduced = try prepare(dataset, detail: detail)
+        #expect(Set(reduced.polygons.map(\.featureID)) == ["land-large", "water-large"])
+        #expect(Set(reduced.labels.map(\.featureID)) == ["land-large", "water-large"])
+        #expect(try prepare(dataset, detail: .source).polygons.count == 6)
+        #expect(!detail.admitsArea(1.999, kind: .land))
+        #expect(detail.admitsArea(2, kind: .land))
+        #expect(!detail.admitsArea(3.999, kind: .water))
+        #expect(detail.admitsArea(4, kind: .water))
+    }
+
     @Test("Abstract maps omit buildings and admit minor roads only at useful scale and allocation")
     func scaleAndAllocation() throws {
         let minor = try road("minor", kind: .road)
@@ -53,19 +107,20 @@ struct MapDetailTests {
                                           detail: .abstract).polygons.count == 1)
     }
 
-    @Test("Admitted water retains exact source-mode rings and holes")
-    func retainedHoles() throws {
+    @Test("Admitted water retains exact source-mode rings and holes", arguments: MapDetail.allCases)
+    func retainedHoles(detail: MapDetail) throws {
         let source = try MapDataset(features: [polygon("water", kind: .water,
                                                        rings: [rectangle(-10, 10, 70, 30), rectangle(20, 15, 40, 25)])])
-        let abstract = try prepare(source, detail: .abstract)
+        let abstract = try prepare(source, detail: detail)
         let full = try prepare(source, detail: .source)
         #expect(abstract.polygons == full.polygons)
         #expect(abstract.polygons[0].rings.map(\.count) == [5, 5])
         #expect(abstract.lines == full.lines)
     }
 
-    @Test("Major roads keep every visible path including short connecting geometry")
-    func majorRoadContinuity() throws {
+    @Test("Major roads keep every visible path including short connecting geometry",
+          arguments: [MapDetail.minimal, .abstract, .source])
+    func majorRoadContinuity(detail: MapDetail) throws {
         let coordinates = try [coordinate(-60, 0), coordinate(-0.01, 0), coordinate(0, 0.01),
                                coordinate(0.01, 0), coordinate(60, 0)]
         let major = try MapFeature(id: "major", kind: .primaryRoad,
@@ -73,7 +128,7 @@ struct MapDetailTests {
         let short = try MapFeature(id: "connection", kind: .primaryRoad,
                                    geometry: .polyline(MapPolyline(coordinates: [coordinate(0.01, 0), coordinate(0.02, 0)])))
         let source = try MapDataset(features: [major, short])
-        let abstract = try prepare(source, detail: .abstract)
+        let abstract = try prepare(source, detail: detail)
         #expect(try abstract.lines == prepare(source, detail: .source).lines)
         #expect(Set(abstract.lines.map(\.featureID)) == ["major", "connection"])
         #expect(abstract.lines[0].points.first?.x == 0)
@@ -108,7 +163,9 @@ struct MapDetailTests {
         let camera = try MapCamera(center: coordinate(0, 0), longitudeSpan: 100)
         let viewport = try MapViewport(columns: 100, rows: 40)
         let before = try MapPreparation.prepare(dataset: source, camera: camera, viewport: viewport)
-        _ = try MapPreparation.prepare(dataset: source, camera: camera, viewport: viewport, detail: .abstract)
+        for detail in MapDetail.allCases {
+            _ = try MapPreparation.prepare(dataset: source, camera: camera, viewport: viewport, detail: detail)
+        }
         #expect(source == captured)
         #expect(try before == prepare(source, detail: .source))
         #expect(before.statistics.sourceVertices == source.vertexCount)
@@ -133,6 +190,40 @@ struct MapDetailTests {
             #expect(abstract.polygons.contains { $0.kind == .water })
             #expect(abstract.polygons.contains { $0.kind == .park })
             #expect(!abstract.polygons.contains { $0.kind == .building })
+        }
+    }
+
+    @Test("Real fixture geometry grows monotonically with detail across world and street allocations")
+    func fixtureLevels() throws {
+        let fixtures = try MapFixtures.load()
+        for scene in MapFixtures.Scene.allCases {
+            let dataset = fixtures.dataset(for: scene)
+            let captured = dataset
+            let camera = scene.camera
+            for (columns, rows) in [(100, 20), (60, 20), (36, 18)] {
+                let viewport = try MapViewport(columns: columns, rows: rows)
+                let maps = try MapDetail.allCases.map {
+                    try MapPreparation.prepare(dataset: dataset, camera: camera, viewport: viewport, detail: $0)
+                }
+                for (less, more) in zip(maps, maps.dropFirst()) {
+                    #expect(Set(less.polygons).isSubset(of: Set(more.polygons)))
+                    #expect(Set(less.lines).isSubset(of: Set(more.lines)))
+                    #expect(less.statistics.visibleFeatures <= more.statistics.visibleFeatures)
+                    #expect(less.statistics.preparedVertices <= more.statistics.preparedVertices)
+                    #expect(less.statistics.sourceVertices == more.statistics.sourceVertices)
+                }
+                #expect(maps[0].statistics.visibleFeatures > 0)
+                #expect(maps[0].polygons.allSatisfy { $0.kind == .land || $0.kind == .water })
+                #expect(maps[1].lines.filter { $0.kind == .primaryRoad }
+                        == maps[3].lines.filter { $0.kind == .primaryRoad })
+                if scene == .street {
+                    #expect(maps[0].statistics.visibleFeatures < maps[1].statistics.visibleFeatures)
+                    #expect(maps[1].statistics.visibleFeatures < maps[2].statistics.visibleFeatures)
+                    #expect(maps[2].statistics.visibleFeatures < maps[3].statistics.visibleFeatures)
+                }
+            }
+            #expect(dataset == captured)
+            #expect(camera == scene.camera)
         }
     }
 

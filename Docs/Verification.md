@@ -42,9 +42,11 @@ python3 Scripts/ci/terminal-smoke.py .build/release/chio-dashboard
 
 The map experiment additionally runs `Scripts/maps/prepare-fixtures.py --verify`
 and `Scripts/maps/terminal-probe.py` against its release binary. The PTY checks
-compare map samples after pan and detail changes, as well as camera text, offline
+compare map samples after pan and detail changes, including batched detail keys,
+endpoint limits and cycle wrapping, as well as retained camera text, offline
 coverage status and terminal restoration. Its `--benchmark` mode measures the
-default abstract treatment; add `--source-detail` for a comparison. It measures
+default abstract treatment; use `--detail minimal` (or `silhouette`, `abstract`,
+`source`) to compare a level (`--source-detail` remains an alias). It measures
 local preparation and native raster work; it does not measure SSH
 latency. `Scripts/maps/render-snapshot.py` converts `--snapshot-json` exports into
 inspection previews with Pillow and explicit text/braille fonts. Its default

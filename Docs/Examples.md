@@ -36,10 +36,12 @@ The rendering proof is a separate executable, not a public Chio component:
 ```sh
 swift run -c release chio-map-spike --scene world
 swift run -c release chio-map-spike --scene street --theme btop
+swift run -c release chio-map-spike --scene street --detail minimal
 ```
 
 Start at **100 × 30**. Arrows pan, `+`/`-` zoom, Space switches world/Singapore,
-`t` cycles themes, `d` compares abstract/source detail, `f` toggles area fills,
+`t` cycles themes, `[` lowers detail, `]` raises it, `d` cycles all four levels,
+`f` toggles area fills,
 `l` toggles labels, `r` resets the camera,
 and `q` quits. No network request or API key is needed at runtime. Below the
 provisional map allocation, a resize hint replaces the drawing and retains the
@@ -48,8 +50,13 @@ camera. Try **60 × 26** or larger with ordinary 2:1 terminal cells.
 The world uses Natural Earth land; the neighborhood uses real OpenStreetMap
 vectors around Marina Bay. The default abstract view emphasizes water and major
 roads, omits buildings, and admits smaller streets only at useful scale and size.
-Labels leave more empty space. Use `--source-detail` to start with the comparison
-view; neither mode modifies the retained source geometry.
+Labels leave more empty space. Choose `--detail silhouette`, `minimal`, `abstract`
+(the default), or `source`. Silhouette shows land and water; minimal adds major
+roads. Abstract adds parks and scale-dependent smaller streets; source includes
+all available layers. Lower levels omit smaller areas and show fewer labels.
+The header shows the active level, and changes preserve the camera. Brackets stop
+at the ends; `d` wraps. `--source-detail` remains an alias that takes precedence
+over `--detail`. No level modifies retained source geometry or merges roads.
 
 Panning moves across the bundled data; it does not load new areas. The neighborhood
 has finite coverage, indicated in the header, with an explicit notice when the

@@ -154,9 +154,16 @@ def probe(binary, output_dir, record=None):
 
         key("street", b" ", ("Singapore", "span 0.0300"))
         abstract_samples = map_samples()
-        key("source detail", b"d", ("source detail", "span 0.0300"))
+        key("minimal detail", b"[", ("detail 2/4 minimal", "Center 1.289, 103.856", "span 0.0300"))
+        minimal_samples = map_samples()
+        key("silhouette detail", b"[", ("detail 1/4 silhouette", "Center 1.289, 103.856", "span 0.0300"))
+        assert map_samples() != minimal_samples, "Silhouette did not remove road geometry"
+        key("raise detail", b"]]", ("detail 3/4 abstract", "span 0.0300"))
+        assert map_samples() == abstract_samples, "Raising detail did not restore the drawing"
+        key("source detail", b"]", ("detail 4/4 source", "span 0.0300"))
         assert map_samples() != abstract_samples, "Detail comparison did not change the drawing"
-        key("abstract detail", b"d", ("abstract", "span 0.0300"))
+        key("cycle detail", b"d", ("detail 1/4 silhouette", "span 0.0300"))
+        key("abstract detail", b"]]", ("detail 3/4 abstract", "span 0.0300"))
         assert map_samples() == abstract_samples, "Abstract comparison did not restore the drawing"
         key("zoom", b"+", ("Singapore", "span 0.0210"))
         zoom_samples = map_samples()
@@ -169,8 +176,11 @@ def probe(binary, output_dir, record=None):
         key("labels on redraw", b"l", ("Singapore", "span 0.0210"))
         stop_recording()
 
+        key("lower detail limit", b"[[[", ("detail 1/4 silhouette", "Center 1.289, 103.859", "span 0.0210"))
+        key("upper detail limit", b"]]]]", ("detail 4/4 source", "Center 1.289, 103.859", "span 0.0210"))
+        key("restore abstract detail", b"[", ("detail 3/4 abstract", "span 0.0210"))
         observe("compact fallback", ("More room for the map",), lambda: resize(36, 18))
-        observe("restored size retains camera", ("Singapore", "Center 1.289, 103.859", "span 0.0210"),
+        observe("restored size retains camera and detail", ("Singapore", "detail 3/4 abstract", "Center 1.289, 103.859", "span 0.0210"),
                 lambda: resize(100, 30))
         assert "More room for the map" not in current_screen(), "Fallback remained after expansion"
         key("leave offline coverage", b"\x1b[C" * 8, ("Outside offline coverage",))
@@ -228,7 +238,7 @@ def probe(binary, output_dir, record=None):
                     cast.write(json.dumps(item, ensure_ascii=False) + "\n")
         os.close(master)
         os.close(slave)
-    print(f"PASS: map drawing pan/zoom, abstraction, theme, fills/labels, offline coverage, resize and clean exit ({len(output)} bytes)")
+    print(f"PASS: map drawing pan/zoom, detail levels and limits, theme, fills/labels, offline coverage, resize and clean exit ({len(output)} bytes)")
 
 
 def main():
