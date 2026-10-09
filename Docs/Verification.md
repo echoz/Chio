@@ -163,8 +163,11 @@ Completing a visible example change includes updating the showcase:
 ## Linux and CI
 
 [CI](../.github/workflows/ci.yml) runs on `main` pushes and pull requests using
-Xcode 27 and the Swift 6.4.0 Ubuntu 24.04 container. Builds/tests serialize within
-each job; artifacts retain logs, text captures and xUnit reports.
+Xcode 27 and the Swift 6.4.0 Ubuntu 24.04 container. The Linux image uses
+[Docker's official ECR mirror](https://www.docker.com/blog/news-from-aws-reinvent-docker-official-images-on-amazon-ecr-public/),
+pinned to the same image digest verified from Docker Hub, to avoid depending on
+Docker Hub authentication during runner initialization. Builds/tests serialize
+within each job; artifacts retain logs, text captures and xUnit reports.
 
 [0.1.0 verification](Releases/0.1.0.md#platform-verification) records the tested
 platforms. Ordinary Linux executables need the Swift/Foundation runtime libraries.

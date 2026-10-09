@@ -40,7 +40,7 @@ jobs:
 
   linux:
     runs-on: ubuntu-24.04
-    container: swift:6.4.0-noble
+    container: public.ecr.aws/docker/library/swift:6.4.0-noble@sha256:31d14d727f4451f25e29bac9c42563a098c39ac66415e8bad970f48038e38aca
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
