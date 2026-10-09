@@ -257,7 +257,8 @@ let snapshot = try await loader.load(request)
 Get the actual drawable allocation with `.onViewportChange { viewport = $0 }`.
 Nil means the compact fallback is visible. Use SwiftTUI's `.task(id:)` to load
 when the camera/allocation changes, retain the previous source during loading,
-and check cancellation before publication. See the complete
+and check cancellation before publication. Start with `MapView(source: nil, ...)`
+when nothing has loaded; its controls and allocation reporting remain available. See the complete
 [online example composition](../Examples/Maps/Presentation/OnlineMapContent.swift).
 Changing theme or `MapDetail` does not change a tile request.
 
@@ -274,7 +275,8 @@ retains complete parts whose bounds could intersect the viewport; coverage descr
 that retained region, even when whole raw tiles are cached. Geometry-budget failures may retry two
 lower source zooms; compare `requestedZoom` and `attainedZoom` to disclose that
 fallback. Empty successful tiles remain empty; HTTP failures remain errors.
-Source zoom 3 is the online minimum; use a bundled world overview for broad views.
+Source zoom 1 is the online minimum; four tiles cover the world through the same
+loader used for regions and streets. Online mode never substitutes bundled geography.
 Buffered/clipped polygon seams are still possible. See
 [online acquisition contracts](Decisions/OnlineMaps.md) for limits and lifecycle.
 

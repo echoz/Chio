@@ -27,13 +27,53 @@
       "url": "https://www.openstreetmap.org/copyright"
     }
   ],
-  "provenance": "Eight complete responses retained at their original XYZ coordinates: three z12 tiles for fixed local HTTP replay and five z14 tiles for normal-resolution model/acquisition tests. HTTP content encoding alone is decoded. No coordinate relocation, feature filtering or geometry rewriting. The observed dated endpoint is not a guarantee of immutable provider bytes. Bundled hashes identify the inputs.",
+  "provenance": "Twelve complete responses retained at their original XYZ coordinates: four z1 world tiles and three z12 Singapore tiles for local HTTP replay, plus five z14 tiles for normal-resolution model/acquisition tests. HTTP content encoding alone is decoded. No coordinate relocation, feature filtering or geometry rewriting. The observed dated endpoint is not a guarantee of immutable provider bytes. Bundled hashes identify the inputs.",
   "acquisitionBounds": {
-    "requests": 8,
+    "requests": 12,
     "timeoutSeconds": 20,
     "maximumDecodedBytesPerTile": 16777216
   },
   "tiles": [
+    {
+      "z": 1,
+      "x": 0,
+      "y": 0,
+      "file": "1-0-0.pbf",
+      "url": "https://tiles.openfreemap.org/planet/20261004_113936_pt/1/0/0.pbf",
+      "retrievedAt": "2026-10-09T20:46:22.557429+00:00",
+      "bytes": 199480,
+      "sha256": "1ab28e92ce85372dc494ff888775f24743dcf78b5188ade10125cbf34bd5a1b6"
+    },
+    {
+      "z": 1,
+      "x": 0,
+      "y": 1,
+      "file": "1-0-1.pbf",
+      "url": "https://tiles.openfreemap.org/planet/20261004_113936_pt/1/0/1.pbf",
+      "retrievedAt": "2026-10-09T20:46:22.660823+00:00",
+      "bytes": 193375,
+      "sha256": "13bdaac6cc47063c25b2cbafc1e93c82f773121a953c031becbbad55d7e6b654"
+    },
+    {
+      "z": 1,
+      "x": 1,
+      "y": 0,
+      "file": "1-1-0.pbf",
+      "url": "https://tiles.openfreemap.org/planet/20261004_113936_pt/1/1/0.pbf",
+      "retrievedAt": "2026-10-09T20:46:22.782821+00:00",
+      "bytes": 223254,
+      "sha256": "d151d22528336049642a3ec2a031b8c1511c5ba8f8374b5dc584c2775de48a0e"
+    },
+    {
+      "z": 1,
+      "x": 1,
+      "y": 1,
+      "file": "1-1-1.pbf",
+      "url": "https://tiles.openfreemap.org/planet/20261004_113936_pt/1/1/1.pbf",
+      "retrievedAt": "2026-10-09T20:46:22.883027+00:00",
+      "bytes": 195498,
+      "sha256": "bd9720af1e8133bce3e8ab2a517de7e80eb06f157f0ead7fc75161e39961bf14"
+    },
     {
       "z": 12,
       "x": 3228,

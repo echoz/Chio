@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify eight native-coordinate tiles and replay fixed z12 maps; never fetch."""
+"""Verify twelve native-coordinate tiles and replay world and street maps; never fetch."""
 
 import argparse
 import hashlib
@@ -13,7 +13,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 
 FIXTURES = Path(__file__).resolve().parents[2] / "Examples/Maps/Fixtures/OnlineTiles"
-ADDRESSES = ({(12, x, 2033) for x in (3228, 3229, 3230)}
+ADDRESSES = ({(1, x, y) for x in (0, 1) for y in (0, 1)}
+             | {(12, x, 2033) for x in (3228, 3229, 3230)}
              | {(14, x, 8133) for x in range(12917, 12922)})
 MAX_TILE_BYTES = 16 * 1024 * 1024
 
@@ -105,7 +106,7 @@ def serve(manifest, routes, args):
     # Loopback only, with an OS-selected ephemeral port.
     with Server(("127.0.0.1", 0), Handler) as server:
         endpoint = f"http://127.0.0.1:{server.server_port}"
-        source = {"template": endpoint + "/{z}/{x}/{y}.pbf", "zoomRange": [12, 12],
+        source = {"template": endpoint + "/{z}/{x}/{y}.pbf", "zoomRange": [1, 12],
                   "metadata": manifest["metadata"]}
         write_json(args.config_file, source)
         readiness = {"ready": True, "endpoint": endpoint, "configFile": str(args.config_file.resolve()),

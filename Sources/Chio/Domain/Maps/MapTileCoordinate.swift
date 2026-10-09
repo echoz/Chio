@@ -26,10 +26,18 @@ public struct MapTileCoordinate {
     /// Buffers retain their positions. A longitude beyond the world seam wraps;
     /// tile coverage itself always uses the unbuffered bounds.
     func coordinate(x localX: Int64, y localY: Int64, extent: Int) throws -> MapCoordinate {
-        guard (1...65_536).contains(extent) else { throw ValidationError.invalidAddress }
+        try coordinate(interpolatedX: Double(localX), interpolatedY: Double(localY), extent: extent)
+    }
+
+    /// Fractional tile-space vertices preserve the source's straight projected
+    /// edges when the adapter subdivides an ambiguous longitude step.
+    func coordinate(interpolatedX localX: Double, interpolatedY localY: Double,
+                    extent: Int) throws -> MapCoordinate {
+        guard (1...65_536).contains(extent), localX.isFinite, localY.isFinite
+        else { throw ValidationError.invalidAddress }
         let side = Double(1 << zoom)
-        let horizontal = (Double(x) + Double(localX) / Double(extent)) / side
-        let vertical = (Double(y) + Double(localY) / Double(extent)) / side
+        let horizontal = (Double(x) + localX / Double(extent)) / side
+        let vertical = (Double(y) + localY / Double(extent)) / side
         let rawLongitude = horizontal * 360 - 180
         let longitude: Double
         if (-180...180).contains(rawLongitude) {

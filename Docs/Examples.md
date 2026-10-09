@@ -74,8 +74,8 @@ swift run -c release chio-maps --online --map street
 This discovers OpenFreeMap without a key, requests the visible tiles, and retains
 previous coverage while replacements load. The status row reports loading,
 failure, or reduced source resolution when data exceeds geometry budgets. Press
-`e` to retry using the loader's cache policy. The world overview stays bundled;
-zooming into spans below 45 degrees enables online tiles. `--source` selects an
+`e` to retry using the loader's cache policy. World, region and street views all
+use online tiles; the initial view stays empty until data arrives. `--source` selects an
 offline fixture and is not needed online. Detail and theme changes do not fetch
 new data. No disk cache or background download is created. Online snapshots and
 benchmarks are rejected so the inspection modes remain deterministic.
@@ -86,8 +86,8 @@ OpenMapTiles-compatible endpoint. The file is a JSON-encoded `OpenMapTilesSource
 For a reproducible local HTTP replay, run
 `python3 Scripts/maps/online-fixture-server.py --config-file .build/maps-source.json`
 in one terminal, then add `--tile-source .build/maps-source.json` to the online
-launch in another. The replay configuration uses three retained z12 tiles and deliberately
-returns an error outside that coverage; it never accesses the Internet.
+launch in another. The replay serves four world z1 tiles and three Singapore z12
+tiles, and deliberately returns an error at unretained scales or locations; it never accesses the Internet.
 
 Give the component at least **32 × 16** drawing cells for longitude spans of
 60 degrees or more, or **58 × 16** for closer views, plus two credit rows.

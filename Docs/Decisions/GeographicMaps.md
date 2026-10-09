@@ -8,7 +8,9 @@
 
 `MapView(source:camera:selection:overlays:detail:)` is a north-up, flat Web Mercator
 map. The application supplies a `MapSource`, authoritative camera/selection
-bindings and optional `MapOverlays`; minimal detail is the default. `mapFills`,
+bindings and optional `MapOverlays`; minimal detail is the default. A nil source
+means geography has not loaded: focus, allocation reporting, camera controls and
+marker selection remain available, with no substituted dataset or attribution. `mapFills`,
 `mapLabels` and `onActivate` configure presentation and explicit marker activation.
 No provider, network request, timer or route calculation is hidden in the view.
 Explicit [online acquisition](OnlineMaps.md) is a separate effect boundary;
@@ -166,8 +168,17 @@ upstream transport limits chosen by the application.
 The MVT reader allows 16 MiB input, 64 layers, 20,000 raw features, 65,536 total
 key/value entries, one million geometry words and 2 MiB text (16 KiB per string).
 Layer extents are 1…65,536 and XYZ zoom is 0…22. Buffered positions are retained
-within the documented ±8-extent allowance. Half-world or longer tile-space edges
-reject before longitude wrapping. Multipart parts receive snapshot-local IDs;
+within the documented ±8-extent allowance. Before longitude wrapping, paths/rings
+must span less than a world horizontally; each hole's bounds midpoint must lie
+strictly within half a world of its exterior's midpoint. Edges at least half a
+world long are subdivided in Cartesian tile coordinates, interpolating both axes
+without integer rounding. Each resulting horizontal delta is strictly less than
+half a world, preserving the source branch. Expanded path, polygon and aggregate
+vertex counts obey the existing bounds before allocation; no truncation occurs.
+Preparation aligns whole projected hole rings to the exterior's bounds midpoint,
+independent of starting vertex and vertex density. Ambiguous full-world buffered
+inputs reject. Existing explicit polar/full-world cuts in bundled geometry retain
+their handling. Multipart parts receive snapshot-local IDs;
 those IDs are not stable across provider revisions or neighboring tiles.
 
 Online integration exposed a multipart admission mistake: the decoder previously

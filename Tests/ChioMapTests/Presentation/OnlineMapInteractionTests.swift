@@ -22,7 +22,7 @@ struct OnlineMapInteractionTests {
     @Test("Explicit online source files decode a bounded checked configuration without provider discovery")
     func configuredSourceFile() throws {
         let url = URL(string: "https://example.test")!
-        let source = try OpenMapTilesSource(template: "https://example.test/{z}/{x}/{y}.pbf", zoomRange: 3...14,
+        let source = try OpenMapTilesSource(template: "https://example.test/{z}/{x}/{y}.pbf", zoomRange: 1...14,
             metadata: MapSourceMetadata(attribution: "Configured provider", license: "Fixture license",
                                         licenseURL: url, sourceURL: url, sourceRevision: "configured-test"))
         let file = FileManager.default.temporaryDirectory.appendingPathComponent("chio-online-\(UUID().uuidString).json")
@@ -41,9 +41,15 @@ struct OnlineMapInteractionTests {
     func loadingPanFailureRetry() async throws {
         try await withOnlineScene(held: true) { session, _, frames, transport in
             let loading = try await frames.wait {
-                $0.onlineText.contains("Loading tiles") && $0.onlineText.contains("bundled overview")
+                $0.onlineText.contains("Loading tiles") && $0.onlineText.contains("no map loaded")
                     && $0.focusedIdentity != nil
             }
+            #expect(loading.onlineText.contains("No map source loaded"))
+            let loadingHasGeography = loading.onlineHasGeography
+            #expect(!loadingHasGeography)
+            #expect(!loading.onlineText.contains("Natural Earth"))
+            #expect(!loading.onlineText.contains("Controlled tiles"))
+            #expect(!loading.onlineText.contains("Fixture license"))
             try await transport.waitForRequests(2)
             await transport.release()
             let initial = try await frames.wait(after: loading.sequence) { $0.onlineReady }
@@ -97,21 +103,67 @@ struct OnlineMapInteractionTests {
         }
     }
 
-    @Test("Compact allocations and bundled world overview suspend I/O, then current street inputs resume")
+    @Test("Initial online failure keeps geography absent and interactive bindings recover on explicit retry")
+    func initialFailureRetry() async throws {
+        try await withOnlineScene(fails: true, markers: true) { session, _, frames, transport in
+            let failed = try await frames.wait {
+                $0.onlineText.contains("Could not load this area") && $0.onlineText.contains("no map loaded")
+                    && $0.focusedIdentity != nil
+            }
+            #expect(failed.onlineText.contains("No map source loaded"))
+            let failedHasGeography = failed.onlineHasGeography
+            #expect(!failedHasGeography)
+            #expect(!failed.onlineText.contains("Natural Earth"))
+            #expect(!failed.onlineText.contains("Controlled tiles"))
+            #expect(!failed.onlineText.contains("Fixture license"))
+            #expect(await transport.paths().isSubset(of: initialPaths))
+
+            session.send([.key(.character("n")), .key(.return), .key(.character("+")), .key(.arrowRight),
+                          .key(.character("b"), modifiers: .ctrl)])
+            let controlled = try await frames.wait(after: failed.sequence) {
+                $0.onlineText.contains("Could not load this area") && $0.onlineText.contains("Lon=103.869 Span=0.0210")
+                    && $0.onlineText.contains("B=1 S=place A=place")
+            }
+            #expect(controlled.onlineText.contains("No map source loaded"))
+            let controlledHasGeography = controlled.onlineHasGeography
+            #expect(!controlledHasGeography)
+            #expect(controlled.focusedIdentity == failed.focusedIdentity)
+            let beforeRetry = await transport.count
+            await transport.setFailure(false)
+            session.send(.key(.character("e"), modifiers: .ctrl))
+            let recovered = try await frames.wait(after: controlled.sequence) {
+                $0.onlineReady && $0.onlineText.contains("Controlled tiles")
+                    && $0.onlineText.contains("Lon=103.869 Span=0.0210")
+                    && $0.onlineText.contains("B=1 S=place A=place")
+            }
+            #expect(!recovered.onlineText.contains("No map source loaded"))
+            #expect(!recovered.onlineText.contains("Natural Earth"))
+            // The narrower 0.021° camera intersects only the southern z14 row.
+            #expect(await transport.count == beforeRetry + 2)
+            #expect(await transport.paths(after: beforeRetry) == ["/14/12918/8133.pbf", "/14/12919/8133.pbf"])
+            #expect(await transport.factoryCalls == 1)
+            #expect(recovered.focusedIdentity == failed.focusedIdentity)
+        }
+    }
+
+    @Test("World and street cameras acquire online tiles with one loader while compact allocations pause I/O")
     func allocationAndWorld() async throws {
         try await withOnlineScene(startsWorld: true) { session, surface, frames, transport in
             let world = try await frames.wait {
-                $0.onlineText.contains("World overview") && $0.focusedIdentity != nil
+                $0.onlineText.contains("Online · z1") && $0.focusedIdentity != nil
             }
-            try await Task.sleep(for: .milliseconds(350))
-            #expect(await transport.count == 0)
-            #expect(await transport.factoryCalls == 0)
+            #expect(await transport.paths() == worldPaths)
+            #expect(await transport.count == 4)
+            #expect(await transport.factoryCalls == 1)
+            #expect(world.onlineText.contains("Controlled tiles"))
+            #expect(!world.onlineText.contains("Natural Earth"))
             session.send(.key(.character("w"), modifiers: .ctrl))
             let street = try await frames.wait(after: world.sequence) { $0.onlineReady }
             #expect(street.focusedIdentity == world.focusedIdentity)
-            #expect(await transport.count == 4)
+            #expect(await transport.count == 8)
+            #expect(await transport.paths(after: 4) == initialPaths)
             let beforeCompact = await transport.count
-            surface.updateSurfaceSize(.init(width: 40, height: 14))
+            surface.updateSurfaceSize(CellSize(width: 40, height: 14))
             session.requestSurfaceRefresh()
             let compact = try await frames.wait(after: street.sequence) {
                 $0.onlineText.contains("Online paused") && $0.onlineText.contains("More room for the map")
@@ -123,7 +175,7 @@ struct OnlineMapInteractionTests {
             }
             try await Task.sleep(for: .milliseconds(350))
             #expect(await transport.count == beforeCompact)
-            surface.updateSurfaceSize(.init(width: 100, height: 32))
+            surface.updateSurfaceSize(CellSize(width: 100, height: 32))
             session.requestSurfaceRefresh()
             let expanded = try await frames.wait(after: changed.sequence) {
                 $0.onlineReady && $0.onlineText.contains("Lon=103.870")
@@ -131,10 +183,11 @@ struct OnlineMapInteractionTests {
             #expect(await transport.count == beforeCompact + 4)
             #expect(expanded.focusedIdentity == street.focusedIdentity)
             session.send(.key(.character("w"), modifiers: .ctrl))
-            let backToWorld = try await frames.wait(after: expanded.sequence) { $0.onlineText.contains("World overview") }
+            let backToWorld = try await frames.wait(after: expanded.sequence) { $0.onlineText.contains("Online · z1") }
             let worldCount = await transport.count
-            try await Task.sleep(for: .milliseconds(350))
-            #expect(await transport.count == worldCount)
+            #expect(worldCount == beforeCompact + 8)
+            #expect(await transport.paths(after: worldCount - 4) == worldPaths)
+            #expect(backToWorld.focusedIdentity == street.focusedIdentity)
             session.send(.key(.character("w"), modifiers: .ctrl))
             let resumed = try await frames.wait(after: backToWorld.sequence) { $0.onlineReady }
             #expect(await transport.count == worldCount + 4)
@@ -159,7 +212,10 @@ struct OnlineMapInteractionTests {
             session.send(.key(.character("b"), modifiers: .ctrl))
             let pendingNew = try await frames.wait(after: moved.sequence) { $0.onlineText.contains("B=1") }
             #expect(pendingNew.onlineText.contains("Loading tiles"))
-            #expect(pendingNew.onlineText.contains("showing bundled overview"))
+            #expect(pendingNew.onlineText.contains("no map loaded"))
+            #expect(pendingNew.onlineText.contains("No map source loaded"))
+            let pendingNewHasGeography = pendingNew.onlineHasGeography
+            #expect(!pendingNewHasGeography)
             #expect(!pendingNew.onlineText.contains("Controlled tiles"))
             #expect(pendingNew.focusedIdentity == initial.focusedIdentity)
             await transport.release()
@@ -173,6 +229,9 @@ struct OnlineMapInteractionTests {
 
     // Independent addresses for the known 100x27 drawing allocation at z14,
     // including both north/south rows and every longitude column after the pan.
+    private var worldPaths: Set<String> {
+        ["/1/0/0.pbf", "/1/0/1.pbf", "/1/1/0.pbf", "/1/1/1.pbf"]
+    }
     private var initialPaths: Set<String> {
         ["/14/12918/8132.pbf", "/14/12918/8133.pbf", "/14/12919/8132.pbf", "/14/12919/8133.pbf"]
     }
@@ -184,16 +243,17 @@ struct OnlineMapInteractionTests {
 private actor OnlineTransport {
     private let source: OpenMapTilesSource
     private var held: Bool
-    private var fails = false
+    private var fails: Bool
     private var urls: [URL] = []
     private var pending: [CheckedContinuation<Void, Never>] = []
     private(set) var factoryCalls = 0
     var count: Int { urls.count }
 
-    init(held: Bool) throws {
+    init(held: Bool, fails: Bool) throws {
         self.held = held
+        self.fails = fails
         let url = URL(string: "https://example.test")!
-        source = try OpenMapTilesSource(template: "https://example.test/{z}/{x}/{y}.pbf", zoomRange: 3...14,
+        source = try OpenMapTilesSource(template: "https://example.test/{z}/{x}/{y}.pbf", zoomRange: 1...14,
             metadata: MapSourceMetadata(attribution: "Controlled tiles", license: "Fixture license",
                                         licenseURL: url, sourceURL: url, sourceRevision: "test-revision"))
     }
@@ -209,7 +269,7 @@ private actor OnlineTransport {
         if fails { throw MapTileLoader.LoadingError.httpStatus(503) }
         // An empty protobuf message is a valid MVT with no supported layers.
         // No-store ensures resume/refresh assertions observe acquisition itself.
-        return .init(data: Data(), headers: ["cache-control": "no-store"])
+        return MapHTTPClient.Response(data: Data(), headers: ["cache-control": "no-store"])
     }
 
     func setFailure(_ value: Bool) { fails = value }
@@ -234,20 +294,20 @@ private actor OnlineTransport {
 }
 
 private struct OnlineTestApp {
-    let fallback: MapSource?
     let transport: OnlineTransport?
     let startsWorld: Bool
-    nonisolated init() { fallback = nil; transport = nil; startsWorld = false }
-    nonisolated init(fallback: MapSource, transport: OnlineTransport, startsWorld: Bool) {
-        self.fallback = fallback; self.transport = transport; self.startsWorld = startsWorld
+    let overlays: MapOverlays
+    nonisolated init() { transport = nil; startsWorld = false; overlays = .empty }
+    nonisolated init(transport: OnlineTransport, startsWorld: Bool, overlays: MapOverlays) {
+        self.transport = transport; self.startsWorld = startsWorld; self.overlays = overlays
     }
 }
 
 extension OnlineTestApp: App {
     var body: some Scene {
         WindowGroup(id: "online-map-tests") {
-            if let fallback, let transport {
-                OnlineTestView(fallback: fallback, transport: transport, startsWorld: startsWorld)
+            if let transport {
+                OnlineTestView(transport: transport, startsWorld: startsWorld, overlays: overlays)
             }
         }.exitOnKeys([])
     }
@@ -255,17 +315,19 @@ extension OnlineTestApp: App {
 
 @MainActor
 private struct OnlineTestView {
-    let fallback: MapSource
     let transport: OnlineTransport
+    let overlays: MapOverlays
     @State private var camera: MapCamera
     @State private var selection: String?
     @State private var detail: MapDetail = .minimal
     @State private var light = false
     @State private var retry = 0
     @State private var barrier = 0
+    @State private var activation = "none"
 
-    init(fallback: MapSource, transport: OnlineTransport, startsWorld: Bool) {
-        self.fallback = fallback; self.transport = transport
+    init(transport: OnlineTransport, startsWorld: Bool, overlays: MapOverlays) {
+        self.transport = transport
+        self.overlays = overlays
         _camera = State(wrappedValue: (startsWorld ? MapFixtures.Scene.world : .street).camera)
         _selection = State(wrappedValue: nil)
     }
@@ -274,13 +336,13 @@ private struct OnlineTestView {
 extension OnlineTestView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            OnlineMapContent(fallback: fallback, camera: $camera, selection: $selection, overlays: .empty,
-                             detail: detail, fills: true, labels: true, retry: retry, activate: { _ in },
+            OnlineMapContent(camera: $camera, selection: $selection, overlays: overlays,
+                             detail: detail, fills: true, labels: true, retry: retry, activate: { activation = $0.id },
                              makeLoader: { [transport] in await transport.makeLoader() })
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             Text(String(format: "Lon=%.3f Span=%.4f", camera.center.longitude, camera.longitudeSpan))
                 .frame(height: 1, alignment: .leading)
-            Text("Detail=\(detail.rawValue) Theme=\(light ? "light" : "default") B=\(barrier)")
+            Text("Detail=\(detail.rawValue) Theme=\(light ? "light" : "default") B=\(barrier) S=\(selection ?? "nil") A=\(activation)")
                 .frame(height: 1, alignment: .leading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -302,15 +364,17 @@ extension OnlineTestView: View {
 
 @MainActor
 private func withOnlineScene(
-    held: Bool = false, startsWorld: Bool = false,
+    held: Bool = false, startsWorld: Bool = false, fails: Bool = false, markers: Bool = false,
     perform: @MainActor (HostedSceneSession, HostedRasterSurface, OnlineFrames, OnlineTransport) async throws -> Void
 ) async throws {
     let frames = OnlineFrames()
-    let surface = HostedRasterSurface(surfaceSize: .init(width: 100, height: 32), appearance: .fallback,
+    let surface = HostedRasterSurface(surfaceSize: CellSize(width: 100, height: 32), appearance: .fallback,
                                       onFrame: { frames.latest = $0 })
-    let transport = try OnlineTransport(held: held)
-    let fallback = try MapFixtures.load().source(for: .world)
-    let session = try HostedSceneSession(for: OnlineTestApp(fallback: fallback, transport: transport, startsWorld: startsWorld),
+    let transport = try OnlineTransport(held: held, fails: fails)
+    let overlays = markers ? try MapOverlays(markers: [
+        MapMarker(id: "place", coordinate: MapFixtures.Scene.street.camera.center, title: "Online place")
+    ]) : .empty
+    let session = try HostedSceneSession(for: OnlineTestApp(transport: transport, startsWorld: startsWorld, overlays: overlays),
                                         sceneID: "online-map-tests", surface: surface)
     let run = Task { try await session.start() }
     do {
@@ -349,4 +413,7 @@ private final class OnlineFrames {
 private extension SemanticHostFrame {
     var onlineText: String { raster.lines.joined(separator: "\n") }
     var onlineReady: Bool { onlineText.contains("Online · z14") }
+    var onlineHasGeography: Bool {
+        onlineText.unicodeScalars.contains { (0x2801...0x28FF).contains($0.value) }
+    }
 }

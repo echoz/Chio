@@ -68,17 +68,15 @@ enum MapPreparation {
                 }
             case .polygon(let polygon):
                 let outer = try project(polygon.rings[0].coordinates, camera: camera, viewport: viewport, cancellation: cancellation)
-                // Holes use the exterior's longitude branch, rather than wrapping independently.
-                let referenceX = try outer.enumerated().reduce(0.0) {
-                    try cancellation.check(index: $1.offset)
-                    return $0 + $1.element.x
-                } / Double(outer.count)
-                let referenceLongitude = camera.center.longitude
-                    + (referenceX - Double(viewport.columns) / 2) * camera.longitudeSpan / Double(viewport.columns)
+                // Unwrap the whole hole before choosing its world copy. Bounds
+                // midpoints are independent of vertex density and ring start point.
+                let exteriorMidpoint = try horizontalMidpoint(outer, cancellation: cancellation)
                 let rings = try [outer] + polygon.rings.dropFirst().map {
                     try cancellation.check()
-                    return try project($0.coordinates, camera: camera, viewport: viewport,
-                                       referenceLongitude: referenceLongitude, cancellation: cancellation)
+                    let hole = try project($0.coordinates, camera: camera, viewport: viewport, cancellation: cancellation)
+                    let holeMidpoint = try horizontalMidpoint(hole, cancellation: cancellation)
+                    let worldShift = ((exteriorMidpoint - holeMidpoint) / wrapWidth).rounded() * wrapWidth
+                    return try shifted(hole, by: worldShift, cancellation: cancellation)
                 }
                 // Cull and admit source geometry before spending generalization work.
                 // Admission stays monotonic across levels and independent of fallback.
@@ -142,7 +140,7 @@ enum MapPreparation {
     }
 
     private static func project(_ coordinates: [MapCoordinate], camera: MapCamera,
-                                viewport: MapViewport, referenceLongitude: Double? = nil,
+                                viewport: MapViewport,
                                 cancellation: Cancellation) throws -> [PreparedMap.Point] {
         let isClosed = coordinates.first == coordinates.last
         // An explicit -180...180 edge records the source's full-world cut. Shortest
@@ -156,7 +154,7 @@ enum MapPreparation {
                 return viewport.point(longitude: $0.element.longitude, mercatorY: MapViewport.mercatorY($0.element.latitude), camera: camera)
             }
         }
-        var previous = referenceLongitude ?? camera.center.longitude
+        var previous = camera.center.longitude
         var points: [PreparedMap.Point] = []
         for (index, coordinate) in coordinates.enumerated() {
             try cancellation.check(index: index)
@@ -174,6 +172,17 @@ enum MapPreparation {
             }
         }
         return points
+    }
+
+    private static func horizontalMidpoint(_ points: [PreparedMap.Point],
+                                           cancellation: Cancellation) throws -> Double {
+        var minimum = points[0].x, maximum = points[0].x
+        for (index, point) in points.dropFirst().enumerated() {
+            try cancellation.check(index: index)
+            minimum = min(minimum, point.x)
+            maximum = max(maximum, point.x)
+        }
+        return (minimum + maximum) / 2
     }
 
     private static func shifted(_ points: [PreparedMap.Point], by x: Double,

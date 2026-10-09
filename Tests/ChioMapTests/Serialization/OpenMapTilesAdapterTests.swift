@@ -219,16 +219,115 @@ struct OpenMapTilesAdapterTests {
         #expect(try !MapPreparation.mayIntersect(line, request: distant))
     }
 
-    @Test("Tile segments outside the shortest-edge geographic subset reject instead of collapsing")
-    func wideEdges() throws {
-        let adapter = OpenMapTilesAdapter(tile: try .init(zoom: 0, x: 0, y: 0), metadata: try credit())
-        // (0,2048) -> (4096,2048) is a full-world segment, not a zero-length seam.
-        for endX in [UInt32(2048), 4096] {
-            let data = Data(layer("transportation", type: 2, words: [9,0,4096,10,endX * 2,0], sourceClass: "primary"))
-            #expect(throws: MapboxVectorTileDecoder.ValidationError.invalidGeometry) { try adapter.adapt(data) }
+    @Test("Half-world tile edges subdivide exactly in both directions without rounding projected vertices")
+    func longEdges() throws {
+        let tile = try MapTileCoordinate(zoom: 1, x: 0, y: 0)
+        let adapter = OpenMapTilesAdapter(tile: tile, metadata: try credit())
+        let path: [(Int64, Int64)] = [(0, 2000), (4160, 2001)]
+        for points in [path, Array(path.reversed())] {
+            let data = Data(layer("transportation", type: 2, words: geometryWords(paths: [points]), sourceClass: "primary"))
+            let source = try adapter.adapt(data)
+            guard case .polyline(let line) = source.dataset.features[0].geometry else {
+                Issue.record("Expected a road"); return
+            }
+            #expect(line.coordinates.count == 3)
+            #expect(line.coordinates.first == (try tile.coordinate(x: points[0].0, y: points[0].1, extent: 4096)))
+            #expect(line.coordinates.last == (try tile.coordinate(x: points[1].0, y: points[1].1, extent: 4096)))
+            // Independent inverse Web Mercator for the exact fractional midpoint.
+            #expect(line.coordinates[1].longitude == -88.59375)
+            let latitude = atan(sinh(Double.pi * (1 - 2 * (2000.5 / 4096 / 2)))) * 180 / Double.pi
+            #expect(line.coordinates[1].latitude == latitude)
         }
-        let local = Data(layer("transportation", type: 2, words: [9,0,4096,10,2048,0], sourceClass: "primary"))
-        #expect(try adapter.adapt(local).dataset.features.count == 1)
+        let halfWorld = OpenMapTilesAdapter(tile: try MapTileCoordinate(zoom: 0, x: 0, y: 0), metadata: try credit())
+        let half = Data(layer("transportation", type: 2, words: geometryWords(paths: [[(0, 2048), (2048, 2048)]]), sourceClass: "primary"))
+        guard case .polyline(let line) = try halfWorld.adapt(half).dataset.features[0].geometry else {
+            Issue.record("Expected a half-world road"); return
+        }
+        #expect(line.coordinates.map(\.longitude) == [-180, -90, 0])
+        let short = Data(layer("transportation", type: 2, words: geometryWords(paths: [[(0, 2048), (1024, 2048)]]), sourceClass: "primary"))
+        #expect(try halfWorld.adapt(short).dataset.vertexCount == 2)
+    }
+
+    @Test("Coarse polygon normalization retains holes and rejects ambiguous world spans and hole branches")
+    func coarsePolygons() throws {
+        let tile = try MapTileCoordinate(zoom: 1, x: 0, y: 0)
+        let adapter = OpenMapTilesAdapter(tile: tile, metadata: try credit())
+        let exterior: [(Int64, Int64)] = [(0, 1000), (4160, 1000), (4160, 3000), (0, 3000)]
+        let hole: [(Int64, Int64)] = [(100, 1500), (100, 2500), (200, 2500), (200, 1500)]
+        let data = Data(layer("water", type: 3, words: geometryWords(paths: [exterior, hole], isPolygon: true)))
+        guard case .polygon(let polygon) = try adapter.adapt(data).dataset.features[0].geometry else {
+            Issue.record("Expected coarse water"); return
+        }
+        #expect(polygon.rings.map { $0.coordinates.count } == [7, 5])
+        #expect(polygon.rings[1].coordinates == (try (hole + [hole[0]]).map { try tile.coordinate(x: $0.0, y: $0.1, extent: 4096) }))
+        // This buffered whole-world shape represents the actual z0 ocean's
+        // ambiguous branch class; preserving its ring parity needs decomposition.
+        let world = OpenMapTilesAdapter(tile: try MapTileCoordinate(zoom: 0, x: 0, y: 0), metadata: try credit())
+        let buffered: [(Int64, Int64)] = [(-64, -64), (4160, -64), (4160, 4160), (-64, 4160)]
+        #expect(throws: OpenMapTilesAdapter.ValidationError.invalidGeometry) {
+            try world.adapt(Data(layer("water", type: 3, words: geometryWords(paths: [buffered], isPolygon: true))))
+        }
+        #expect(throws: OpenMapTilesAdapter.ValidationError.invalidGeometry) {
+            try world.adapt(Data(layer("transportation", type: 2,
+                                      words: geometryWords(paths: [[(0, 2048), (4096, 2048)]]), sourceClass: "primary")))
+        }
+        // Exterior midpoint 100 and hole midpoint 4196 differ by exactly half
+        // the z1 world. A nearest-copy choice would have no unique source branch.
+        let local: [(Int64, Int64)] = [(0, 1000), (200, 1000), (200, 3000), (0, 3000)]
+        let ambiguous: [(Int64, Int64)] = [(4146, 1500), (4146, 2500), (4246, 2500), (4246, 1500)]
+        #expect(throws: OpenMapTilesAdapter.ValidationError.invalidGeometry) {
+            try adapter.adapt(Data(layer("water", type: 3, words: geometryWords(paths: [local, ambiguous], isPolygon: true))))
+        }
+    }
+
+    @Test("Inserted vertices obey path, polygon and multipart record budgets before publication")
+    func normalizationBudgets() throws {
+        let adapter = OpenMapTilesAdapter(tile: try MapTileCoordinate(zoom: 1, x: 0, y: 0), metadata: try credit())
+        func path(prefixCount: Int) -> [(Int64, Int64)] {
+            (0..<prefixCount).map { (Int64($0 % 2), Int64($0)) } + [(4160, 20000)]
+        }
+        let exact = path(prefixCount: 19998) // 19999 raw + one inserted vertex.
+        let accepted = Data(layer("transportation", type: 2, words: geometryWords(paths: [exact]), sourceClass: "primary"))
+        #expect(try adapter.adapt(accepted).dataset.vertexCount == 20000)
+        let over = Data(layer("transportation", type: 2, words: geometryWords(paths: [path(prefixCount: 19999)]), sourceClass: "primary"))
+        #expect(throws: OpenMapTilesAdapter.ValidationError.budgetExceeded) { try adapter.adapt(over) }
+        let record = Array(repeating: exact, count: 10)
+        #expect(try adapter.adapt(Data(layer("transportation", type: 2, words: geometryWords(paths: record), sourceClass: "primary"))).dataset.vertexCount == 200000)
+        #expect(throws: OpenMapTilesAdapter.ValidationError.budgetExceeded) {
+            try adapter.adapt(Data(layer("transportation", type: 2,
+                                        words: geometryWords(paths: record + [[(0, 0), (1, 1)]]), sourceClass: "primary")))
+        }
+        let exterior: [(Int64, Int64)] = [(0, 0), (4160, 0), (4160, 22000), (0, 22000)]
+        func hole(verticalVertices: Int) -> [(Int64, Int64)] {
+            [(100, 100)] + (1...verticalVertices).map { (Int64(100), Int64($0 + 100)) }
+                + [(200, Int64(verticalVertices + 100)), (200, 100)]
+        }
+        // Each ring fits on its own. Closure and both inserted exterior
+        // midpoints must also fit their shared polygon allowance with the hole.
+        let polygon = Data(layer("water", type: 3,
+                                 words: geometryWords(paths: [exterior, hole(verticalVertices: 19989)], isPolygon: true)))
+        #expect(try adapter.adapt(polygon).dataset.vertexCount == 20000)
+        #expect(throws: OpenMapTilesAdapter.ValidationError.budgetExceeded) {
+            try adapter.adapt(Data(layer("water", type: 3,
+                                        words: geometryWords(paths: [exterior, hole(verticalVertices: 19990)], isPolygon: true))))
+        }
+    }
+
+    private func geometryWords(paths: [[(Int64, Int64)]], isPolygon: Bool = false) -> [UInt32] {
+        var x: Int64 = 0, y: Int64 = 0
+        var words: [UInt32] = []
+        for path in paths {
+            words.append(9)
+            for (index, point) in path.enumerated() {
+                if index == 1 { words.append(UInt32((path.count - 1) << 3 | 2)) }
+                let dx = point.0 - x, dy = point.1 - y
+                words.append(UInt32((dx << 1) ^ (dx >> 63)))
+                words.append(UInt32((dy << 1) ^ (dy >> 63)))
+                x = point.0; y = point.1
+            }
+            if isPolygon { words.append(15) }
+        }
+        return words
     }
 
     private func credit() throws -> MapSourceMetadata {

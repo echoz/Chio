@@ -79,7 +79,7 @@ extension MapExampleView: View {
             Text(context).foregroundStyle(theme.colors.mutedText)
                 .frame(height: 1, alignment: .leading)
             if acquisition.isOnline {
-                OnlineMapContent(fallback: fixtures.source(for: .world), camera: $camera,
+                OnlineMapContent(camera: $camera,
                     selection: $selection, overlays: overlays, detail: detail, fills: fills,
                     labels: labels, retry: retry, activate: { activation = "Opened \($0.title)" },
                     makeLoader: { try await acquisition.makeLoader() })

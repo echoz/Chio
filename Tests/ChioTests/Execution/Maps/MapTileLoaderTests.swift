@@ -30,6 +30,32 @@ struct MapTileLoaderTests {
         #expect(calls.withLock { $0.count } == plan.tiles.count * 2)
     }
 
+    @Test("Online world requests acquire all four zoom-one tiles without bundled data")
+    func onlineWorldCoverage() async throws {
+        let calls = Mutex<Set<String>>([])
+        let loader = MapTileLoader(source: try source(), transport: { url, _ in
+            _ = calls.withLock { $0.insert(url.path) }
+            return MapHTTPClient.Response(data: Data(), headers: [:])
+        })
+        let world = try MapTileRequest(
+            camera: MapCamera(center: MapCoordinate(latitude: 0, longitude: 0), longitudeSpan: 360),
+            viewport: MapViewport(columns: 38, rows: 19, cellAspectRatio: 2))
+        let snapshot = try await loader.load(world)
+        #expect(snapshot.request == world)
+        #expect(snapshot.requestedZoom == 1 && snapshot.attainedZoom == 1)
+        let tiles = try [MapTileCoordinate(zoom: 1, x: 0, y: 0), MapTileCoordinate(zoom: 1, x: 0, y: 1),
+                         MapTileCoordinate(zoom: 1, x: 1, y: 0), MapTileCoordinate(zoom: 1, x: 1, y: 1)]
+        #expect(snapshot.source.coverage == .tiled(try MapTileCoverage(tiles: tiles, region: world)))
+        guard case .tiled(let coverage) = snapshot.source.coverage else {
+            Issue.record("Expected online tile coverage"); return
+        }
+        #expect(coverage.covers(world))
+        #expect(calls.withLock { $0 } == ["/tiles/1/0/0.pbf", "/tiles/1/0/1.pbf", "/tiles/1/1/0.pbf", "/tiles/1/1/1.pbf"])
+        let statistics = await loader.statistics()
+        #expect(statistics.maximumInFlight <= 2 && statistics.inFlight == 0)
+        #expect(statistics.cacheEntries == 4)
+    }
+
     @Test("Canonical aggregation admits exactly four thousand unique features and never truncates")
     func canonicalAggregateBudget() async throws {
         let request = try request(span: 0.001)
@@ -97,7 +123,7 @@ struct MapTileLoaderTests {
     func boundedFallback() async throws {
         let attempts = Mutex<[Int]>([])
         let request = try request(span: 0.03)
-        let wanted = MapTilePlan.desiredZoom(for: request, range: 3...14)
+        let wanted = MapTilePlan.desiredZoom(for: request, range: 1...14)
         let loader = MapTileLoader(source: try source(), transport: { url, _ in
             let zoom = Int(url.pathComponents[2])!
             attempts.withLock { $0.append(zoom) }
@@ -134,7 +160,7 @@ struct MapTileLoaderTests {
             #expect(zooms.withLock { $0.count } == 1)
         }
         let calls = Mutex(0)
-        let wide = MapTileLoader(source: try source(), transport: { _, _ in
+        let wide = MapTileLoader(source: try source(range: 0...0), transport: { _, _ in
             calls.withLock { $0 += 1 }; return .init(data: Data(), headers: [:])
         })
         await #expect(throws: MapTileLoader.LoadingError.unsupportedViewport) {

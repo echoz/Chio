@@ -6,6 +6,46 @@ import Testing
 @MainActor
 @Suite(.serialized)
 struct MapViewInteractionTests {
+    @Test("An absent source retains allocation, controls and native focus when geographic data arrives")
+    func sourceReadiness() async throws {
+        try await withMapScene(markers: true, startsWithoutSource: true) { session, _, recorder in
+            let unloaded = try await recorder.wait(description: "an unloaded map still reports its drawing allocation and receives focus") {
+                $0.mapContains("No map source loaded") && $0.mapContains("Viewport=60x18")
+                    && $0.focusedIdentity != nil
+            }
+            #expect(!unloaded.mapHasGeography)
+            #expect(!unloaded.mapContains("credit"))
+            #expect(!unloaded.mapContains("Fixture license"))
+            #expect(unloaded.semantics.focusRegions.count == 2)
+            session.send([.key(.arrowRight), .key(.character("+")), .key(.character("n")),
+                          .key(.return), .key(.character("b"), modifiers: .ctrl)])
+            let controlled = try await recorder.wait(after: unloaded.sequence, description: "camera, marker selection and activation work before loading") {
+                $0.mapContains("No map source loaded") && $0.mapContains("Selection=near CW=3 SW=1")
+                    && $0.mapContains("A=near B=1")
+            }
+            #expect(controlled.mapContains("Lon=-20.000 Lat=-10.000 Span=70.000"))
+            #expect(controlled.focusedIdentity == unloaded.focusedIdentity)
+            session.send([.key(.character("a"), modifiers: .ctrl), .key(.character("b"), modifiers: .ctrl)])
+            let loaded = try await recorder.wait(after: controlled.sequence, description: "the supplied source loads into the same native map with unchanged bindings") {
+                $0.mapReady && $0.mapContains("Alpha credit") && $0.mapContains("B=2")
+                    && $0.mapHasGeography
+            }
+            #expect(loaded.mapContains("Lon=-20.000 Lat=-10.000 Span=70.000"))
+            #expect(loaded.mapContains("Selection=near CW=3 SW=1"))
+            #expect(loaded.mapContains("Viewport=60x18"))
+            #expect(loaded.focusedIdentity == unloaded.focusedIdentity)
+            #expect(loaded.semantics.focusRegions.count == 2)
+            session.send([.key(.character("a"), modifiers: .ctrl), .key(.character("b"), modifiers: .ctrl)])
+            let cleared = try await recorder.wait(after: loaded.sequence, description: "clearing the loaded source removes its geography and metadata") {
+                $0.mapContains("No map source loaded") && $0.mapContains("B=3")
+            }
+            #expect(!cleared.mapHasGeography)
+            #expect(!cleared.mapContains("Alpha"))
+            #expect(!cleared.mapContains("Fixture license"))
+            #expect(cleared.focusedIdentity == unloaded.focusedIdentity)
+        }
+    }
+
     @Test("A supplied map frame owns its allocation and preserves focus through compact recovery")
     func allocationAndFallback() async throws {
         try await withMapScene { session, surface, recorder in
@@ -254,12 +294,17 @@ private struct MapConsumerTestApp {
     let fixtures: MapConsumerFixtures?
     let rejectsCameraWrites: Bool
     let rejectsSelectionWrites: Bool
+    let startsWithoutSource: Bool
 
-    nonisolated init() { fixtures = nil; rejectsCameraWrites = false; rejectsSelectionWrites = false }
-    nonisolated init(fixtures: MapConsumerFixtures, rejectsCameraWrites: Bool, rejectsSelectionWrites: Bool) {
+    nonisolated init() {
+        fixtures = nil; rejectsCameraWrites = false; rejectsSelectionWrites = false; startsWithoutSource = false
+    }
+    nonisolated init(fixtures: MapConsumerFixtures, rejectsCameraWrites: Bool, rejectsSelectionWrites: Bool,
+                     startsWithoutSource: Bool) {
         self.fixtures = fixtures
         self.rejectsCameraWrites = rejectsCameraWrites
         self.rejectsSelectionWrites = rejectsSelectionWrites
+        self.startsWithoutSource = startsWithoutSource
     }
 }
 
@@ -268,7 +313,8 @@ extension MapConsumerTestApp: App {
         WindowGroup(id: "map-consumer-tests") {
             if let fixtures {
                 MapConsumerTestView(fixtures: fixtures, rejectsCameraWrites: rejectsCameraWrites,
-                                    rejectsSelectionWrites: rejectsSelectionWrites)
+                                    rejectsSelectionWrites: rejectsSelectionWrites,
+                                    startsWithoutSource: startsWithoutSource)
             }
         }.exitOnKeys([])
     }
@@ -288,14 +334,23 @@ private struct MapConsumerTestView {
     @State private var clicks = 0
     @State private var compact = false
     @State private var secondSource = false
+    @State private var hasSource: Bool
+    @State private var viewport: MapViewport?
     @State private var detail: MapDetail = .source
 
-    init(fixtures: MapConsumerFixtures, rejectsCameraWrites: Bool, rejectsSelectionWrites: Bool) {
+    init(fixtures: MapConsumerFixtures, rejectsCameraWrites: Bool, rejectsSelectionWrites: Bool,
+         startsWithoutSource: Bool) {
         self.fixtures = fixtures
         self.rejectsCameraWrites = rejectsCameraWrites
         self.rejectsSelectionWrites = rejectsSelectionWrites
         _camera = State(wrappedValue: fixtures.camera)
         _selection = State(wrappedValue: nil)
+        _hasSource = State(wrappedValue: !startsWithoutSource)
+    }
+
+    private var source: MapSource? {
+        guard hasSource else { return nil }
+        return secondSource ? fixtures.beta : fixtures.alpha
     }
 
     private var controlledCamera: Binding<MapCamera> {
@@ -320,16 +375,18 @@ private struct MapConsumerTestView {
 extension MapConsumerTestView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            MapView(source: secondSource ? fixtures.beta : fixtures.alpha,
+            MapView(source: source,
                     camera: controlledCamera, selection: controlledSelection,
                     overlays: fixtures.overlays, detail: detail)
                 .onActivate { activation = $0.id }
+                .onViewportChange { viewport = $0 }
                 .frame(width: compact ? 30 : 60, height: compact ? 12 : 20, alignment: .topLeading)
             Button("Adjacent") { clicks += 1 }
             Text(String(format: "Lon=%.3f Lat=%.3f Span=%.3f", camera.center.longitude,
                         camera.center.latitude, camera.longitudeSpan))
             Text("Selection=\(selection ?? "nil") CW=\(cameraWrites) SW=\(selectionWrites)")
             Text("A=\(activation) B=\(barrier) Clicks=\(clicks)")
+            Text(viewport.map { "Viewport=\($0.columns)x\($0.rows)" } ?? "Viewport=nil")
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onKeyPress { press in
@@ -340,6 +397,7 @@ extension MapConsumerTestView: View {
             case .character("e"): camera = fixtures.replacementCamera
             case .character("u"): selection = "unknown"
             case .character("s"): secondSource.toggle()
+            case .character("a"): hasSource.toggle()
             case .character("d"): detail = detail == .source ? .silhouette : .source
             default: return .ignored
             }
@@ -351,6 +409,7 @@ extension MapConsumerTestView: View {
 @MainActor
 private func withMapScene(
     rejectsCameraWrites: Bool = false, rejectsSelectionWrites: Bool = false, markers: Bool = false,
+    startsWithoutSource: Bool = false,
     perform: @MainActor (HostedSceneSession, HostedRasterSurface, HostedFrameRecorder) async throws -> Void
 ) async throws {
     let recorder = HostedFrameRecorder()
@@ -358,7 +417,7 @@ private func withMapScene(
                                       onFrame: { recorder.receive($0) })
     let fixtures = try MapConsumerFixtures(markers: markers)
     let session = try HostedSceneSession(for: MapConsumerTestApp(fixtures: fixtures, rejectsCameraWrites: rejectsCameraWrites,
-                                                                               rejectsSelectionWrites: rejectsSelectionWrites),
+        rejectsSelectionWrites: rejectsSelectionWrites, startsWithoutSource: startsWithoutSource),
                                         sceneID: "map-consumer-tests", surface: surface)
     let run = Task { try await session.start() }
     do {

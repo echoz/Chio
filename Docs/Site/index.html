@@ -600,8 +600,8 @@
           <div class="player" aria-label="Maps recording"></div>
           <p class="player-message" role="status" hidden></p>
           <div class="recording-caption">
-            <p>Compose Chio’s MapView with your own camera, locations and routes. Opt into online street maps: panning loads neighboring tiles through the explicit MapTileLoader, retaining the last accepted coverage during loading or failure. Press e to retry; eligible responses can be reused from the memory cache. Visual detail stays independent of source zoom, and the world overview uses bundled Natural Earth data. Select a location with n or p and press Return to activate it.</p>
-            <p>The recording and static previews replay fixed OpenFreeMap XYZ tiles at source zoom 12 over local HTTP through the real MapTileLoader. This repeatable fixture session demonstrates loading, retained coverage, retry, markers, routes, detail changes and themes. Static previews show the default minimal level. The command below discovers current OpenFreeMap tiles; omit <code>--online</code> for the offline default. <a href="https://github.com/echoz/Chio/blob/main/Examples/Maps/Fixtures/OnlineTiles/Provenance.md">Replay inputs and data credits <span aria-hidden="true">↗</span></a>.</p>
+            <p>Compose Chio’s MapView with your own camera, locations and routes. Opt into online world and street maps: panning loads neighboring tiles through the explicit MapTileLoader, retaining the last accepted coverage during loading or failure. Press e to retry; eligible responses can be reused from the memory cache. Visual detail stays independent of source zoom. World and street views use the same online tile pipeline. Select a location with n or p and press Return to activate it.</p>
+            <p>The recording and static previews replay fixed OpenFreeMap XYZ tiles at source zooms 1 and 12 over local HTTP through the real MapTileLoader. This repeatable fixture session demonstrates world and street coverage, loading, retained coverage, retry, markers, routes, detail changes and themes. Static previews show the default minimal level. The command below discovers current OpenFreeMap tiles; omit <code>--online</code> for the offline default. <a href="https://github.com/echoz/Chio/blob/main/Examples/Maps/Fixtures/OnlineTiles/Provenance.md">Replay inputs and data credits <span aria-hidden="true">↗</span></a>.</p>
             <a class="download" href="recordings/maps.cast" download>Download recording ↓</a>
           </div>
           <div class="recording-run">
@@ -616,8 +616,8 @@
             <dl class="recording-ingredients">
               <div><dt>Chio</dt><dd>MapView, MapTileLoader, OpenMapTilesSource, checked camera and geography, location markers, route overlays and shared themes.</dd></div>
               <div><dt>SwiftTUI</dt><dd>Native drawing, text labels, layout and keyboard input.</dd></div>
-              <div><dt>Application</dt><dd>Network opt-in, retained source and coverage status, camera and selection bindings, bundled world data, location annotations, authored routes and activation feedback.</dd></div>
-              <div><dt>Map data</dt><dd>Natural Earth <a href="https://www.naturalearthdata.com/about/terms-of-use/">public-domain land</a> · © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> · <a href="https://opendatacommons.org/licenses/odbl/1-0/">ODbL 1.0</a> · <a href="https://openfreemap.org/">OpenFreeMap</a> · © <a href="https://openmaptiles.org/">OpenMapTiles</a></dd></div>
+              <div><dt>Application</dt><dd>Network opt-in, retained source and coverage status, camera and selection bindings, location annotations, authored routes and activation feedback.</dd></div>
+              <div><dt>Map data</dt><dd>Offline world: Natural Earth <a href="https://www.naturalearthdata.com/about/terms-of-use/">public-domain land</a> · © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a> · <a href="https://opendatacommons.org/licenses/odbl/1-0/">ODbL 1.0</a> · <a href="https://openfreemap.org/">OpenFreeMap</a> · © <a href="https://openmaptiles.org/">OpenMapTiles</a></dd></div>
             </dl>
             <a class="example-source" href="https://github.com/echoz/Chio/tree/main/Examples/Maps">View example source <span aria-hidden="true">↗</span></a>
           </div>

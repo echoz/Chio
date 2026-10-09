@@ -25,14 +25,22 @@ Discovery accepts only HTTPS tile templates on the provider's tile host.
 The example can also decode a checked `OpenMapTilesSource` from an explicit
 `--tile-source` JSON file (at most 16 KiB), requiring `--online`.
 
-The default example remains offline. `--online` opts into OpenFreeMap traffic;
-camera spans of 45 degrees or wider use bundled Natural Earth instead. World
-polygons at very low tile zooms can violate the adapter's half-world edge guard;
-the online loader uses source zoom 3 or above. This does not weaken the adapter's
-geometry validation. The example retains the last accepted source while loading
-or after failure and labels previous coverage. It does not claim that old tiles
-cover a new area. Camera, marker selection, theme and visual detail remain owned
-by the application and native SwiftTUI state.
+The default example remains offline. `--online` selects online tiles at every
+camera scale, including the world overview; it never switches to Natural Earth.
+Before the first successful load, `MapView(source: nil, ...)` keeps its allocation,
+native focus and camera/marker controls active without claiming geographic data
+or attribution. Later loads and failures retain the last accepted online source
+and label previous coverage. They do not claim that old tiles cover a new area.
+Camera, marker selection, theme and visual detail remain application/native state.
+
+World acquisition uses source zoom 1 or above: four zoom-1 tiles cover the entire
+world within the existing 16-tile allowance. The provider advertises zoom 0, but
+its buffered full-world polygons contain translated copies of islands whose
+relative branch cannot be recovered from canonical longitude alone. Supporting
+those inputs would require geometric decomposition or a richer representation.
+Zoom 1 supplies full online world coverage without either change. Sources whose
+maximum is below 1 reject explicitly. This replaces the initial hybrid policy
+(bundled world, online regions/streets).
 
 ## Resolution, limits and cancellation
 
@@ -45,7 +53,10 @@ culls complete parts whose projected bounds cannot intersect the viewport. It
 reuses the renderer's sequential longitude unwrapping and world copies. Crossing
 lines, enclosing polygons and all retained holes remain whole; identities retain
 their original multipart indices. Malformed selected geometry or names reject
-even outside the viewport. No clipping or simplification happens at acquisition.
+even outside the viewport. No clipping or simplification happens at acquisition. Coarse Cartesian edges
+are subdivided before canonical longitude conversion to retain their direction;
+this adds collinear points without changing provider shapes. See the geometry
+constraints in [geographic maps](GeographicMaps.md#work-bounds).
 
 The unchanged 4,000-feature/200,000-vertex limits apply to the retained aggregate.
 Raw wire, record, path and polygon bounds still apply before culling. The public
@@ -62,7 +73,7 @@ holes; [geographic limits](GeographicMaps.md#work-bounds) record the acceptance
 change and unchanged canonical constraints.
 
 Only resource-budget failures retry at a lower source zoom: requested zoom and
-at most its two predecessors, bounded by source minimum and zoom 3. A successful
+at most its two predecessors, bounded by source minimum and zoom 1. A successful
 fallback exposes both zooms. Malformed geometry, HTTP failures and unsupported
 schemas fail the request. No required tile or potentially visible part is omitted
 to fit a count budget. Dense visible areas may still fail after all three bounded
@@ -136,5 +147,7 @@ parts, and distinguish retained regions from tile footprints. Injected transport
 replacement, concurrency, fallback and failure without a public service. Local
 HTTP integration tests exercise the real URLSession boundary on supported CI
 platforms. Hosted and terminal checks cover source replacement and native focus.
+Four retained genuine zoom-1 responses exercise world acquisition, coastline/hole
+placement, seam pans, all detail levels, themes and narrow raster allocations.
 Separate bounded live-provider checks establish integration, not service uptime,
 universal data coverage, provider parity or SSH latency.

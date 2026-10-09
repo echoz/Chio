@@ -5,7 +5,6 @@ import SwiftTUI
 /// MapView remains the same native focus target through every loading state.
 @MainActor
 struct OnlineMapContent {
-    private let fallback: MapSource
     private let camera: Binding<MapCamera>
     private let selection: Binding<String?>
     private let overlays: MapOverlays
@@ -21,13 +20,12 @@ struct OnlineMapContent {
     @State private var snapshot: MapTileSnapshot?
     @State private var update: Update = .idle
 
-    init(fallback: MapSource, camera: Binding<MapCamera>, selection: Binding<String?>,
+    init(camera: Binding<MapCamera>, selection: Binding<String?>,
          overlays: MapOverlays, detail: MapDetail, fills: Bool, labels: Bool, retry: Int,
          activate: @escaping @MainActor (MapMarker) -> Void,
          makeLoader: @escaping @Sendable () async throws -> MapTileLoader = {
              MapTileLoader(source: try await OpenMapTilesSource.fetchOpenFreeMap())
          }) {
-        self.fallback = fallback
         self.camera = camera
         self.selection = selection
         self.overlays = overlays
@@ -50,24 +48,22 @@ struct OnlineMapContent {
         let retry: Int
     }
 
-    // This is the example's acquisition policy, independent of Chio's visual detail.
-    private var worldOverview: Bool { camera.wrappedValue.longitudeSpan >= 45 }
     private var request: MapTileRequest? {
-        worldOverview ? nil : viewport.map { MapTileRequest(camera: camera.wrappedValue, viewport: $0) }
+        viewport.map { MapTileRequest(camera: camera.wrappedValue, viewport: $0) }
     }
-    private var source: MapSource { worldOverview ? fallback : snapshot?.source ?? fallback }
     private var status: String {
-        if worldOverview { return "World overview · bundled Natural Earth · zoom in for online tiles" }
         guard let request else { return "Online paused · resize to load tiles" }
-        let retained = snapshot == nil ? "bundled overview" : "previous coverage"
+        let retained: String
+        if snapshot == nil { retained = "no map loaded" }
+        else { retained = "showing previous coverage" }
         switch update {
         case .failed(let failed) where failed == request:
-            return "Could not load this area · showing \(retained) · e retry"
+            return "Could not load this area · \(retained) · e retry"
         case .loading(let pending) where pending == request:
-            return "Loading tiles… · showing \(retained)"
+            return "Loading tiles… · \(retained)"
         default:
             guard let snapshot, snapshot.request == request else {
-                return "Loading tiles… · showing \(retained)"
+                return "Loading tiles… · \(retained)"
             }
             let resolution = snapshot.attainedZoom < snapshot.requestedZoom
                 ? " · reduced from z\(snapshot.requestedZoom) to fit geometry limits" : ""
@@ -104,7 +100,7 @@ extension OnlineMapContent: View {
     var body: some View {
         let work = Work(request: request, retry: retry)
         VStack(alignment: .leading, spacing: 0) {
-            MapView(source: source, camera: camera, selection: selection, overlays: overlays, detail: detail)
+            MapView(source: snapshot?.source, camera: camera, selection: selection, overlays: overlays, detail: detail)
                 .mapFills(fills)
                 .mapLabels(labels)
                 .onActivate(activate)

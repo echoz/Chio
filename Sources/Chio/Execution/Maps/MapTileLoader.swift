@@ -91,7 +91,7 @@ public actor MapTileLoader {
     }
 
     private func acquire(_ request: MapTileRequest) async throws -> MapTileSnapshot {
-        let floor = max(3, source.zoomRange.lowerBound)
+        let floor = max(1, source.zoomRange.lowerBound)
         guard floor <= source.zoomRange.upperBound else { throw LoadingError.unsupportedViewport }
         let requested = MapTilePlan.desiredZoom(for: request, range: floor...source.zoomRange.upperBound)
         var lastBudgetError: (any Error)?

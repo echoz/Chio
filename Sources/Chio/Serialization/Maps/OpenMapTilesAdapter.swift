@@ -16,14 +16,69 @@ public struct OpenMapTilesAdapter {
         self.metadata = metadata
     }
 
-    private func coordinates(_ path: [MapboxVectorTileDecoder.Point], extent: Int) throws -> [MapCoordinate] {
-        // Canonical geographic paths follow the shortest longitude edge. Reject
-        // tile edges spanning half a world or more rather than silently changing
-        // their tile-space meaning through longitude wrapping.
+    private func horizontalBounds(_ path: [MapboxVectorTileDecoder.Point]) -> (minimum: Int64, maximum: Int64) {
+        // The wire decoder establishes a nonempty, bounded path first.
+        var minimum = path[0].x, maximum = path[0].x
+        for point in path.dropFirst() {
+            minimum = min(minimum, point.x)
+            maximum = max(maximum, point.x)
+        }
+        return (minimum, maximum)
+    }
+
+    private func normalizedVertexCount(_ path: [MapboxVectorTileDecoder.Point], extent: Int) throws -> Int {
         let worldWidth = Int64(extent) * Int64(1 << tile.zoom)
-        guard zip(path, path.dropFirst()).allSatisfy({ abs($0.1.x - $0.0.x) * 2 < worldWidth })
-        else { throw MapboxVectorTileDecoder.ValidationError.invalidGeometry }
-        return try path.map { try tile.coordinate(x: $0.x, y: $0.y, extent: extent) }
+        let bounds = horizontalBounds(path)
+        // A whole-world or wider raw path loses its distinct buffered longitude
+        // branches in the canonical model. Do not repair or collapse those copies.
+        guard bounds.maximum - bounds.minimum < worldWidth else { throw ValidationError.invalidGeometry }
+        var count = 1
+        for (start, end) in zip(path, path.dropFirst()) {
+            let pieces = Int(abs(end.x - start.x) * 2 / worldWidth) + 1
+            guard count <= MapLimits.pathVertices - pieces else { throw ValidationError.budgetExceeded }
+            count += pieces
+        }
+        return count
+    }
+
+    private func normalizedPolygonVertexCount(_ rings: [[MapboxVectorTileDecoder.Point]], extent: Int) throws -> Int {
+        let worldWidth = Int64(extent) * Int64(1 << tile.zoom)
+        let exterior = horizontalBounds(rings[0])
+        var vertices = 0
+        for (index, ring) in rings.enumerated() {
+            let count = try normalizedVertexCount(ring, extent: extent)
+            guard vertices <= MapLimits.pathVertices - count else { throw ValidationError.budgetExceeded }
+            vertices += count
+            if index > 0 {
+                let hole = horizontalBounds(ring)
+                // Twice the raw midpoint distance must be strictly less than a
+                // world: nearest-world alignment then uniquely recovers the source
+                // branch. This is a branch invariant, not a topology repair.
+                let midpointDistance = abs((hole.minimum + hole.maximum) - (exterior.minimum + exterior.maximum))
+                guard midpointDistance < worldWidth else { throw ValidationError.invalidGeometry }
+            }
+        }
+        return vertices
+    }
+
+    private func coordinates(_ path: [MapboxVectorTileDecoder.Point], extent: Int) throws -> [MapCoordinate] {
+        let count = try normalizedVertexCount(path, extent: extent)
+        let worldWidth = Int64(extent) * Int64(1 << tile.zoom)
+        var coordinates: [MapCoordinate] = []
+        coordinates.reserveCapacity(count)
+        coordinates.append(try tile.coordinate(x: path[0].x, y: path[0].y, extent: extent))
+        for (start, end) in zip(path, path.dropFirst()) {
+            let pieces = Int(abs(end.x - start.x) * 2 / worldWidth) + 1
+            for piece in 1..<pieces {
+                let fraction = Double(piece) / Double(pieces)
+                coordinates.append(try tile.coordinate(
+                    interpolatedX: Double(start.x) + Double(end.x - start.x) * fraction,
+                    interpolatedY: Double(start.y) + Double(end.y - start.y) * fraction, extent: extent))
+            }
+            // Preserve the original conversion exactly for every supplied vertex.
+            coordinates.append(try tile.coordinate(x: end.x, y: end.y, extent: extent))
+        }
+        return coordinates
     }
 
     private func kind(layer: String, feature: MapboxVectorTileDecoder.Feature) -> MapFeature.Kind? {
@@ -76,12 +131,22 @@ extension OpenMapTilesAdapter: MapSourceAdapter {
                     guard kind == .road || kind == .primaryRoad else {
                         throw MapboxVectorTileDecoder.ValidationError.invalidGeometry
                     }
+                    var normalizedVertices = 0
+                    for path in paths {
+                        normalizedVertices += try normalizedVertexCount(path, extent: layer.extent)
+                        guard normalizedVertices <= MapLimits.sourceVertices else { throw ValidationError.budgetExceeded }
+                    }
                     geometries = try paths.map { path in
                         .polyline(try MapPolyline(coordinates: coordinates(path, extent: layer.extent)))
                     }
                 case .polygons(let parts):
                     guard kind != .road, kind != .primaryRoad else {
                         throw MapboxVectorTileDecoder.ValidationError.invalidGeometry
+                    }
+                    var normalizedVertices = 0
+                    for rings in parts {
+                        normalizedVertices += try normalizedPolygonVertexCount(rings, extent: layer.extent)
+                        guard normalizedVertices <= MapLimits.sourceVertices else { throw ValidationError.budgetExceeded }
                     }
                     geometries = try parts.map { rings in
                         .polygon(try MapPolygon(rings: rings.map { ring in

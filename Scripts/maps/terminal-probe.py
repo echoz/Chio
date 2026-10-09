@@ -150,7 +150,10 @@ def probe(binary, output_dir, record=None, online_source=None):
         for key_name in ("NO_COLOR", "CLICOLOR", "CLICOLOR_FORCE", "FORCE_COLOR"):
             environment.pop(key_name, None)
         process = subprocess.Popen(command, stdin=slave, stdout=slave, stderr=slave, env=environment)
-        observe("world minimal default", ("/ maps", "World", "2/4 minimal", "span 360.0000"))
+        initial_expected = ("/ maps", "World", "2/4 minimal", "span 360.0000")
+        if online_source is not None:
+            initial_expected += ("Online · z1", "OpenFreeMap")
+        observe("world minimal default", initial_expected)
         modes = termios.tcgetattr(slave)
         assert not modes[3] & (termios.ECHO | termios.ICANON | termios.ISIG | termios.IEXTEN), "Terminal is not in raw input mode"
         assert modes[6][termios.VMIN] == 1 and modes[6][termios.VTIME] == 0, "Unexpected raw read timing"
@@ -161,9 +164,14 @@ def probe(binary, output_dir, record=None, online_source=None):
         validations["cursor_hidden"] = True
 
         if online_source is not None:
-            assert "World overview · bundled Natural Earth" in current_screen(), "Online world overview did not use bundled geometry"
-            assert "Online · z" not in current_screen(), "World overview unexpectedly displayed online tiles"
-            validations["bundled_world_overview"] = True
+            assert "Natural Earth" not in current_screen(), "Online world substituted bundled geography"
+            initial_world_samples = map_samples()
+            assert sum(char not in (" ", "\u2800") for row in initial_world_samples for char in row) > 100, "Online world lacks braille geography"
+            key("online world pan", b"\x1b[C", ("Online · z1", "span 360.0000"))
+            assert map_samples() != initial_world_samples, "World pan changed camera without moving geography"
+            key("online world reset", b"r", ("Online · z1", "span 360.0000"))
+            assert map_samples() == initial_world_samples, "World reset did not restore geography"
+            validations["online_world_coverage_and_pan"] = True
             observe("online street default ready", ("Singapore", "2/4 minimal · default", "Online · z12",
                     "Center 1.289, 103.866", "span 0.0300"), lambda: os.write(master, b" "),
                     transitions=("Loading tiles",))

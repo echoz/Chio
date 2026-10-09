@@ -9,12 +9,20 @@ live in [0.1.0](Releases/0.1.0.md).
 
 ## Latest slice: online maps
 
-**Status:** Accepted implementation. Provider comparisons remain shelved.
+**Status:** Accepted implementation with explicit offline and online world/street modes.
+Provider comparisons remain shelved.
 
 The explicit loader and opt-in online example are implemented. Current contracts
 live in [online tile acquisition](Decisions/OnlineMaps.md), with rendering owned by
-[geographic maps](Decisions/GeographicMaps.md). Offline launches remain the default;
-online views retain the bundled world overview and acquire regional/street tiles.
+[geographic maps](Decisions/GeographicMaps.md). Offline launches remain the default.
+
+The source choice is explicit: bundled data or online tiles. Online world views
+use the same pipeline as regions and streets, starting at source zoom 1; there is
+no automatic bundled-world fallback. Initial loading has no geographic source;
+subsequent loads retain the last online snapshot. Native focus, complete coverage
+and existing geometry/rendering budgets remain in force. Bundled copies of online
+tiles can later supply the same tile pipeline;
+disk caches and tile archives are not part of this correction.
 
 Required verification for this slice:
 

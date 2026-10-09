@@ -10,7 +10,7 @@ import SwiftTUIViews
 /// Source loading and route calculation belong to the application.
 @MainActor
 public struct MapView {
-    private let source: MapSource
+    private let source: MapSource?
     private let camera: Binding<MapCamera>
     private let selection: Binding<String?>
     private let overlays: MapOverlays
@@ -26,6 +26,14 @@ public struct MapView {
     @State private var completion: Completion?
 
     public init(source: MapSource, camera: Binding<MapCamera>, selection: Binding<String?> = .constant(nil),
+                overlays: MapOverlays = .empty, detail: MapDetail = .minimal) {
+        self.init(source: Optional(source), camera: camera, selection: selection, overlays: overlays, detail: detail)
+    }
+
+    /// A nil source means no geographic data has been loaded. Allocation, native
+    /// focus, camera controls and marker selection remain available while the
+    /// application acquires a source or presents its own loading/error status.
+    public init(source: MapSource?, camera: Binding<MapCamera>, selection: Binding<String?> = .constant(nil),
                 overlays: MapOverlays = .empty, detail: MapDetail = .minimal) {
         self.source = source
         self.camera = camera
@@ -76,6 +84,7 @@ public struct MapView {
     }
 
     private func coverageNotice(camera: MapCamera, viewport: MapViewport?) -> String {
+        guard let source else { return "" }
         let covered: Bool
         let unavailable: String
         switch source.coverage {
@@ -200,6 +209,8 @@ public struct MapView {
     private func content(_ request: MapPreparationRequest?, small: Bool) -> some View {
         if small {
             message("More room for the map", detail: "Camera and selection retained · Resize to continue")
+        } else if source == nil {
+            message("No map source loaded", detail: "Pan and zoom remain available")
         } else if let request, let completion, completion.request == request {
             switch completion.result {
             case .success(let prepared): drawing(prepared, request: request)
@@ -218,14 +229,16 @@ extension MapView: View {
             let current = camera.wrappedValue
             let viewport = MapViewport.fitting(width: geometry.size.width, height: geometry.size.height,
                 cellAspectRatio: geometry.cellPixelMetrics.aspectRatio, camera: current)
-            let request = viewport.map { MapPreparationRequest(dataset: source.dataset, camera: current,
-                viewport: $0, detail: detail, routes: overlays.routes, fills: fills) }
+            let request = source.flatMap { source in
+                viewport.map { MapPreparationRequest(dataset: source.dataset, camera: current,
+                    viewport: $0, detail: detail, routes: overlays.routes, fills: fills) }
+            }
             VStack(alignment: .leading, spacing: 0) {
                 content(request, small: viewport == nil)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 HStack(spacing: 1) {
                     Text(focused ? "›" : " ").foregroundStyle(theme.colors.accent)
-                    Text(source.metadata.attribution).foregroundStyle(theme.colors.mutedText)
+                    Text(source?.metadata.attribution ?? "").foregroundStyle(theme.colors.mutedText)
                 }.frame(height: 1, alignment: .leading).clipped()
                 Text(coverageNotice(camera: current, viewport: viewport))
                     .foregroundStyle(theme.colors.mutedText).frame(height: 1, alignment: .leading).clipped()

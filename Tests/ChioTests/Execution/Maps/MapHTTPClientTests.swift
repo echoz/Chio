@@ -15,88 +15,111 @@ import Glibc
 struct MapHTTPClientTests {
     @Test("Real localhost transport bounds decompressed bodies and rejects HTTP/MIME/redirect failures")
     func boundedHTTP() async throws {
-        let server = try await Server()
-        defer { server.stop() }
-        let valid = try await bounded("empty HTTP 200") { try await MapHTTPClient.fetch(server.url("/empty"), resource: .tile) }
-        #expect(valid.data.isEmpty)
-        #expect(valid.headers["cache-control"] == "max-age=60")
-        let tile = try await bounded("nonempty HTTP 200") { try await MapHTTPClient.fetch(server.url("/tile"), resource: .tile) }
-        #expect(tile.data == Data([0x08, 0x00]))
-        let redirected = try await bounded("permitted same-origin redirect") { try await MapHTTPClient.fetch(server.url("/redirect"), resource: .tile) }
-        #expect(redirected.data.isEmpty)
-        for (path, expected) in [
-            ("/status", MapTileLoader.LoadingError.httpStatus(503)),
-            ("/mime", .unexpectedContentType), ("/cross-host", .rejectedRedirect),
-            ("/scheme", .rejectedRedirect), ("/loop", .rejectedRedirect),
-            ("/oversize-header", .responseTooLarge), ("/oversize-stream", .responseTooLarge),
-        ] {
+        try await withServer { server in
+            let valid = try await bounded("empty HTTP 200") { try await MapHTTPClient.fetch(server.url("/empty"), resource: .tile) }
+            #expect(valid.data.isEmpty)
+            #expect(valid.headers["cache-control"] == "max-age=60")
+            let tile = try await bounded("nonempty HTTP 200") { try await MapHTTPClient.fetch(server.url("/tile"), resource: .tile) }
+            #expect(tile.data == Data([0x08, 0x00]))
+            let redirected = try await bounded("permitted same-origin redirect") { try await MapHTTPClient.fetch(server.url("/redirect"), resource: .tile) }
+            #expect(redirected.data.isEmpty)
+            for (path, expected) in [
+                ("/status", MapTileLoader.LoadingError.httpStatus(503)),
+                ("/mime", .unexpectedContentType), ("/cross-host", .rejectedRedirect),
+                ("/scheme", .rejectedRedirect), ("/loop", .rejectedRedirect),
+                ("/oversize-header", .responseTooLarge), ("/oversize-stream", .responseTooLarge),
+            ] {
+                let terminalCount = Mutex(0)
+                await #expect(throws: expected) {
+                    try await bounded("reject \(path)") {
+                        try await MapHTTPClient.fetch(server.url(path), resource: .tile,
+                            onTerminalAcknowledgement: { terminalCount.withLock { $0 += 1 } })
+                    }
+                }
+                #expect(terminalCount.withLock { $0 } == 1)
+            }
+            // The compressed Content-Length is below the catalog limit, while the
+            // decompressed delegate bytes exceed it. This is real URLSession gzip.
+            await #expect(throws: MapTileLoader.LoadingError.responseTooLarge) {
+                try await bounded("decompressed catalog overflow") { try await MapHTTPClient.fetch(server.url("/gzip"), resource: .catalog) }
+            }
             let terminalCount = Mutex(0)
-            await #expect(throws: expected) {
-                try await bounded("reject \(path)") {
-                    try await MapHTTPClient.fetch(server.url(path), resource: .tile,
-                        onTerminalAcknowledgement: { terminalCount.withLock { $0 += 1 } })
+            let pending = Task { [url = server.url("/slow")] in
+                try await MapHTTPClient.fetch(url, resource: .tile,
+                    onTerminalAcknowledgement: { terminalCount.withLock { $0 += 1 } })
+            }
+            defer { pending.cancel() }
+            try await bounded("slow fixture request entered") {
+                while true {
+                    let status = try await MapHTTPClient.fetch(server.url("/started"), resource: .catalog)
+                    if String(data: status.data, encoding: .utf8) == "true" { return }
+                    try await Task.sleep(for: .milliseconds(10))
                 }
             }
+            pending.cancel()
+            await #expect(throws: CancellationError.self) { try await bounded("in-flight cancellation acknowledgment") { try await pending.value } }
             #expect(terminalCount.withLock { $0 } == 1)
-        }
-        // The compressed Content-Length is below the catalog limit, while the
-        // decompressed delegate bytes exceed it. This is real URLSession gzip.
-        await #expect(throws: MapTileLoader.LoadingError.responseTooLarge) {
-            try await bounded("decompressed catalog overflow") { try await MapHTTPClient.fetch(server.url("/gzip"), resource: .catalog) }
-        }
-        let terminalCount = Mutex(0)
-        let pending = Task {
-            try await MapHTTPClient.fetch(server.url("/slow"), resource: .tile,
-                onTerminalAcknowledgement: { terminalCount.withLock { $0 += 1 } })
-        }
-        defer { pending.cancel() }
-        try await bounded("slow fixture request entered") {
-            while true {
-                let status = try await MapHTTPClient.fetch(server.url("/started"), resource: .catalog)
-                if String(data: status.data, encoding: .utf8) == "true" { return }
-                try await Task.sleep(for: .milliseconds(10))
+            do {
+                _ = try await bounded("native resource timeout") { try await MapHTTPClient.fetch(server.url("/slow"), resource: .tile, timeout: 0.2) }
+                Issue.record("Slow HTTP resource did not time out")
+            } catch let error as URLError { #expect(error.code == .timedOut) }
+            let cancelled = Task {
+                withUnsafeCurrentTask { $0?.cancel() }
+                return try await MapHTTPClient.fetch(server.url("/empty"), resource: .tile)
             }
+            await #expect(throws: CancellationError.self) { try await bounded("cancel before registration") { try await cancelled.value } }
         }
-        pending.cancel()
-        await #expect(throws: CancellationError.self) { try await bounded("in-flight cancellation acknowledgment") { try await pending.value } }
-        #expect(terminalCount.withLock { $0 } == 1)
-        do {
-            _ = try await bounded("native resource timeout") { try await MapHTTPClient.fetch(server.url("/slow"), resource: .tile, timeout: 0.2) }
-            Issue.record("Slow HTTP resource did not time out")
-        } catch let error as URLError { #expect(error.code == .timedOut) }
-        let cancelled = Task {
-            withUnsafeCurrentTask { $0?.cancel() }
-            return try await MapHTTPClient.fetch(server.url("/empty"), resource: .tile)
-        }
-        await #expect(throws: CancellationError.self) { try await bounded("cancel before registration") { try await cancelled.value } }
     }
 
     @Test("Cancellation queued before a redirect decision still acknowledges exactly once")
     func cancelledPendingRedirect() async throws {
+        try await withServer { server in
+            let control = RedirectGate()
+            let acknowledgments = Mutex(0)
+            let pending = Task { [url = server.url("/redirect")] in
+                try await MapHTTPClient.fetch(url, resource: .tile,
+                    onTerminalAcknowledgement: { acknowledgments.withLock { $0 += 1 } },
+                    beforeRedirectDecision: { control.intercept($0) })
+            }
+            defer { pending.cancel(); control.release() }
+            try await bounded("redirect callback entered") {
+                while !control.entered { try await Task.sleep(for: .milliseconds(1)) }
+            }
+            pending.cancel()
+            // Observe the real Foundation task state, not a timed guess that caller
+            // cancellation has reached the transport. The decision remains withheld.
+            try await bounded("real pending-redirect transport cancellation") {
+                while !control.transportCancelled { try await Task.sleep(for: .milliseconds(1)) }
+            }
+            control.release()
+            await #expect(throws: CancellationError.self) {
+                try await bounded("pending-redirect terminal acknowledgment") { try await pending.value }
+            }
+            #expect(acknowledgments.withLock { $0 } == 1)
+        }
+    }
+
+    @Test("HTTP fixture cleanup awaits child exit even when its owner is cancelled")
+    func cancelledFixtureCleanup() async throws {
         let server = try await Server()
-        defer { server.stop() }
-        let control = RedirectGate()
-        let acknowledgments = Mutex(0)
-        let pending = Task {
-            try await MapHTTPClient.fetch(server.url("/redirect"), resource: .tile,
-                onTerminalAcknowledgement: { acknowledgments.withLock { $0 += 1 } },
-                beforeRedirectDecision: { control.intercept($0) })
+        let cleanup = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            await server.stop()
         }
-        defer { pending.cancel(); control.release() }
-        try await bounded("redirect callback entered") {
-            while !control.entered { try await Task.sleep(for: .milliseconds(1)) }
+        await cleanup.value
+        #expect(!server.isRunning)
+    }
+
+    @Test("A throwing HTTP fixture operation awaits child cleanup")
+    func throwingFixtureCleanup() async {
+        let fixture = Mutex<Server?>(nil)
+        await #expect(throws: WaitError.fixtureStartup("expected fixture operation failure")) {
+            try await withServer { server in
+                fixture.withLock { $0 = server }
+                throw WaitError.fixtureStartup("expected fixture operation failure")
+            }
         }
-        pending.cancel()
-        // Observe the real Foundation task state, not a timed guess that caller
-        // cancellation has reached the transport. The decision remains withheld.
-        try await bounded("real pending-redirect transport cancellation") {
-            while !control.transportCancelled { try await Task.sleep(for: .milliseconds(1)) }
-        }
-        control.release()
-        await #expect(throws: CancellationError.self) {
-            try await bounded("pending-redirect terminal acknowledgment") { try await pending.value }
-        }
-        #expect(acknowledgments.withLock { $0 } == 1)
+        #expect(fixture.withLock { $0?.isRunning } == false)
     }
 
     @Test("Same-origin redirects normalize implicit HTTP and HTTPS ports")
@@ -128,6 +151,19 @@ struct MapHTTPClientTests {
         }
     }
 
+    private func withServer(_ operation: (Server) async throws -> Void) async throws {
+        let server = try await Server()
+        do {
+            try await operation(server)
+        } catch {
+            // The operation's defers cancel pending HTTP tasks and release any
+            // held redirect decision before this owner closes the child.
+            await server.stop()
+            throw error
+        }
+        await server.stop()
+    }
+
     private func bounded<T: Sendable>(_ phase: String, _ operation: @escaping @Sendable () async throws -> T) async throws -> T {
         try await withThrowingTaskGroup(of: T.self) { group in
             group.addTask(operation: operation)
@@ -136,7 +172,7 @@ struct MapHTTPClientTests {
             return try await group.next()!
         }
     }
-    private enum WaitError: Error { case timeout(String), fixtureStartup(String) }
+    private enum WaitError: Error, Equatable { case timeout(String), fixtureStartup(String) }
 
     private final class RedirectGate: Sendable {
         private let task = Mutex<URLSessionTask?>(nil)
@@ -224,9 +260,10 @@ struct MapHTTPClientTests {
                 let status: String
                 if process.isRunning { status = "still running" }
                 else { status = "exited \(process.terminationStatus)" }
-                Self.terminate(process)
+                let cleanupFailure = await Self.terminate(process)
                 errorHandle.readabilityHandler = nil
                 try? errorHandle.close()
+                if let cleanupFailure { Issue.record("\(cleanupFailure)") }
                 if error is CancellationError { throw error }
                 let stdout = output.withLock { String(decoding: $0.bytes, as: UTF8.self) }
                 let stderr = errors.withLock { String(decoding: $0, as: UTF8.self) }
@@ -234,15 +271,28 @@ struct MapHTTPClientTests {
             }
         }
         func url(_ path: String) -> URL { URL(string: path, relativeTo: base)!.absoluteURL }
-        func stop() {
+        var isRunning: Bool { process.isRunning }
+        func stop() async {
             let shouldStop = stopped.withLock { value in if value { return false }; value = true; return true }
             if shouldStop {
-                Self.terminate(process)
+                let cleanupFailure = await Self.terminate(process)
+                errorHandle.readabilityHandler = nil
+                try? errorHandle.close()
+                if let cleanupFailure { Issue.record("\(cleanupFailure)") }
+            }
+        }
+        deinit {
+            guard !stopped.withLock({ $0 }) else { return }
+            Issue.record("HTTP fixture owner omitted awaited cleanup")
+            let process = process, errorHandle = errorHandle
+            // The normal owner awaits stop(). This fallback retains only the
+            // resources until bounded cleanup finishes, never the dying owner.
+            Task.detached {
+                _ = await Server.terminate(process)
                 errorHandle.readabilityHandler = nil
                 try? errorHandle.close()
             }
         }
-        deinit { stop() }
         private static func readAvailable(from handle: FileHandle, limit: Int) -> Data? {
             // One nonblocking POSIX read cannot wait to fill a Foundation read's
             // requested length. A transient read error waits for the next event.
@@ -253,14 +303,36 @@ struct MapHTTPClientTests {
             guard count >= 0 else { return nil }
             return Data(bytes.prefix(count))
         }
-        private static func terminate(_ process: Process) {
-            if process.isRunning { process.terminate() }
-            let exited = DispatchSemaphore(value: 0)
-            DispatchQueue.global().async { process.waitUntilExit(); exited.signal() }
-            if exited.wait(timeout: .now() + 3) != .success {
-                _ = kill(process.processIdentifier, SIGKILL)
-                if exited.wait(timeout: .now() + 2) != .success { Issue.record("Local HTTP fixture failed to exit within five seconds") }
-            }
+        private static func terminate(_ process: Process) async -> String? {
+            // Cleanup must finish even if the HTTP test or startup is cancelled.
+            // Foundation owns child reaping; observe its state without a second
+            // waitUntilExit worker whose scheduling adds another completion gate.
+            guard process.isRunning else { return nil }
+            let clock = ContinuousClock()
+            let start = clock.now
+            let termDeadline = start.advanced(by: .seconds(3))
+            let killDeadline = start.advanced(by: .seconds(5))
+            let pid = process.processIdentifier
+            let termResult = kill(pid, SIGTERM)
+            let termError = termResult == 0 ? 0 : errno
+            return await Task.detached {
+                while process.isRunning && clock.now < termDeadline {
+                    try? await clock.sleep(until: min(termDeadline, clock.now.advanced(by: .milliseconds(10))))
+                }
+                guard process.isRunning else { return nil as String? }
+                let killResult = kill(pid, SIGKILL)
+                let killError = killResult == 0 ? 0 : errno
+                while process.isRunning && clock.now < killDeadline {
+                    try? await clock.sleep(until: min(killDeadline, clock.now.advanced(by: .milliseconds(10))))
+                }
+                guard process.isRunning else { return nil }
+                let probeResult = kill(pid, 0)
+                let probeError = probeResult == 0 ? 0 : errno
+                return "Local HTTP fixture failed to exit within five seconds; pid=\(pid); "
+                    + "SIGTERM result=\(termResult) errno=\(termError); "
+                    + "SIGKILL result=\(killResult) errno=\(killError); "
+                    + "Foundation isRunning=\(process.isRunning); existence probe result=\(probeResult) errno=\(probeError)"
+            }.value
         }
         private static let script = #"""
 import sys

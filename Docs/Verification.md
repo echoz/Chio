@@ -93,7 +93,10 @@ replacement cancellation, budget-only fallback and current-result publication.
 A bounded localhost HTTP fixture exercises URLSession response status, MIME,
 redirects, decompressed-byte limits and cancellation on macOS/Linux. Python 3 is
 required for that fixture. Hosted tests verify loading/failure/retry, retained
-source/focus, compact recovery and independent detail/theme changes. CI uses no
+source/focus (including an initially absent source), compact recovery and independent
+detail/theme changes. Real zoom-1 fixtures verify all four world tiles, complete
+coverage across seam pans, coarse edge conversion and land/ocean raster samples
+across detail levels, themes and narrow allocations. CI uses no
 live provider. Separately inspect bounded OpenFreeMap acquisition and adjacent
 tile rendering; this is integration evidence, not an availability guarantee.
 
@@ -101,6 +104,9 @@ Both HTTP fixtures bind numeric loopback directly, preserving the OS-selected
 ephemeral port without Python HTTPServer's reverse-DNS lookup. Fixture readiness
 must not depend on the runner's DNS configuration. Startup failure diagnostics
 retain bounded child output and identify progress through imports and binding.
+Test owners await child shutdown even after cancellation or a thrown operation.
+Cleanup retains a five-second bound and reports signal results and observed process
+state when it fails.
 
 Pass an example flag such as `--choices`, `--inbox` or `--diff` for its workflow;
 [verify.sh](../Scripts/ci/verify.sh) is the complete list. Terminal checks cover

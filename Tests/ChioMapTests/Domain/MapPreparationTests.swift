@@ -126,6 +126,48 @@ struct MapPreparationTests {
         #expect(prepared.polygons[0].rings[1].map(\.x) == [50, 60, 60, 50, 50])
     }
 
+    @Test("Hole branches use exterior bounds rather than vertex-density biased averages")
+    func holeVertexDensity() throws {
+        var outer = try [coordinate(-170, -10), coordinate(0, -10), coordinate(170, -10)]
+        outer += try (-9...9).map { try coordinate(170, Double($0)) }
+        outer += try [coordinate(170, 10), coordinate(0, 10), coordinate(-170, 10), coordinate(-170, -10)]
+        let hole = try [coordinate(-165, -2), coordinate(-165, 2), coordinate(-155, 2),
+                        coordinate(-155, -2), coordinate(-165, -2)]
+        let dataset = try MapDataset(features: [MapFeature(id: "wide", kind: .water,
+            geometry: .polygon(MapPolygon(rings: [MapRing(coordinates: outer), MapRing(coordinates: hole)])))])
+        let camera = try MapCamera(center: coordinate(0, 0), longitudeSpan: 360)
+        let viewport = try MapViewport(columns: 100, rows: 40)
+        let prepared = try MapPreparation.prepare(dataset: dataset, camera: camera, viewport: viewport, detail: .source)
+        #expect(prepared.polygons.count == 1)
+        let rings = prepared.polygons[0].rings
+        #expect(rings.map(\.count) == [outer.count, hole.count])
+        for (point, source) in zip(rings[1], hole) {
+            #expect(abs(point.x - (50 + source.longitude * 100 / 360)) < 1e-9)
+        }
+        #expect(dataset.vertexCount == outer.count + hole.count)
+    }
+
+    @Test("Fully unwrapped hole bounds choose the same world branch for every ring start point", arguments: 0..<6)
+    func holeStartPoint(start: Int) throws {
+        let outer = try MapRing(coordinates: [coordinate(-170, -10), coordinate(0, -10), coordinate(170, -10),
+                                             coordinate(170, 10), coordinate(0, 10), coordinate(-170, 10), coordinate(-170, -10)])
+        let openHole = try [coordinate(-160, -2), coordinate(0, -2), coordinate(160, -2),
+                            coordinate(160, 2), coordinate(0, 2), coordinate(-160, 2)]
+        let rotated = Array(openHole[start...]) + Array(openHole[..<start])
+        let hole = try MapRing(coordinates: rotated + [rotated[0]])
+        let dataset = try MapDataset(features: [MapFeature(id: "branch", kind: .water,
+            geometry: .polygon(MapPolygon(rings: [outer, hole])))])
+        let camera = try MapCamera(center: coordinate(-179, 0), longitudeSpan: 360)
+        let viewport = try MapViewport(columns: 100, rows: 40)
+        let prepared = try MapPreparation.prepare(dataset: dataset, camera: camera, viewport: viewport, detail: .source)
+        let polygon = try #require(prepared.polygons.first { abs($0.rings[0][0].x - 52.5) < 1e-9 })
+        #expect(polygon.rings[1].count == hole.coordinates.count)
+        for (point, source) in zip(polygon.rings[1], hole.coordinates) {
+            #expect(abs(point.x - (50 + (source.longitude + 179) * 100 / 360)) < 1e-9)
+        }
+        #expect(polygon.rings[1].first == polygon.rings[1].last)
+    }
+
     @Test("Seam-touching geography can generalize while every seam vertex stays fixed")
     func seamTouchingShape() throws {
         let ring = try MapRing(coordinates: [coordinate(170, -5), coordinate(175, -5),
