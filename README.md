@@ -81,6 +81,6 @@ Chio adapts these ideas to native SwiftTUI composition and Swift APIs.
 - [API usage](Docs/Usage.md) — themes and component recipes
 - [Examples](Docs/Examples.md) — controls, screenshots, and SSH guidance
 - [Design](Docs/Design.md) — architecture and interaction contracts
-- [Coverage and roadmap](Docs/Plan.md#component-coverage) · [Development checks](Docs/Plan.md#running-checks)
+- [Coverage](Docs/Releases/0.1.0.md#component-coverage) · [Plan](Docs/Plan.md) · [Development checks](Docs/Verification.md#running-checks)
 
 [MIT License](LICENSE).

@@ -103,7 +103,7 @@ the simulation.
 
 Linux verification uses Swift 6.4.0 on Ubuntu 24.04. Ordinary Linux builds use
 glibc and need the Swift runtime libraries; they are not self-contained binaries.
-Static Linux distribution is a [separate compatibility check](Plan.md#static-linux-blocker).
+Static Linux distribution is a [separate compatibility check](Decisions/Dependencies.md#static-linux-blocker).
 
 ## Review inbox
 

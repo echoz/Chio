@@ -176,7 +176,7 @@ value state when switching away and back. Keep durable data in an application ow
 survive removing tabs or replacing the tab view's identity.
 
 The [tabs example](Examples.md#tabs) demonstrates editing, scrolling and native
-focus. See [the design](Design.md#tabs) for the native lifecycle and overflow limits.
+focus. See [the design](Decisions/Tabs.md#tabs) for the native lifecycle and overflow limits.
 
 ## Pagination
 

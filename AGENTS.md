@@ -1,8 +1,12 @@
 # Chio project guidance
 
-Read [Docs/Design.md](Docs/Design.md) for accepted architecture and interaction
-contracts, and [Docs/Plan.md](Docs/Plan.md) for verification and remaining work.
-Keep those owning documents current instead of duplicating their contents here.
+Read [Docs/Design.md](Docs/Design.md) for current architecture and its decision
+index, then the relevant topic files in `Docs/Decisions/` before changing behavior.
+Read [Docs/Plan.md](Docs/Plan.md) for active work and
+[Docs/Verification.md](Docs/Verification.md) for applicable checks. Accepted
+decisions remain authoritative after delivery; proposals and shelved work do not
+change shipped contracts. `Docs/Releases/` holds revision-specific evidence.
+Update each owning document instead of duplicating contracts or history here.
 
 ## Project boundaries
 
