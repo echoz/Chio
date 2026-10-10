@@ -41,7 +41,7 @@ struct MapExampleView {
     }
     private var context: String {
         let areaPresentation = fillsAreas ? "filled" : "outlines"
-        if acquisition.isOnline { return "Online · \(detail.levelNumber)/\(MapDetail.allCases.count) \(detail.rawValue) · \(appearance.rawValue) · \(areaPresentation) · synthetic guide" }
+        if acquisition.usesTiles { return "\(acquisition.title) · \(detail.levelNumber)/\(MapDetail.allCases.count) \(detail.rawValue) · \(appearance.rawValue) · \(areaPresentation) · synthetic guide" }
         let sourceTitle = scene.sourceTitle(streetSource: streetSource)
         return "Offline · \(sourceTitle) · \(detail.levelNumber)/\(MapDetail.allCases.count) \(detail.rawValue) · \(appearance.rawValue) · \(areaPresentation) · synthetic guide"
     }
@@ -63,7 +63,7 @@ struct MapExampleView {
         case .character("f"): fillsAreas.toggle()
         case .character("l"): showsLabels.toggle()
         case .character("r"): camera = scene.camera
-        case .character("e") where acquisition.isOnline: retry &+= 1
+        case .character("e") where acquisition.usesTiles: retry &+= 1
         default: return .ignored
         }
         return .handled
@@ -79,10 +79,10 @@ extension MapExampleView: View {
             }.frame(height: 1, alignment: .leading)
             Text(context).foregroundStyle(theme.colors.mutedText)
                 .frame(height: 1, alignment: .leading)
-            if acquisition.isOnline {
-                OnlineMapContent(camera: $camera,
+            if acquisition.usesTiles {
+                TiledMapContent(camera: $camera,
                     selection: $selection, overlays: overlays, detail: detail, fillsAreas: fillsAreas,
-                    showsLabels: showsLabels, retry: retry, activate: { activation = "Opened \($0.title)" },
+                    showsLabels: showsLabels, retry: retry, sourceLabel: acquisition.title, activate: { activation = "Opened \($0.title)" },
                     makeLoader: { try await acquisition.makeLoader() })
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {

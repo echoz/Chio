@@ -29,6 +29,10 @@
   ],
   "importPolicies": [
     {
+      "path": "Sources/Chio/Maps/Execution/MapTilePack.swift",
+      "allowed": ["Foundation", "Swift", "Darwin", "Glibc"]
+    },
+    {
       "path": "Sources/Chio/Maps/Execution/MapTileCache.swift",
       "allowed": ["Foundation", "Swift", "ChioFileSystem", "Darwin", "Glibc"]
     },

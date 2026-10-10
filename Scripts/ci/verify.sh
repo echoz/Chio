@@ -118,3 +118,4 @@ trap - EXIT
 
 # Separate executable launches prove disk reuse and cooperative ownership.
 python3 -B Scripts/maps/cache-probe.py "$map_binary" --output-dir .build/ci-results/maps/cache
+python3 -B Scripts/maps/pack-probe.py "$map_binary" --output-dir .build/ci-results/maps/pack

@@ -155,7 +155,7 @@ Adjacent tiles are normalized and aggregated. Buffered geometry can overlap,
 and clipped polygon edges can appear as artificial outlines. This is not polygon
 stitching or a topology engine. Provider comparison work remains shelved.
 
-Downloadable tile packs, geocoding and route calculation remain
+Provider archive downloads, geocoding and route calculation remain
 [approved follow-up scope](../Plan.md#approved-map-expansion). Pack acquisition needs a separately evaluated source and
 download policy; this approval does not turn the interactive loader into a bulk
 downloader. Credential storage remains application-owned.

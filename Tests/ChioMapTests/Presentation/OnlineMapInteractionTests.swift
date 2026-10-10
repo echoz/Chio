@@ -342,7 +342,7 @@ private struct OnlineTestView {
 extension OnlineTestView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            OnlineMapContent(camera: $camera, selection: $selection, overlays: overlays,
+            TiledMapContent(camera: $camera, selection: $selection, overlays: overlays,
                              detail: detail, fillsAreas: true, showsLabels: true, retry: retry, activate: { activation = $0.id },
                              makeLoader: { [transport] in await transport.makeLoader() })
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
