@@ -21,11 +21,12 @@ The map example uses `t`. With no option, metrics starts in btop and other examp
 start in default. Dashboard examples retain `--light` as an alias for
 `--theme light`; use one option or the other.
 
-The [showcase](https://echoz.github.io/Chio/) provides a **Static preview** theme
-selector beside each example. These previews render the same example state in
-all three themes, and the launch command follows the selected theme. **Play
-original recording** opens the interaction recording, whose own theme changes
-remain part of that recorded session.
+The [showcase](https://echoz.github.io/Chio/) provides one shared **Theme** selector.
+It follows you across entries and updates the static preview, Swift fragment and
+launch command. Previews render the same example state in all three themes;
+the URL retains your theme and entry for sharing. **Play original recording**
+opens the interaction recording, whose own theme changes remain part of that
+recorded session.
 
 Themes change styling, not terminal color support. For true-color terminals over
 SSH, see [Colors over SSH](#colors-over-ssh).
@@ -554,10 +555,13 @@ and scale, gap and accessibility contracts.
 seeking, and fullscreen playback. These are recorded examples; run the binary to
 interact with the controls yourself.
 
-The gallery groups reusable views, maps and native control styles under **Components**.
-The dashboard, metrics, inbox, and diff prototype are **Compositions** of those building blocks.
-Each recording lists the Chio APIs, native SwiftTUI controls, and application-owned
-behavior it uses, with a link to its example source.
+The gallery opens on Maps under **Views**, alongside Markdown, searchable choices,
+metrics and other reusable Chio views. **Native styles** demonstrates Chio styling
+on SwiftTUI controls. **Example apps** contains the dashboard, inbox and diff
+prototype, with links back to their building blocks. Each entry names the public
+APIs, native controls and application-owned behavior, with a matching launch
+command and source link. Component options and map acquisition/storage remain
+distinct from the shared theme.
 
 ![Chio's dark dashboard with selectable agents, semantic status colors, progress, and keyboard hints](Media/dashboard.png)
 
