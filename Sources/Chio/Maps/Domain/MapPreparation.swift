@@ -96,6 +96,12 @@ enum MapPreparation {
                     case .silhouette, .minimal, .abstract:
                         let visibleCellArea = try visibleArea(sourceRings, viewport: viewport, cancellation: cancellation)
                         if detail.admitsArea(visibleCellArea, kind: feature.kind) { return true }
+                        // Even arbitrary even-odd fill cannot exceed the sum of
+                        // its clipped ring bounds. Tiny complex shapes need no
+                        // topology proof to establish that they are too small.
+                        let maximumCellArea = try visibleAreaUpperBound(sourceRings, viewport: viewport,
+                                                                       cancellation: cancellation)
+                        guard detail.admitsArea(maximumCellArea, kind: feature.kind) else { return false }
                         // Signed area and hole subtraction justify rejection only
                         // for simple, contained, disjoint rings. Accepted source
                         // geometry makes no such topology promise. Unproved input
@@ -267,6 +273,24 @@ enum MapPreparation {
         }
         if path.count >= 2 { paths.append(path) }
         return paths
+    }
+
+    /// Any even-odd fill lies within these ring bounds, regardless of topology.
+    private static func visibleAreaUpperBound(_ rings: [[PreparedMap.Point]], viewport: MapViewport,
+                                              cancellation: Cancellation) throws -> Double {
+        try rings.reduce(0) { total, ring in
+            try cancellation.check()
+            guard let first = ring.first else { return total }
+            var minX = first.x, maxX = first.x, minY = first.y, maxY = first.y
+            for (index, point) in ring.dropFirst().enumerated() {
+                try cancellation.check(index: index)
+                minX = min(minX, point.x); maxX = max(maxX, point.x)
+                minY = min(minY, point.y); maxY = max(maxY, point.y)
+            }
+            let width = max(0, min(Double(viewport.columns), maxX) - max(0, minX))
+            let height = max(0, min(Double(viewport.rows), maxY) - max(0, minY))
+            return total + width * height
+        }
     }
 
     /// Clip temporary copies only to measure visible area for admission. The prepared

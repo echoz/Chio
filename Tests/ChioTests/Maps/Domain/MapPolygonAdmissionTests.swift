@@ -105,8 +105,8 @@ struct MapPolygonAdmissionTests {
         #expect(ring == captured)
     }
 
-    @Test("Exhausting an admission proof retains a small polygon rather than guessing its topology")
-    func unprovenSmallPolygon() throws {
+    @Test("A complex polygon below the area bound needs no topology assumption", arguments: MapDetail.allCases)
+    func boundedSmallPolygon(detail: MapDetail) throws {
         let points = try (0..<2_048).map { index in
             let angle = Double(index) / 2_048 * 2 * Double.pi
             return try coordinate(cos(angle) * 0.01, sin(angle) * 0.01)
@@ -115,12 +115,66 @@ struct MapPolygonAdmissionTests {
         let request = try request()
         let source = try dataset(polygon)
         let captured = source
+        let prepared = try MapPreparation.prepare(dataset: source, camera: request.camera,
+                                                   viewport: request.viewport, detail: detail)
+        switch detail {
+        case .source: #expect(prepared.polygons.count == 1)
+        case .silhouette, .minimal, .abstract: #expect(prepared.polygons.isEmpty)
+        }
+        #expect(source == captured)
+    }
+
+    @Test("Exhausting topology proof retains geometry when its area bound cannot justify rejection")
+    func unprovenSlenderPolygon() throws {
+        // A densely sampled diagonal strip: its bounding box covers more than
+        // four cells, but its signed area falls below every reduced-detail limit.
+        // Proving all edge pairs exceeds the admission allowance.
+        let corners = [(-0.4, -0.001), (0.4, -0.001), (0.4, 0.001), (-0.4, 0.001)]
+        let points = try corners.indices.flatMap { edge in
+            try (0..<512).map { index in
+                let start = corners[edge], end = corners[(edge + 1) % corners.count]
+                let fraction = Double(index) / 512
+                let along = start.0 + (end.0 - start.0) * fraction
+                let across = start.1 + (end.1 - start.1) * fraction
+                return try coordinate(along - across, along + across)
+            }
+        }
+        let polygon = try MapPolygon(rings: [MapRing(coordinates: points + [points[0]])])
+        let request = try request()
+        let source = try dataset(polygon)
+        let captured = source
+        let projected = polygon.rings[0].coordinates.map {
+            request.viewport.project($0, camera: request.camera)
+        }
+        var proofBudget = MapPreparation.admissionOperationLimit
+        #expect(try !MapShapeSimplification.provesTopology([projected], operationBudget: &proofBudget))
+        #expect(proofBudget == 0)
         for detail in MapDetail.allCases {
             let prepared = try MapPreparation.prepare(dataset: source, camera: request.camera,
                                                        viewport: request.viewport, detail: detail)
             #expect(prepared.polygons.count == 1)
+            #expect(prepared.polygons.first?.rings == [projected])
         }
         #expect(source == captured)
+    }
+
+    @Test("Area bounds count only the part intersecting the viewport", arguments: MapDetail.allCases)
+    func clippedAreaBound(detail: MapDetail) throws {
+        // Most of this complex circle is beyond the right edge at longitude 5.
+        // Its full bounds are large; the visible sliver is below every threshold.
+        let points = try (0..<2_048).map { index in
+            let angle = Double(index) / 2_048 * 2 * Double.pi
+            return try coordinate(6.0999 + cos(angle) * 1.1, sin(angle) * 1.1)
+        }
+        let polygon = try MapPolygon(rings: [MapRing(coordinates: points + [points[0]])])
+        let request = try request()
+        #expect(try MapPreparation.mayIntersect(.polygon(polygon), request: request))
+        let prepared = try MapPreparation.prepare(dataset: dataset(polygon), camera: request.camera,
+                                                   viewport: request.viewport, detail: detail)
+        switch detail {
+        case .source: #expect(prepared.polygons.count == 1)
+        case .silhouette, .minimal, .abstract: #expect(prepared.polygons.isEmpty)
+        }
     }
 
     private func request() throws -> MapTileRequest {

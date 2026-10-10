@@ -169,11 +169,15 @@ part of the component's supported scope.
 Reduced-detail area rejection uses clipped signed area minus hole areas only when
 bounded topology checks establish simple rings with contained, disjoint holes.
 If that estimate already meets the detail threshold, no proof is needed. When it
-would reject, self-crossing, overlapping, uncontained or unproved geometry remains
-intact for the existing even-odd renderer. This is conservative admission, not
+would reject, the sum of viewport-clipped ring bounding-box areas supplies a safe
+upper bound for arbitrary even-odd fill. Shapes below that bound's threshold can
+be omitted without topology assumptions. Otherwise, self-crossing, overlapping,
+uncontained or unproved geometry remains intact for the existing even-odd renderer.
+This is conservative admission, not
 exact measurement of arbitrary even-odd area or a new input validation rule.
 Ordinary small polygons and thin shells with verified holes retain their existing
-threshold behavior. Exhausted checks may retain an otherwise small valid polygon;
+threshold behavior. Exhausted checks may retain an otherwise small valid polygon
+whose bounding boxes are large enough;
 the existing preparation and drawing limits still reject excess work as a whole.
 
 ### Work bounds
