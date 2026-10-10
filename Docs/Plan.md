@@ -56,6 +56,9 @@ defines identity, freshness, bounds and recovery. Before delivery, its
 [verification gates](Verification.md) require independent review, unit and real
 process checks on macOS/Linux, and the updated showcase. Downloadable offline
 packs are the next design slice; their retention policy differs from this cache.
+The [provider recommendation](Decisions/OnlineMaps.md#explicit-effects-and-source-configuration)
+uses the existing explicit OpenFreeMap discovery API; it adds no provider registry
+or implicit network behavior.
 
 | Order | Capability | First useful outcome and acceptance evidence |
 | --- | --- | --- |
@@ -63,6 +66,42 @@ packs are the next design slice; their retention policy differs from this cache.
 | 2 | Downloadable offline tile packs | Explicitly select an area and zoom range, inspect the planned tile/byte limits, download with progress/cancellation, then reopen the pack without network access. Preserve coverage, attribution and checksums; incomplete downloads must not appear complete. |
 | 3 | Geocoding | Forward place/address search and reverse coordinate lookup through an explicit provider adapter. Return bounded results that applications can turn into markers and camera changes; prove no-result/failure distinctions, cancellation and stale-result rejection. |
 | 4 | Routing | Explicit route requests between supplied locations through a provider adapter, returning checked geometry and available distance/duration metadata. Compose with existing route overlays; prove no-route/failure distinctions, cancellation, stale-result rejection and route work limits. |
+
+### Next slice: offline pack acquisition
+
+**Status:** Design direction; archive support and public pack APIs are not implemented.
+
+First prove a suitable download source. OpenFreeMap advertises
+[downloadable planet archives](https://github.com/hyperknot/openfreemap#full-planet-downloads),
+including PMTiles. This is a candidate for region extraction, separate from the
+interactive XYZ endpoint. [PMTiles](https://docs.protomaps.com/pmtiles/) permits
+indexed reads through HTTP ranges, but Chio's transport currently accepts whole
+HTTP 200 tile responses. Before choosing that format, verify bounded range reads,
+archive identity across requests, compression, tile-schema compatibility and
+usable extraction latency. Archive publication alone proves none of those runtime
+contracts. Do not require a full planet download or an external CLI at runtime.
+
+The smallest useful pack workflow should:
+
+- Plan a checked area and zoom interval before effects. Count required tiles with
+  checked arithmetic before enumeration; show exact tile count and a byte ceiling,
+  distinguishing any estimate from actual downloaded bytes.
+- Own bounded acquisition, progress, cancellation and staging in one downloader.
+  Publish only after every planned tile and required metadata is present and checked.
+  A partial download must never open as a completed pack.
+- Retain source identity, attribution, coverage, addresses and checksums without
+  cache expiry or eviction. Validate manifest completeness and tile integrity on
+  use; corruption must remain visible rather than trigger online repair.
+- Resolve online or local tile access when composing the loader. Reuse viewport
+  planning, decoding, geometry admission and snapshot publication. Pack viewing
+  must work without discovery or network capability, and explicitly report areas
+  or zooms it cannot supply.
+
+Choose the persisted format and public API after the source probe. Keep the
+viewport's existing 16-tile bound separate from pack limits. The first delivery
+needs complete-pack reopening; resumable incomplete downloads remain a separate
+decision. Preserve the existing macOS/Linux, independent-review and showcase gates
+for the eventual implementation.
 
 ### Boundaries and open choices
 

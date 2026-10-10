@@ -278,7 +278,10 @@ See the [runnable example](Examples.md#maps) and its
 
 ### Online vectors
 
-Opt into networking at the application boundary. The view itself stays offline:
+OpenFreeMap is Chio's recommended online provider and the default for
+`chio-maps --online`. It supplies compatible vectors without an API key; Chio
+supplies the terminal styling. Opt into networking at the application boundary.
+The view itself never loads data:
 
 ```swift
 let endpoint = try await OpenMapTilesSource.fetchOpenFreeMap()
