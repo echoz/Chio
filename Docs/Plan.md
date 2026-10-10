@@ -56,7 +56,8 @@ tile pipeline; [its storage contract](Decisions/OnlineMaps.md#persistent-raw-til
 defines identity, freshness, bounds and recovery. Before delivery, its
 [verification gates](Verification.md) require independent review, unit and real
 process checks on macOS/Linux, and the updated showcase. Programmatic offline
-packs are the next design slice; their retention policy differs from this cache.
+packs now provide durable read-only backing with separate retention; provider
+downloads remain the next acquisition slice.
 The [provider recommendation](Decisions/OnlineMaps.md#explicit-effects-and-source-configuration)
 uses the existing explicit OpenFreeMap discovery API; it adds no provider registry
 or implicit network behavior.
