@@ -72,6 +72,31 @@ struct InstrumentReadoutTests {
         }
     }
 
+    @Test("An inherited line limit preserves complete lettering or chooses ordinary text")
+    func inheritedLineLimit() {
+        for lineLimit in [1, 2] {
+            for height in [1, 2, 3] {
+                let proposal = ProposedSize(width: 7, height: height)
+                let result = DefaultRenderer().render(
+                    InstrumentReadout("12").lineLimit(lineLimit), proposal: proposal)
+                let expected: RenderSnapshot
+                if height >= 3 {
+                    expected = DefaultRenderer().render(
+                        Text(verbatim: "     _ \n  |  _|\n  | |_ ").fixedSize()
+                            .foregroundStyle(ChioTheme.default.colors.accent),
+                        proposal: proposal)
+                } else {
+                    expected = DefaultRenderer().render(
+                        Text(verbatim: "12").lineLimit(lineLimit)
+                            .foregroundStyle(ChioTheme.default.colors.accent),
+                        proposal: proposal)
+                }
+                #expect(result.rasterSurface == expected.rasterSurface)
+                #expect(result.semanticSnapshot.accessibilityNodes.compactMap(\.label) == ["12"])
+            }
+        }
+    }
+
     @Test("Unsupported, empty and overlong values use ordinary native text")
     func unsupportedValues() {
         let values = ["", " ", "42 bpm", "NaN", "1/2", "１２", "−12", "1\n2",

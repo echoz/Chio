@@ -7,25 +7,6 @@ live in [Design](Design.md) and its decision index; implementation and showcase
 checks live in [Verification](Verification.md). Completed release scope and results
 live in [0.1.0](Releases/0.1.0.md).
 
-## Instrumentation presentation candidate
-
-**Status:** Implemented candidate; review, merge and release pending. The pull
-request records verification and showcase evidence.
-
-Add reusable `MeasurementGauge` bars/dials and `InstrumentReadout` plain/segmented
-styles, with the same optional style on `DurationText`. Applications retain scales,
-units, sampling and timekeeping. Contracts live in
-[instrumentation](Decisions/Instrumentation.md); the metrics and timer examples
-exercise wide and compact composition. `Sparkline` already supplies passive history
-presentation and is unchanged in this slice. Applications retain history
-collection, retention and interpretation.
-
-Required completion evidence: focused validation/rendering/accessibility and hosted
-interaction checks, pinned engineering gate, macOS/Linux checks, and the affected
-metrics/timer recordings plus three-theme previews from the verified release
-binary. Prepare showcase assets in the PR; publish only after merge and verify the
-live result before claiming showcase completion.
-
 ## Latest slice: online maps
 
 **Status:** Accepted implementation with explicit offline and online world/street modes.

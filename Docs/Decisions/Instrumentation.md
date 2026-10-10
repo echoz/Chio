@@ -1,8 +1,8 @@
 # Compact instrumentation and duration display
 
 **Status:** Accepted presentation contracts. Compact styles, `Sparkline` and plain
-`DurationText` shipped in 0.1.0; measurement gauges and segmented readouts are
-implemented in the current candidate, pending verification and release.
+`DurationText` shipped in 0.1.0; measurement gauges and segmented readouts extend
+those contracts and have not yet been included in a tagged release.
 
 Present supplied measurements and durations; applications retain sampling, timing and interpretation.
 
@@ -64,6 +64,8 @@ supports digits, decimal points, colons and signs (`+`, `-`), at most 32 charact
 Empty, unsupported or longer values use native text. Native `ViewThatFits` also
 chooses text when the complete lettering does not fit the allocation. Formatting,
 units and interpretation remain application-owned; this is a passive readout.
+Segmented artwork always measures all three rows, regardless of inherited text
+line limits. The ordinary-text fallback retains the caller's native line limit.
 
 ## Duration presentation and example-owned timekeeping
 

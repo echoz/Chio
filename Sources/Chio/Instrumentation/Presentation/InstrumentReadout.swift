@@ -63,7 +63,7 @@ extension InstrumentReadout: View {
         case .segmented:
             if let segmentedText {
                 ViewThatFits {
-                    Text(verbatim: segmentedText).fixedSize()
+                    Text(verbatim: segmentedText).lineLimit(nil).fixedSize()
                     Text(verbatim: value)
                 }
             } else {
