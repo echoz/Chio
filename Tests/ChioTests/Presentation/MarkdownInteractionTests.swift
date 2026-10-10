@@ -159,9 +159,16 @@ private struct MarkdownCodeTestView {
 
 extension MarkdownCodeTestView: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        let status: String
+        if opened {
+            status = "Opened=docs"
+        } else {
+            let paint = plain ? "plain" : "auto"
+            status = "Paint=\(paint)"
+        }
+        return VStack(alignment: .leading, spacing: 0) {
             Text("Theme=\(light ? "light" : "dark")")
-            Text(opened ? "Opened=docs" : "Paint=\(plain ? "plain" : "auto")")
+            Text(status)
             MarkdownView(document, openLink: OpenLinkAction { destination in
                 opened = destination.rawValue == "docs"
                 return opened

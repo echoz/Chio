@@ -57,7 +57,9 @@ with affected tests updated alongside their owners. Public labels, persisted key
 native state identity and rendering remain compatibility constraints.
 
 Older untouched test fixtures can adopt constructor spelling when their behavior
-is next changed; they do not justify a separate rewrite. Intentional single-case
+is next changed; the [pinned local lint gate](Verification.md#shared-engineering-rules)
+tracks their reviewed baseline and rejects new findings. They do not justify a
+separate rewrite. Intentional single-case
 filters, extensible upstream/raw-input switches, native wrappers and private
 nested conformances retain their documented roles.
 

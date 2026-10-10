@@ -35,8 +35,13 @@ struct DiffFileView {
     private func ink(for marker: String) -> Color {
         // Change ink is independent of success/error status. Palette decisions
         // remain in this prototype until a public diff style earns its contract.
-        marker == "+" ? theme.syntax.string
-            : marker == "−" ? theme.colors.accent : theme.colors.foreground
+        if marker == "+" {
+            return theme.syntax.string
+        } else if marker == "−" {
+            return theme.colors.accent
+        } else {
+            return theme.colors.foreground
+        }
     }
 
     private func unifiedRow(_ row: DiffFile.UnifiedRow) -> some View {

@@ -146,7 +146,14 @@ struct ChioCompactStyleTests {
             )
             let surface = rendered.rasterSurface
             let track = try #require(surface.lines.last)
-            let expected = value == 0 ? "────────" : value == 0.5 ? "━━━━────" : "━━━━━━━━"
+            let expected: String
+            if value == 0 {
+                expected = "────────"
+            } else if value == 0.5 {
+                expected = "━━━━────"
+            } else {
+                expected = "━━━━━━━━"
+            }
             #expect(track.hasPrefix(expected))
             #expect(surface.lines.first?.contains("CPU") == true)
             let color = treatment == .progress && value == 1 ? theme.colors.success : theme.colors.accent

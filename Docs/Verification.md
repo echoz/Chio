@@ -5,9 +5,58 @@ Current requirements for implementation, dependency and visible example changes.
 revision-specific results. For documentation-only changes, check links, anchors
 and preservation of current contracts.
 
+## Shared engineering rules
+
+Chio pins [EngineeringRules](https://github.com/echoz/EngineeringRules) **v0.1.0**
+(`500e988b146fcdd5ff111f1916f25675b2787f0a`) through
+[.swift-rules.json](../.swift-rules.json). This is a required local development
+gate alongside the compiler, tests and platform checks below. It is not a package
+dependency or a guarantee of purity, correct enum policy or API compatibility.
+
+Install the pinned tool from its repository using its README. On this Mac, run:
+
+```sh
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
+  ~/.local/bin/swift-rules check --root .
+```
+
+Full Xcode supplies the required Swift/SourceKit. On Linux, omit `DEVELOPER_DIR`
+and follow the pinned tool's Swift 6.4 and Ubuntu Noble requirements. The normal
+check does not install tools or edit source, configuration or baselines; a missing
+pinned installation is a failed prerequisite.
+
+The gate scans all retained Swift files in `Sources`, `Examples` and `Tests`,
+with no path exclusions and explicit target import allowlists. Its production
+layout and file-scope checks apply to `Sources`; `Sources/Chio/Domain` also gets
+immutability and direct-effect checks. In v0.1.0 those production rules cannot
+target `Examples`, whose syntax, constructors, ternaries, imports and selected
+SwiftLint rules are still checked. Tests receive the latter checks too. Extend
+the configuration when introducing retained source roots such as new spikes;
+empty local directories and `Package.swift` are not scanned by this version.
+
+The initial [.swift-rules-baseline.json](../.swift-rules-baseline.json) records
+reviewed existing findings, with exact paths, source anchors and occurrence counts:
+
+- Older test-fixture constructor shorthand is adoption debt. Replace it with
+  concrete types when changing the owning suite, then prune the fixed entries.
+- `MapShapeSimplification.Budget.remaining` is invocation-owned, private scratch
+  storage passed `inout` through bounded geometry work. Its local mutation is an
+  intentional exception to the checker's lexical stored-property rule; public
+  domain inputs remain immutable. Preserve its work and cancellation bounds.
+
+New findings and stale baseline entries fail the check. Baseline expansion,
+exclusions and tool upgrades require review; do not regenerate the baseline to
+silence failures. Inspect rule categories for checker limitations before changing
+application behavior. The shared tool owns rule implementations.
+
+EngineeringRules is private. This local gate does not add credentials or a private
+fetch to Chio's public CI or package build. Hosted lint requires a separate tool
+distribution/access decision; the public platform gate below remains required.
+
 ## Running checks
 
-With Swift 6.4 and Python 3 installed, run from the repository root:
+After the shared local check, with Swift 6.4 and Python 3 installed, run from the
+repository root:
 
 ```sh
 bash Scripts/ci/verify.sh

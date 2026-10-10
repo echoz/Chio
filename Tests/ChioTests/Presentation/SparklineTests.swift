@@ -57,7 +57,15 @@ struct SparklineTests {
 
     @Test("Dense histories keep a brief spike and trough at narrow widths")
     func reduction() {
-        let values: [Double?] = (0..<100).map { $0 == 30 ? 100 : $0 == 31 ? 0 : 50 }
+        let values: [Double?] = (0..<100).map { index in
+            if index == 30 {
+                return 100
+            } else if index == 31 {
+                return 0
+            } else {
+                return 50
+            }
+        }
         for width in [1, 2, 8] {
             let points = pixels(render(values, scale: .fixed(0...100), width: width))
             #expect(points.contains { $0.y == 0 })

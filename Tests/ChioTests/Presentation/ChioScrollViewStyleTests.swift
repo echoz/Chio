@@ -261,11 +261,17 @@ private struct ScrollStyleTestView {
 
 extension ScrollStyleTestView: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        let scrollStyle: AnyScrollViewStyle
+        if native {
+            scrollStyle = AnyScrollViewStyle(AutomaticScrollViewStyle())
+        } else {
+            let theme = light ? ChioTheme.light : scrollTestTheme
+            scrollStyle = AnyScrollViewStyle(ChioScrollViewStyle(theme: theme))
+        }
+        return VStack(alignment: .leading, spacing: 0) {
             Text("\(position.x),\(position.y) \(light ? "light" : "custom")")
             ScrollView([.vertical, .horizontal], position: $position) { scrollTestContent }
-                .scrollViewStyle(native ? AnyScrollViewStyle(AutomaticScrollViewStyle())
-                    : AnyScrollViewStyle(ChioScrollViewStyle(theme: light ? .light : scrollTestTheme)))
+                .scrollViewStyle(scrollStyle)
                 .focused($reading)
                 .accessibilityLabel("Viewport")
                 .focusEffectDisabled(suppressed)

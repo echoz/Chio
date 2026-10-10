@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "toolVersion": "0.1.0",
+  "sourceRoots": [
+    "Sources",
+    "Examples",
+    "Tests"
+  ],
+  "excludedPaths": [],
+  "applicationRoots": [
+    "Sources"
+  ],
+  "pureGroups": [
+    "Domain"
+  ],
+  "pureTargets": [],
+  "layoutRoots": [
+    "Sources"
+  ],
+  "responsibilityGroups": [
+    "Domain",
+    "Execution",
+    "Protocol",
+    "Serialization",
+    "Presentation"
+  ],
+  "importPolicies": [
+    {
+      "path": "Sources/Chio",
+      "allowed": [
+        "Foundation",
+        "FoundationNetworking",
+        "Markdown",
+        "Swift",
+        "SwiftTUIViews",
+        "TreeSitter",
+        "TreeSitterSwift"
+      ]
+    },
+    {
+      "path": "Examples/AgentDashboard",
+      "allowed": [
+        "Chio",
+        "Foundation",
+        "Swift",
+        "SwiftTUI"
+      ]
+    },
+    {
+      "path": "Examples/Maps",
+      "allowed": [
+        "Chio",
+        "Foundation",
+        "Swift",
+        "SwiftTUI"
+      ]
+    },
+    {
+      "path": "Tests/ChioDashboardTests",
+      "allowed": [
+        "Chio",
+        "ChioDashboard",
+        "Foundation",
+        "Swift",
+        "SwiftTUI",
+        "SwiftTUIRuntime",
+        "SwiftTUIViews",
+        "Testing"
+      ]
+    },
+    {
+      "path": "Tests/ChioMapTests",
+      "allowed": [
+        "Chio",
+        "ChioMaps",
+        "Foundation",
+        "Swift",
+        "SwiftTUI",
+        "SwiftTUIRuntime",
+        "Synchronization",
+        "Testing"
+      ]
+    },
+    {
+      "path": "Tests/ChioTests",
+      "allowed": [
+        "Chio",
+        "Darwin",
+        "Dispatch",
+        "Foundation",
+        "FoundationNetworking",
+        "Glibc",
+        "Swift",
+        "SwiftTUIRuntime",
+        "Synchronization",
+        "Testing"
+      ]
+    }
+  ],
+  "baseline": ".swift-rules-baseline.json"
+}

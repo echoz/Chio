@@ -1,6 +1,5 @@
 @testable import ChioMaps
 @testable import Chio
-import Chio
 import Foundation
 import SwiftTUI
 import Testing

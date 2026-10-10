@@ -47,7 +47,12 @@ struct MetricsExampleView {
     private var isWide: Bool { terminalSize.width >= 70 }
     private var isCompact: Bool { !isWide || terminalSize.height < 24 }
     private var panelWidth: Int {
-        isWide ? (min(100, terminalSize.width) - (isCompact ? 2 : 4)) / 2 : terminalSize.width
+        if isWide {
+            let panelSpacing = isCompact ? 2 : 4
+            return (min(100, terminalSize.width) - panelSpacing) / 2
+        } else {
+            return terminalSize.width
+        }
     }
     private var meterWidth: Int { max(1, panelWidth - 4) }
 

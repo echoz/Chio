@@ -122,9 +122,13 @@ struct TimerExampleView {
 
     private func content(at instant: MonotonicInstant) -> some View {
         let isCompact = terminalSize.width < 70 || terminalSize.height < 24
-        let layout = terminalSize.width >= 70
-            ? AnyLayout(HStackLayout(alignment: .top, spacing: 2))
-            : AnyLayout(VStackLayout(alignment: .leading, spacing: isCompact ? 0 : 1))
+        let layout: AnyLayout
+        if terminalSize.width >= 70 {
+            layout = AnyLayout(HStackLayout(alignment: .top, spacing: 2))
+        } else {
+            let panelSpacing = isCompact ? 0 : 1
+            layout = AnyLayout(VStackLayout(alignment: .leading, spacing: panelSpacing))
+        }
         return VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 1) {
                 Text("chio").bold().foregroundStyle(theme.colors.accent)

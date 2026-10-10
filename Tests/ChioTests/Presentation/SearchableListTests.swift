@@ -467,9 +467,17 @@ private struct SearchTestView {
 
 extension SearchTestView: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        let queryBinding: Binding<String>?
+        if usesInternalQuery {
+            queryBinding = nil
+        } else if rejectsQueryWrites {
+            queryBinding = .constant("")
+        } else {
+            queryBinding = $query
+        }
+        return VStack(alignment: .leading, spacing: 0) {
             SearchableList(SearchItem.fixtures, selection: $selection,
-                           query: usesInternalQuery ? nil : (rejectsQueryWrites ? .constant("") : $query),
+                           query: queryBinding,
                            searchText: \.name) {
                 Text($0.name)
             }

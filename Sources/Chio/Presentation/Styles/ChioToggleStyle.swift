@@ -15,12 +15,24 @@ extension ChioToggleStyle: ToggleStyle {
     @MainActor
     public func makeBody(configuration: ToggleStyleConfiguration) -> some View {
         let isActive = configuration.isEnabled && (configuration.focusActive || configuration.isPressed)
-        HStack(spacing: 1) {
+        let indicator: String
+        let status: String
+        if configuration.isMixed {
+            indicator = "[−]"
+            status = "Mixed"
+        } else if configuration.isOn {
+            indicator = "[✓]"
+            status = "On"
+        } else {
+            indicator = "[ ]"
+            status = "Off"
+        }
+        return HStack(spacing: 1) {
             Text(configuration.focusActive && configuration.isEnabled ? "▌" : " ")
                 .foregroundStyle(theme.colors.accent)
-            Text(configuration.isMixed ? "[−]" : configuration.isOn ? "[✓]" : "[ ]")
+            Text(indicator)
                 .foregroundStyle(configuration.isOn ? theme.colors.success : theme.colors.mutedText)
-            Text(configuration.isMixed ? "Mixed" : configuration.isOn ? "On" : "Off")
+            Text(status)
                 .foregroundStyle(theme.colors.foreground)
             if showsLabel {
                 configuration.label.foregroundStyle(theme.colors.secondaryText).lineLimit(1)

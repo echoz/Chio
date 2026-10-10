@@ -127,10 +127,18 @@ private extension SemanticHostFrame {
     }
 
     func metricsHistory(_ mode: String) -> Bool {
-        ["Processor", "Memory"].allSatisfy { title in
+        let expectedReadings: String
+        if mode == "empty" {
+            expectedReadings = "No readings."
+        } else if mode == "gaps" {
+            expectedReadings = "21 readings, 3 missing."
+        } else {
+            expectedReadings = "24 readings, 0 missing."
+        }
+        return ["Processor", "Memory"].allSatisfy { title in
             semantics.accessibilityNodes.contains {
                 $0.label?.hasPrefix("\(title) history, simulated, \(mode), 0 to 100 percent.") == true
-                    && $0.label?.contains(mode == "empty" ? "No readings." : mode == "gaps" ? "21 readings, 3 missing." : "24 readings, 0 missing.") == true
+                    && $0.label?.contains(expectedReadings) == true
             }
         }
     }
