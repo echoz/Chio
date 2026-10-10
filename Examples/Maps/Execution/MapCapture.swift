@@ -16,7 +16,7 @@ enum MapCapture {
                          cellAspect: Double? = nil, detail: MapDetail = .minimal,
                          streetSource: MapFixtures.StreetSource = .overpass) async throws -> CapturedFrame {
         let recorder = FrameRecorder(size: CellSize(width: width, height: height))
-        let surface = HostedRasterSurface(surfaceSize: .init(width: width, height: height),
+        let surface = HostedRasterSurface(surfaceSize: CellSize(width: width, height: height),
                                           appearance: .fallback, onFrame: { recorder.receive($0) })
         let app = MapExampleApplication(fixtures: fixtures, scene: scene, appearance: appearance,
                                         cellAspect: cellAspect, detail: detail, streetSource: streetSource)
@@ -59,7 +59,7 @@ enum MapCapture {
                     if sample > 0 { times.append(capture.firstFrameMS) }
                 }
                 results.append(Measurement(scene: scene.rawValue,
-                                           source: scene == .world ? "natural-earth" : streetSource.rawValue,
+                                           source: scene.sourceIdentifier(streetSource: streetSource),
                                            detail: detail, width: width, height: height,
                                            cellAspect: cellAspect ?? 2,
                                            warmupSamples: 1, measuredSamples: times.count,
@@ -99,12 +99,17 @@ enum MapCapture {
         init(size: CellSize) { self.size = size }
 
         func receive(_ frame: SemanticHostFrame) {
-            guard completed == nil, failure == nil, frame.raster.size == size else { return }
+            let hasCompletedFrame = completed != nil
+            let hasFailure = failure != nil
+            let hasExpectedSize = frame.raster.size == size
+            guard !hasCompletedFrame, !hasFailure, hasExpectedSize else { return }
             let text = frame.raster.lines.joined(separator: "\n")
             // The app header must exist, and asynchronous preparation must have finished.
             // Below-minimum summaries count as a completed, valid presentation.
-            guard text.contains("chio"), text.contains("/ maps"),
-                  !text.contains("Preparing map") else { return }
+            let hasApplicationName = text.contains("chio")
+            let hasMapHeader = text.contains("/ maps")
+            let isPreparingMap = text.contains("Preparing map")
+            guard hasApplicationName, hasMapHeader, !isPreparingMap else { return }
             completed = CapturedFrame(raster: frame.raster,
                                       firstFrameMS: MapCapture.milliseconds(began.duration(to: clock.now)))
         }

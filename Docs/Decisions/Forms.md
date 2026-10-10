@@ -13,6 +13,8 @@ accessible while visually omitted inside fields to avoid duplicate headings.
 Applications supply current ordered issues: `message(for:in:)` hides errors until
 blur/submission; `recordingExit(from:)` returns visibility; `submitting(_:)` returns
 visibility and first invalid field for native focus. Apps exclude hidden fields.
+Its Codable representation retains `visitedFields` and `submissionAttempted`;
+internal property names do not change those keys or historical decoding.
 
 Native controls/bindings/focus own editing. The compact picker maps arrows and
 wheel/accessibility to selection without a pointer option menu; toggles retain

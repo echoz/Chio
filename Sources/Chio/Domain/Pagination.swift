@@ -41,27 +41,27 @@ public struct Pagination {
     /// Selects an existing page, rejecting indices outside the current collection.
     public func selectingPage(at index: Int) -> Self? {
         guard index >= 0, index < pageCount else { return nil }
-        return Self(totalCount: totalCount, pageSize: pageSize, pageIndex: index)
+        return Pagination(totalCount: totalCount, pageSize: pageSize, pageIndex: index)
     }
 
     public func movingToFirstPage() -> Self {
         guard pageIndex != nil else { return self }
-        return Self(totalCount: totalCount, pageSize: pageSize, pageIndex: 0)
+        return Pagination(totalCount: totalCount, pageSize: pageSize, pageIndex: 0)
     }
 
     public func movingToPreviousPage() -> Self {
         guard canGoBack, let pageIndex else { return self }
-        return Self(totalCount: totalCount, pageSize: pageSize, pageIndex: pageIndex - 1)
+        return Pagination(totalCount: totalCount, pageSize: pageSize, pageIndex: pageIndex - 1)
     }
 
     public func movingToNextPage() -> Self {
         guard canGoForward, let pageIndex else { return self }
-        return Self(totalCount: totalCount, pageSize: pageSize, pageIndex: pageIndex + 1)
+        return Pagination(totalCount: totalCount, pageSize: pageSize, pageIndex: pageIndex + 1)
     }
 
     public func movingToLastPage() -> Self {
         guard pageIndex != nil else { return self }
-        return Self(totalCount: totalCount, pageSize: pageSize, pageIndex: pageCount - 1)
+        return Pagination(totalCount: totalCount, pageSize: pageSize, pageIndex: pageCount - 1)
     }
 
     /// Keeps the current index when possible, otherwise selects the last page.
@@ -69,7 +69,7 @@ public struct Pagination {
     public func updatingTotalCount(to count: Int) -> Self {
         precondition(count >= 0, "Pagination total count must be nonnegative")
         let index = count == 0 ? nil : min(pageIndex ?? 0, (count - 1) / pageSize)
-        return Self(totalCount: count, pageSize: pageSize, pageIndex: index)
+        return Pagination(totalCount: count, pageSize: pageSize, pageIndex: index)
     }
 
     /// Selects the new page containing the old first visible item.
@@ -77,7 +77,7 @@ public struct Pagination {
     public func resizingPages(to size: Int) -> Self {
         precondition(size > 0, "Pagination page size must be positive")
         let index = pageIndex == nil ? nil : itemRange.lowerBound / size
-        return Self(totalCount: totalCount, pageSize: size, pageIndex: index)
+        return Pagination(totalCount: totalCount, pageSize: size, pageIndex: index)
     }
 
     private enum CodingKeys: String, CodingKey {

@@ -23,22 +23,22 @@ extension ChioPickerStyle: PickerStyle {
 
     @MainActor
     public func makeBody(configuration: PickerStyleConfiguration) -> some View {
-        let active = configuration.focusActive && configuration.isEnabled
+        let isActive = configuration.focusActive && configuration.isEnabled
         HStack(spacing: 1) {
-            Text(active ? "▌" : " ")
+            Text(isActive ? "▌" : " ")
                 .foregroundStyle(theme.colors.accent)
             if showsLabel {
                 configuration.label.foregroundStyle(theme.colors.secondaryText)
             }
-            Text("◂").foregroundStyle(active ? theme.colors.accent : theme.colors.mutedText)
+            Text("◂").foregroundStyle(isActive ? theme.colors.accent : theme.colors.mutedText)
             Text(configuration.selectedIndex.map { configuration.options[$0].label } ?? "Choose…")
                 .foregroundStyle(configuration.selectedIndex == nil
                     ? theme.colors.mutedText : theme.colors.foreground)
                 .lineLimit(1)
-            Text("▸").foregroundStyle(active ? theme.colors.accent : theme.colors.mutedText)
+            Text("▸").foregroundStyle(isActive ? theme.colors.accent : theme.colors.mutedText)
             Spacer(minLength: 0)
         }
-        .background(active ? theme.colors.selectedSurface : theme.colors.surface)
+        .background(isActive ? theme.colors.selectedSurface : theme.colors.surface)
         .opacity(configuration.isEnabled ? 1 : 0.6)
     }
 }

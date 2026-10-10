@@ -3,7 +3,7 @@ public struct MapOverlays {
     public let markers: [MapMarker]
     public let routes: [MapRoute]
 
-    public static let empty = Self()
+    public static let empty = MapOverlays()
 
     /// At most 256 markers, 64 routes and 200,000 route vertices are accepted.
     /// Marker IDs and route IDs must each be unique within their collection.

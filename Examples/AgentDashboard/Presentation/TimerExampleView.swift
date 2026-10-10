@@ -36,7 +36,9 @@ struct TimerExampleView {
     }
 
     private func actionLabel(for value: ElapsedTime, at instant: MonotonicInstant) -> String {
-        value.isRunning ? "Pause" : value.elapsed(at: instant) == .zero ? "Start" : "Resume"
+        if value.isRunning { return "Pause" }
+        if value.elapsed(at: instant) == .zero { return "Start" }
+        return "Resume"
     }
 
     private var hints: some View {
@@ -49,16 +51,16 @@ struct TimerExampleView {
         }
     }
 
-    private func stopwatchPanel(at instant: MonotonicInstant, compact: Bool) -> some View {
+    private func stopwatchPanel(at instant: MonotonicInstant, isCompact: Bool) -> some View {
         GroupBox("Stopwatch") {
-            VStack(alignment: .leading, spacing: compact ? 0 : 1) {
+            VStack(alignment: .leading, spacing: isCompact ? 0 : 1) {
                 HStack {
                     DurationText(elapsed: stopwatch.elapsed(at: instant))
                     Spacer(minLength: 1)
                     Text(stopwatch.isRunning ? "Running" : "Paused")
                         .foregroundStyle(stopwatch.isRunning ? theme.colors.success : theme.colors.mutedText)
                 }
-                if !compact {
+                if !isCompact {
                     Text("Keep time across pauses.").foregroundStyle(theme.colors.secondaryText)
                 }
                 HStack(spacing: 1) {
@@ -72,37 +74,41 @@ struct TimerExampleView {
         }
     }
 
-    private func countdownPanel(at instant: MonotonicInstant, compact: Bool) -> some View {
+    private func countdownPanel(at instant: MonotonicInstant, isCompact: Bool) -> some View {
         let elapsed = countdown.elapsed(at: instant)
-        let complete = elapsed >= countdownDuration
-        let remaining = complete ? Duration.zero : countdownDuration - elapsed
+        let isComplete = elapsed >= countdownDuration
+        let remaining = isComplete ? Duration.zero : countdownDuration - elapsed
+        let status: String
+        if isComplete { status = "Complete" }
+        else if countdown.isRunning { status = "Running" }
+        else { status = "Paused" }
         return GroupBox("Countdown") {
-            VStack(alignment: .leading, spacing: compact ? 0 : 1) {
+            VStack(alignment: .leading, spacing: isCompact ? 0 : 1) {
                 HStack {
                     DurationText(remaining: remaining)
                     Spacer(minLength: 1)
-                    Text(complete ? "Complete" : countdown.isRunning ? "Running" : "Paused")
-                        .foregroundStyle(complete ? theme.colors.success : theme.colors.mutedText)
+                    Text(status)
+                        .foregroundStyle(isComplete ? theme.colors.success : theme.colors.mutedText)
                 }
-                if !compact {
-                    Text(complete ? "Time is up. Ready for another round." : "A short focus interval. No alarm or background job.")
+                if !isCompact {
+                    Text(isComplete ? "Time is up. Ready for another round." : "A short focus interval. No alarm or background job.")
                         .foregroundStyle(theme.colors.secondaryText)
                 }
-                ProgressView(value: complete ? 1 : elapsed.totalSeconds / countdownDuration.totalSeconds,
+                ProgressView(value: isComplete ? 1 : elapsed.totalSeconds / countdownDuration.totalSeconds,
                              barWidth: max(1, min(38, (terminalSize.width >= 70 ? min(100, terminalSize.width) / 2 : terminalSize.width) - 8))) {
                     EmptyView()
                 } currentValueLabel: { EmptyView() }
                 HStack(spacing: 1) {
                     Button(actionLabel(for: countdown, at: instant), action: toggleCountdown)
                         .accessibilityLabel("\(actionLabel(for: countdown, at: instant)) countdown")
-                        .disabled(complete)
+                        .disabled(isComplete)
                     Button("Reset") { countdown = countdown.resetting() }
                         .accessibilityLabel("Reset countdown")
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .onChange(of: complete && countdown.isRunning, initial: true) { _, finished in
+        .onChange(of: isComplete && countdown.isRunning, initial: true) { _, finished in
             guard finished else { return }
             // Recheck the retained value at dispatch: a reset may have superseded
             // this displayed completion before its lifecycle callback runs.
@@ -115,36 +121,36 @@ struct TimerExampleView {
     }
 
     private func content(at instant: MonotonicInstant) -> some View {
-        let compact = terminalSize.width < 70 || terminalSize.height < 24
+        let isCompact = terminalSize.width < 70 || terminalSize.height < 24
         let layout = terminalSize.width >= 70
             ? AnyLayout(HStackLayout(alignment: .top, spacing: 2))
-            : AnyLayout(VStackLayout(alignment: .leading, spacing: compact ? 0 : 1))
+            : AnyLayout(VStackLayout(alignment: .leading, spacing: isCompact ? 0 : 1))
         return VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 1) {
                 Text("chio").bold().foregroundStyle(theme.colors.accent)
                 Text("/ time studio").foregroundStyle(theme.colors.secondaryText)
             }
-            if !compact {
+            if !isCompact {
                 Text("Every second counts. Pauses do not.").foregroundStyle(theme.colors.secondaryText)
                 Spacer().frame(height: 1)
             }
             layout {
-                stopwatchPanel(at: instant, compact: compact)
+                stopwatchPanel(at: instant, isCompact: isCompact)
                     .frame(width: terminalSize.width >= 70 ? (min(100, terminalSize.width) - 4) / 2 : nil)
-                countdownPanel(at: instant, compact: compact)
+                countdownPanel(at: instant, isCompact: isCompact)
                     .frame(width: terminalSize.width >= 70 ? (min(100, terminalSize.width) - 4) / 2 : nil)
             }
             .groupBoxStyle(ChioGroupBoxStyle(theme: theme.replacing(
-                spacing: theme.spacing.replacing(sectionGap: compact ? 0 : theme.spacing.sectionGap)
+                spacing: theme.spacing.replacing(sectionGap: isCompact ? 0 : theme.spacing.sectionGap)
             )))
             Spacer(minLength: 0)
-            if !compact {
+            if !isCompact {
                 Text("Tab moves focus · Return activates · each clock has its own controls")
                     .foregroundStyle(theme.colors.mutedText)
                 StatusBar { hints }
             } else { hints }
         }
-        .padding(compact ? 0 : 1)
+        .padding(isCompact ? 0 : 1)
         .frame(maxWidth: 100, maxHeight: .infinity, alignment: .topLeading)
         .frame(width: terminalSize.width, height: terminalSize.height, alignment: .top)
     }

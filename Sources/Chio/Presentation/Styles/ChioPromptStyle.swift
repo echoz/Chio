@@ -24,7 +24,7 @@ extension ChioPromptStyle: PromptStyle {
         presentation.scrollMinimumHeight = 1
         presentation.scrollIdealHeight = min(4, viewport)
         presentation.scrollMaximumHeight = viewport
-        presentation.contentInsets = .init(horizontal: horizontal, vertical: vertical)
+        presentation.contentInsets = EdgeInsets(horizontal: horizontal, vertical: vertical)
         presentation.backgroundStyle = AnyShapeStyle(theme.colors.surface)
         presentation.borderStyle = AnyShapeStyle(theme.colors.accent)
         presentation.borderStroke = theme.treatments.borderStyle

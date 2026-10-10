@@ -24,7 +24,7 @@ public struct MapCamera {
         guard longitude.isFinite, y.isFinite else { throw MapValidationError.invalidCamera }
         let wrapped = (longitude + 180).truncatingRemainder(dividingBy: 360)
         let latitude = MapViewport.latitude(mercatorY: min(180, max(-180, y)))
-        return try Self(center: MapCoordinate(latitude: latitude,
+        return try MapCamera(center: MapCoordinate(latitude: latitude,
                                              longitude: (wrapped < 0 ? wrapped + 360 : wrapped) - 180),
                         longitudeSpan: longitudeSpan)
     }
@@ -32,7 +32,7 @@ public struct MapCamera {
     /// A factor above one zooms in while keeping the center fixed.
     public func zoomed(by factor: Double) throws -> Self {
         guard factor.isFinite, factor > 0 else { throw MapValidationError.invalidCamera }
-        return try Self(center: center,
+        return try MapCamera(center: center,
                         longitudeSpan: min(360, max(MapLimits.minimumLongitudeSpan, longitudeSpan / factor)))
     }
 }

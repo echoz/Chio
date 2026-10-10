@@ -223,7 +223,7 @@ private struct PaletteTestApp {
 
 extension PaletteTestApp: App {
     var body: some Scene {
-        WindowGroup(id: "palette-tests") { DashboardView(scenario: scenario, animates: false, paused: true) }
+        WindowGroup(id: "palette-tests") { DashboardView(scenario: scenario, shouldAnimate: false, isPaused: true) }
             .exitOnKeys([])
     }
 }

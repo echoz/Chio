@@ -3,6 +3,17 @@ import Foundation
 import Testing
 
 struct AgentTests {
+    @Test("Scenarios preserve initial selection and filtering policies")
+    func scenarioPolicies() {
+        #expect(DashboardScenario.normal.initialSelection == "build")
+        #expect(DashboardScenario.empty.initialSelection == nil)
+        #expect(DashboardScenario.noMatches.initialSelection == nil)
+        #expect(DashboardScenario.failed.initialSelection == "build")
+        #expect(DashboardScenario.completed.initialSelection == "build")
+        #expect(DashboardScenario.noMatches.query == "xyz")
+        #expect([DashboardScenario.normal, .empty, .failed, .completed].allSatisfy { $0.query.isEmpty })
+    }
+
     @Test("Running progress rejects nonfinite values and values outside an unfinished run",
           arguments: [Double.nan, .infinity, -.infinity, -0.1, 1, 1.1])
     func invalidProgress(_ fraction: Double) {

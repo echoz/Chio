@@ -8,20 +8,20 @@ struct CreateAgentView {
     @State private var validation = FormValidation<AgentDraft.Field>()
     @FocusState private var focus: Focus?
     let entry: Entry
-    let validateOnArrival: Bool
+    let shouldValidateOnArrival: Bool
     let create: @MainActor @Sendable () -> Void
     let cancel: @MainActor @Sendable () -> Void
 
     init(
         draft: Binding<AgentDraft>, themeChoice: Binding<ExampleTheme>,
-        entry: Entry = .name, validateOnArrival: Bool = false,
+        entry: Entry = .name, shouldValidateOnArrival: Bool = false,
         create: @escaping @MainActor @Sendable () -> Void,
         cancel: @escaping @MainActor @Sendable () -> Void
     ) {
         _draft = draft
         _themeChoice = themeChoice
         self.entry = entry
-        self.validateOnArrival = validateOnArrival
+        self.shouldValidateOnArrival = shouldValidateOnArrival
         self.create = create
         self.cancel = cancel
     }
@@ -29,6 +29,12 @@ struct CreateAgentView {
     enum Entry {
         case name
         case role
+        var isName: Bool {
+            switch self {
+            case .name: true
+            case .role: false
+            }
+        }
     }
 
     private enum Focus: Hashable {
@@ -113,7 +119,7 @@ struct CreateAgentView {
                 .focused($focus, equals: .role)
             }
 
-            if draft.role == .test {
+            if draft.role.requiresSuite {
                 FormField("Test suite", description: "Required for Test · up to 40 characters",
                           error: validation.message(for: .suite, in: draft.issues)) {
                     TextField("e.g. Integration tests", text: suite)
@@ -173,7 +179,7 @@ extension CreateAgentView: View {
                 case .name: focus = .name
                 case .role: focus = .role
                 }
-                if validateOnArrival, let firstInvalid = validate() {
+                if shouldValidateOnArrival, let firstInvalid = validate() {
                     focus = Focus(field: firstInvalid)
                 }
             }
@@ -203,7 +209,7 @@ extension CreateAgentView: View {
                 }
             }
             .onChange(of: draft.role) {
-                if draft.role != .test && focus == .suite { focus = .role }
+                if !draft.role.requiresSuite && focus == .suite { focus = .role }
             }
         }
     }

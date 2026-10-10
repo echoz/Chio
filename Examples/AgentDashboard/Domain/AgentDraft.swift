@@ -32,6 +32,13 @@ struct AgentDraft {
         case test = "Test"
         case docs = "Docs"
 
+        var requiresSuite: Bool {
+            switch self {
+            case .test: true
+            case .build, .review, .docs: false
+            }
+        }
+
         var summary: String {
             switch self {
             case .build: "Compile · resolve · package"
@@ -45,14 +52,18 @@ struct AgentDraft {
     var issues: [FormValidation<Field>.Issue] {
         var issues: [FormValidation<Field>.Issue] = []
         if trimmedName.isEmpty {
-            issues.append(.init(field: .name, message: "Enter an agent name."))
+            issues.append(FormValidation<Field>.Issue(field: .name, message: "Enter an agent name."))
         } else if trimmedName.count > 32 {
-            issues.append(.init(field: .name, message: "Use 32 characters or fewer."))
+            issues.append(FormValidation<Field>.Issue(field: .name, message: "Use 32 characters or fewer."))
         }
-        if role == .test && trimmedSuite.isEmpty {
-            issues.append(.init(field: .suite, message: "Enter a test suite."))
-        } else if role == .test && trimmedSuite.count > 40 {
-            issues.append(.init(field: .suite, message: "Use 40 characters or fewer."))
+        switch role {
+        case .test:
+            if trimmedSuite.isEmpty {
+                issues.append(FormValidation<Field>.Issue(field: .suite, message: "Enter a test suite."))
+            } else if trimmedSuite.count > 40 {
+                issues.append(FormValidation<Field>.Issue(field: .suite, message: "Use 40 characters or fewer."))
+            }
+        case .build, .review, .docs: break
         }
         return issues
     }
@@ -60,10 +71,15 @@ struct AgentDraft {
     /// The caller supplies identity; invalid drafts never become agents.
     func makeAgent(id: Agent.ID) -> Agent? {
         guard issues.isEmpty else { return nil }
+        let summary: String
+        switch role {
+        case .test: summary = "Test suite · \(trimmedSuite)"
+        case .build, .review, .docs: summary = role.summary
+        }
         return Agent(
             id: id,
             name: trimmedName,
-            summary: role == .test ? "Test suite · \(trimmedSuite)" : role.summary,
+            summary: summary,
             phase: startImmediately ? .running(progress: .zero) : .idle
         )
     }

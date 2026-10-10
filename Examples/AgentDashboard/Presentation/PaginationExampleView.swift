@@ -9,7 +9,7 @@ struct PaginationExampleView {
     @State private var themeChoice: ExampleTheme
     @State private var query = ""
     @State private var pagination = Pagination(totalCount: 23, pageSize: 3)
-    @FocusState private var searchFocused: Bool
+    @FocusState private var isSearchFocused: Bool
 
     init(theme: ExampleTheme = .default) { _themeChoice = State(wrappedValue: theme) }
 
@@ -62,12 +62,19 @@ struct PaginationExampleView {
     private enum Outcome: String, Hashable, Codable, Sendable {
         case passed = "Passed"
         case failed = "Failed"
+
+        func color(in theme: ChioTheme) -> Color {
+            switch self {
+            case .passed: theme.colors.success
+            case .failed: theme.colors.error
+            }
+        }
     }
 }
 
 extension PaginationExampleView: View {
     var body: some View {
-        let short = terminalSize.height < 24
+        let isShort = terminalSize.height < 24
         let filtered = Self.matching(query)
         let visible = filtered[pagination.itemRange]
         let filter = queryBinding
@@ -76,14 +83,14 @@ extension PaginationExampleView: View {
                 Text("chio").bold().foregroundStyle(theme.colors.accent)
                 Text("/ run history").foregroundStyle(theme.colors.secondaryText)
             }
-            if !short {
+            if !isShort {
                 Text("Find a run. Take the results one page at a time.")
                     .foregroundStyle(theme.colors.secondaryText)
                 Spacer().frame(height: 1)
             }
             TextField("Filter history…", text: filter)
-                .focused($searchFocused)
-                .defaultFocus($searchFocused, true)
+                .focused($isSearchFocused)
+                .defaultFocus($isSearchFocused, true)
             HStack(spacing: 1) {
                 Picker("Rows per page", selection: pageSizeBinding) {
                     Text("3").tag(3)
@@ -103,21 +110,21 @@ extension PaginationExampleView: View {
                                 Text("\(entry.title) \(entry.id < 10 ? "0" : "")\(entry.id)")
                                     .bold().lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
                                 Text(entry.outcome.rawValue)
-                                    .foregroundStyle(entry.outcome == .passed ? theme.colors.success : theme.colors.error)
+                                    .foregroundStyle(entry.outcome.color(in: theme))
                             }
                             Text("Local simulation · run \(entry.id)").foregroundStyle(theme.colors.mutedText)
                         }
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.vertical, short ? 0 : 1)
+                .padding(.vertical, isShort ? 0 : 1)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             PageControl(pagination: $pagination)
-            if short { hints } else { StatusBar { hints } }
+            if isShort { hints } else { StatusBar { hints } }
         }
-        .padding(.horizontal, short ? 0 : 1)
-        .padding(.vertical, short ? 0 : 1)
+        .padding(.horizontal, isShort ? 0 : 1)
+        .padding(.vertical, isShort ? 0 : 1)
         .frame(maxWidth: 76, maxHeight: .infinity, alignment: .topLeading)
         .frame(width: terminalSize.width, height: terminalSize.height, alignment: .top)
         .onKeyPress { press in

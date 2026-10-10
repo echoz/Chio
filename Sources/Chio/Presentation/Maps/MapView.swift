@@ -15,13 +15,13 @@ public struct MapView {
     private let selection: Binding<String?>
     private let overlays: MapOverlays
     private let detail: MapDetail
-    private let fills: Bool
-    private let labels: Bool
+    private let showsFills: Bool
+    private let showsLabels: Bool
     private let activation: @MainActor (MapMarker) -> Void
     private let viewportChange: @MainActor (MapViewport?) -> Void
     @Environment(\.chioTheme) private var theme
-    @Environment(\.isEnabled) private var enabled
-    @FocusState private var focused: Bool
+    @Environment(\.isEnabled) private var isEnabled
+    @FocusState private var isFocused: Bool
     @State private var worker: MapPreparationWorker?
     @State private var completion: Completion?
 
@@ -40,13 +40,13 @@ public struct MapView {
         self.selection = selection
         self.overlays = overlays
         self.detail = detail
-        fills = true
-        labels = true
+        showsFills = true
+        showsLabels = true
         activation = { _ in }
         viewportChange = { _ in }
     }
 
-    private init(copying value: Self, fills: Bool? = nil, labels: Bool? = nil,
+    private init(copying value: Self, showsFills: Bool? = nil, showsLabels: Bool? = nil,
                  activation: (@MainActor (MapMarker) -> Void)? = nil,
                  viewportChange: (@MainActor (MapViewport?) -> Void)? = nil) {
         source = value.source
@@ -54,48 +54,48 @@ public struct MapView {
         selection = value.selection
         overlays = value.overlays
         detail = value.detail
-        self.fills = fills ?? value.fills
-        self.labels = labels ?? value.labels
+        self.showsFills = showsFills ?? value.showsFills
+        self.showsLabels = showsLabels ?? value.showsLabels
         self.activation = activation ?? value.activation
         self.viewportChange = viewportChange ?? value.viewportChange
         _theme = value._theme
-        _enabled = value._enabled
-        _focused = value._focused
+        _isEnabled = value._isEnabled
+        _isFocused = value._isFocused
         _worker = value._worker
         _completion = value._completion
     }
 
     /// Shows or hides polygon fills; route and geographic outlines remain visible.
-    public func mapFills(_ visible: Bool) -> Self { Self(copying: self, fills: visible) }
+    public func mapFills(_ visible: Bool) -> Self { MapView(copying: self, showsFills: visible) }
 
     /// Shows background, route and unselected-marker labels. Selected-marker labels remain enabled.
-    public func mapLabels(_ visible: Bool) -> Self { Self(copying: self, labels: visible) }
+    public func mapLabels(_ visible: Bool) -> Self { MapView(copying: self, showsLabels: visible) }
 
     /// Activation is explicit; merely selecting or replacing a source never calls it.
     public func onActivate(_ action: @escaping @MainActor (MapMarker) -> Void) -> Self {
-        Self(copying: self, activation: action)
+        MapView(copying: self, activation: action)
     }
 
     /// Reports the actual drawing allocation after layout, including its initial value.
     /// Nil means the compact fallback is visible. Pair a viewport with the current
     /// camera when explicitly requesting online tiles; observing never fetches data.
     public func onViewportChange(_ action: @escaping @MainActor (MapViewport?) -> Void) -> Self {
-        Self(copying: self, viewportChange: action)
+        MapView(copying: self, viewportChange: action)
     }
 
     private func coverageNotice(camera: MapCamera, viewport: MapViewport?) -> String {
         guard let source else { return "" }
-        let covered: Bool
+        let isCovered: Bool
         let unavailable: String
         switch source.coverage {
         case .tiled(let coverage):
-            covered = viewport.map { coverage.covers(MapTileRequest(camera: camera, viewport: $0)) } ?? true
+            isCovered = viewport.map { coverage.covers(MapTileRequest(camera: camera, viewport: $0)) } ?? true
             unavailable = "Outside loaded coverage"
         case .worldwide, .boundedOfflineExtract:
-            covered = source.coverage.contains(camera.center)
+            isCovered = source.coverage.contains(camera.center)
             unavailable = "Outside offline coverage"
         }
-        return covered
+        return isCovered
             ? "\(source.metadata.license) · \((source.metadata.attributionURL ?? source.metadata.licenseURL).absoluteString)"
             : "\(unavailable) · \(source.metadata.license)"
     }
@@ -106,7 +106,7 @@ public struct MapView {
     }
 
     private func select(_ marker: MapMarker) {
-        guard enabled else { return }
+        guard isEnabled else { return }
         selection.wrappedValue = marker.id
         // An application may reject a write. Do not pan to a rejected selection.
         guard selection.wrappedValue == marker.id else { return }
@@ -128,7 +128,7 @@ public struct MapView {
     }
 
     private func handle(_ press: KeyPress) -> KeyPressResult {
-        guard enabled, press.modifiers.isEmpty else { return .ignored }
+        guard isEnabled, press.modifiers.isEmpty else { return .ignored }
         // Bindings are read for each event, not captured at the preceding frame.
         switch press.key {
         case .arrowLeft: camera.wrappedValue = try! camera.wrappedValue.panned(longitudeFraction: -0.12, latitudeFraction: 0)
@@ -151,11 +151,11 @@ public struct MapView {
     private func drawing(_ prepared: PreparedMapDrawing, request: MapPreparationRequest) -> some View {
         let viewport = request.viewport
         let markers = MapMarkerPlacement(markers: overlays.markers, selection: selection.wrappedValue,
-                                         camera: request.camera, viewport: viewport, showsLabels: labels)
+                                         camera: request.camera, viewport: viewport, showsLabels: showsLabels)
         let routeNames = MapLabels(candidates: prepared.routeLabels, columns: viewport.columns, rows: viewport.rows,
-                                   enabled: labels, detail: detail, reserved: markers.reservations)
+                                   enabled: showsLabels, detail: detail, reserved: markers.reservations)
         let names = MapLabels(candidates: prepared.map.labels, columns: viewport.columns, rows: viewport.rows,
-                              enabled: labels, detail: detail, reserved: markers.reservations + routeNames.labels)
+                              enabled: showsLabels, detail: detail, reserved: markers.reservations + routeNames.labels)
         ZStack(alignment: .topLeading) {
             Canvas(MapDrawing(prepared: prepared, colors: theme.colors,
                               waterColor: theme.map.water,
@@ -184,7 +184,7 @@ public struct MapView {
                     .foregroundStyle(marker.isSelected ? theme.colors.warning : theme.colors.foreground)
                     .frame(width: marker.glyph.width, height: marker.glyph.height)
                     .offset(x: marker.origin.x, y: marker.origin.y)
-                    .onTapGesture { select(marker.value); focused = true }
+                    .onTapGesture { select(marker.value); isFocused = true }
                     .accessibilityLabel(marker.value.title.isEmpty ? marker.value.id : marker.value.title)
             }
         }
@@ -205,8 +205,8 @@ public struct MapView {
     }
 
     @ViewBuilder
-    private func content(_ request: MapPreparationRequest?, small: Bool) -> some View {
-        if small {
+    private func content(_ request: MapPreparationRequest?, isCompact: Bool) -> some View {
+        if isCompact {
             message("More room for the map", detail: "Camera and selection retained · Resize to continue")
         } else if source == nil {
             message("No map source loaded", detail: "Pan and zoom remain available")
@@ -230,13 +230,13 @@ extension MapView: View {
                 cellAspectRatio: geometry.cellPixelMetrics.aspectRatio, camera: current)
             let request = source.flatMap { source in
                 viewport.map { MapPreparationRequest(dataset: source.dataset, camera: current,
-                    viewport: $0, detail: detail, routes: overlays.routes, fills: fills) }
+                    viewport: $0, detail: detail, routes: overlays.routes, fills: showsFills) }
             }
             VStack(alignment: .leading, spacing: 0) {
-                content(request, small: viewport == nil)
+                content(request, isCompact: viewport == nil)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 HStack(spacing: 1) {
-                    Text(focused ? "›" : " ").foregroundStyle(theme.colors.accent)
+                    Text(isFocused ? "›" : " ").foregroundStyle(theme.colors.accent)
                     Text(source?.metadata.attribution ?? "").foregroundStyle(theme.colors.mutedText)
                 }.frame(height: 1, alignment: .leading).clipped()
                 Text(coverageNotice(camera: current, viewport: viewport))
@@ -269,7 +269,7 @@ extension MapView: View {
         .foregroundStyle(theme.colors.foreground)
         .focusable()
         .focusEffectDisabled()
-        .focused($focused)
+        .focused($isFocused)
         .onKeyPress(perform: handle)
         .accessibilityLabel("Map\(overlays.markers.first(where: { $0.id == selection.wrappedValue }).map { ", selected \($0.title.isEmpty ? $0.id : $0.title)" } ?? "")")
         .accessibilityHint("Arrows pan, plus and minus zoom, n and p select places, Return opens, Tab leaves the map")

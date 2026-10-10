@@ -11,8 +11,8 @@ struct MapExampleView {
     @State private var camera: MapCamera
     @State private var selection: String?
     @State private var appearance: MapExampleCommand.Appearance
-    @State private var fills = true
-    @State private var labels = true
+    @State private var fillsAreas = true
+    @State private var showsLabels = true
     @State private var detail: MapDetail
     @State private var activation = "Return opens the selected place"
     @State private var retry = 0
@@ -40,9 +40,9 @@ struct MapExampleView {
         overlays.markers.first(where: { $0.id == selection })?.title ?? "None"
     }
     private var context: String {
-        let areaPresentation = fills ? "filled" : "outlines"
+        let areaPresentation = fillsAreas ? "filled" : "outlines"
         if acquisition.isOnline { return "Online · \(detail.levelNumber)/\(MapDetail.allCases.count) \(detail.rawValue) · \(appearance.rawValue) · \(areaPresentation) · synthetic guide" }
-        let sourceTitle = scene == .world ? "Natural Earth" : streetSource.title
+        let sourceTitle = scene.sourceTitle(streetSource: streetSource)
         return "Offline · \(sourceTitle) · \(detail.levelNumber)/\(MapDetail.allCases.count) \(detail.rawValue) · \(appearance.rawValue) · \(areaPresentation) · synthetic guide"
     }
 
@@ -60,8 +60,8 @@ struct MapExampleView {
         case .character("["): detail = detail.less
         case .character("]"): detail = detail.more
         case .character("d"): detail = detail.next
-        case .character("f"): fills.toggle()
-        case .character("l"): labels.toggle()
+        case .character("f"): fillsAreas.toggle()
+        case .character("l"): showsLabels.toggle()
         case .character("r"): camera = scene.camera
         case .character("e") where acquisition.isOnline: retry &+= 1
         default: return .ignored
@@ -81,15 +81,15 @@ extension MapExampleView: View {
                 .frame(height: 1, alignment: .leading)
             if acquisition.isOnline {
                 OnlineMapContent(camera: $camera,
-                    selection: $selection, overlays: overlays, detail: detail, fills: fills,
-                    labels: labels, retry: retry, activate: { activation = "Opened \($0.title)" },
+                    selection: $selection, overlays: overlays, detail: detail, fillsAreas: fillsAreas,
+                    showsLabels: showsLabels, retry: retry, activate: { activation = "Opened \($0.title)" },
                     makeLoader: { try await acquisition.makeLoader() })
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 MapView(source: source, camera: $camera, selection: $selection,
                         overlays: overlays, detail: detail)
-                    .mapFills(fills)
-                    .mapLabels(labels)
+                    .mapFills(fillsAreas)
+                    .mapLabels(showsLabels)
                     .onActivate { marker in activation = "Opened \(marker.title)" }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }

@@ -19,7 +19,15 @@ struct HelpExampleView {
         _themeChoice = State(wrappedValue: theme)
     }
 
-    private enum Context { case browse, editing, actions, all }
+    private enum Context {
+        case browse, editing, actions, all
+        var showsAllShortcuts: Bool {
+            switch self {
+            case .all: true
+            case .browse, .editing, .actions: false
+            }
+        }
+    }
     private enum Action: Hashable { case run, help }
 
     private static let navigate = ShortcutHint("↑↓", "move", detail: "Move through the visible agents.")
@@ -65,8 +73,8 @@ struct HelpExampleView {
         case .all: contextual = [browse, editing, actions]
         }
         let application = (selectedAgent == nil ? [] : [Self.run]) + [Self.theme, Self.quit]
-        return contextual + [.init("Application", shortcuts: application),
-                             .init("Help", shortcuts: [Self.scroll, Self.close])]
+        return contextual + [ShortcutGroup("Application", shortcuts: application),
+                             ShortcutGroup("Help", shortcuts: [Self.scroll, Self.close])]
     }
 
     private var helpIsPresented: Binding<Bool> {
@@ -113,14 +121,14 @@ struct HelpExampleView {
 
 extension HelpExampleView: View {
     var body: some View {
-        let short = terminalSize.height < 24
+        let isShort = terminalSize.height < 24
         let helpStorage = $help
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 1) {
                 Text("chio").bold().foregroundStyle(theme.colors.accent)
                 Text("/ keyboard help").foregroundStyle(theme.colors.secondaryText)
             }
-            if !short {
+            if !isShort {
                 Text("A few hints now. The full picture when you need it.")
                     .foregroundStyle(theme.colors.secondaryText)
                 Spacer().frame(height: 1)
@@ -141,10 +149,10 @@ extension HelpExampleView: View {
                     .focused($actionFocus, equals: .help)
             }
             .onKeyPress { openHelp(.actions, for: $0) }
-            if short { KeyHints(compactHints) } else { StatusBar { KeyHints(compactHints) } }
+            if isShort { KeyHints(compactHints) } else { StatusBar { KeyHints(compactHints) } }
         }
-        .padding(.horizontal, short ? 0 : 1)
-        .padding(.vertical, short ? 0 : 1)
+        .padding(.horizontal, isShort ? 0 : 1)
+        .padding(.vertical, isShort ? 0 : 1)
         .frame(maxWidth: 76, maxHeight: .infinity, alignment: .topLeading)
         .frame(width: terminalSize.width, height: terminalSize.height, alignment: .top)
         .onKeyPress(perform: backgroundKey)
@@ -155,7 +163,7 @@ extension HelpExampleView: View {
                     Spacer(minLength: 1)
                     Button("Close") { helpStorage.wrappedValue = nil }
                 }
-                if help == .all {
+                if help?.showsAllShortcuts == true {
                     Text("All shortcuts").foregroundStyle(theme.colors.secondaryText)
                 }
                 ScrollView(.vertical) {
@@ -166,7 +174,7 @@ extension HelpExampleView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 KeyHints([Self.close, Self.theme, Self.quit])
             }
-                .padding(.horizontal, short ? 0 : 1)
+                .padding(.horizontal, isShort ? 0 : 1)
                 .frame(maxWidth: 76, maxHeight: .infinity, alignment: .topLeading)
                 .frame(width: terminalSize.width, height: terminalSize.height, alignment: .top)
                 .chioTheme(theme)

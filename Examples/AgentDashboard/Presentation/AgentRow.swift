@@ -5,11 +5,11 @@ import SwiftTUI
 struct AgentRow {
     @Environment(\.chioTheme) private var theme
     let agent: Agent
-    let compact: Bool
+    let isCompact: Bool
 
-    init(agent: Agent, compact: Bool = false) {
+    init(agent: Agent, isCompact: Bool = false) {
         self.agent = agent
-        self.compact = compact
+        self.isCompact = isCompact
     }
 
     private var statusColor: Color {
@@ -31,10 +31,10 @@ extension AgentRow: View {
                 Spacer()
                 Text(agent.phase.label).foregroundStyle(statusColor)
             }
-            if !compact {
+            if !isCompact {
                 Text(agent.summary).foregroundStyle(theme.colors.secondaryText)
             }
         }
-        .padding(.bottom, compact ? 0 : 1)
+        .padding(.bottom, isCompact ? 0 : 1)
     }
 }

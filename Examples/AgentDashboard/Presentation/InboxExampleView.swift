@@ -33,8 +33,16 @@ struct InboxExampleView {
 
         func contains(_ item: ReviewItem) -> Bool {
             switch self {
-            case .review: item.status != .draft
-            case .drafts: item.status == .draft
+            case .review:
+                switch item.status {
+                case .review, .changesRequested: true
+                case .draft: false
+                }
+            case .drafts:
+                switch item.status {
+                case .review, .changesRequested: false
+                case .draft: true
+                }
             case .all: true
             }
         }
@@ -72,15 +80,19 @@ struct InboxExampleView {
         case presented(Selection)
 
         var isActive: Bool {
-            if case .closed = self { return false }
-            return true
+            switch self {
+            case .closed: false
+            case .requested, .presented: true
+            }
         }
     }
 
     private var presentedReader: Binding<Selection?> {
         Binding(get: {
-            if case .presented(let selection) = readerPresentation { return selection }
-            return nil
+            switch readerPresentation {
+            case .presented(let selection): selection
+            case .closed, .requested: nil
+            }
         }, set: { readerPresentation = $0.map(ReaderPresentation.presented) ?? .closed })
     }
 
@@ -88,11 +100,11 @@ struct InboxExampleView {
         let base: ChioTheme = themeChoice.theme
         return base.replacing(spacing: base.spacing.replacing(sectionGap: 0))
     }
-    private var compact: Bool { terminalSize.height < 26 || terminalSize.width < 88 }
-    private var inlinePreview: Bool { !compact && showsPreview }
+    private var isCompact: Bool { terminalSize.height < 26 || terminalSize.width < 88 }
+    private var showsInlinePreview: Bool { !isCompact && showsPreview }
     private var queueWidth: Int? {
         // Two outer insets and the two-cell pane gap leave the usable width.
-        inlinePreview ? max(40, (terminalSize.width - 4) * 2 / 5) : nil
+        showsInlinePreview ? max(40, (terminalSize.width - 4) * 2 / 5) : nil
     }
     private var items: [ReviewItem] {
         ReviewItem.ordered(ReviewItem.examples.filter(queue.contains), by: order)
@@ -167,7 +179,7 @@ struct InboxExampleView {
             KeyHint("/", "filter")
             KeyHint("^G", "queue")
             KeyHint("^S", "sort")
-            if !compact { KeyHint("^P", "preview") }
+            if !isCompact { KeyHint("^P", "preview") }
             KeyHint("^T", "theme")
             KeyHint("^Q", "quit")
         }
@@ -178,7 +190,7 @@ struct InboxExampleView {
         let selection: Selection
         @Binding var themeChoice: ExampleTheme
         let close: @MainActor @Sendable () -> Void
-        @FocusState private var reading: Bool
+        @FocusState private var isReading: Bool
     }
 }
 
@@ -191,7 +203,7 @@ extension InboxExampleView: View {
                 Spacer(minLength: 1)
                 Text("local").foregroundStyle(theme.colors.mutedText)
             }
-            if !compact {
+            if !isCompact {
                 Text("A quiet place to review. Fixed fixtures; no GitHub connection.")
                     .foregroundStyle(theme.colors.mutedText)
                 Spacer().frame(height: 1)
@@ -222,7 +234,7 @@ extension InboxExampleView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .frame(width: queueWidth)
-                if inlinePreview {
+                if showsInlinePreview {
                     GroupBox("Preview") {
                         ScrollView {
                             if let selection {
@@ -245,10 +257,10 @@ extension InboxExampleView: View {
                 ?? "No review selected.")
                 .foregroundStyle(theme.colors.secondaryText)
                 .lineLimit(1)
-            if compact { hints } else { StatusBar { hints } }
+            if isCompact { hints } else { StatusBar { hints } }
         }
-        .padding(.horizontal, compact ? 0 : 1)
-        .padding(.vertical, compact ? 0 : 1)
+        .padding(.horizontal, isCompact ? 0 : 1)
+        .padding(.vertical, isCompact ? 0 : 1)
         .frame(width: terminalSize.width, height: terminalSize.height, alignment: .topLeading)
         .chioTheme(theme)
         .onKeyPress(perform: handleKey)
@@ -256,8 +268,9 @@ extension InboxExampleView: View {
             // A committed background frame lets native results focus settle
             // before the cover captures it for restoration. Read live state so
             // Escape during the handoff cannot be undone by this callback.
-            if case .requested(let selection) = readerPresentation {
-                readerPresentation = .presented(selection)
+            switch readerPresentation {
+            case .requested(let selection): readerPresentation = .presented(selection)
+            case .closed, .presented: break
             }
         }
         .fullScreenCover(item: presentedReader) { selection in
@@ -288,7 +301,7 @@ extension InboxExampleView.Reader: View {
                 MarkdownView(selection.document)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .focused($reading)
+            .focused($isReading)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             StatusBar {
                 KeyHints {
@@ -303,7 +316,7 @@ extension InboxExampleView.Reader: View {
         .padding(.vertical, 1)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .chioTheme(theme)
-        .onAppear { reading = true }
+        .onAppear { isReading = true }
         .onKeyPress { press in
             if press.key == .escape { close(); return .handled }
             if press == KeyPress(.character("t"), modifiers: .ctrl) {

@@ -7,7 +7,7 @@ struct ViewportExampleView {
     @Environment(\.requestTermination) private var requestTermination
     @State private var themeChoice: ExampleTheme
     @State private var position = ScrollCellOffset.zero
-    @FocusState private var logFocused: Bool
+    @FocusState private var isLogFocused: Bool
 
     init(theme: ExampleTheme = .default) { _themeChoice = State(wrappedValue: theme) }
 
@@ -43,14 +43,14 @@ struct ViewportExampleView {
 
 extension ViewportExampleView: View {
     var body: some View {
-        let short = terminalSize.height < 24
-        let logFocus = $logFocused
+        let isShort = terminalSize.height < 24
+        let logFocus = $isLogFocused
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 1) {
                 Text("chio").bold().foregroundStyle(theme.colors.accent)
                 Text("/ activity viewport").foregroundStyle(theme.colors.secondaryText)
             }
-            if !short {
+            if !isShort {
                 Text("A little room for a wide view.").foregroundStyle(theme.colors.secondaryText)
                 Spacer().frame(height: 1)
             }
@@ -61,8 +61,8 @@ extension ViewportExampleView: View {
                     ForEach(1...40, id: \.self) { event($0) }
                 }
             }
-            .focused($logFocused)
-            .defaultFocus($logFocused, true)
+            .focused($isLogFocused)
+            .defaultFocus($isLogFocused, true)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             HStack(spacing: 1) {
                 Button("Back to start") { position = .zero }
@@ -70,10 +70,10 @@ extension ViewportExampleView: View {
                 Text("Row \(position.y + 1) · Col \(position.x + 1)")
                     .foregroundStyle(theme.colors.secondaryText)
             }
-            if short { hints } else { StatusBar { hints } }
+            if isShort { hints } else { StatusBar { hints } }
         }
-        .padding(.horizontal, short ? 0 : 1)
-        .padding(.vertical, short ? 0 : 1)
+        .padding(.horizontal, isShort ? 0 : 1)
+        .padding(.vertical, isShort ? 0 : 1)
         .frame(maxWidth: 86, maxHeight: .infinity, alignment: .topLeading)
         .frame(width: terminalSize.width, height: terminalSize.height, alignment: .top)
         .onKeyPress { press in

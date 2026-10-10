@@ -27,3 +27,26 @@ extension FileEntry: Sendable {}
 extension FileEntry.Kind: Hashable {}
 extension FileEntry.Kind: Codable {}
 extension FileEntry.Kind: Sendable {}
+
+extension FileEntry.Kind {
+    var isDirectory: Bool {
+        switch self {
+        case .directory: true
+        case .file, .other, .unavailable: false
+        }
+    }
+
+    var isRegularFile: Bool {
+        switch self {
+        case .file: true
+        case .directory, .other, .unavailable: false
+        }
+    }
+
+    var isSupported: Bool {
+        switch self {
+        case .directory, .file: true
+        case .other, .unavailable: false
+        }
+    }
+}

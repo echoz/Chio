@@ -17,6 +17,13 @@ public struct ChioProgressViewStyle {
         /// Applications own units, thresholds and alert policy.
         case measurement
     }
+
+    private func filledColor(isComplete: Bool) -> Color {
+        switch treatment {
+        case .progress: isComplete ? theme.colors.success : theme.colors.accent
+        case .measurement: theme.colors.accent
+        }
+    }
 }
 
 extension ChioProgressViewStyle: ProgressViewStyle {
@@ -40,8 +47,7 @@ extension ChioProgressViewStyle: ProgressViewStyle {
                 let filled = Int((Double(width) * normalized).rounded())
                 HStack(spacing: 0) {
                     Text(String(repeating: theme.treatments.progressFilledGlyph, count: filled))
-                        .foregroundStyle(treatment == .progress && normalized == 1
-                            ? theme.colors.success : theme.colors.accent)
+                        .foregroundStyle(filledColor(isComplete: normalized == 1))
                     Text(String(repeating: theme.treatments.progressEmptyGlyph, count: width - filled))
                         .foregroundStyle(theme.colors.border)
                 }

@@ -74,6 +74,27 @@ public struct FilePicker {
         case failed(directory: URL, message: String)
         case closed
 
+        var isClosed: Bool {
+            switch self {
+            case .closed: true
+            case .idle, .loading, .browsing, .confirming, .failed: false
+            }
+        }
+
+        var hasFailed: Bool {
+            switch self {
+            case .failed: true
+            case .idle, .loading, .browsing, .confirming, .closed: false
+            }
+        }
+
+        var browsingDirectory: Directory? {
+            switch self {
+            case .browsing(let directory, _): directory
+            case .idle, .loading, .confirming, .failed, .closed: nil
+            }
+        }
+
         var requestID: UUID? {
             switch self {
             case .loading(let id, _, _), .confirming(let id, _, _): id
@@ -116,7 +137,10 @@ public struct FilePicker {
 
     private func permittedEntries(in phase: Phase) -> [FileEntry] {
         phase.entries.filter { entry in
-            entry.kind != .file || allowedExtensions.allows(entry.url.pathExtension)
+            switch entry.kind {
+            case .file: allowedExtensions.allows(entry.url.pathExtension)
+            case .directory, .other, .unavailable: true
+            }
         }
     }
 
@@ -144,9 +168,10 @@ public struct FilePicker {
     }
 
     private func choose(phase: Binding<Phase>, candidate: Binding<URL?>, query: Binding<String>, activating: URL? = nil) {
-        guard case .browsing(let directory, _) = phase.wrappedValue,
-              let entry = currentEntry(phase: phase.wrappedValue, candidate: candidate.wrappedValue, query: query.wrappedValue),
-              activating == nil || activating == entry.id else { return }
+        guard let directory = phase.wrappedValue.browsingDirectory,
+              let entry = currentEntry(phase: phase.wrappedValue, candidate: candidate.wrappedValue, query: query.wrappedValue) else { return }
+        let isCurrentActivation = activating == nil || activating == entry.id
+        guard isCurrentActivation else { return }
         switch entry.kind {
         case .directory:
             navigate(to: entry.url, phase: phase, candidate: candidate, query: query)
@@ -159,22 +184,37 @@ public struct FilePicker {
     }
 
     private func cancel(phase: Binding<Phase>) {
-        guard phase.wrappedValue != .closed else { return }
+        guard !phase.wrappedValue.isClosed else { return }
         phase.wrappedValue = .closed
         cancel()
+    }
+
+    private func icon(for entry: FileEntry) -> String {
+        switch entry.kind {
+        case .directory: "▸"
+        case .file, .other, .unavailable: entry.isSymbolicLink ? "↗" : "·"
+        }
+    }
+
+    private func kindLabel(for entry: FileEntry) -> String {
+        switch entry.kind {
+        case .directory: "folder"
+        case .file: entry.isSymbolicLink ? "link" : ""
+        case .other, .unavailable: entry.isSymbolicLink ? "link" : "unavailable"
+        }
     }
 
     @ViewBuilder
     private func row(_ entry: FileEntry) -> some View {
         HStack(spacing: 1) {
-            Text(entry.kind == .directory ? "▸" : entry.isSymbolicLink ? "↗" : "·")
-                .foregroundStyle(entry.kind == .directory ? theme.colors.accent : theme.colors.mutedText)
+            Text(icon(for: entry))
+                .foregroundStyle(entry.kind.isDirectory ? theme.colors.accent : theme.colors.mutedText)
             Text(verbatim: entry.name).lineLimit(1).truncationMode(.middle)
             Spacer(minLength: 0)
-            Text(entry.kind == .directory ? "folder" : entry.isSymbolicLink ? "link" : entry.kind == .file ? "" : "unavailable")
+            Text(kindLabel(for: entry))
                 .foregroundStyle(theme.colors.mutedText).lineLimit(1)
         }
-        .foregroundStyle(entry.kind == .other || entry.kind == .unavailable ? theme.colors.mutedText : theme.colors.foreground)
+        .foregroundStyle(entry.kind.isSupported ? theme.colors.foreground : theme.colors.mutedText)
     }
 }
 
@@ -205,8 +245,12 @@ extension FilePicker: View {
             validateFile: { try await reader.validateFile(at: $0) }
         )
         let entry = currentEntry(phase: phase, candidate: candidate, query: query)
-        let canChoose: Bool = if case .browsing = phase { entry?.kind == .file } else { false }
-        let failed: Bool = if case .failed = phase { true } else { false }
+        let canChoose: Bool
+        switch phase {
+        case .browsing: canChoose = entry?.kind.isRegularFile == true
+        case .idle, .loading, .confirming, .failed, .closed: canChoose = false
+        }
+        let hasFailed = phase.hasFailed
 
         VStack(alignment: .leading, spacing: 0) {
             Text(verbatim: (phase.directory ?? initialDirectory).path)
@@ -226,19 +270,20 @@ extension FilePicker: View {
                     goUp(phase: phaseStorage, candidate: candidateStorage, query: queryStorage)
                     return .handled
                 }
-                .disabled(phase == .closed)
+                .disabled(phase.isClosed)
             HStack(spacing: 1) {
                 Button("Parent") { goUp(phase: phaseStorage, candidate: candidateStorage, query: queryStorage) }
                     .disabled(phase.directory == nil || phase.directory?.path == "/")
-                Button(failed ? "Retry" : "Choose") {
-                    if case .failed(let directory, _) = phaseStorage.wrappedValue {
+                Button(hasFailed ? "Retry" : "Choose") {
+                    switch phaseStorage.wrappedValue {
+                    case .failed(let directory, _):
                         navigate(to: directory, phase: phaseStorage, candidate: candidateStorage, query: queryStorage)
-                    } else {
+                    case .idle, .loading, .browsing, .confirming, .closed:
                         choose(phase: phaseStorage, candidate: candidateStorage, query: queryStorage)
                     }
                 }
-                .disabled(!failed && !canChoose)
-                Button("Cancel", role: .cancel) { cancel(phase: phaseStorage) }.disabled(phase == .closed)
+                .disabled(!hasFailed && !canChoose)
+                Button("Cancel", role: .cancel) { cancel(phase: phaseStorage) }.disabled(phase.isClosed)
             }
             KeyHints {
                 KeyHint("↑↓", "navigate")
@@ -253,7 +298,7 @@ extension FilePicker: View {
         }
         .onDisappear { phaseStorage.wrappedValue = .closed }
         .onChange(of: initialDirectory) {
-            guard phaseStorage.wrappedValue != .closed else { return }
+            guard !phaseStorage.wrappedValue.isClosed else { return }
             navigate(to: initialDirectory, phase: phaseStorage, candidate: candidateStorage, query: queryStorage)
         }
         .onChange(of: showsHiddenFiles) {

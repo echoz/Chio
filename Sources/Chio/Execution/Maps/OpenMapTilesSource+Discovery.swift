@@ -28,7 +28,7 @@ extension OpenMapTilesSource {
                 attributionURL: URL(string: "https://openfreemap.org"), license: "ODbL",
                 licenseURL: URL(string: "https://opendatacommons.org/licenses/odbl/1-0/")!,
                 sourceURL: URL(string: "https://tiles.openfreemap.org/planet")!, sourceRevision: template) else { continue }
-            if let source = try? Self(template: template, zoomRange: catalog.minzoom...catalog.maxzoom, metadata: metadata) {
+            if let source = try? OpenMapTilesSource(template: template, zoomRange: catalog.minzoom...catalog.maxzoom, metadata: metadata) {
                 return source
             }
         }

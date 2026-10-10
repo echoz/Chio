@@ -188,7 +188,7 @@ struct SearchableChecklistTests {
             }
             #expect(previous.focusedIdentity == row.focusedIdentity)
             for width in [32, 36] {
-                surface.updateSurfaceSize(.init(width: width, height: 18))
+                surface.updateSurfaceSize(CellSize(width: width, height: 18))
                 session.requestSurfaceRefresh()
                 let resized = try await recorder.wait(after: previous.sequence, description: "checklist at width \(width)") {
                     $0.raster.size.width == width && $0.checklistQuery("qu") && $0.checklistRowFocused("Quill")
@@ -422,7 +422,7 @@ private func withChecklistScene(
     perform: @MainActor (HostedSceneSession, HostedRasterSurface, HostedFrameRecorder) async throws -> Void
 ) async throws {
     let recorder = HostedFrameRecorder()
-    let surface = HostedRasterSurface(surfaceSize: .init(width: 60, height: height), appearance: .fallback,
+    let surface = HostedRasterSurface(surfaceSize: CellSize(width: 60, height: height), appearance: .fallback,
                                       onFrame: { recorder.receive($0) })
     let app = ChecklistTestApp(selection: selection, disabledIDs: disabledIDs, internalQuery: internalQuery,
                                writePolicy: writePolicy, longList: longList)

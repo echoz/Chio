@@ -241,7 +241,7 @@ enum MapboxVectorTileDecoder {
         if field.wire == 0 { try append(reader.integer(field)) }
         else {
             var packed = try reader.message(field)
-            while !packed.atEnd { try append(packed.varint()) }
+            while !packed.isAtEnd { try append(packed.varint()) }
         }
     }
 
@@ -317,12 +317,12 @@ enum MapboxVectorTileDecoder {
 
         init(bytes: [UInt8]) { self.bytes = bytes; offset = 0; end = bytes.count }
         init(bytes: [UInt8], offset: Int, end: Int) { self.bytes = bytes; self.offset = offset; self.end = end }
-        var atEnd: Bool { offset == end }
+        var isAtEnd: Bool { offset == end }
 
         struct Field { let number: UInt64; let wire: UInt64 }
 
         mutating func field() throws -> Field? {
-            if atEnd { return nil }
+            if isAtEnd { return nil }
             let key = try varint()
             guard key >> 3 > 0, key >> 3 <= 536_870_911 else { throw ValidationError.malformedWire }
             return Field(number: key >> 3, wire: key & 7)

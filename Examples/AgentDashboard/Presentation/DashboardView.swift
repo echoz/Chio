@@ -16,34 +16,41 @@ struct DashboardView {
     @State private var creationNumber = 0
     @State private var draft = AgentDraft()
     @State private var creationEntry = CreateAgentView.Entry.name
-    @State private var validateOnArrival = false
+    @State private var shouldValidateOnArrival = false
     @State private var isReturningFromCreation = false
     @State private var report: AgentReport?
     @State private var showsCommands = false
     @State private var commandQuery = ""
     @State private var pendingCommand: Command?
-    let animates: Bool
+    let shouldAnimate: Bool
 
     private enum Command {
         case create, run, report, theme, pause
     }
 
-    init(scenario: DashboardScenario = .normal, theme: ExampleTheme = .default, animates: Bool = true, paused: Bool = false) {
+    init(scenario: DashboardScenario = .normal, theme: ExampleTheme = .default, shouldAnimate: Bool = true, isPaused: Bool = false) {
         _agents = State(wrappedValue: scenario.agents)
-        _selection = State(wrappedValue: scenario == .noMatches ? nil : scenario.agents.first?.id)
+        _selection = State(wrappedValue: scenario.initialSelection)
         _query = State(wrappedValue: scenario.query)
         _themeChoice = State(wrappedValue: theme)
-        _isPaused = State(wrappedValue: paused)
-        self.animates = animates
+        _isPaused = State(wrappedValue: isPaused)
+        self.shouldAnimate = shouldAnimate
     }
 
     private var theme: ChioTheme { themeChoice.theme }
     private var selectedAgent: Agent? { agents.first { $0.id == selection } }
+    private var isPresentingOverlay: Bool {
+        if isCreating { return true }
+        let isPresentingReport = report != nil
+        if isPresentingReport { return true }
+        return showsCommands
+    }
+    private var canOpenCommands: Bool { !isPresentingOverlay }
 
     private func beginCreation() {
         draft = AgentDraft()
         creationEntry = .name
-        validateOnArrival = false
+        shouldValidateOnArrival = false
         creationNumber += 1
         isCreating = true
     }
@@ -121,12 +128,12 @@ struct DashboardView {
             }
             guard press.modifiers.subtracting(.shift).isEmpty else { return .handled }
             switch press.key {
-            case .character(let character) where creationEntry == .name:
+            case .character(let character) where creationEntry.isName:
                 draft = draft.replacing(name: draft.name + String(character))
-            case .space where creationEntry == .name:
+            case .space where creationEntry.isName:
                 draft = draft.replacing(name: draft.name + " ")
             case .backspace:
-                if creationEntry == .name && !draft.name.isEmpty {
+                if creationEntry.isName && !draft.name.isEmpty {
                     draft = draft.replacing(name: String(draft.name.dropLast()))
                 }
             case .tab:
@@ -174,11 +181,11 @@ struct DashboardView {
         if draft.issues.isEmpty {
             createAgent()
         } else {
-            validateOnArrival = true
+            shouldValidateOnArrival = true
         }
     }
 
-    private func header(compact: Bool) -> some View {
+    private func header(isCompact: Bool) -> some View {
         HStack(alignment: .top, spacing: 2) {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 1) {
@@ -190,14 +197,14 @@ struct DashboardView {
                     .lineLimit(1)
             }
             Spacer()
-            if !compact {
+            if !isCompact {
                 Text(isPaused ? "○ paused" : "● local demo")
                     .foregroundStyle(isPaused ? theme.colors.warning : theme.colors.success)
             }
         }
     }
 
-    private func footer(brief: Bool) -> some View {
+    private func footer(isBrief: Bool) -> some View {
         StatusBar {
             KeyHints {
                 if isSearching {
@@ -212,7 +219,7 @@ struct DashboardView {
                     KeyHint("/", "filter")
                     KeyHint("n", "new")
                     KeyHint("^K", "commands")
-                    if !brief {
+                    if !isBrief {
                         KeyHint("r", "run")
                         KeyHint("f", "fail")
                         KeyHint("p", isPaused ? "resume" : "pause")
@@ -229,26 +236,26 @@ struct DashboardView {
 extension DashboardView: View {
     var body: some View {
         GeometryReader { geometry in
-            let wide = geometry.size.width >= 88
-            let compact = !wide || geometry.size.height < 30
-            let brief = geometry.size.height < 26
+            let isWide = geometry.size.width >= 88
+            let isCompact = !isWide || geometry.size.height < 30
+            let isBrief = geometry.size.height < 26
             let layoutTheme = ChioTheme(
                 colors: theme.colors,
-                spacing: .init(sectionGap: compact ? 0 : 1),
+                spacing: ChioTheme.Spacing(sectionGap: isCompact ? 0 : 1),
                 treatments: theme.treatments
             )
-            let layout = wide
+            let layout = isWide
                 ? AnyLayout(HStackLayout(alignment: .top, spacing: 2))
                 : AnyLayout(VStackLayout(alignment: .leading, spacing: 1))
 
             VStack(alignment: .leading, spacing: 1) {
-                header(compact: geometry.size.width < 60)
+                header(isCompact: geometry.size.width < 60)
                 GeometryReader { contentGeometry in
                     layout {
                         GroupBox("Agents") {
                             ScrollViewReader { proxy in
                                 SearchableList(agents, selection: $selection, query: $query, searchText: \.name) { agent in
-                                    AgentRow(agent: agent, compact: compact)
+                                    AgentRow(agent: agent, isCompact: isCompact)
                                 }
                                 .filtering(.fuzzy)
                                 .onActivate { agent in
@@ -260,7 +267,7 @@ extension DashboardView: View {
                                     // Until the appended row renders, native list handlers
                                     // still hold the old items and can overwrite selection.
                                     if isReturningFromCreation { return .handled }
-                                    return isCreating || report != nil || showsCommands ? handleKey(press) : .ignored
+                                    return isPresentingOverlay ? handleKey(press) : .ignored
                                 }
                                 .onChange(of: agents.count) {
                                     if agents.last?.id == selection {
@@ -270,24 +277,24 @@ extension DashboardView: View {
                                 }
                             }
                         }
-                        .frame(width: wide ? max(35, (geometry.size.width - 6) / 2) : nil,
-                               height: wide || brief ? contentGeometry.size.height : max(8, contentGeometry.size.height - 7))
+                        .frame(width: isWide ? max(35, (geometry.size.width - 6) / 2) : nil,
+                               height: isWide || isBrief ? contentGeometry.size.height : max(8, contentGeometry.size.height - 7))
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
-                        if wide || !brief {
-                            AgentDetail(agent: selectedAgent, compact: compact, run: runSelected, fail: failSelected)
+                        if isWide || !isBrief {
+                            AgentDetail(agent: selectedAgent, isCompact: isCompact, run: runSelected, fail: failSelected)
                                 .onKeyPress(perform: handleKey)
                         }
                     }
                     .frame(width: contentGeometry.size.width, height: contentGeometry.size.height, alignment: .topLeading)
                 }
 
-                if let openedAgent, !brief {
+                if let openedAgent, !isBrief {
                     Text("Opened \(openedAgent) · activity shown above")
                         .foregroundStyle(theme.colors.secondaryText)
                         .layoutPriority(1)
                 }
-                footer(brief: brief)
+                footer(isBrief: isBrief)
                     .layoutPriority(1)
             }
             .padding(.horizontal, 2)
@@ -298,15 +305,15 @@ extension DashboardView: View {
         }
         .panel(id: "dashboard")
         .keyCommand("Commands", key: .character("k"), modifiers: .ctrl,
-                    isEnabled: !isCreating && report == nil && !showsCommands) {
-            guard !isCreating, report == nil, !showsCommands else { return }
+                    isEnabled: canOpenCommands) {
+            guard canOpenCommands else { return }
             commandQuery = ""
             showsCommands = true
         }
         .paletteCommand(name: "Create agent", description: "Set up a new simulated agent") {
             pendingCommand = .create
         }
-        .paletteCommand(name: selectedAgent?.phase == .failed ? "Retry selected agent" : "Run selected agent",
+        .paletteCommand(name: selectedAgent?.phase.isFailed == true ? "Retry selected agent" : "Run selected agent",
                         description: selectedAgent?.name ?? "Select an agent first",
                         isEnabled: selectedAgent != nil) {
             pendingCommand = .run
@@ -331,7 +338,7 @@ extension DashboardView: View {
         .paletteStyle(ChioPaletteStyle(theme: theme, initialQuery: commandQuery))
         .fullScreenCover(isPresented: $isCreating) {
             CreateAgentView(draft: $draft, themeChoice: $themeChoice, entry: creationEntry,
-                            validateOnArrival: validateOnArrival,
+                            shouldValidateOnArrival: shouldValidateOnArrival,
                             create: createAgent, cancel: { isCreating = false })
                 .id(creationNumber)
         }
@@ -339,7 +346,7 @@ extension DashboardView: View {
             AgentReportView(report: report, themeChoice: $themeChoice, close: { self.report = nil })
         }
         .task {
-            guard animates else { return }
+            guard shouldAnimate else { return }
             while !Task.isCancelled {
                 do { try await Task.sleep(for: .milliseconds(600)) }
                 catch { return }

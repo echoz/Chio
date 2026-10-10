@@ -3,23 +3,23 @@ import SwiftTUI
 struct DashboardApplication {
     let scenario: DashboardScenario
     let theme: ExampleTheme
-    let paused: Bool
+    let isPaused: Bool
 
     nonisolated init() {
-        self.init(scenario: .normal, theme: .default, paused: false)
+        self.init(scenario: .normal, theme: .default, isPaused: false)
     }
 
-    nonisolated init(scenario: DashboardScenario, theme: ExampleTheme, paused: Bool) {
+    nonisolated init(scenario: DashboardScenario, theme: ExampleTheme, isPaused: Bool) {
         self.scenario = scenario
         self.theme = theme
-        self.paused = paused
+        self.isPaused = isPaused
     }
 }
 
 extension DashboardApplication: SwiftTUIRuntime.App {
     var body: some Scene {
         WindowGroup("Chio") {
-            DashboardView(scenario: scenario, theme: theme, animates: true, paused: paused)
+            DashboardView(scenario: scenario, theme: theme, shouldAnimate: true, isPaused: isPaused)
         }
     }
 }

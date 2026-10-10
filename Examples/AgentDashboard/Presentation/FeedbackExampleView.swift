@@ -28,6 +28,34 @@ struct FeedbackExampleView {
             }
         }
 
+        var canPublish: Bool {
+            switch self {
+            case .ready, .published: true
+            case .publishing: false
+            }
+        }
+
+        var canDiscard: Bool {
+            switch self {
+            case .ready, .publishing: false
+            case .published: true
+            }
+        }
+
+        var isPublishing: Bool {
+            switch self {
+            case .ready, .published: false
+            case .publishing: true
+            }
+        }
+
+        func color(in theme: ChioTheme) -> Color {
+            switch self {
+            case .ready, .publishing: theme.colors.foreground
+            case .published: theme.colors.success
+            }
+        }
+
         var label: String {
             switch self {
             case .ready: "Ready to publish"
@@ -40,13 +68,13 @@ struct FeedbackExampleView {
     private var theme: ChioTheme { themeChoice.theme }
 
     private func publish() {
-        guard phase != .publishing else { return }
+        guard phase.canPublish else { return }
         showsToast = false
         prompt = .publish
     }
 
     private func discard() {
-        guard phase == .published else { return }
+        guard phase.canDiscard else { return }
         showsToast = false
         prompt = .discard
     }
@@ -74,13 +102,13 @@ struct FeedbackExampleView {
 
 extension FeedbackExampleView: View {
     var body: some View {
-        let short = terminalSize.height < 24
+        let isShort = terminalSize.height < 24
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 1) {
                 Text("chio").bold().foregroundStyle(theme.colors.accent)
                 Text("/ confirmation & feedback").foregroundStyle(theme.colors.secondaryText)
             }
-            if !short {
+            if !isShort {
                 Text("Small moments, considered details.").foregroundStyle(theme.colors.secondaryText)
                 Spacer().frame(height: 1)
             }
@@ -90,23 +118,23 @@ extension FeedbackExampleView: View {
                     Text("A local simulation. Nothing is sent.").foregroundStyle(theme.colors.secondaryText)
                     HStack(spacing: 1) {
                         Spinner(stage: phase.stage)
-                        Text(phase.label).foregroundStyle(phase == .published ? theme.colors.success : theme.colors.foreground)
+                        Text(phase.label).foregroundStyle(phase.color(in: theme))
                     }
                 }
             }
             HStack(spacing: 1) {
-                Button("Publish", action: publish).disabled(phase == .publishing)
-                Button("Discard", role: .destructive, action: discard).disabled(phase != .published)
+                Button("Publish", action: publish).disabled(!phase.canPublish)
+                Button("Discard", role: .destructive, action: discard).disabled(!phase.canDiscard)
             }
-            if !short {
+            if !isShort {
                 Text("Publish asks first. Discard becomes available after completion.")
                     .foregroundStyle(theme.colors.mutedText)
             }
             Spacer(minLength: 0)
-            if short { hints } else { StatusBar { hints } }
+            if isShort { hints } else { StatusBar { hints } }
         }
-        .padding(.horizontal, short ? 0 : 1)
-        .padding(.vertical, short ? 0 : 1)
+        .padding(.horizontal, isShort ? 0 : 1)
+        .padding(.vertical, isShort ? 0 : 1)
         .frame(maxWidth: 76, maxHeight: .infinity, alignment: .topLeading)
         .frame(width: terminalSize.width, height: terminalSize.height, alignment: .top)
         .confirmationDialog("Publish report?", isPresented: isPresented(.publish)) {
@@ -131,9 +159,9 @@ extension FeedbackExampleView: View {
                style: ChioToastStyle(theme: theme, tone: .success), duration: 3)
         .chioTheme(theme)
         .task(id: phase) {
-            guard phase == .publishing else { return }
+            guard phase.isPublishing else { return }
             do { try await Task.sleep(for: .seconds(1.5)) } catch { return }
-            guard !Task.isCancelled, phase == .publishing else { return }
+            guard !Task.isCancelled, phase.isPublishing else { return }
             phase = .published
             showsToast = true
         }

@@ -4,6 +4,64 @@ import Foundation
 import Testing
 
 struct MapDetailTests {
+    @Test("Every feature class keeps its detail admission, outline and simplification policy")
+    func featurePolicies() throws {
+        let camera = try MapCamera(center: MapCoordinate(latitude: 0, longitude: 0), longitudeSpan: 100)
+        let viewport = try MapViewport(columns: 100, rows: 40)
+        let kinds: [MapFeature.Kind] = [.land, .water, .park, .building, .road, .primaryRoad]
+        let policies: [(detail: MapDetail, admitted: [Bool], outlined: [Bool], tolerances: [Double])] = [
+            (.silhouette, [true, true, false, false, false, false], [true, true, false, true, true, true],
+             [1.5, 1.5, 0, 0, 0, 0]),
+            (.minimal, [true, true, false, false, false, true], [true, true, false, true, true, true],
+             [0.75, 0.75, 0, 0, 0, 0]),
+            (.abstract, [true, true, true, false, false, true], [true, true, false, true, true, true],
+             [0, 0, 0, 0, 0, 0]),
+            (.source, [true, true, true, true, true, true], [true, true, true, true, true, true],
+             [0, 0, 0, 0, 0, 0]),
+        ]
+        for policy in policies {
+            #expect(kinds.map { policy.detail.admits($0, camera: camera, viewport: viewport) } == policy.admitted)
+            #expect(kinds.map { policy.detail.outlines($0) } == policy.outlined)
+            #expect(kinds.map { policy.detail.shapeTolerance(for: $0) } == policy.tolerances)
+        }
+    }
+
+    @Test("Area thresholds are inclusive and other classes retain their explicit admission")
+    func areaPolicyBoundaries() {
+        let boundaries: [(detail: MapDetail, kind: MapFeature.Kind, minimum: Double)] = [
+            (.silhouette, .land, 2), (.silhouette, .water, 4),
+            (.minimal, .land, 2), (.minimal, .water, 4),
+            (.abstract, .land, 0.5), (.abstract, .water, 1), (.abstract, .park, 6),
+        ]
+        for boundary in boundaries {
+            #expect(!boundary.detail.admitsArea(boundary.minimum.nextDown, kind: boundary.kind))
+            #expect(boundary.detail.admitsArea(boundary.minimum, kind: boundary.kind))
+        }
+        let kinds: [MapFeature.Kind] = [.land, .water, .park, .building, .road, .primaryRoad]
+        let largeAreaPolicies: [(detail: MapDetail, admitted: [Bool])] = [
+            (.silhouette, [true, true, false, false, false, false]),
+            (.minimal, [true, true, false, false, false, true]),
+            (.abstract, [true, true, true, false, true, true]),
+            (.source, [true, true, true, true, true, true]),
+        ]
+        for policy in largeAreaPolicies {
+            #expect(kinds.map { policy.detail.admitsArea(100, kind: $0) } == policy.admitted)
+        }
+        #expect(kinds.allSatisfy { MapDetail.source.admitsArea(0, kind: $0) })
+    }
+
+    @Test("Abstract road admission requires readable ground scale and both allocation boundaries")
+    func roadPolicyBoundaries() throws {
+        let center = try MapCoordinate(latitude: 0, longitude: 0)
+        for (columns, rows, span, isAdmitted) in [(58, 16, 0.00625, true), (58, 16, 0.00626, false),
+                                                (57, 16, 0.001, false), (58, 15, 0.001, false)] {
+            let camera = try MapCamera(center: center, longitudeSpan: span)
+            let viewport = try MapViewport(columns: columns, rows: rows)
+            #expect(MapDetail.abstract.admits(.road, camera: camera, viewport: viewport) == isAdmitted)
+            #expect(MapDetail.abstract.admits(.primaryRoad, camera: camera, viewport: viewport))
+        }
+    }
+
     @Test("Detail levels are ordered, bounded in either direction and cyclic when advanced")
     func steps() throws {
         let levels: [MapDetail] = [.silhouette, .minimal, .abstract, .source]
@@ -64,13 +122,13 @@ struct MapDetailTests {
         let major = try road("major", kind: .primaryRoad)
         let building = try polygon("building", kind: .building, rings: [rectangle(20, 10, 80, 30)])
         let source = try MapDataset(features: [minor, major, building])
-        for (columns, rows, span, minorVisible) in [(100, 40, 0.03, false), (100, 40, 0.01, true),
+        for (columns, rows, span, isMinorVisible) in [(100, 40, 0.03, false), (100, 40, 0.01, true),
                                                    (200, 40, 0.02, true), (100, 40, 0.02, false),
                                                    (36, 18, 0.002, false), (100, 15, 0.002, false)] {
             let viewport = try MapViewport(columns: columns, rows: rows)
             let camera = try MapCamera(center: coordinate(0, 0), longitudeSpan: span)
             let prepared = try MapPreparation.prepare(dataset: source, camera: camera, viewport: viewport, detail: .abstract)
-            #expect(prepared.lines.contains { $0.featureID == "minor" } == minorVisible)
+            #expect(prepared.lines.contains { $0.featureID == "minor" } == isMinorVisible)
             #expect(prepared.lines.contains { $0.featureID == "major" })
             #expect(!prepared.polygons.contains { $0.kind == .building })
             #expect(!prepared.labels.contains { $0.featureID == "building" })
@@ -83,8 +141,8 @@ struct MapDetailTests {
             polygon("large", kind: .park, rings: [rectangle(20, 10, 24, 14)]),
             polygon("small", kind: .park, rings: [rectangle(30, 10, 31, 11)]),
             polygon("mostly-hole", kind: .park, rings: [rectangle(40, 10, 44, 14), rectangle(40.1, 10.1, 43.9, 13.9)]),
-            polygon("skinny", kind: .park, rings: [[.init(x: 10, y: 25), .init(x: 40, y: 35),
-                                                   .init(x: 40, y: 34.8), .init(x: 10, y: 25)]]),
+            polygon("skinny", kind: .park, rings: [[PreparedMap.Point(x: 10, y: 25), PreparedMap.Point(x: 40, y: 35),
+                                                   PreparedMap.Point(x: 40, y: 34.8), PreparedMap.Point(x: 10, y: 25)]]),
             polygon("mostly-offscreen", kind: .park, rings: [rectangle(-100, 10, 0.1, 14)]),
         ])
         let prepared = try prepare(source, detail: .abstract)
@@ -239,10 +297,10 @@ struct MapDetailTests {
     @Test("Lower levels change filled bays and matching outlines while abstract and source stay exact",
           arguments: [MapFeature.Kind.land, .water])
     func shapeGeneralization(kind: MapFeature.Kind) throws {
-        let bay: [PreparedMap.Point] = [.init(x: 10, y: 10), .init(x: 18, y: 10),
-                                       .init(x: 18, y: 10.5), .init(x: 22, y: 10.5),
-                                       .init(x: 22, y: 10), .init(x: 30, y: 10),
-                                       .init(x: 30, y: 30), .init(x: 10, y: 30), .init(x: 10, y: 10)]
+        let bay: [PreparedMap.Point] = [PreparedMap.Point(x: 10, y: 10), PreparedMap.Point(x: 18, y: 10),
+                                       PreparedMap.Point(x: 18, y: 10.5), PreparedMap.Point(x: 22, y: 10.5),
+                                       PreparedMap.Point(x: 22, y: 10), PreparedMap.Point(x: 30, y: 10),
+                                       PreparedMap.Point(x: 30, y: 30), PreparedMap.Point(x: 10, y: 30), PreparedMap.Point(x: 10, y: 10)]
         let dataset = try MapDataset(features: [polygon("bay", kind: kind, rings: [bay])])
         let captured = dataset
         let maps = try MapDetail.allCases.map { try prepare(dataset, detail: $0) }
@@ -290,8 +348,8 @@ struct MapDetailTests {
     }
 
     private func rectangle(_ left: Double, _ top: Double, _ right: Double, _ bottom: Double) -> [PreparedMap.Point] {
-        [.init(x: left, y: top), .init(x: right, y: top), .init(x: right, y: bottom),
-         .init(x: left, y: bottom), .init(x: left, y: top)]
+        [PreparedMap.Point(x: left, y: top), PreparedMap.Point(x: right, y: top), PreparedMap.Point(x: right, y: bottom),
+         PreparedMap.Point(x: left, y: bottom), PreparedMap.Point(x: left, y: top)]
     }
 
     private func coordinate(_ longitude: Double, _ latitude: Double) throws -> MapCoordinate {

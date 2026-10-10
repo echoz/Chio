@@ -14,7 +14,7 @@ public struct ChioToggleStyle {
 extension ChioToggleStyle: ToggleStyle {
     @MainActor
     public func makeBody(configuration: ToggleStyleConfiguration) -> some View {
-        let active = configuration.isEnabled && (configuration.focusActive || configuration.isPressed)
+        let isActive = configuration.isEnabled && (configuration.focusActive || configuration.isPressed)
         HStack(spacing: 1) {
             Text(configuration.focusActive && configuration.isEnabled ? "▌" : " ")
                 .foregroundStyle(theme.colors.accent)
@@ -27,7 +27,7 @@ extension ChioToggleStyle: ToggleStyle {
             }
             Spacer(minLength: 0)
         }
-        .background(active ? theme.colors.selectedSurface : theme.colors.surface)
+        .background(isActive ? theme.colors.selectedSurface : theme.colors.surface)
         .opacity(configuration.isEnabled ? 1 : 0.6)
     }
 }

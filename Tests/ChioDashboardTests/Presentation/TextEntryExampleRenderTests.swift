@@ -62,7 +62,7 @@ struct TextEntryExampleRenderTests {
         let syntheticPassword = "Fixture-password-482!"
         let rendered = DefaultRenderer().render(
             TextEntryExampleView(theme: appearance, initialPassword: syntheticPassword, initialNotes: "Local notes",
-                                 inputsDisabled: true).environment(\.terminalSize, size),
+                                 areInputsDisabled: true).environment(\.terminalSize, size),
             proposal: .init(width: size.width, height: size.height), frameInstant: .zero
         )
         let text = rendered.rasterSurface.lines.joined(separator: "\n")

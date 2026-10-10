@@ -7,7 +7,7 @@ struct DashboardRenderTests {
     @Test(arguments: [CellSize(width: 100, height: 30), CellSize(width: 100, height: 26),
                       CellSize(width: 100, height: 24), CellSize(width: 50, height: 30)])
     func normalAndNarrowDashboard(_ size: CellSize) {
-        let view = DashboardView(animates: false)
+        let view = DashboardView(shouldAnimate: false)
         let first = DefaultRenderer().render(view, proposal: .init(width: size.width, height: size.height), frameInstant: .zero)
         let second = DefaultRenderer().render(view, proposal: .init(width: size.width, height: size.height), frameInstant: .zero)
         #expect(first.rasterSurface == second.rasterSurface)
@@ -21,7 +21,7 @@ struct DashboardRenderTests {
     @Test("Short terminals retain visible selection and essential keyboard help")
     func shortDashboard() {
         let frame = DefaultRenderer().render(
-            DashboardView(animates: false),
+            DashboardView(shouldAnimate: false),
             proposal: .init(width: 36, height: 18), frameInstant: .zero
         )
         #expect(frame.rasterSurface.size == CellSize(width: 36, height: 18))
@@ -35,7 +35,7 @@ struct DashboardRenderTests {
     @Test(arguments: [DashboardScenario.empty, .noMatches, .failed, .completed])
     func deterministicScenarios(_ scenario: DashboardScenario) {
         let frame = DefaultRenderer().render(
-            DashboardView(scenario: scenario, animates: false),
+            DashboardView(scenario: scenario, shouldAnimate: false),
             proposal: .init(width: 100, height: 30), frameInstant: .zero
         )
         let text = frame.rasterSurface.lines.joined(separator: "\n")

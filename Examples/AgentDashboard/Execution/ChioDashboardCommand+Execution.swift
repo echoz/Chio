@@ -12,7 +12,7 @@ extension ChioDashboardCommand {
         let configuration = swiftTUIOptions.runtimeConfiguration()
         switch example {
         case .dashboard:
-            let app = DashboardApplication(scenario: scenario, theme: theme, paused: paused)
+            let app = DashboardApplication(scenario: scenario, theme: theme, isPaused: paused)
             try await WebHostCLIRunner.run(app, configuration: configuration)
         case .choices:
             try await WebHostCLIRunner.run(ChoiceApplication(theme: theme), configuration: configuration)
@@ -56,7 +56,7 @@ extension ChioDashboardCommand {
     private func renderSnapshot(_ example: DashboardExample, theme: ExampleTheme) throws -> String {
         switch example {
         case .dashboard:
-            render(DashboardView(scenario: scenario, theme: theme, animates: false, paused: paused))
+            render(DashboardView(scenario: scenario, theme: theme, shouldAnimate: false, isPaused: paused))
         case .choices:
             render(ChoiceExampleView(theme: theme))
         case .textEntry:

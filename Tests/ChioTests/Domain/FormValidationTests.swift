@@ -83,12 +83,19 @@ struct FormValidationTests {
                       Validation.Issue(field: .budget, message: "Positive")]
         let visited = Validation().recordingExit(from: .name)
         for original in [Validation(), visited, visited.submitting(issues).validation] {
-            let decoded = try JSONDecoder().decode(Validation.self, from: JSONEncoder().encode(original))
+            let encoded = try JSONEncoder().encode(original)
+            let fields = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+            #expect(fields["submissionAttempted"] is Bool)
+            #expect(fields["hasAttemptedSubmission"] == nil)
+            let decoded = try JSONDecoder().decode(Validation.self, from: encoded)
             #expect(decoded == original)
             for field in [Field.name, .budget] {
                 #expect(decoded.message(for: field, in: issues) == original.message(for: field, in: issues))
             }
         }
+        let historical = Data(#"{"visitedFields":[],"submissionAttempted":true}"#.utf8)
+        let decodedHistorical = try JSONDecoder().decode(Validation.self, from: historical)
+        #expect(decodedHistorical.message(for: .name, in: issues) == "Required")
         #expect(try JSONDecoder().decode([Validation.Issue].self, from: JSONEncoder().encode(issues)) == issues)
     }
 }

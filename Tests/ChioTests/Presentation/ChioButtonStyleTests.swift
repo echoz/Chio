@@ -10,7 +10,7 @@ struct ChioButtonStyleTests {
         let theme: ChioTheme = light ? .light : .default
         let backdrop = customSurface ? theme.colors.selectedSurface : theme.colors.surface
         let recorder = HostedFrameRecorder()
-        let surface = HostedRasterSurface(surfaceSize: .init(width: 36, height: 18), appearance: .fallback,
+        let surface = HostedRasterSurface(surfaceSize: CellSize(width: 36, height: 18), appearance: .fallback,
                                           onFrame: { recorder.receive($0) })
         let session = try HostedSceneSession(for: ButtonTestApp(light: light, backdrop: backdrop), sceneID: "button-focus", surface: surface)
         let run = Task { try await session.start() }

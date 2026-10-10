@@ -2,32 +2,37 @@
 /// Compute current issues in field order, excluding fields that are not shown.
 public struct FormValidation<Field: Hashable> {
     private let visitedFields: Set<Field>
-    private let submissionAttempted: Bool
+    private let hasAttemptedSubmission: Bool
+
+    private enum CodingKeys: String, CodingKey {
+        case visitedFields
+        case hasAttemptedSubmission = "submissionAttempted"
+    }
 
     public init() {
         visitedFields = []
-        submissionAttempted = false
+        hasAttemptedSubmission = false
     }
 
-    private init(visitedFields: Set<Field>, submissionAttempted: Bool) {
+    private init(visitedFields: Set<Field>, hasAttemptedSubmission: Bool) {
         self.visitedFields = visitedFields
-        self.submissionAttempted = submissionAttempted
+        self.hasAttemptedSubmission = hasAttemptedSubmission
     }
 
     /// Makes a field's current issue visible after focus leaves that field.
     public func recordingExit(from field: Field) -> Self {
-        Self(visitedFields: visitedFields.union([field]), submissionAttempted: submissionAttempted)
+        Self(visitedFields: visitedFields.union([field]), hasAttemptedSubmission: hasAttemptedSubmission)
     }
 
     /// Returns new visibility state and the first invalid field for native focus.
     /// The receiver and the application's current issues remain unchanged.
     public func submitting(_ issues: [Issue]) -> (validation: Self, firstInvalidField: Field?) {
-        (Self(visitedFields: visitedFields, submissionAttempted: true), issues.first?.field)
+        (Self(visitedFields: visitedFields, hasAttemptedSubmission: true), issues.first?.field)
     }
 
     /// Reads the first current issue after the field has been exited or submitted.
     public func message(for field: Field, in issues: [Issue]) -> String? {
-        guard submissionAttempted || visitedFields.contains(field) else { return nil }
+        guard hasAttemptedSubmission || visitedFields.contains(field) else { return nil }
         return issues.first { $0.field == field }?.message
     }
 

@@ -7,7 +7,7 @@ struct ChioPaletteStyleTests {
     @Test("Long command lists keep keyboard selection visible and activate from a batch")
     func selectionWindow() async throws {
         let recorder = HostedFrameRecorder()
-        let surface = HostedRasterSurface(surfaceSize: .init(width: 36, height: 18), appearance: .fallback,
+        let surface = HostedRasterSurface(surfaceSize: CellSize(width: 36, height: 18), appearance: .fallback,
                                           onFrame: { recorder.receive($0) })
         let session = try HostedSceneSession(for: PaletteStyleTestApp(), sceneID: "palette-style", surface: surface)
         let run = Task { try await session.start() }
@@ -50,7 +50,7 @@ struct ChioPaletteStyleTests {
             selectedSurface: Color(hexRGB: 0x654321)
         ))
         let recorder = HostedFrameRecorder()
-        let surface = HostedRasterSurface(surfaceSize: .init(width: 36, height: 18), appearance: .fallback,
+        let surface = HostedRasterSurface(surfaceSize: CellSize(width: 36, height: 18), appearance: .fallback,
                                           onFrame: { recorder.receive($0) })
         let session = try HostedSceneSession(for: PaletteStyleTestApp(theme: theme), sceneID: "palette-style", surface: surface)
         let run = Task { try await session.start() }

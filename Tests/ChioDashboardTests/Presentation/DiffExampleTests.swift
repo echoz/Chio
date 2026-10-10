@@ -44,7 +44,7 @@ struct DiffExampleTests {
     func unifiedGutters(appearance: ExampleTheme) throws {
         let file = try gutterFixture()
         let rendered = DefaultRenderer().render(
-            DiffFileView(file: file, split: false, minimumWidth: 60, sourceWidth: 9, activeHunk: 0)
+            DiffFileView(file: file, isSplit: false, minimumWidth: 60, sourceWidth: 9, activeHunk: 0)
                 .chioTheme(appearance.theme),
             proposal: .init(width: 80, height: 15)
         )
@@ -74,7 +74,7 @@ struct DiffExampleTests {
           arguments: ExampleTheme.allCases)
     func splitGutters(appearance: ExampleTheme) throws {
         let rendered = DefaultRenderer().render(
-            DiffFileView(file: try gutterFixture(), split: true, minimumWidth: 60,
+            DiffFileView(file: try gutterFixture(), isSplit: true, minimumWidth: 60,
                          sourceWidth: 9, activeHunk: 0).chioTheme(appearance.theme),
             proposal: .init(width: 80, height: 15)
         )
@@ -108,7 +108,7 @@ struct DiffExampleTests {
 
     @Test("Literal Unicode, tabs, trailing spaces and blank source rows survive native composition",
           arguments: [false, true])
-    func literalSource(split: Bool) throws {
+    func literalSource(isSplit: Bool) throws {
         let unicode = "  cafe\u{301} 界 🐚  "
         let old = "\told  "
         let new = "\tnew   "
@@ -123,7 +123,7 @@ struct DiffExampleTests {
         #expect(layoutText(for: new, width: nil).size.width == 7)
         let rendered = DefaultRenderer().render(
             ScrollView([.horizontal, .vertical]) {
-                DiffFileView(file: file, split: split, minimumWidth: 96, sourceWidth: sourceWidth, activeHunk: 0)
+                DiffFileView(file: file, isSplit: isSplit, minimumWidth: 96, sourceWidth: sourceWidth, activeHunk: 0)
             }.frame(width: 96, height: 15).chioTheme(.default),
             proposal: .init(width: 96, height: 15)
         )
@@ -135,7 +135,7 @@ struct DiffExampleTests {
         let route = try #require(rendered.semanticSnapshot.scrollRoutes.first)
         #expect(rendered.semanticSnapshot.scrollRoutes.count == 1)
         #expect(route.contentBounds.size.height == 6)
-        #expect(route.contentBounds.size.width == (split ? 95 : 96))
+        #expect(route.contentBounds.size.width == (isSplit ? 95 : 96))
         let text = rendered.rasterSurface.lines.joined(separator: "\n")
         #expect(text.contains("@@ -1,3 +1,3 @@"))
         #expect(text.contains("界") && text.contains("🐚"))
@@ -143,7 +143,7 @@ struct DiffExampleTests {
 
     @Test("Unsupported and empty content has explicit summaries rather than invented source rows",
           arguments: [2, 3, 4, 5], [false, true])
-    func summaries(index: Int, split: Bool) {
+    func summaries(index: Int, isSplit: Bool) {
         let expected = [
             2: "Empty file added.",
             3: "Empty file deleted.",
@@ -151,7 +151,7 @@ struct DiffExampleTests {
             5: "Binary content · no source lines to display.",
         ][index]!
         let rendered = DefaultRenderer().render(
-            DiffFileView(file: DiffFile.examples[index], split: split, minimumWidth: 100,
+            DiffFileView(file: DiffFile.examples[index], isSplit: isSplit, minimumWidth: 100,
                          sourceWidth: 0, activeHunk: nil).chioTheme(.default),
             proposal: .init(width: 100, height: 8)
         )
@@ -205,12 +205,12 @@ struct DiffExampleTests {
                     && $0.diffContains("@@ -79,6 +84,4 @@") && $0.diffReaderFocused
             }
             session.send(.key(.character("l"), modifiers: .ctrl))
-            let split = try await recorder.wait(after: wide.sequence, description: "split mode keeps the same last hunk") {
+            let splitFrame = try await recorder.wait(after: wide.sequence, description: "split mode keeps the same last hunk") {
                 $0.diffContains("Split · hunk 3/3") && $0.diffContains("@@ -79,6 +84,4 @@") && $0.diffReaderFocused
             }
             surface.updateSurfaceSize(.init(width: 36, height: 18))
             session.requestSurfaceRefresh()
-            let fallback = try await recorder.wait(after: split.sequence, description: "narrow terminals temporarily use unified rows") {
+            let fallback = try await recorder.wait(after: splitFrame.sequence, description: "narrow terminals temporarily use unified rows") {
                 $0.raster.size == CellSize(width: 36, height: 18) && $0.diffContains("Unified · hunk 3/3") && $0.diffReaderFocused
             }
             surface.updateSurfaceSize(.init(width: 100, height: 30))
@@ -239,7 +239,7 @@ struct DiffExampleTests {
 
     @Test("Native horizontal navigation reaches long source and file changes retain the reader")
     func longSourceAndFiles() async throws {
-        try await withDiffExample(initialSize: .init(width: 36, height: 18), initialFile: 1, split: false) {
+        try await withDiffExample(initialSize: CellSize(width: 36, height: 18), initialFile: 1, isSplit: false) {
             session, _, recorder in
             let ready = try await recorder.wait(description: "Unicode fixture starts in the compact native reader") {
                 $0.diffContains("Fixtures/Unicode.swift") && $0.diffContains("Unified · hunk 1/1") && $0.diffReaderFocused
@@ -305,31 +305,31 @@ private func cellText(_ cells: [RasterCell], from start: Int, count: Int) -> Str
 
 private struct DiffExampleTestApp {
     let initialFile: Int
-    let split: Bool
+    let isSplit: Bool
 
-    nonisolated init(initialFile: Int, split: Bool) {
+    nonisolated init(initialFile: Int, isSplit: Bool) {
         self.initialFile = initialFile
-        self.split = split
+        self.isSplit = isSplit
     }
 }
 
 extension DiffExampleTestApp: App {
-    nonisolated init() { self.init(initialFile: 0, split: true) }
+    nonisolated init() { self.init(initialFile: 0, isSplit: true) }
 
     var body: some Scene {
-        WindowGroup(id: "diff-example-tests") { DiffExampleView(initialFile: initialFile, split: split) }.exitOnKeys([])
+        WindowGroup(id: "diff-example-tests") { DiffExampleView(initialFile: initialFile, isSplit: isSplit) }.exitOnKeys([])
     }
 }
 
 @MainActor
 private func withDiffExample(
-    initialSize: CellSize = .init(width: 100, height: 30), initialFile: Int = 0, split: Bool = true,
+    initialSize: CellSize = CellSize(width: 100, height: 30), initialFile: Int = 0, isSplit: Bool = true,
     perform: @MainActor (HostedSceneSession, HostedRasterSurface, HostedFrameRecorder) async throws -> Void
 ) async throws {
     let recorder = HostedFrameRecorder()
     let surface = HostedRasterSurface(surfaceSize: initialSize, appearance: .fallback,
                                       onFrame: { recorder.receive($0) })
-    let app = DiffExampleTestApp(initialFile: initialFile, split: split)
+    let app = DiffExampleTestApp(initialFile: initialFile, isSplit: isSplit)
     let session = try HostedSceneSession(
         for: app, sceneID: "diff-example-tests", surface: surface,
         runtimeIssueSink: RuntimeIssueSink { issue in

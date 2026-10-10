@@ -3,7 +3,7 @@ extension DiffFile {
     static let examples: [Self] = {
         do {
             return [
-                try Self(id: "greeting", change: .modified(path: "Sources/Greeting.swift"), content: .text([
+                try DiffFile(id: "greeting", change: .modified(path: "Sources/Greeting.swift"), content: .text([
                     try Hunk(oldOffset: 0, newOffset: 0, blocks: [
                         .context("struct Greeting {"),
                         .context("    let name: String"),
@@ -27,7 +27,7 @@ extension DiffFile {
                         .context("// Ready for the next greeting."),
                     ]),
                 ])),
-                try Self(id: "unicode", change: .modified(path: "Fixtures/Unicode.swift"), content: .text([
+                try DiffFile(id: "unicode", change: .modified(path: "Fixtures/Unicode.swift"), content: .text([
                     try Hunk(oldOffset: 8, newOffset: 8, blocks: [
                         .context("// Café · 界 · 🐚"),
                         .change(removed: ["let title = \"café\"", "let blank = \"\"", ""],
@@ -37,10 +37,10 @@ extension DiffFile {
                         .context("// Trailing spaces stay here.   "),
                     ]),
                 ])),
-                try Self(id: "empty-added", change: .added(path: "Fixtures/empty.txt"), content: .text([])),
-                try Self(id: "empty-deleted", change: .deleted(path: "Fixtures/obsolete.txt"), content: .text([])),
-                try Self(id: "renamed", change: .renamed(from: "Docs/GettingStarted.md", to: "Docs/Guide.md"), content: .text([])),
-                try Self(id: "binary", change: .modified(path: "Assets/mark.png"), content: .binary),
+                try DiffFile(id: "empty-added", change: .added(path: "Fixtures/empty.txt"), content: .text([])),
+                try DiffFile(id: "empty-deleted", change: .deleted(path: "Fixtures/obsolete.txt"), content: .text([])),
+                try DiffFile(id: "renamed", change: .renamed(from: "Docs/GettingStarted.md", to: "Docs/Guide.md"), content: .text([])),
+                try DiffFile(id: "binary", change: .modified(path: "Assets/mark.png"), content: .binary),
             ]
         } catch {
             preconditionFailure("Invalid local diff fixture: \(error)")

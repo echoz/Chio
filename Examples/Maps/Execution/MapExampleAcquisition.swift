@@ -8,7 +8,10 @@ enum MapExampleAcquisition {
     case configured(OpenMapTilesSource)
 
     var isOnline: Bool {
-        if case .offline = self { false } else { true }
+        switch self {
+        case .offline: false
+        case .openFreeMap, .configured: true
+        }
     }
 
     func makeLoader() async throws -> MapTileLoader {

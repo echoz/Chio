@@ -51,18 +51,15 @@ focused corrections preserve native state ownership and valid public inputs.
 Meaningful optional selections/loading states and raw/projected/source models
 retain their distinct contracts; no broad consolidation was justified.
 
-Remaining audit cleanup is explicit, not a new component queue:
+The follow-up applies exhaustive owned-enum policies, concrete constructors,
+internal Boolean names and dedicated conformances across production and examples,
+with affected tests updated alongside their owners. Public labels, persisted keys,
+native state identity and rendering remain compatibility constraints.
 
-- Some owned enum policies still use comparisons, including
-  [map detail](../Sources/Chio/Domain/Maps/MapDetail.swift),
-  [HTTP resource limits](../Sources/Chio/Execution/Maps/MapHTTPClient.swift) and
-  [example fixtures](../Examples/Maps/Execution/MapFixtures.swift).
-- Inferred constructors, internal Boolean names and nonprivate inline
-  conformances have residual adoption work across production and test code.
-
-Apply these in their owning files with contract-preserving checks; avoid a
-mechanical repository-wide rewrite or changing public labels/encoding as
-incidental cleanup.
+Older untouched test fixtures can adopt constructor spelling when their behavior
+is next changed; they do not justify a separate rewrite. Intentional single-case
+filters, extensible upstream/raw-input switches, native wrappers and private
+nested conformances retain their documented roles.
 
 There is no committed broader component queue. Real application use of the
 public map remains useful validation.

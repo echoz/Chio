@@ -13,6 +13,46 @@ import Glibc
 #endif
 
 struct MapHTTPClientTests {
+    @Test("Resource policies retain exact byte bounds, request headers and MIME alternatives")
+    func resourcePolicies() async throws {
+        let policies: [(resource: MapHTTPClient.Resource, limit: Int, accept: String,
+                        accepted: [String], rejected: [String])] = [
+            (.catalog, 262_144, "application/json", ["application/json", "text/json", "APPLICATION/JSON"],
+             ["application/octet-stream", "application/x-protobuf", "text/html"]),
+            (.tile, 16_777_216, "application/vnd.mapbox-vector-tile, application/x-protobuf, application/octet-stream",
+             ["application/vnd.mapbox-vector-tile", "application/x-protobuf", "application/protobuf",
+              "application/octet-stream", "APPLICATION/X-PROTOBUF"], ["application/json", "text/json", "text/html"]),
+        ]
+        try await withServer { server in
+            for policy in policies {
+                for mime in policy.accepted {
+                    let response = try await bounded("accept \(mime)") {
+                        try await MapHTTPClient.fetch(server.url("/policy?mime=\(mime)&bytes=0"), resource: policy.resource)
+                    }
+                    #expect(response.data.isEmpty)
+                    #expect(response.headers["x-observed-accept"] == policy.accept)
+                    #expect(response.headers["x-observed-user-agent"] == "Chio OpenMapTiles")
+                }
+                for mime in policy.rejected {
+                    await #expect(throws: MapTileLoader.LoadingError.unexpectedContentType) {
+                        try await bounded("reject \(mime)") {
+                            try await MapHTTPClient.fetch(server.url("/policy?mime=\(mime)&bytes=0"), resource: policy.resource)
+                        }
+                    }
+                }
+                let exact = try await bounded("exact resource byte limit") {
+                    try await MapHTTPClient.fetch(server.url("/policy?mime=\(policy.accepted[0])&bytes=\(policy.limit)"), resource: policy.resource)
+                }
+                #expect(exact.data.count == policy.limit)
+                await #expect(throws: MapTileLoader.LoadingError.responseTooLarge) {
+                    try await bounded("over resource byte limit") {
+                        try await MapHTTPClient.fetch(server.url("/policy?mime=\(policy.accepted[0])&bytes=\(policy.limit + 1)"), resource: policy.resource)
+                    }
+                }
+            }
+        }
+    }
+
     @Test("Real localhost transport bounds decompressed bodies and rejects HTTP/MIME/redirect failures")
     func boundedHTTP() async throws {
         try await withServer { server in
@@ -83,13 +123,13 @@ struct MapHTTPClientTests {
             }
             defer { pending.cancel(); control.release() }
             try await bounded("redirect callback entered") {
-                while !control.entered { try await Task.sleep(for: .milliseconds(1)) }
+                while !control.hasEntered { try await Task.sleep(for: .milliseconds(1)) }
             }
             pending.cancel()
             // Observe the real Foundation task state, not a timed guess that caller
             // cancellation has reached the transport. The decision remains withheld.
             try await bounded("real pending-redirect transport cancellation") {
-                while !control.transportCancelled { try await Task.sleep(for: .milliseconds(1)) }
+                while !control.isTransportCancelled { try await Task.sleep(for: .milliseconds(1)) }
             }
             control.release()
             await #expect(throws: CancellationError.self) {
@@ -136,7 +176,7 @@ struct MapHTTPClientTests {
         let source = try await OpenMapTilesSource.fetchOpenFreeMap { url, resource in
             #expect(url.absoluteString == "https://tiles.openfreemap.org/planet")
             #expect(resource == .catalog)
-            return .init(data: catalog, headers: [:])
+            return MapHTTPClient.Response(data: catalog, headers: [:])
         }
         #expect(source.zoomRange == 0...14)
         #expect(source.metadata.sourceRevision == source.template)
@@ -146,7 +186,7 @@ struct MapHTTPClientTests {
                     #"{"tiles":["https://tiles.openfreemap.org/{z}/{x}/{y}.pbf"],"minzoom":15,"maxzoom":14}"#,
                     #"{"tiles":[],"minzoom":0,"maxzoom":14}"#, "garbage"] {
             await #expect(throws: MapTileLoader.LoadingError.invalidCatalog) {
-                try await OpenMapTilesSource.fetchOpenFreeMap { _, _ in .init(data: Data(bad.utf8), headers: [:]) }
+                try await OpenMapTilesSource.fetchOpenFreeMap { _, _ in MapHTTPClient.Response(data: Data(bad.utf8), headers: [:]) }
             }
         }
     }
@@ -177,8 +217,8 @@ struct MapHTTPClientTests {
     private final class RedirectGate: Sendable {
         private let task = Mutex<URLSessionTask?>(nil)
         private let releaseSignal = DispatchSemaphore(value: 0)
-        var entered: Bool { task.withLock { $0 != nil } }
-        var transportCancelled: Bool {
+        var hasEntered: Bool { task.withLock { $0 != nil } }
+        var isTransportCancelled: Bool {
             task.withLock { $0?.state == .canceling || $0?.state == .completed }
         }
         func intercept(_ task: URLSessionTask) {
@@ -337,13 +377,24 @@ struct MapHTTPClientTests {
         private static let script = #"""
 import sys
 print('fixture: entered; python=%s' % sys.executable, file=sys.stderr, flush=True)
-import gzip, http.server, socketserver, threading, time
+import gzip, http.server, socketserver, threading, time, urllib.parse
 print('fixture: imports complete', file=sys.stderr, flush=True)
 started = threading.Event()
 class Handler(http.server.BaseHTTPRequestHandler):
     def log_message(self, *args): pass
     def do_GET(self):
         path = self.path
+        if path.startswith('/policy?'):
+            query = urllib.parse.parse_qs(urllib.parse.urlsplit(path).query)
+            size = int(query['bytes'][0])
+            self.send_response(200)
+            if 'mime' in query: self.send_header('Content-Type', query['mime'][0])
+            self.send_header('X-Observed-Accept', self.headers.get('Accept', ''))
+            self.send_header('X-Observed-User-Agent', self.headers.get('User-Agent', ''))
+            self.send_header('Content-Length', str(size)); self.end_headers()
+            try: self.wfile.write(b'x' * size)
+            except (BrokenPipeError, ConnectionResetError): pass
+            return
         if path in ('/redirect', '/cross-host', '/scheme', '/loop'):
             location = {'/redirect':'/empty', '/loop':'/loop', '/cross-host':'http://localhost:%s/empty' % self.server.server_port, '/scheme':'https://127.0.0.1:%s/empty' % self.server.server_port}[path]
             self.send_response(302); self.send_header('Location', location); self.send_header('Content-Length','0'); self.end_headers(); return

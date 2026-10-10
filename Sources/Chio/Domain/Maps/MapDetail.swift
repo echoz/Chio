@@ -23,7 +23,12 @@ public enum MapDetail: String {
         }
     }
 
-    public var next: MapDetail { self == .source ? .silhouette : more }
+    public var next: MapDetail {
+        switch self {
+        case .silhouette, .minimal, .abstract: more
+        case .source: .silhouette
+        }
+    }
 
     public var levelNumber: Int {
         switch self {
@@ -37,7 +42,10 @@ public enum MapDetail: String {
     /// Provisional deviation in terminal-column widths, measured in physical space.
     /// Abstract and source retain the accepted polygon geometry exactly.
     func shapeTolerance(for kind: MapFeature.Kind) -> Double {
-        guard kind == .land || kind == .water else { return 0 }
+        switch kind {
+        case .land, .water: break
+        case .park, .building, .road, .primaryRoad: return 0
+        }
         switch self {
         case .silhouette: return 1.5
         case .minimal: return 0.75
@@ -50,9 +58,15 @@ public enum MapDetail: String {
         case .source:
             return true
         case .silhouette:
-            return kind == .land || kind == .water
+            switch kind {
+            case .land, .water: return true
+            case .park, .building, .road, .primaryRoad: return false
+            }
         case .minimal:
-            return kind == .land || kind == .water || kind == .primaryRoad
+            switch kind {
+            case .land, .water, .primaryRoad: return true
+            case .park, .building, .road: return false
+            }
         case .abstract:
             switch kind {
             case .building:
@@ -62,7 +76,10 @@ public enum MapDetail: String {
                 // Mercator scale varies with latitude; this is ground distance per column.
                 let metresPerCell = camera.longitudeSpan / Double(viewport.columns)
                     * .pi / 180 * 6_378_137 * cos(camera.center.latitude * .pi / 180)
-                return metresPerCell <= 12 && viewport.columns >= 58 && viewport.rows >= 16
+                let isScaleReadable = metresPerCell <= 12
+                let hasReadableWidth = viewport.columns >= 58
+                let hasReadableHeight = viewport.rows >= 16
+                return isScaleReadable && hasReadableWidth && hasReadableHeight
             case .land, .water, .park, .primaryRoad:
                 return true
             }
@@ -77,7 +94,11 @@ public enum MapDetail: String {
             switch kind {
             case .land: return visibleCellArea >= 2
             case .water: return visibleCellArea >= 4
-            case .primaryRoad: return self == .minimal
+            case .primaryRoad:
+                switch self {
+                case .silhouette: return false
+                case .minimal, .abstract, .source: return true
+                }
             case .park, .building, .road: return false
             }
         case .abstract:
@@ -92,7 +113,14 @@ public enum MapDetail: String {
     }
 
     func outlines(_ kind: MapFeature.Kind) -> Bool {
-        self == .source || kind != .park
+        switch self {
+        case .source: return true
+        case .silhouette, .minimal, .abstract:
+            switch kind {
+            case .park: return false
+            case .land, .water, .building, .road, .primaryRoad: return true
+            }
+        }
     }
 
     func labelLimit(columns: Int, rows: Int) -> Int {

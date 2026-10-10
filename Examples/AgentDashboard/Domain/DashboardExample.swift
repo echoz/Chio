@@ -26,6 +26,22 @@ enum DashboardExample {
         }
     }
 
+    var supportsDirectory: Bool {
+        switch self {
+        case .files: true
+        case .dashboard, .choices, .textEntry, .feedback, .keyboardHelp, .tabs,
+             .pagination, .viewport, .tree, .forms, .timers, .metrics, .inbox, .diff: false
+        }
+    }
+
+    var supportsSnapshot: Bool {
+        switch self {
+        case .files: false
+        case .dashboard, .choices, .textEntry, .feedback, .keyboardHelp, .tabs,
+             .pagination, .viewport, .tree, .forms, .timers, .metrics, .inbox, .diff: true
+        }
+    }
+
     var defaultTheme: ExampleTheme {
         switch self {
         case .metrics:

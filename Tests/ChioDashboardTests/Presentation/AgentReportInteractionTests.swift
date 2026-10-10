@@ -216,7 +216,7 @@ private struct ReportTestApp {
 
 extension ReportTestApp: App {
     var body: some Scene {
-        WindowGroup(id: "report-tests") { DashboardView(animates: false, paused: true) }
+        WindowGroup(id: "report-tests") { DashboardView(shouldAnimate: false, isPaused: true) }
             .exitOnKeys([])
     }
 }

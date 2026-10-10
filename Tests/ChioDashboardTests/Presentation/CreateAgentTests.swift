@@ -247,7 +247,7 @@ private struct CreationTestApp {
 
 extension CreationTestApp: App {
     var body: some Scene {
-        WindowGroup(id: "creation-tests") { DashboardView(animates: false, paused: true) }
+        WindowGroup(id: "creation-tests") { DashboardView(shouldAnimate: false, isPaused: true) }
             .exitOnKeys([])
     }
 }

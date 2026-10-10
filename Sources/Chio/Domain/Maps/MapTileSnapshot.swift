@@ -5,10 +5,14 @@ public struct MapTileSnapshot {
     public let requestedZoom: Int
 
     public init(request: MapTileRequest, source: MapSource, requestedZoom: Int) throws {
-        guard case .tiled(let coverage) = source.coverage,
-              (0...22).contains(requestedZoom), requestedZoom >= coverage.zoom,
-              coverage.covers(request)
-        else { throw MapValidationError.invalidTileSnapshot }
+        switch source.coverage {
+        case .worldwide, .boundedOfflineExtract: throw MapValidationError.invalidTileSnapshot
+        case .tiled(let coverage):
+            let isSupportedZoom = (0...22).contains(requestedZoom)
+            let isAtLeastAttainedZoom = requestedZoom >= coverage.zoom
+            guard isSupportedZoom, isAtLeastAttainedZoom else { throw MapValidationError.invalidTileSnapshot }
+            guard coverage.covers(request) else { throw MapValidationError.invalidTileSnapshot }
+        }
         self.request = request
         self.source = source
         self.requestedZoom = requestedZoom
@@ -16,8 +20,11 @@ public struct MapTileSnapshot {
 
     public var attainedZoom: Int {
         // Checked construction and decoding establish tiled coverage.
-        if case .tiled(let coverage) = source.coverage { return coverage.zoom }
-        preconditionFailure("A tile snapshot requires tiled coverage")
+        switch source.coverage {
+        case .tiled(let coverage): return coverage.zoom
+        case .worldwide, .boundedOfflineExtract:
+            preconditionFailure("A tile snapshot requires tiled coverage")
+        }
     }
 }
 

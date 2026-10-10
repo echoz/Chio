@@ -1,4 +1,4 @@
-public enum MapValidationError: Error, Equatable, Sendable {
+public enum MapValidationError {
     case invalidCoordinate
     case invalidCamera
     case invalidViewport
@@ -14,3 +14,7 @@ public enum MapValidationError: Error, Equatable, Sendable {
     case invalidTileSnapshot
     case tileLimitExceeded
 }
+
+extension MapValidationError: Error {}
+extension MapValidationError: Equatable {}
+extension MapValidationError: Sendable {}

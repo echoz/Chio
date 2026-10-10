@@ -16,7 +16,19 @@ enum DashboardScenario: String {
         }
     }
 
-    var query: String { self == .noMatches ? "xyz" : "" }
+    var query: String {
+        switch self {
+        case .noMatches: "xyz"
+        case .normal, .empty, .failed, .completed: ""
+        }
+    }
+
+    var initialSelection: Agent.ID? {
+        switch self {
+        case .noMatches: nil
+        case .normal, .empty, .failed, .completed: agents.first?.id
+        }
+    }
 }
 
 extension DashboardScenario: CaseIterable {}

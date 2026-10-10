@@ -10,7 +10,7 @@ struct ChioStyleRenderTests {
         let surface = DefaultRenderer().render(
             ProgressView(value: value, barWidth: 8) { EmptyView() } currentValueLabel: { EmptyView() }
                 .chioTheme(.default),
-            proposal: .init(width: 8, height: 1)
+            proposal: ProposedViewSize(width: 8, height: 1)
         ).rasterSurface
 
         let expected: String
@@ -45,7 +45,7 @@ struct ChioStyleRenderTests {
         let surface = DefaultRenderer().render(
             ProgressView(value: 0.5, barWidth: 8) { EmptyView() } currentValueLabel: { EmptyView() }
                 .chioTheme(theme),
-            proposal: .init(width: 8, height: 1)
+            proposal: ProposedViewSize(width: 8, height: 1)
         ).rasterSurface
 
         #expect(surface.lines == ["####...."])
@@ -59,8 +59,8 @@ struct ChioStyleRenderTests {
         let view = ProgressView(barWidth: 8)
             .chioTheme(.default)
             .environment(\.accessibilityReduceMotion, true)
-        let first = DefaultRenderer().render(view, proposal: .init(width: 8, height: 1))
-        let second = DefaultRenderer().render(view, proposal: .init(width: 8, height: 1))
+        let first = DefaultRenderer().render(view, proposal: ProposedViewSize(width: 8, height: 1))
+        let second = DefaultRenderer().render(view, proposal: ProposedViewSize(width: 8, height: 1))
         let cells = first.rasterSurface.cells.flatMap { $0 }
 
         #expect(first.rasterSurface.lines == second.rasterSurface.lines)
@@ -81,7 +81,7 @@ struct ChioStyleRenderTests {
         ))
         let surface = DefaultRenderer().render(
             GroupBox("Agents") { Text("Ready") }.chioTheme(theme),
-            proposal: .init(width: width, height: 7)
+            proposal: ProposedViewSize(width: width, height: 7)
         ).rasterSurface
 
         #expect(surface.lines.contains { $0.contains("Agents") })
@@ -105,7 +105,7 @@ struct ChioStyleRenderTests {
         ))
         let surface = DefaultRenderer().render(
             TextField("Search…", text: .constant(value)).chioTheme(theme),
-            proposal: .init(width: 16, height: 3)
+            proposal: ProposedViewSize(width: 16, height: 3)
         ).rasterSurface
 
         #expect(surface.lines.contains { $0.contains(value.isEmpty ? "Search…" : value) })
@@ -131,7 +131,7 @@ struct ChioStyleRenderTests {
                 Text($0.name)
             }
             .chioTheme(theme),
-            proposal: .init(width: 32, height: 10)
+            proposal: ProposedViewSize(width: 32, height: 10)
         ).rasterSurface
 
         #expect(surface.lines.contains { $0.contains("> Beta") })
@@ -149,12 +149,12 @@ struct ChioStyleRenderTests {
             SearchableList([RenderItem](), selection: .constant(nil), searchText: \.name) {
                 Text($0.name)
             }.chioTheme(.default),
-            proposal: .init(width: 60, height: 8)
+            proposal: ProposedViewSize(width: 60, height: 8)
         ).rasterSurface.lines.joined(separator: "\n")
         let unmatched = DefaultRenderer().render(
             SearchableList(RenderItem.fixtures, selection: .constant(nil), query: .constant("zzz"),
                            searchText: \.name) { Text($0.name) }.chioTheme(.default),
-            proposal: .init(width: 60, height: 8)
+            proposal: ProposedViewSize(width: 60, height: 8)
         ).rasterSurface.lines.joined(separator: "\n")
 
         #expect(empty.contains("Search…"))
@@ -174,10 +174,10 @@ struct ChioStyleRenderTests {
             .onSearchFocusChange { _ in }
             .onResultKeyPress { _ in .ignored }
         let filtered = DefaultRenderer().render(substring.chioTheme(.default),
-                                               proposal: .init(width: 60, height: 8))
+                                               proposal: ProposedViewSize(width: 60, height: 8))
             .rasterSurface.lines.joined(separator: "\n")
         let unmodified = DefaultRenderer().render(original.chioTheme(.default),
-                                                 proposal: .init(width: 60, height: 8))
+                                                 proposal: ProposedViewSize(width: 60, height: 8))
             .rasterSurface.lines.joined(separator: "\n")
         #expect(filtered.contains("0 of 2 items"))
         #expect(filtered.contains("No matches."))

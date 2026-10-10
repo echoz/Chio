@@ -23,13 +23,20 @@ struct MapFixtures {
         let streetAdapter = NormalizedGeoJSONMapAdapter(metadata: manifest.streetMetadata,
                                                       coverage: .boundedOfflineExtract(manifest.streetBounds))
         let tileAdapter = OpenMapTilesAdapter(tile: manifest.openFreeMapTile, metadata: manifest.openFreeMapMetadata)
-        return try Self(worldSource: worldAdapter.adapt(read("world", extension: "geojson")),
+        return try MapFixtures(worldSource: worldAdapter.adapt(read("world", extension: "geojson")),
                         streetSource: streetAdapter.adapt(read("singapore", extension: "geojson")),
                         openFreeMapSource: tileAdapter.adapt(read("openfreemap-singapore", extension: "pbf")))
     }
 
     func source(for scene: Scene, streetSource choice: StreetSource = .overpass) -> MapSource {
-        scene == .world ? worldSource : choice == .overpass ? streetSource : openFreeMapSource
+        switch scene {
+        case .world: worldSource
+        case .street:
+            switch choice {
+            case .overpass: streetSource
+            case .openfreemap: openFreeMapSource
+            }
+        }
     }
     func dataset(for scene: Scene, streetSource choice: StreetSource = .overpass) -> MapDataset {
         source(for: scene, streetSource: choice).dataset
@@ -37,14 +44,41 @@ struct MapFixtures {
 
     enum StreetSource: String {
         case overpass, openfreemap
-        var title: String { self == .overpass ? "Overpass" : "OpenFreeMap" }
+        var title: String {
+            switch self {
+            case .overpass: "Overpass"
+            case .openfreemap: "OpenFreeMap"
+            }
+        }
     }
 
     enum Scene: String {
         case world, street
 
-        var title: String { self == .world ? "World" : "Singapore · Marina Bay" }
-        var next: Self { self == .world ? .street : .world }
+        var title: String {
+            switch self {
+            case .world: "World"
+            case .street: "Singapore · Marina Bay"
+            }
+        }
+        func sourceTitle(streetSource: StreetSource) -> String {
+            switch self {
+            case .world: "Natural Earth"
+            case .street: streetSource.title
+            }
+        }
+        func sourceIdentifier(streetSource: StreetSource) -> String {
+            switch self {
+            case .world: "natural-earth"
+            case .street: streetSource.rawValue
+            }
+        }
+        var next: Self {
+            switch self {
+            case .world: .street
+            case .street: .world
+            }
+        }
         /// Demonstration locations and synthetic guides, independent of source geography.
         var overlays: MapOverlays {
             // These fixed fixtures exercise the same checked API as application input.

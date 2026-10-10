@@ -15,15 +15,18 @@ public struct MapSourceMetadata {
     public init(attribution: String, attributionURL: URL? = nil, license: String,
          licenseURL: URL, sourceURL: URL, sourceRevision: String) throws {
         for text in [attribution, license, sourceRevision] {
-            guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                  text.utf8.count <= 1_024,
-                  !text.unicodeScalars.contains(where: { CharacterSet.controlCharacters.contains($0) })
-            else { throw ValidationError.invalidText }
+            let hasVisibleText = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            guard hasVisibleText else { throw ValidationError.invalidText }
+            let isWithinTextLimit = text.utf8.count <= 1_024
+            guard isWithinTextLimit else { throw ValidationError.invalidText }
+            let hasNoControlCharacters = !text.unicodeScalars.contains(where: { CharacterSet.controlCharacters.contains($0) })
+            guard hasNoControlCharacters else { throw ValidationError.invalidText }
         }
         for url in [licenseURL, sourceURL] + [attributionURL].compactMap({ $0 }) {
-            guard ["https", "http"].contains(url.scheme?.lowercased() ?? ""),
-                  !(url.host ?? "").isEmpty, url.user == nil, url.password == nil
-            else { throw ValidationError.invalidURL }
+            let hasSupportedScheme = ["https", "http"].contains(url.scheme?.lowercased() ?? "")
+            let hasHost = !(url.host ?? "").isEmpty
+            let hasNoCredentials = url.user == nil && url.password == nil
+            guard hasSupportedScheme, hasHost, hasNoCredentials else { throw ValidationError.invalidURL }
         }
         self.attribution = attribution
         self.attributionURL = attributionURL
@@ -33,7 +36,7 @@ public struct MapSourceMetadata {
         self.sourceRevision = sourceRevision
     }
 
-    public enum ValidationError: Error, Equatable, Sendable {
+    public enum ValidationError {
         case invalidText, invalidURL
     }
 }
@@ -55,3 +58,7 @@ extension MapSourceMetadata: Codable {
                       sourceRevision: values.decode(String.self, forKey: .sourceRevision))
     }
 }
+
+extension MapSourceMetadata.ValidationError: Error {}
+extension MapSourceMetadata.ValidationError: Equatable {}
+extension MapSourceMetadata.ValidationError: Sendable {}

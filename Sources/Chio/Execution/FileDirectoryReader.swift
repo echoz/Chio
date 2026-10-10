@@ -50,8 +50,8 @@ actor FileDirectoryReader {
         }
 
         let sorted = entries.sorted { left, right in
-            if (left.kind == .directory) != (right.kind == .directory) {
-                return left.kind == .directory
+            if left.kind.isDirectory != right.kind.isDirectory {
+                return left.kind.isDirectory
             }
             let leftName = left.name.lowercased()
             let rightName = right.name.lowercased()
@@ -144,12 +144,22 @@ actor FileDirectoryReader {
         // URL.path can discard an encoded NUL on Foundation platforms. Decode the
         // complete encoded path before validating or passing it to pathname APIs.
         guard let encodedPath = URLComponents(url: url, resolvingAgainstBaseURL: false)?.percentEncodedPath,
-              let path = encodedPath.removingPercentEncoding,
-              url.isFileURL, url.baseURL == nil, path.hasPrefix("/"),
-              url.host == nil || url.host == "" || url.host == "localhost",
-              url.query == nil, url.fragment == nil, !path.contains("\0") else {
+              let path = encodedPath.removingPercentEncoding else {
             throw Failure.invalidLocation
         }
+        guard url.isFileURL else { throw Failure.invalidLocation }
+        let hasNoBaseURL = url.baseURL == nil
+        guard hasNoBaseURL else { throw Failure.invalidLocation }
+        let hasAbsolutePath = path.hasPrefix("/")
+        guard hasAbsolutePath else { throw Failure.invalidLocation }
+        let hasLocalHost = url.host == nil || url.host == "" || url.host == "localhost"
+        guard hasLocalHost else { throw Failure.invalidLocation }
+        let hasNoQuery = url.query == nil
+        guard hasNoQuery else { throw Failure.invalidLocation }
+        let hasNoFragment = url.fragment == nil
+        guard hasNoFragment else { throw Failure.invalidLocation }
+        let hasNoNullByte = !path.contains("\0")
+        guard hasNoNullByte else { throw Failure.invalidLocation }
         // Normalize dot components without resolving any link in the identity.
         var components: [Substring] = []
         for component in path.split(separator: "/") {

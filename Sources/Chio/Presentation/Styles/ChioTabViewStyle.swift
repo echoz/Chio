@@ -15,7 +15,7 @@ extension ChioTabViewStyle: TabViewStyle {
         let widths = configuration.options.map { tabWidth($0.label.displayText) }
         let available = max(0, configuration.availableWidth)
         if widths.reduce(0, +) <= available {
-            return .init(stripHeight: 2, visibleOptionIndices: Array(widths.indices), overflowMenu: nil)
+            return TabViewStylePresentation(stripHeight: 2, visibleOptionIndices: Array(widths.indices), overflowMenu: nil)
         }
 
         let triggerLabel = configuration.isOverflowMenuExpanded ? "More ▴" : "More ▾"
@@ -28,10 +28,10 @@ extension ChioTabViewStyle: TabViewStyle {
             leadingWidth += widths[index]
         }
         let overflow = Array(widths.indices.dropFirst(visible.count))
-        return .init(
+        return TabViewStylePresentation(
             stripHeight: 2,
             visibleOptionIndices: visible,
-            overflowMenu: .init(
+            overflowMenu: TabViewOverflowMenuPresentation(
                 triggerLeadingWidth: leadingWidth,
                 overflowIndices: overflow,
                 isExpanded: configuration.isOverflowMenuExpanded,
@@ -63,17 +63,17 @@ private struct ChioTabViewBody {
     let theme: ChioTheme
     @Environment(\.isEnabled) private var isEnabled
 
-    private func stripLabel(_ label: String, selected: Bool, focused: Bool, width: Int) -> some View {
+    private func stripLabel(_ label: String, isSelected: Bool, isFocused: Bool, width: Int) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(verbatim: " " + label + " ")
-                .bold(selected)
-                .foregroundStyle(selected ? theme.colors.accent : theme.colors.foreground)
+                .bold(isSelected)
+                .foregroundStyle(isSelected ? theme.colors.accent : theme.colors.foreground)
                 .lineLimit(1)
                 .truncationMode(.tail)
                 .frame(width: width, height: 1, alignment: .leading)
-                .background(focused && isEnabled ? theme.colors.selectedSurface : theme.colors.surface)
-            Text(verbatim: String(repeating: selected ? "━" : "─", count: width))
-                .foregroundStyle(selected ? theme.colors.accent : theme.colors.border)
+                .background(isFocused && isEnabled ? theme.colors.selectedSurface : theme.colors.surface)
+            Text(verbatim: String(repeating: isSelected ? "━" : "─", count: width))
+                .foregroundStyle(isSelected ? theme.colors.accent : theme.colors.border)
                 .frame(width: width, height: 1, alignment: .leading)
         }
         .fixedSize(horizontal: true, vertical: true)
@@ -123,14 +123,14 @@ extension ChioTabViewBody: View {
             HStack(alignment: .top, spacing: 0) {
                 ForEach(configuration.visibleItems, id: \.index) { item in
                     item.route {
-                        stripLabel(item.label.displayText, selected: item.isSelected, focused: item.isFocused,
+                        stripLabel(item.label.displayText, isSelected: item.isSelected, isFocused: item.isFocused,
                                    width: layoutText(for: item.label.displayText, width: nil).size.width + 2)
                     }
                 }
                 if let trigger = configuration.overflowTrigger, configuration.availableWidth > 0 {
                     trigger.route {
-                        stripLabel(trigger.label, selected: trigger.isSelected,
-                                   focused: trigger.isFocused && configuration.showsFocusEffect,
+                        stripLabel(trigger.label, isSelected: trigger.isSelected,
+                                   isFocused: trigger.isFocused && configuration.showsFocusEffect,
                                    width: min(configuration.availableWidth,
                                               layoutText(for: trigger.label, width: nil).size.width + 2))
                     }
@@ -151,7 +151,7 @@ extension ChioTabViewBody: View {
                     // A bordered row needs two border cells and at least one content cell.
                     if availableRows > 0, width >= 3 {
                         overflowMenu(width: width, height: min(configuration.overflowItems.count, availableRows))
-                            .padding(.init(top: configuration.presentation.stripHeight, leading: leading,
+                            .padding(EdgeInsets(top: configuration.presentation.stripHeight, leading: leading,
                                            bottom: 0, trailing: 0))
                     }
                 }

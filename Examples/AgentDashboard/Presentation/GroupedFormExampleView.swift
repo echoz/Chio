@@ -14,14 +14,29 @@ struct GroupedFormExampleView {
     @FocusState private var focus: RunSettingsDraft.Field?
 
     // A draft override supports layout probes; the saved baseline remains the defaults.
-    init(theme: ExampleTheme = .default, initialDraft: RunSettingsDraft = .init()) {
+    init(theme: ExampleTheme = .default, initialDraft: RunSettingsDraft = RunSettingsDraft()) {
         _themeChoice = State(wrappedValue: theme)
         _draft = State(wrappedValue: initialDraft)
     }
 
-    private enum Feedback: Equatable { case editing, saved, rejected, cancelled }
+    private enum Feedback: Equatable {
+        case editing, saved, rejected, cancelled
+
+        var isRejected: Bool {
+            switch self {
+            case .rejected: true
+            case .editing, .saved, .cancelled: false
+            }
+        }
+        var isCancelled: Bool {
+            switch self {
+            case .cancelled: true
+            case .editing, .saved, .rejected: false
+            }
+        }
+    }
     private var theme: ChioTheme { themeChoice.theme }
-    private var short: Bool { terminalSize.height < 24 }
+    private var isShort: Bool { terminalSize.height < 24 }
 
     private var name: Binding<String> {
         let storage = $draft
@@ -51,8 +66,14 @@ struct GroupedFormExampleView {
         })
     }
 
+    private var hasRejectedIssues: Bool {
+        // Preserve the lazy validation query when feedback has another state.
+        guard feedback.isRejected else { return false }
+        return !draft.issues.isEmpty
+    }
+
     private var status: String {
-        if feedback == .rejected && !draft.issues.isEmpty { return "Not saved · check the fields" }
+        if hasRejectedIssues { return "Not saved · check the fields" }
         if draft != savedDraft { return "Unsaved changes" }
         switch feedback {
         case .cancelled: return "Cancelled · saved values restored"
@@ -92,7 +113,7 @@ struct GroupedFormExampleView {
         VStack(alignment: .leading, spacing: 1) {
             GroupBox("Workspace") {
                 VStack(alignment: .leading, spacing: 1) {
-                    FormField("Workspace name", description: short ? "" : "Required · up to 32 characters",
+                    FormField("Workspace name", description: isShort ? "" : "Required · up to 32 characters",
                               error: validation.message(for: .name, in: draft.issues)) {
                         TextField("Workspace name", text: name)
                             .accessibilityLabel("Workspace name")
@@ -103,20 +124,20 @@ struct GroupedFormExampleView {
             }
             GroupBox("Automation") {
                 VStack(alignment: .leading, spacing: 1) {
-                    FormField("Automatic runs", description: short ? "" : "Settings only · no scheduler is started") {
+                    FormField("Automatic runs", description: isShort ? "" : "Settings only · no scheduler is started") {
                         Toggle("Automatic runs", isOn: automaticRuns)
                             .focused($focus, equals: .automaticRuns)
                     }
                     .id(RunSettingsDraft.Field.automaticRuns)
                     if draft.automaticRuns {
-                        FormField("Interval (minutes)", description: short ? "" : "Whole minutes · 1–60",
+                        FormField("Interval (minutes)", description: isShort ? "" : "Whole minutes · 1–60",
                                   error: validation.message(for: .interval, in: draft.issues)) {
                             TextField("Interval", text: interval)
                                 .accessibilityLabel("Interval")
                                 .focused($focus, equals: .interval)
                         }
                         .id(RunSettingsDraft.Field.interval)
-                        FormField("Timeout (minutes)", description: short ? "" : "Must be shorter than the interval",
+                        FormField("Timeout (minutes)", description: isShort ? "" : "Must be shorter than the interval",
                                   error: validation.message(for: .timeout, in: draft.issues)) {
                             TextField("Timeout", text: timeout)
                                 .accessibilityLabel("Timeout")
@@ -150,12 +171,12 @@ extension GroupedFormExampleView: View {
                     Text("chio").bold().foregroundStyle(theme.colors.accent)
                     Text("/ grouped forms").foregroundStyle(theme.colors.secondaryText)
                 }
-                if !short {
+                if !isShort {
                     Text("Run settings, kept together.").foregroundStyle(theme.colors.secondaryText)
                 }
                 ScrollView { fields }
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                Text(status).foregroundStyle(feedback == .rejected && !draft.issues.isEmpty
+                Text(status).foregroundStyle(hasRejectedIssues
                                              ? theme.colors.error : theme.colors.secondaryText)
                     .lineLimit(1)
                 Text("Saved: \(savedDraft.summary)").foregroundStyle(theme.colors.mutedText).lineLimit(1)
@@ -163,10 +184,10 @@ extension GroupedFormExampleView: View {
                     Button("Save", action: save)
                     Button("Cancel", action: cancel)
                 }
-                if short { hints } else { StatusBar { hints } }
+                if isShort { hints } else { StatusBar { hints } }
             }
-            .padding(.horizontal, short ? 0 : 1)
-            .padding(.vertical, short ? 0 : 1)
+            .padding(.horizontal, isShort ? 0 : 1)
+            .padding(.vertical, isShort ? 0 : 1)
             .frame(maxWidth: 76, maxHeight: .infinity, alignment: .topLeading)
             .frame(width: terminalSize.width, height: terminalSize.height, alignment: .top)
             .chioTheme(theme)
@@ -174,9 +195,20 @@ extension GroupedFormExampleView: View {
             .onSubmit(save)
             .onChange(of: focus) { old, new in
                 // Restoring the saved draft is not a visit to the abandoned field.
-                let restoringSavedFocus = feedback == .cancelled && draft == savedDraft && new == .name
-                if !restoringSavedFocus {
-                    if feedback == .cancelled { feedback = .editing }
+                let isRestoringSavedFocus: Bool
+                if feedback.isCancelled {
+                    let hasSavedDraft = draft == savedDraft
+                    if hasSavedDraft {
+                        let isReturningToName = new == .name
+                        isRestoringSavedFocus = isReturningToName
+                    } else {
+                        isRestoringSavedFocus = false
+                    }
+                } else {
+                    isRestoringSavedFocus = false
+                }
+                if !isRestoringSavedFocus {
+                    if feedback.isCancelled { feedback = .editing }
                     if let old { validation = validation.recordingExit(from: old) }
                 }
                 revealFocusedError(using: proxy)
@@ -188,8 +220,10 @@ extension GroupedFormExampleView: View {
                 revealFocusedError(using: proxy)
             }
             .onChange(of: draft.automaticRuns) {
-                if !draft.automaticRuns && (focus == .interval || focus == .timeout) {
-                    focus = .automaticRuns
+                guard !draft.automaticRuns else { return }
+                switch focus {
+                case .interval, .timeout: focus = .automaticRuns
+                case .name, .automaticRuns, nil: break
                 }
             }
             .onKeyPress { press in

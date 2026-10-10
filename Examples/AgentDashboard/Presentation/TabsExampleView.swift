@@ -7,7 +7,7 @@ struct TabsExampleView {
     @Environment(\.requestTermination) private var requestTermination
     @State private var themeChoice: ExampleTheme
     @State private var section = Section.overview
-    @FocusState private var stripFocused: Bool
+    @FocusState private var isStripFocused: Bool
 
     init(theme: ExampleTheme = .default) {
         _themeChoice = State(wrappedValue: theme)
@@ -19,7 +19,7 @@ struct TabsExampleView {
 
     private var theme: ChioTheme { themeChoice.theme }
     private var hints: [ShortcutHint] {
-        let navigation = stripFocused
+        let navigation = isStripFocused
             ? [ShortcutHint("←→", "choose"), ShortcutHint("↵", "open"), ShortcutHint("↓", "more")]
             : [ShortcutHint("F6", "tabs")]
         return navigation + [ShortcutHint("tab", "focus"), ShortcutHint("^T", "theme"), ShortcutHint("^Q", "quit")]
@@ -28,14 +28,14 @@ struct TabsExampleView {
 
 extension TabsExampleView: View {
     var body: some View {
-        let short = terminalSize.height < 24
-        let stripFocus = $stripFocused
+        let isShort = terminalSize.height < 24
+        let stripFocus = $isStripFocused
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 1) {
                 Text("chio").bold().foregroundStyle(theme.colors.accent)
                 Text("/ workspace tabs").foregroundStyle(theme.colors.secondaryText)
             }
-            if !short {
+            if !isShort {
                 Text("Choose a section. Your drafts stay where you left them.")
                     .foregroundStyle(theme.colors.secondaryText)
                 Spacer().frame(height: 1)
@@ -47,13 +47,13 @@ extension TabsExampleView: View {
                 Tab("Activity", value: Section.activity) { ActivityTab() }
                 Tab("Settings", value: Section.settings) { SettingsTab() }
             }
-            .focused($stripFocused)
-            .defaultFocus($stripFocused, true)
+            .focused($isStripFocused)
+            .defaultFocus($isStripFocused, true)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            if short { KeyHints(hints) } else { StatusBar { KeyHints(hints) } }
+            if isShort { KeyHints(hints) } else { StatusBar { KeyHints(hints) } }
         }
-        .padding(.horizontal, short ? 0 : 1)
-        .padding(.vertical, short ? 0 : 1)
+        .padding(.horizontal, isShort ? 0 : 1)
+        .padding(.vertical, isShort ? 0 : 1)
         .frame(maxWidth: 76, maxHeight: .infinity, alignment: .topLeading)
         .frame(width: terminalSize.width, height: terminalSize.height, alignment: .top)
         .onKeyPress { press in

@@ -11,7 +11,7 @@ struct SearchableChecklistRenderTests {
             SearchableChecklist(ChecklistRenderItem.fixtures, selection: .constant(Set(["a", "b"])),
                                 searchText: \.name, isEnabled: { $0.id != "b" }) { Text($0.name) }
                 .chioTheme(theme),
-            proposal: .init(width: width, height: width == 100 ? 30 : 18)
+            proposal: ProposedViewSize(width: width, height: width == 100 ? 30 : 18)
         )
         let surface = rendered.rasterSurface
         #expect(surface.size.width <= width)
@@ -42,7 +42,7 @@ struct SearchableChecklistRenderTests {
             SearchableChecklist(emptySource ? [] : ChecklistRenderItem.fixtures,
                                 selection: .constant(Set(["a"])), query: .constant("zzz"),
                                 searchText: \.name) { Text($0.name) }.chioTheme(.default),
-            proposal: .init(width: 36, height: 18)
+            proposal: ProposedViewSize(width: 36, height: 18)
         ).rasterSurface
         let text = surface.lines.joined(separator: " ")
         #expect(text.contains(emptySource ? "No items yet." : "No matches."))
@@ -56,9 +56,9 @@ struct SearchableChecklistRenderTests {
                                            query: .constant("aa"), searchText: \.name) { Text($0.name) }
         let substring = original.filtering(.substring)
         let fuzzyText = DefaultRenderer().render(original.chioTheme(.default),
-                                                proposal: .init(width: 36, height: 18)).rasterSurface.lines
+                                                proposal: ProposedViewSize(width: 36, height: 18)).rasterSurface.lines
         let substringText = DefaultRenderer().render(substring.chioTheme(.default),
-                                                    proposal: .init(width: 36, height: 18)).rasterSurface.lines
+                                                    proposal: ProposedViewSize(width: 36, height: 18)).rasterSurface.lines
         #expect(fuzzyText.contains { $0.contains("Alpha") })
         #expect(fuzzyText.contains { $0.contains("1 of 3 items · 0 selected") })
         #expect(substringText.contains { $0.contains("No matches.") })

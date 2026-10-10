@@ -5,31 +5,31 @@ struct PreparedMap {
     let labels: [Label]
     let statistics: Statistics
 
-    struct Point: Hashable, Sendable {
+    struct Point {
         let x: Double
         let y: Double
     }
 
-    struct Line: Hashable, Sendable {
+    struct Line {
         let featureID: String
         let kind: MapFeature.Kind
         let points: [Point]
     }
 
-    struct Polygon: Hashable, Sendable {
+    struct Polygon {
         let featureID: String
         let kind: MapFeature.Kind
         let rings: [[Point]]
     }
 
-    struct Label: Hashable, Sendable {
+    struct Label {
         let featureID: String
         let kind: MapFeature.Kind
         let text: String
         let position: Point
     }
 
-    struct Statistics: Hashable, Sendable {
+    struct Statistics {
         let sourceVertices: Int
         let preparedVertices: Int
         let visibleFeatures: Int
@@ -38,3 +38,18 @@ struct PreparedMap {
 
 extension PreparedMap: Hashable {}
 extension PreparedMap: Sendable {}
+
+extension PreparedMap.Point: Hashable {}
+extension PreparedMap.Point: Sendable {}
+
+extension PreparedMap.Line: Hashable {}
+extension PreparedMap.Line: Sendable {}
+
+extension PreparedMap.Polygon: Hashable {}
+extension PreparedMap.Polygon: Sendable {}
+
+extension PreparedMap.Label: Hashable {}
+extension PreparedMap.Label: Sendable {}
+
+extension PreparedMap.Statistics: Hashable {}
+extension PreparedMap.Statistics: Sendable {}

@@ -5,7 +5,7 @@ import SwiftTUI
 struct AgentDetail {
     @Environment(\.chioTheme) private var theme
     let agent: Agent?
-    let compact: Bool
+    let isCompact: Bool
     let run: @MainActor @Sendable () -> Void
     let fail: @MainActor @Sendable () -> Void
 }
@@ -16,20 +16,20 @@ extension AgentDetail: View {
             VStack(alignment: .leading, spacing: 1) {
                 if let agent {
                     Text(agent.name).bold().foregroundStyle(theme.colors.heading)
-                    if !compact {
+                    if !isCompact {
                         Text(agent.summary).foregroundStyle(theme.colors.secondaryText)
                     }
-                    if case .running(let progress) = agent.phase {
-                        ProgressView(value: progress.fraction, barWidth: compact ? 20 : 30) {
+                    if let progress = agent.phase.runningProgress {
+                        ProgressView(value: progress.fraction, barWidth: isCompact ? 20 : 30) {
                             Text("Running test suite")
                         } currentValueLabel: {
                             Text("\(Int(progress.fraction * 100))%")
                         }
                     } else {
                         Text("\(agent.phase.symbol) \(agent.phase.label)")
-                            .foregroundStyle(agent.phase == .failed ? theme.colors.error : theme.colors.success)
+                            .foregroundStyle(agent.phase.isFailed ? theme.colors.error : theme.colors.success)
                     }
-                    if !compact {
+                    if !isCompact {
                         Divider().foregroundStyle(theme.colors.border)
                         VStack(alignment: .leading, spacing: 0) {
                             ForEach(Array(agent.activity.enumerated()), id: \.offset) { entry in
@@ -37,7 +37,7 @@ extension AgentDetail: View {
                             }
                         }
                     }
-                    if !compact {
+                    if !isCompact {
                         HStack(spacing: 2) {
                             Button("Run again", action: run)
                             Button("Simulate failure", action: fail)

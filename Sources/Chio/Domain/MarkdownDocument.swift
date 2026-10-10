@@ -64,9 +64,9 @@ public struct MarkdownDocument {
         init(rawValue: UInt8) {
             self.rawValue = rawValue
         }
-        static let strong = Self(rawValue: 1 << 0)
-        static let emphasis = Self(rawValue: 1 << 1)
-        static let code = Self(rawValue: 1 << 2)
+        static let strong = Attributes(rawValue: 1 << 0)
+        static let emphasis = Attributes(rawValue: 1 << 1)
+        static let code = Attributes(rawValue: 1 << 2)
     }
 }
 

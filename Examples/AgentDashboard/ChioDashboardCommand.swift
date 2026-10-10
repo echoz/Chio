@@ -114,12 +114,12 @@ struct ChioDashboardCommand {
             }
         }
         if directory != nil {
-            guard case .files = example else {
+            guard example.supportsDirectory else {
                 throw ValidationError("--directory is available only with --files.")
             }
         }
         if snapshot {
-            if case .files = example {
+            if !example.supportsSnapshot {
                 throw Self.fileSnapshotError
             }
         }

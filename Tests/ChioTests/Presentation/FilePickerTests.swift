@@ -556,7 +556,7 @@ private func withFilePickerScene(
     perform: @MainActor (HostedSceneSession, HostedRasterSurface, HostedFrameRecorder) async throws -> Void
 ) async throws {
     let recorder = HostedFrameRecorder()
-    let surface = HostedRasterSurface(surfaceSize: .init(width: width, height: height), appearance: .fallback,
+    let surface = HostedRasterSurface(surfaceSize: CellSize(width: width, height: height), appearance: .fallback,
                                       onFrame: { recorder.receive($0) })
     let app = FilePickerTestApp(directory: directory, gate: gate, allowedExtensions: allowedExtensions,
                                 allowsSelection: allowsSelection, light: light)

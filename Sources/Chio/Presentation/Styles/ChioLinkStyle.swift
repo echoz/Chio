@@ -12,12 +12,12 @@ public struct ChioLinkStyle {
 extension ChioLinkStyle: LinkStyle {
     @MainActor
     public func resolvePresentation(for configuration: LinkStyleConfiguration) -> LinkStylePresentation {
-        let active = configuration.isEnabled && (configuration.focusActive || configuration.isPressed)
+        let isActive = configuration.isEnabled && (configuration.focusActive || configuration.isPressed)
         return LinkStylePresentation(
             foregroundStyle: AnyShapeStyle(configuration.isEnabled ? theme.colors.accent : theme.colors.mutedText),
-            backgroundStyle: active ? AnyShapeStyle(theme.colors.selectedSurface) : nil,
-            emphasis: active ? .bold : [],
-            underline: .visible(.init()),
+            backgroundStyle: isActive ? AnyShapeStyle(theme.colors.selectedSurface) : nil,
+            emphasis: isActive ? .bold : [],
+            underline: .visible(TextLineStyle()),
             opacity: configuration.isEnabled ? 1 : 0.6
         )
     }

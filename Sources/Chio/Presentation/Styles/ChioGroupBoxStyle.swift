@@ -17,6 +17,20 @@ public struct ChioGroupBoxStyle {
         /// Text truncates at the trailing edge; allocations below five cells
         /// omit its paint while retaining its authored subtree.
         case border
+
+        var isInContent: Bool {
+            switch self {
+            case .content: true
+            case .border: false
+            }
+        }
+
+        var isOnBorder: Bool {
+            switch self {
+            case .content: false
+            case .border: true
+            }
+        }
     }
 }
 
@@ -24,12 +38,12 @@ extension ChioGroupBoxStyle: GroupBoxStyle {
     @MainActor
     public func makeBody(configuration: GroupBoxStyleConfiguration) -> some View {
         VStack(alignment: .leading, spacing: theme.spacing.sectionGap) {
-            if titlePlacement == .content, let label = configuration.label {
+            if titlePlacement.isInContent, let label = configuration.label {
                 label.foregroundStyle(theme.colors.heading)
             }
             configuration.content
         }
-        .padding(.init(horizontal: theme.spacing.horizontalInset, vertical: theme.spacing.verticalInset))
+        .padding(EdgeInsets(horizontal: theme.spacing.horizontalInset, vertical: theme.spacing.verticalInset))
         .foregroundStyle(theme.colors.foreground)
         .background(theme.colors.surface)
         .border(
@@ -38,11 +52,13 @@ extension ChioGroupBoxStyle: GroupBoxStyle {
             placement: .outset
         )
         .overlay(alignment: .topLeading) {
-            if titlePlacement == .border, let label = configuration.label {
+            if titlePlacement.isOnBorder, let label = configuration.label {
                 GeometryReader { geometry in
                     // Read the bordered allocation, rather than introducing a
                     // geometry container around the authored content. Keep the
                     // title mounted even when there is no room to paint it.
+                    let hasTitleWidth = geometry.size.width >= 5
+                    let hasTitleHeight = geometry.size.height > 0
                     label
                         .foregroundStyle(theme.colors.heading)
                         .lineLimit(1)
@@ -53,7 +69,7 @@ extension ChioGroupBoxStyle: GroupBoxStyle {
                         .padding(.leading, 1)
                         .frame(width: geometry.size.width, height: 1, alignment: .leading)
                         .clipped()
-                        .opacity(geometry.size.width >= 5 && geometry.size.height > 0 ? 1 : 0)
+                        .opacity(hasTitleWidth && hasTitleHeight ? 1 : 0)
                         .disabled(true)
                         .allowsHitTesting(false)
                 }

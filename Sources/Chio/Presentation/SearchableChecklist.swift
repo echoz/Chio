@@ -20,8 +20,8 @@ public struct SearchableChecklist<Item: Identifiable, RowContent: View> where It
     private let resultKeyPress: @MainActor @Sendable (KeyPress) -> KeyPressResult
 
     @State private var internalQuery = ""
-    @State private var resultsRequested = false
-    @FocusState private var searchFocused: Bool
+    @State private var hasRequestedResults = false
+    @FocusState private var isSearchFocused: Bool
     @Namespace private var resultsScope
     @Environment(\.resetFocus) private var resetFocus
     @Environment(\.chioTheme) private var theme
@@ -61,8 +61,8 @@ public struct SearchableChecklist<Item: Identifiable, RowContent: View> where It
         self.filter = filter ?? source.filter
         self.resultKeyPress = resultKeyPress ?? source.resultKeyPress
         _internalQuery = source._internalQuery
-        _resultsRequested = source._resultsRequested
-        _searchFocused = source._searchFocused
+        _hasRequestedResults = source._hasRequestedResults
+        _isSearchFocused = source._isSearchFocused
         _resultsScope = source._resultsScope
         _resetFocus = source._resetFocus
         _theme = source._theme
@@ -104,7 +104,7 @@ public struct SearchableChecklist<Item: Identifiable, RowContent: View> where It
 
     private func requestResults(in scope: Namespace.ID, using reset: ResetFocusAction) {
         guard !visibleItems.isEmpty else { return }
-        resultsRequested = true
+        hasRequestedResults = true
         reset(in: scope)
     }
 
@@ -112,8 +112,8 @@ public struct SearchableChecklist<Item: Identifiable, RowContent: View> where It
         guard press.modifiers.subtracting(.shift).isEmpty else { return .ignored }
         // Focus changes commit with the next frame. Do not let later keys in
         // the same terminal read toggle rows from the preceding result set.
-        if resultsRequested { return .handled }
-        guard searchFocused else { return .ignored }
+        if hasRequestedResults { return .handled }
+        guard isSearchFocused else { return .ignored }
         let storage = query
         switch press.key {
         case .character(let character): storage.wrappedValue.append(character)
@@ -146,7 +146,7 @@ extension SearchableChecklist: View {
 
         VStack(alignment: .leading, spacing: theme.spacing.sectionGap) {
             TextField(prompt, text: query)
-                .focused($searchFocused)
+                .focused($isSearchFocused)
                 .onKeyPress(.return) { _ in
                     request()
                     return .handled
@@ -157,7 +157,7 @@ extension SearchableChecklist: View {
                     return .handled
                 }
                 .onKeyPress { press in
-                    resultsRequested && press.modifiers.subtracting(.shift).isEmpty ? .handled : .ignored
+                    hasRequestedResults && press.modifiers.subtracting(.shift).isEmpty ? .handled : .ignored
                 }
 
             if visible.isEmpty {
@@ -166,27 +166,27 @@ extension SearchableChecklist: View {
             }
 
             List(visible, selection: editableSelection, onActivate: toggle) { item in
-                let checked = selected.contains(item.id)
-                let enabled = isEnabled(item)
+                let isChecked = selected.contains(item.id)
+                let isItemEnabled = isEnabled(item)
                 HStack(alignment: .top, spacing: theme.spacing.horizontalInset) {
-                    Text(checked ? "[x]" : "[ ]")
-                        .foregroundStyle(enabled ? theme.colors.accent : theme.colors.mutedText)
+                    Text(isChecked ? "[x]" : "[ ]")
+                        .foregroundStyle(isItemEnabled ? theme.colors.accent : theme.colors.mutedText)
                     rowContent(item)
-                    if !enabled {
+                    if !isItemEnabled {
                         Text("Unavailable").foregroundStyle(theme.colors.mutedText)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .foregroundStyle(enabled ? theme.colors.foreground : theme.colors.mutedText)
-                .background(checked ? theme.colors.selectedSurface : theme.colors.surface)
-                .disabled(!enabled)
+                .foregroundStyle(isItemEnabled ? theme.colors.foreground : theme.colors.mutedText)
+                .background(isChecked ? theme.colors.selectedSurface : theme.colors.surface)
+                .disabled(!isItemEnabled)
             }
             // Resetting this native scope reaches its first native row without
             // manufacturing a cursor or focusing the list's geometric center.
             .focusable(false)
             .focusScope(scope)
             .onKeyPress(.character("/")) { _ in
-                searchFocused = true
+                isSearchFocused = true
                 return .handled
             }
             .onKeyPress(.escape) { _ in
@@ -208,9 +208,9 @@ extension SearchableChecklist: View {
             }
             .foregroundStyle(theme.colors.mutedText)
         }
-        .onAppear { searchFocused = true }
-        .onChange(of: searchFocused) {
-            if !searchFocused { resultsRequested = false }
+        .onAppear { isSearchFocused = true }
+        .onChange(of: isSearchFocused) {
+            if !isSearchFocused { hasRequestedResults = false }
         }
     }
 }

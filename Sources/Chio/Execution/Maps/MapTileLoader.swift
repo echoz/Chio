@@ -71,7 +71,7 @@ public actor MapTileLoader {
 
     func statistics() -> Statistics {
         expireCache()
-        return .init(cacheEntries: cache.count, cacheBytes: cacheBytes,
+        return Statistics(cacheEntries: cache.count, cacheBytes: cacheBytes,
                      inFlight: inFlight, maximumInFlight: maximumInFlight)
     }
 
@@ -129,8 +129,14 @@ public actor MapTileLoader {
             }
         }
         if let lastBudgetError {
-            if let error = lastBudgetError as? MapValidationError, error == .tileLimitExceeded {
-                throw LoadingError.unsupportedViewport
+            if let error = lastBudgetError as? MapValidationError {
+                switch error {
+                case .tileLimitExceeded: throw LoadingError.unsupportedViewport
+                case .invalidCoordinate, .invalidCamera, .invalidViewport, .invalidIdentity,
+                     .invalidPath, .invalidRing, .duplicateIdentity, .unsupportedGeoJSON,
+                     .budgetExceeded, .drawingBudgetExceeded, .invalidTileSource,
+                     .invalidTileCoverage, .invalidTileSnapshot: break
+                }
             }
             throw lastBudgetError
         }
@@ -162,7 +168,7 @@ public actor MapTileLoader {
         expireCache()
         access &+= 1
         if let cached = cache[tile] {
-            cache[tile] = .init(data: cached.data, expires: cached.expires, access: access)
+            cache[tile] = CachedTile(data: cached.data, expires: cached.expires, access: access)
             return cached.data
         }
         let url = try source.url(for: tile)
@@ -192,7 +198,7 @@ public actor MapTileLoader {
             cacheBytes -= cache.removeValue(forKey: oldest)!.data.count
         }
         access &+= 1
-        cache[tile] = .init(data: data, expires: expires, access: access)
+        cache[tile] = CachedTile(data: data, expires: expires, access: access)
         cacheBytes += data.count
     }
 

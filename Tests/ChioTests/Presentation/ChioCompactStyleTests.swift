@@ -12,7 +12,7 @@ struct ChioCompactStyleTests {
                 .groupBoxStyle(ChioGroupBoxStyle(titlePlacement: .border))
                 .frame(width: width, height: 3, alignment: .topLeading)
                 .clipped(),
-            proposal: .init(width: width, height: 3)
+            proposal: ProposedViewSize(width: width, height: 3)
         )
         let surface = rendered.rasterSurface
         #expect(surface.size.width <= width)
@@ -35,7 +35,7 @@ struct ChioCompactStyleTests {
                 Text("Ready").frame(width: 28, alignment: .leading)
             }
             .groupBoxStyle(ChioGroupBoxStyle(theme: theme, titlePlacement: .border)),
-            proposal: .init(width: 32, height: nil)
+            proposal: ProposedViewSize(width: 32, height: nil)
         ).rasterSurface
         let top = try #require(surface.lines.first)
         #expect(top.hasPrefix("╭ "))
@@ -56,12 +56,12 @@ struct ChioCompactStyleTests {
         let labeled = renderer.render(
             GroupBox("Metrics") { Text("Ready").frame(width: 20) }
                 .groupBoxStyle(ChioGroupBoxStyle(titlePlacement: .border)),
-            proposal: .init(width: 24, height: 8)
+            proposal: ProposedViewSize(width: 24, height: 8)
         ).rasterSurface
         let unlabeled = renderer.render(
             GroupBox { Text("Ready").frame(width: 20) }
                 .groupBoxStyle(ChioGroupBoxStyle(titlePlacement: .border)),
-            proposal: .init(width: 24, height: 8)
+            proposal: ProposedViewSize(width: 24, height: 8)
         ).rasterSurface
         #expect(labeled.size == unlabeled.size)
         #expect(labeled.lines[1] == unlabeled.lines[1])
@@ -81,7 +81,7 @@ struct ChioCompactStyleTests {
             }
             .groupBoxStyle(ChioGroupBoxStyle(titlePlacement: .border))
             .frame(width: width, height: 7, alignment: .topLeading),
-            proposal: .init(width: width, height: 7)
+            proposal: ProposedViewSize(width: width, height: 7)
         )
         let semantics = rendered.semanticSnapshot
         let title = try #require(semantics.accessibilityNodes.first { $0.role == .button && $0.label == "Title" })
@@ -101,7 +101,7 @@ struct ChioCompactStyleTests {
     @Test("Native activation reaches compact content and skips the display-only title")
     func contentActivation() async throws {
         let recorder = HostedFrameRecorder()
-        let surface = HostedRasterSurface(surfaceSize: .init(width: 32, height: 10), appearance: .fallback,
+        let surface = HostedRasterSurface(surfaceSize: CellSize(width: 32, height: 10), appearance: .fallback,
                                           onFrame: { recorder.receive($0) })
         let session = try HostedSceneSession(for: CompactGroupTestApp(), sceneID: "compact-group", surface: surface)
         let task = Task { try await session.start() }
@@ -142,7 +142,7 @@ struct ChioCompactStyleTests {
             let rendered = DefaultRenderer().render(
                 ProgressView(value: value, barWidth: 8) { Text("CPU") } currentValueLabel: { Text("percent") }
                     .progressViewStyle(ChioProgressViewStyle(theme: theme, treatment: treatment)),
-                proposal: .init(width: 16, height: 2)
+                proposal: ProposedViewSize(width: 16, height: 2)
             )
             let surface = rendered.rasterSurface
             let track = try #require(surface.lines.last)
@@ -165,7 +165,7 @@ struct ChioCompactStyleTests {
         let measurement = DefaultRenderer().render(
             ProgressView(value: 1, barWidth: 8) { EmptyView() } currentValueLabel: { EmptyView() }
                 .progressViewStyle(ChioProgressViewStyle(theme: theme, treatment: .measurement)),
-            proposal: .init(width: 8, height: 1)
+            proposal: ProposedViewSize(width: 8, height: 1)
         ).rasterSurface
         #expect(measurement.lines == ["########"])
         #expect(measurement.cells.flatMap { $0 }.allSatisfy {
@@ -175,13 +175,13 @@ struct ChioCompactStyleTests {
             ProgressView(barWidth: 8)
                 .progressViewStyle(ChioProgressViewStyle(theme: theme))
                 .environment(\.accessibilityReduceMotion, true),
-            proposal: .init(width: 8, height: 1)
+            proposal: ProposedViewSize(width: 8, height: 1)
         ).rasterSurface
         let indeterminateMeasurement = DefaultRenderer().render(
             ProgressView(barWidth: 8)
                 .progressViewStyle(ChioProgressViewStyle(theme: theme, treatment: .measurement))
                 .environment(\.accessibilityReduceMotion, true),
-            proposal: .init(width: 8, height: 1)
+            proposal: ProposedViewSize(width: 8, height: 1)
         ).rasterSurface
         #expect(progress.lines == indeterminateMeasurement.lines)
         #expect(progress.cells == indeterminateMeasurement.cells)

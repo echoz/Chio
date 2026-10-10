@@ -12,13 +12,13 @@ struct ChioDisclosureGroupStyleTests {
             DisclosureGroup("Details", isExpanded: .constant(false)) { Text("Protected body") }
                 .background(theme.colors.selectedSurface)
                 .chioTheme(theme),
-            proposal: .init(width: width, height: 5)
+            proposal: ProposedViewSize(width: width, height: 5)
         )
         let opened = DefaultRenderer().render(
             DisclosureGroup("Details", isExpanded: .constant(true)) { Text("Body") }
                 .background(theme.colors.selectedSurface)
                 .chioTheme(theme),
-            proposal: .init(width: width, height: 5)
+            proposal: ProposedViewSize(width: width, height: 5)
         )
         #expect(!closed.rasterSurface.lines.joined().contains("Protected body"))
         let closedGlyph = try #require(closed.rasterSurface.cells.flatMap { $0 }.first { $0.character == "▸" })
@@ -38,7 +38,7 @@ struct ChioDisclosureGroupStyleTests {
             DisclosureGroup("Unavailable", isExpanded: .constant(expanded)) { Text("Body") }
                 .disabled(true)
                 .chioTheme(.default),
-            proposal: .init(width: 24, height: 5)
+            proposal: ProposedViewSize(width: 24, height: 5)
         )
         let node = try #require(rendered.semanticSnapshot.accessibilityNodes.first { $0.role == .disclosureGroup })
         #expect(!node.isEnabled)
@@ -55,7 +55,7 @@ struct ChioDisclosureGroupStyleTests {
                 Text("Second")
                 HStack(spacing: 1) { Text("Third"); Text("row") }
             }.chioTheme(.default),
-            proposal: .init(width: 24, height: 6)
+            proposal: ProposedViewSize(width: 24, height: 6)
         ).rasterSurface.lines
         #expect(lines[0].contains("▾ Details"))
         #expect(lines[1].hasPrefix("    First"))
@@ -93,8 +93,8 @@ struct ChioDisclosureGroupStyleTests {
                 $0.disclosureStatus("O=1 I=1 W=1 N=1 M=0")
             }
             let textRow = try #require(activated.raster.lines.firstIndex { $0.contains("Passive body") })
-            session.send(.mouse(MouseEvent(kind: .down(.primary), location: .cellFallback(.init(x: 8, y: textRow)))))
-            session.send(.mouse(MouseEvent(kind: .up(.primary), location: .cellFallback(.init(x: 8, y: textRow)))))
+            session.send(.mouse(MouseEvent(kind: .down(.primary), location: .cellFallback(CellPoint(x: 8, y: textRow)))))
+            session.send(.mouse(MouseEvent(kind: .up(.primary), location: .cellFallback(CellPoint(x: 8, y: textRow)))))
             // A queued app-owned marker provides an observable barrier after a content click that changes no value.
             session.send(.key(.character("m"), modifiers: .ctrl))
             let contentClick = try await recorder.wait(after: activated.sequence, description: "plain content click leaves both disclosures expanded") {
@@ -139,7 +139,7 @@ struct ChioDisclosureGroupStyleTests {
             }
             #expect(themed.focusedIdentity == initial.focusedIdentity)
             self.expectHeaderPaint(themed, label: "Parent", theme: .light, active: !suppressed)
-            surface.updateSurfaceSize(.init(width: 18, height: 14))
+            surface.updateSurfaceSize(CellSize(width: 18, height: 14))
             session.requestSurfaceRefresh()
             let resized = try await recorder.wait(after: themed.sequence, description: "compact rendering preserves native focus and the rejected binding") {
                 $0.raster.size.width == 18 && $0.disclosureFocused("Parent")
@@ -178,7 +178,7 @@ private func withDisclosureScene(
     perform: (HostedSceneSession, HostedRasterSurface, HostedFrameRecorder) async throws -> Void
 ) async throws {
     let recorder = HostedFrameRecorder()
-    let surface = HostedRasterSurface(surfaceSize: .init(width: 40, height: 14), appearance: .fallback,
+    let surface = HostedRasterSurface(surfaceSize: CellSize(width: 40, height: 14), appearance: .fallback,
                                       onFrame: { recorder.receive($0) })
     let session = try HostedSceneSession(for: DisclosureStyleTestApp(rejectsExpansion: rejectsExpansion, suppressed: suppressed),
                                         sceneID: "disclosure-style", surface: surface)

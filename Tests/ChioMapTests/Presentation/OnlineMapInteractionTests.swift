@@ -337,7 +337,7 @@ extension OnlineTestView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             OnlineMapContent(camera: $camera, selection: $selection, overlays: overlays,
-                             detail: detail, fills: true, labels: true, retry: retry, activate: { activation = $0.id },
+                             detail: detail, fillsAreas: true, showsLabels: true, retry: retry, activate: { activation = $0.id },
                              makeLoader: { [transport] in await transport.makeLoader() })
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             Text(String(format: "Lon=%.3f Span=%.4f", camera.center.longitude, camera.longitudeSpan))

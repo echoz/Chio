@@ -107,10 +107,15 @@ struct AgentReport {
     // User-authored names and descriptions are literal Markdown content.
     private static func escape(_ value: String) -> String {
         value.reduce(into: "") { result, character in
-            if character.unicodeScalars.count == 1, let scalar = character.unicodeScalars.first,
-               (0x21...0x2F).contains(scalar.value) || (0x3A...0x40).contains(scalar.value)
-                || (0x5B...0x60).contains(scalar.value) || (0x7B...0x7E).contains(scalar.value) {
-                result.append("\\")
+            if character.unicodeScalars.count == 1, let scalar = character.unicodeScalars.first {
+                let isEarlyASCIIPunctuation = (0x21...0x2F).contains(scalar.value)
+                let isMiddleASCIIPunctuation = (0x3A...0x40).contains(scalar.value)
+                let isBracketASCIIPunctuation = (0x5B...0x60).contains(scalar.value)
+                let isFinalASCIIPunctuation = (0x7B...0x7E).contains(scalar.value)
+                if isEarlyASCIIPunctuation || isMiddleASCIIPunctuation
+                    || isBracketASCIIPunctuation || isFinalASCIIPunctuation {
+                    result.append("\\")
+                }
             }
             result.append(character)
         }

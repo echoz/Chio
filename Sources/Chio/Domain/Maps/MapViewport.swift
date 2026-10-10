@@ -25,7 +25,7 @@ public struct MapViewport {
         let columns = camera.longitudeSpan >= 180
             ? min(available, max(1, Int(Double(rows) * ratio))) : available
         guard columns >= (camera.longitudeSpan >= 60 ? 32 : 58), rows >= 16 else { return nil }
-        return try? Self(columns: columns, rows: rows, cellAspectRatio: ratio)
+        return try? MapViewport(columns: columns, rows: rows, cellAspectRatio: ratio)
     }
 
     /// Returns a finite point in cell units; outside points are useful for culling.
@@ -36,7 +36,7 @@ public struct MapViewport {
 
     func point(longitude: Double, mercatorY: Double, camera: MapCamera) -> PreparedMap.Point {
         let cellsPerDegree = Double(columns) / camera.longitudeSpan
-        return .init(x: Double(columns) / 2 + (longitude - camera.center.longitude) * cellsPerDegree,
+        return PreparedMap.Point(x: Double(columns) / 2 + (longitude - camera.center.longitude) * cellsPerDegree,
                      y: Double(rows) / 2 - (mercatorY - Self.mercatorY(camera.center.latitude))
                         * cellsPerDegree / cellAspectRatio)
     }

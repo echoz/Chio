@@ -11,25 +11,25 @@ struct DiffExampleView {
     @State private var prefersSplit: Bool
     @State private var activeHunk: Int?
     @State private var position = ScrollCellOffset.zero
-    @FocusState private var readerFocused: Bool
+    @FocusState private var isReaderFocused: Bool
     private let files = DiffFile.examples
     private let sourceWidths: [Int]
 
-    init(theme: ExampleTheme = .default, initialFile: Int = 0, split: Bool = true) {
+    init(theme: ExampleTheme = .default, initialFile: Int = 0, isSplit: Bool = true) {
         precondition(DiffFile.examples.indices.contains(initialFile))
         _themeChoice = State(wrappedValue: theme)
         _fileIndex = State(wrappedValue: initialFile)
-        _prefersSplit = State(wrappedValue: split)
+        _prefersSplit = State(wrappedValue: isSplit)
         _activeHunk = State(wrappedValue: DiffFile.examples[initialFile].hunks.indices.first)
         sourceWidths = DiffFile.examples.map(Self.sourceWidth)
     }
 
     private var theme: ChioTheme { themeChoice.theme }
     private var file: DiffFile { files[fileIndex] }
-    private var compact: Bool { terminalSize.height < 24 }
+    private var isCompact: Bool { terminalSize.height < 24 }
     private var canSplit: Bool { terminalSize.width >= 92 }
-    private var effectiveSplit: Bool { prefersSplit && canSplit }
-    private var contentWidth: Int { max(1, terminalSize.width - (compact ? 1 : 3)) }
+    private var isSplit: Bool { prefersSplit && canSplit }
+    private var contentWidth: Int { max(1, terminalSize.width - (isCompact ? 1 : 3)) }
 
     private static func sourceWidth(_ file: DiffFile) -> Int {
         file.hunks.flatMap(\.blocks).reduce(0) { width, block in
@@ -70,7 +70,7 @@ struct DiffExampleView {
     }
 
     private var readingStatus: String {
-        let mode = effectiveSplit ? "Split" : "Unified"
+        let mode = isSplit ? "Split" : "Unified"
         let target = activeHunk.map { "hunk \($0 + 1)/\(file.hunks.count)" } ?? "summary"
         return "\(mode) · \(target) · +\(file.addedLineCount) −\(file.removedLineCount)"
     }
@@ -87,10 +87,10 @@ struct DiffExampleView {
             return .handled
         }
         if press == KeyPress(.functionKey(6)) {
-            readerFocused = true
+            isReaderFocused = true
             return .handled
         }
-        guard readerFocused, press.modifiers.isEmpty else { return .ignored }
+        guard isReaderFocused, press.modifiers.isEmpty else { return .ignored }
         switch press.key {
         case .character("]"): moveHunk(1)
         case .character("["): moveHunk(-1)
@@ -110,7 +110,7 @@ extension DiffExampleView: View {
                     Spacer(minLength: 0)
                     if canSplit { Text("local prototype").foregroundStyle(theme.colors.mutedText) }
                 }
-                if !compact {
+                if !isCompact {
                     Text("Read the change. Keep the context.").foregroundStyle(theme.colors.mutedText)
                     Spacer().frame(height: 1)
                 }
@@ -128,24 +128,24 @@ extension DiffExampleView: View {
                     Button("›") { moveHunk(1) }
                         .accessibilityLabel("Next hunk")
                         .disabled(activeHunk == nil || activeHunk == file.hunks.indices.last)
-                    Button(effectiveSplit ? "Use unified" : "Use split") { prefersSplit.toggle() }
+                    Button(isSplit ? "Use unified" : "Use split") { prefersSplit.toggle() }
                         .disabled(!canSplit)
                 }
                 Text(readingStatus).foregroundStyle(theme.colors.secondaryText).lineLimit(1)
                 ScrollView([.horizontal, .vertical], position: $position) {
-                    DiffFileView(file: file, split: effectiveSplit, minimumWidth: contentWidth,
+                    DiffFileView(file: file, isSplit: isSplit, minimumWidth: contentWidth,
                                  sourceWidth: sourceWidths[fileIndex], activeHunk: activeHunk)
                 }
-                .focused($readerFocused)
-                .defaultFocus($readerFocused, true)
+                .focused($isReaderFocused)
+                .defaultFocus($isReaderFocused, true)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                if !compact {
+                if !isCompact {
                     Text("Read-only fixtures · Tab controls · F6 reader · source lines scroll without wrapping")
                         .foregroundStyle(theme.colors.mutedText).lineLimit(1)
                 }
-                if compact { hints } else { StatusBar { hints } }
+                if isCompact { hints } else { StatusBar { hints } }
             }
-            .padding(compact ? 0 : 1)
+            .padding(isCompact ? 0 : 1)
             .frame(width: terminalSize.width, height: terminalSize.height, alignment: .topLeading)
             .chioTheme(theme)
             .onKeyPress(perform: handleKey)
@@ -153,7 +153,7 @@ extension DiffExampleView: View {
             // when view/file commands arrive in the same terminal input batch.
             .onChange(of: activeHunk) { _, _ in revealHunk(proxy) }
             .onChange(of: file.id) { _, _ in revealHunk(proxy) }
-            .onChange(of: effectiveSplit) { _, _ in revealHunk(proxy) }
+            .onChange(of: isSplit) { _, _ in revealHunk(proxy) }
             .onChange(of: terminalSize) { _, _ in revealHunk(proxy) }
         }
     }

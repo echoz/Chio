@@ -9,11 +9,11 @@ public struct ChioTheme {
     public let map: MapColors
 
     public init(
-        colors: Colors = .init(),
-        spacing: Spacing = .init(),
-        treatments: Treatments = .init(),
-        syntax: SyntaxColors = .init(),
-        map: MapColors = .init()
+        colors: Colors = Colors(),
+        spacing: Spacing = Spacing(),
+        treatments: Treatments = Treatments(),
+        syntax: SyntaxColors = SyntaxColors(),
+        map: MapColors = MapColors()
     ) {
         self.colors = colors
         self.spacing = spacing
@@ -30,14 +30,14 @@ public struct ChioTheme {
         syntax: SyntaxColors? = nil,
         map: MapColors? = nil
     ) -> Self {
-        Self(colors: colors ?? self.colors, spacing: spacing ?? self.spacing,
+        ChioTheme(colors: colors ?? self.colors, spacing: spacing ?? self.spacing,
              treatments: treatments ?? self.treatments, syntax: syntax ?? self.syntax, map: map ?? self.map)
     }
 
     /// A dark palette inspired by Charm's Huh controls and Bubbles lists.
     public static let `default` = ChioTheme()
 
-    public static let light = ChioTheme(colors: .init(
+    public static let light = ChioTheme(colors: Colors(
         accent: Color(hexRGB: 0xB52B80),
         heading: Color(hexRGB: 0x5145CD),
         foreground: Color(hexRGB: 0x272634),
@@ -49,17 +49,17 @@ public struct ChioTheme {
         success: Color(hexRGB: 0x23784E),
         warning: Color(hexRGB: 0x996800),
         error: Color(hexRGB: 0xBE354B)
-    ), syntax: .init(
+    ), syntax: SyntaxColors(
         keyword: Color(hexRGB: 0x922368),
         type: Color(hexRGB: 0x155C83),
         string: Color(hexRGB: 0x246641),
         number: Color(hexRGB: 0x825005),
         comment: Color(hexRGB: 0x615968)
-    ), map: .init(water: Color(hexRGB: 0xC8D6E4), park: Color(hexRGB: 0xD8E1E1)))
+    ), map: MapColors(water: Color(hexRGB: 0xC8D6E4), park: Color(hexRGB: 0xD8E1E1)))
 
     /// A compact dark palette inspired by btop's instrumentation layouts.
     public static let btop = ChioTheme(
-        colors: .init(
+        colors: Colors(
             accent: Color(hexRGB: 0x55C9D8),
             heading: Color(hexRGB: 0xA5D9E1),
             foreground: Color(hexRGB: 0xE5E9ED),
@@ -72,15 +72,15 @@ public struct ChioTheme {
             warning: Color(hexRGB: 0xE5BD72),
             error: Color(hexRGB: 0xE77E88)
         ),
-        spacing: .init(horizontalInset: 1, verticalInset: 0, sectionGap: 0, hintGap: 1),
-        syntax: .init(
+        spacing: Spacing(horizontalInset: 1, verticalInset: 0, sectionGap: 0, hintGap: 1),
+        syntax: SyntaxColors(
             keyword: Color(hexRGB: 0xC69ADD),
             type: Color(hexRGB: 0x55C9D8),
             string: Color(hexRGB: 0xA8C58C),
             number: Color(hexRGB: 0xE5BD72),
             comment: Color(hexRGB: 0xA0ACB6)
         ),
-        map: .init(water: Color(hexRGB: 0x1F3C43), park: Color(hexRGB: 0x28302B))
+        map: MapColors(water: Color(hexRGB: 0x1F3C43), park: Color(hexRGB: 0x28302B))
     )
 
     /// Geographic area fills. Roads, routes and markers use the ordinary semantic palette.
@@ -94,7 +94,7 @@ public struct ChioTheme {
         }
 
         public func replacing(water: Color? = nil, park: Color? = nil) -> Self {
-            Self(water: water ?? self.water, park: park ?? self.park)
+            MapColors(water: water ?? self.water, park: park ?? self.park)
         }
     }
 
@@ -129,7 +129,7 @@ public struct ChioTheme {
             number: Color? = nil,
             comment: Color? = nil
         ) -> Self {
-            Self(keyword: keyword ?? self.keyword, type: type ?? self.type,
+            SyntaxColors(keyword: keyword ?? self.keyword, type: type ?? self.type,
                  string: string ?? self.string, number: number ?? self.number,
                  comment: comment ?? self.comment)
         }
@@ -188,7 +188,7 @@ public struct ChioTheme {
             warning: Color? = nil,
             error: Color? = nil
         ) -> Self {
-            Self(accent: accent ?? self.accent, heading: heading ?? self.heading,
+            Colors(accent: accent ?? self.accent, heading: heading ?? self.heading,
                  foreground: foreground ?? self.foreground,
                  secondaryText: secondaryText ?? self.secondaryText,
                  mutedText: mutedText ?? self.mutedText, surface: surface ?? self.surface,
@@ -211,7 +211,12 @@ public struct ChioTheme {
             sectionGap: Int = 1,
             hintGap: Int = 2
         ) {
-            precondition(horizontalInset >= 0 && verticalInset >= 0 && sectionGap >= 0 && hintGap >= 0,
+            let isHorizontalInsetNonnegative = horizontalInset >= 0
+            let isVerticalInsetNonnegative = verticalInset >= 0
+            let isSectionGapNonnegative = sectionGap >= 0
+            let isHintGapNonnegative = hintGap >= 0
+            precondition(isHorizontalInsetNonnegative && isVerticalInsetNonnegative
+                         && isSectionGapNonnegative && isHintGapNonnegative,
                          "Theme spacing must be nonnegative")
             self.horizontalInset = horizontalInset
             self.verticalInset = verticalInset
@@ -226,7 +231,7 @@ public struct ChioTheme {
             sectionGap: Int? = nil,
             hintGap: Int? = nil
         ) -> Self {
-            Self(horizontalInset: horizontalInset ?? self.horizontalInset,
+            Spacing(horizontalInset: horizontalInset ?? self.horizontalInset,
                  verticalInset: verticalInset ?? self.verticalInset,
                  sectionGap: sectionGap ?? self.sectionGap, hintGap: hintGap ?? self.hintGap)
         }
@@ -262,7 +267,7 @@ public struct ChioTheme {
             progressFilledGlyph: String? = nil,
             progressEmptyGlyph: String? = nil
         ) -> Self {
-            Self(borderStyle: borderStyle ?? self.borderStyle,
+            Treatments(borderStyle: borderStyle ?? self.borderStyle,
                  selectionMarker: selectionMarker ?? self.selectionMarker,
                  progressFilledGlyph: progressFilledGlyph ?? self.progressFilledGlyph,
                  progressEmptyGlyph: progressEmptyGlyph ?? self.progressEmptyGlyph)
@@ -270,13 +275,15 @@ public struct ChioTheme {
 
         private static func requireSingleCellGlyph(_ glyph: String) {
             let layout = layoutText(for: glyph, width: nil)
-            let containsControl = glyph.unicodeScalars.contains {
+            let hasControlScalar = glyph.unicodeScalars.contains {
                 $0.properties.generalCategory == .control
                     || $0.properties.generalCategory == .lineSeparator
                     || $0.properties.generalCategory == .paragraphSeparator
             }
-            precondition(!containsControl && layout.lines.count == 1
-                         && layout.lines[0].clusters.count == 1 && layout.lines[0].cellWidth == 1,
+            let hasSingleLine = layout.lines.count == 1
+            let hasSingleCluster = hasSingleLine && layout.lines[0].clusters.count == 1
+            let hasSingleCellWidth = hasSingleCluster && layout.lines[0].cellWidth == 1
+            precondition(!hasControlScalar && hasSingleLine && hasSingleCluster && hasSingleCellWidth,
                          "Theme glyphs must contain exactly one printable terminal cell")
         }
     }

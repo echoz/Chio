@@ -62,7 +62,7 @@ struct ChioThemeTests {
         #expect(customized.colors.border == base.colors.border)
         #expect(customized.colors.success == base.colors.success)
         #expect(customized.colors.warning == base.colors.warning)
-        #expect(customized.spacing == .init(horizontalInset: 3, sectionGap: 2, hintGap: 4))
+        #expect(customized.spacing == ChioTheme.Spacing(horizontalInset: 3, sectionGap: 2, hintGap: 4))
         #expect(customized.treatments.borderStyle == stroke)
         #expect(customized.treatments.selectionMarker == ">")
         #expect(customized.treatments.progressFilledGlyph == "#")
@@ -99,7 +99,7 @@ struct ChioThemeTests {
     func validBoundaries() {
         let spacing = ChioTheme.Spacing(horizontalInset: 2, verticalInset: 3, sectionGap: 4, hintGap: 5)
         let zero = spacing.replacing(horizontalInset: 0, verticalInset: 0, sectionGap: 0, hintGap: 0)
-        #expect(zero == .init(horizontalInset: 0, verticalInset: 0, sectionGap: 0, hintGap: 0))
+        #expect(zero == ChioTheme.Spacing(horizontalInset: 0, verticalInset: 0, sectionGap: 0, hintGap: 0))
         #expect(spacing.verticalInset == 3)
         let treatments = ChioTheme.Treatments(selectionMarker: "é", progressFilledGlyph: "#", progressEmptyGlyph: " ")
         let replacement = treatments.replacing(selectionMarker: "e\u{301}")
@@ -161,7 +161,7 @@ struct ChioThemeTests {
     func spacingRoundTrip() throws {
         let fixture = Data(#"{"horizontalInset":3,"verticalInset":0,"sectionGap":2,"hintGap":0}"#.utf8)
         let decoded = try JSONDecoder().decode(ChioTheme.Spacing.self, from: fixture)
-        #expect(decoded == .init(horizontalInset: 3, verticalInset: 0, sectionGap: 2, hintGap: 0))
+        #expect(decoded == ChioTheme.Spacing(horizontalInset: 3, verticalInset: 0, sectionGap: 2, hintGap: 0))
         let data = try JSONEncoder().encode(decoded)
         #expect(try JSONDecoder().decode(ChioTheme.Spacing.self, from: data) == decoded)
         #expect(Set([decoded, decoded.replacing()]).count == 1)

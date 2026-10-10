@@ -7,7 +7,7 @@ struct TreeExampleView {
     @Environment(\.requestTermination) private var requestTermination
     @State private var themeChoice: ExampleTheme
     @State private var expanded: Set<Branch> = [.sources, .library, .presentation]
-    @FocusState private var sourcesFocused: Bool
+    @FocusState private var areSourcesFocused: Bool
 
     init(theme: ExampleTheme = .default) { _themeChoice = State(wrappedValue: theme) }
 
@@ -40,8 +40,8 @@ struct TreeExampleView {
                     }
                 }
             }
-            .focused($sourcesFocused)
-            .defaultFocus($sourcesFocused, true)
+            .focused($areSourcesFocused)
+            .defaultFocus($areSourcesFocused, true)
             DisclosureGroup("Tests", isExpanded: expansion(.tests)) {
                 file("ThemeTests.swift")
                 file("SearchTests.swift")
@@ -76,13 +76,13 @@ struct TreeExampleView {
 
 extension TreeExampleView: View {
     var body: some View {
-        let short = terminalSize.height < 24
+        let isShort = terminalSize.height < 24
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 1) {
                 Text("chio").bold().foregroundStyle(theme.colors.accent)
                 Text("/ project tree").foregroundStyle(theme.colors.secondaryText)
             }
-            if !short {
+            if !isShort {
                 Text("A workspace, one branch at a time.").foregroundStyle(theme.colors.secondaryText)
                 Spacer().frame(height: 1)
             }
@@ -95,10 +95,10 @@ extension TreeExampleView: View {
                 Button("Expand all") { expanded = Set(Branch.allCases) }
                 Button("Collapse all") { expanded = [] }
             }
-            if short { hints } else { StatusBar { hints } }
+            if isShort { hints } else { StatusBar { hints } }
         }
-        .padding(.horizontal, short ? 0 : 1)
-        .padding(.vertical, short ? 0 : 1)
+        .padding(.horizontal, isShort ? 0 : 1)
+        .padding(.vertical, isShort ? 0 : 1)
         .frame(maxWidth: 76, maxHeight: .infinity, alignment: .topLeading)
         .frame(width: terminalSize.width, height: terminalSize.height, alignment: .top)
         .onKeyPress { press in

@@ -26,7 +26,9 @@ public struct DurationText {
     }
 
     private init(duration: Duration, kind: Kind) {
-        precondition(duration >= .zero && duration <= .seconds(Int64.max),
+        let isNonnegative = duration >= .zero
+        let isWithinWholeSecondLimit = duration <= .seconds(Int64.max)
+        precondition(isNonnegative && isWithinWholeSecondLimit,
                      "DurationText requires a duration between zero and Int64.max seconds")
         self.duration = duration
         self.kind = kind

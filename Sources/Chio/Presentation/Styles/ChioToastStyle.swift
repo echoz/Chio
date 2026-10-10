@@ -32,7 +32,7 @@ extension ChioToastStyle: ToastStyle {
             iconStyle: AnyShapeStyle(color),
             backgroundStyle: AnyShapeStyle(theme.colors.surface),
             borderStyle: AnyShapeStyle(color),
-            contentPadding: .init(top: height >= 3 ? 1 : 0, leading: inset,
+            contentPadding: EdgeInsets(top: height >= 3 ? 1 : 0, leading: inset,
                                   bottom: height >= 3 ? 1 : 0, trailing: inset),
             minWidth: min(10, width), maxWidth: width,
             minHeight: min(3, height), idealHeight: min(3, height), maxHeight: height

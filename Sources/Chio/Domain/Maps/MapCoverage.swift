@@ -20,15 +20,15 @@ public enum MapCoverage {
         public let northeast: MapCoordinate
 
         public init(southwest: MapCoordinate, northeast: MapCoordinate) throws {
-            guard southwest.longitude < northeast.longitude,
-                  southwest.latitude < northeast.latitude
-            else { throw ValidationError.invalidBounds }
+            let hasIncreasingLongitude = southwest.longitude < northeast.longitude
+            let hasIncreasingLatitude = southwest.latitude < northeast.latitude
+            guard hasIncreasingLongitude, hasIncreasingLatitude else { throw ValidationError.invalidBounds }
             self.southwest = southwest
             self.northeast = northeast
         }
     }
 
-    public enum ValidationError: Error, Equatable, Sendable {
+    public enum ValidationError {
         case invalidBounds
     }
 }
@@ -47,3 +47,7 @@ extension MapCoverage.Bounds: Codable {
                       northeast: values.decode(MapCoordinate.self, forKey: .northeast))
     }
 }
+
+extension MapCoverage.ValidationError: Error {}
+extension MapCoverage.ValidationError: Equatable {}
+extension MapCoverage.ValidationError: Sendable {}

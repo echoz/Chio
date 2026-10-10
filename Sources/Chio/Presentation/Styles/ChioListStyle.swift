@@ -13,7 +13,7 @@ extension ChioListStyle: ListStyle {
     @MainActor
     public func resolvePresentation(for configuration: ListStyleConfiguration) -> ListStylePresentation {
         ListStylePresentation(
-            contentInsets: .init(top: 0, leading: theme.spacing.horizontalInset,
+            contentInsets: EdgeInsets(top: 0, leading: theme.spacing.horizontalInset,
                                  bottom: 0, trailing: theme.spacing.horizontalInset),
             showsRowSeparators: false,
             showsSectionSeparators: false

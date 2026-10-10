@@ -3,6 +3,27 @@
 import Testing
 
 struct MapFixturesTests {
+    @Test("Scene and street choices preserve fixture identity, capture labels and cycle wrapping")
+    func choicePolicies() throws {
+        let fixtures = try MapFixtures.load()
+        #expect(fixtures.source(for: .world, streetSource: .overpass) == fixtures.worldSource)
+        #expect(fixtures.source(for: .world, streetSource: .openfreemap) == fixtures.worldSource)
+        #expect(fixtures.source(for: .street, streetSource: .overpass) == fixtures.streetSource)
+        #expect(fixtures.source(for: .street, streetSource: .openfreemap) == fixtures.openFreeMapSource)
+        #expect(MapFixtures.Scene.world.title == "World")
+        #expect(MapFixtures.Scene.street.title == "Singapore · Marina Bay")
+        #expect(MapFixtures.Scene.world.next == .street)
+        #expect(MapFixtures.Scene.street.next == .world)
+        #expect(MapFixtures.Scene.world.sourceTitle(streetSource: .openfreemap) == "Natural Earth")
+        #expect(MapFixtures.Scene.street.sourceTitle(streetSource: .overpass) == "Overpass")
+        #expect(MapFixtures.Scene.street.sourceTitle(streetSource: .openfreemap) == "OpenFreeMap")
+        #expect(MapFixtures.Scene.world.sourceIdentifier(streetSource: .openfreemap) == "natural-earth")
+        #expect(MapFixtures.Scene.street.sourceIdentifier(streetSource: .overpass) == "overpass")
+        #expect(MapFixtures.Scene.street.sourceIdentifier(streetSource: .openfreemap) == "openfreemap")
+        #expect(!MapExampleAcquisition.offline.isOnline)
+        #expect(MapExampleAcquisition.openFreeMap.isOnline)
+    }
+
     @Test("Fixtures load source metadata once with explicit worldwide and neighborhood query coverage")
     func sourceContracts() throws {
         let fixtures = try MapFixtures.load()

@@ -30,7 +30,7 @@ struct KeyHintsInteractionTests {
                 "Phase=2 Gap=4", "q quit application    / search    r run",
             ])
 
-            surface.updateSurfaceSize(.init(width: 24, height: 6))
+            surface.updateSurfaceSize(CellSize(width: 24, height: 6))
             session.requestSurfaceRefresh()
             let narrow = try await recorder.wait(after: spaced.sequence, description: "narrow hints wrap into two complete rows") {
                 $0.raster.size.width == 24
@@ -53,7 +53,7 @@ struct KeyHintsInteractionTests {
                 "Phase=4 Gap=4", "q quit application", "/ search    r run",
             ])
 
-            surface.updateSurfaceSize(.init(width: 40, height: 6))
+            surface.updateSurfaceSize(CellSize(width: 40, height: 6))
             session.requestSurfaceRefresh()
             let wideAgain = try await recorder.wait(after: expandedAgain.sequence, description: "widening rejoins the hints with current spacing") {
                 $0.raster.size.width == 40
@@ -85,7 +85,7 @@ private struct HintTestView {
 
     private var theme: ChioTheme {
         var theme = ChioTheme.default
-        theme = theme.replacing(spacing: .init(hintGap: widerGap ? 4 : 2))
+        theme = theme.replacing(spacing: ChioTheme.Spacing(hintGap: widerGap ? 4 : 2))
         return theme
     }
 }
@@ -128,7 +128,7 @@ private func withHintScene(
 ) async throws {
     let recorder = HostedFrameRecorder()
     let surface = HostedRasterSurface(
-        surfaceSize: .init(width: 40, height: 6),
+        surfaceSize: CellSize(width: 40, height: 6),
         appearance: .fallback,
         onFrame: { recorder.receive($0) }
     )

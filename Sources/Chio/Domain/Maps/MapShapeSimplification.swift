@@ -41,14 +41,14 @@ enum MapShapeSimplification {
             guard candidate != rings else { return rings }
             for (original, reduced) in zip(rings, candidate) {
                 try remaining.checkCancellation()
-                guard validRing(original), validRing(reduced) else { return rings }
+                guard isValidRing(original), isValidRing(reduced) else { return rings }
                 let before = signedArea(original), after = signedArea(reduced)
                 guard before * after > 0, abs(after / before - 1) <= 0.15 else { return rings }
             }
             // Source values only promise closure/area, so do not silently repair
             // self crossings, overlapping holes or holes outside their exterior.
-            guard try validTopology(rings, budget: &remaining),
-                  try validTopology(candidate, budget: &remaining) else { return rings }
+            guard try hasValidTopology(rings, budget: &remaining),
+                  try hasValidTopology(candidate, budget: &remaining) else { return rings }
             try remaining.checkCancellation()
             return candidate
         } catch {
@@ -58,7 +58,7 @@ enum MapShapeSimplification {
 
     private static func reduce(_ ring: [PreparedMap.Point], tolerance: Double,
                                aspect: Double, budget: inout Budget) throws -> [PreparedMap.Point] {
-        guard validRing(ring), ring.count > 4 else { return ring }
+        guard isValidRing(ring), ring.count > 4 else { return ring }
         let count = ring.count - 1
         let origin = ring[0]
         let physical = try ring.enumerated().map { index, point in
@@ -114,7 +114,7 @@ enum MapShapeSimplification {
         return x * x + y * y
     }
 
-    private static func validRing(_ ring: [PreparedMap.Point]) -> Bool {
+    private static func isValidRing(_ ring: [PreparedMap.Point]) -> Bool {
         ring.count >= 4 && ring.first == ring.last
             && ring.allSatisfy { $0.x.isFinite && $0.y.isFinite }
             && Set(ring.dropLast()).count >= 3 && signedArea(ring).isFinite && signedArea(ring) != 0
@@ -129,7 +129,7 @@ enum MapShapeSimplification {
         } / 2
     }
 
-    private static func validTopology(_ rings: [[PreparedMap.Point]], budget: inout Budget) throws -> Bool {
+    private static func hasValidTopology(_ rings: [[PreparedMap.Point]], budget: inout Budget) throws -> Bool {
         for ring in rings {
             try budget.checkCancellation()
             let edges = Array(zip(ring, ring.dropFirst()))
@@ -191,11 +191,11 @@ enum MapShapeSimplification {
     }
 
     private static func contains(_ point: PreparedMap.Point, ring: [PreparedMap.Point]) -> Bool {
-        var inside = false
+        var isInside = false
         for (a, b) in zip(ring, ring.dropFirst()) where (a.y > point.y) != (b.y > point.y) {
-            if point.x < a.x + (point.y - a.y) * (b.x - a.x) / (b.y - a.y) { inside.toggle() }
+            if point.x < a.x + (point.y - a.y) * (b.x - a.x) / (b.y - a.y) { isInside.toggle() }
         }
-        return inside
+        return isInside
     }
 
     private static func spend(_ budget: inout Budget, amount: Int = 1) throws {

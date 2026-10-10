@@ -9,8 +9,8 @@ struct OnlineMapContent {
     private let selection: Binding<String?>
     private let overlays: MapOverlays
     private let detail: MapDetail
-    private let fills: Bool
-    private let labels: Bool
+    private let fillsAreas: Bool
+    private let showsLabels: Bool
     private let retry: Int
     private let activate: @MainActor (MapMarker) -> Void
     private let makeLoader: @Sendable () async throws -> MapTileLoader
@@ -21,7 +21,7 @@ struct OnlineMapContent {
     @State private var update: Update = .idle
 
     init(camera: Binding<MapCamera>, selection: Binding<String?>,
-         overlays: MapOverlays, detail: MapDetail, fills: Bool, labels: Bool, retry: Int,
+         overlays: MapOverlays, detail: MapDetail, fillsAreas: Bool, showsLabels: Bool, retry: Int,
          activate: @escaping @MainActor (MapMarker) -> Void,
          makeLoader: @escaping @Sendable () async throws -> MapTileLoader = {
              MapTileLoader(source: try await OpenMapTilesSource.fetchOpenFreeMap())
@@ -30,8 +30,8 @@ struct OnlineMapContent {
         self.selection = selection
         self.overlays = overlays
         self.detail = detail
-        self.fills = fills
-        self.labels = labels
+        self.fillsAreas = fillsAreas
+        self.showsLabels = showsLabels
         self.retry = retry
         self.activate = activate
         self.makeLoader = makeLoader
@@ -61,7 +61,7 @@ struct OnlineMapContent {
             return "Could not load this area · \(retained) · e retry"
         case .loading(let pending) where pending == request:
             return "Loading tiles… · \(retained)"
-        default:
+        case .idle, .failed, .loading:
             guard let snapshot, snapshot.request == request else {
                 return "Loading tiles… · \(retained)"
             }
@@ -101,8 +101,8 @@ extension OnlineMapContent: View {
         let work = Work(request: request, retry: retry)
         VStack(alignment: .leading, spacing: 0) {
             MapView(source: snapshot?.source, camera: camera, selection: selection, overlays: overlays, detail: detail)
-                .mapFills(fills)
-                .mapLabels(labels)
+                .mapFills(fillsAreas)
+                .mapLabels(showsLabels)
                 .onActivate(activate)
                 .onViewportChange { viewport = $0 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

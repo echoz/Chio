@@ -12,6 +12,13 @@ public struct SearchableList<Item: Identifiable, RowContent: View> where Item.ID
     private enum Focus: Hashable {
         case search
         case results
+
+        var isSearch: Bool {
+            switch self {
+            case .search: true
+            case .results: false
+            }
+        }
     }
 
     private let items: [Item]
@@ -142,9 +149,10 @@ extension SearchableList: View {
                 .onKeyPress(.return) { _ in
                     // A second Return may arrive before native focus leaves the
                     // editor. Honor the requested results focus for that key.
-                    if focusStorage.wrappedValue == .results {
+                    switch focusStorage.wrappedValue {
+                    case .results:
                         activateSelection()
-                    } else {
+                    case .search, .none:
                         focusStorage.wrappedValue = .results
                     }
                     return .handled
@@ -195,7 +203,7 @@ extension SearchableList: View {
                 // SwiftTUI commits the requested focus on its next frame. Carry
                 // that type-ahead into the query instead of running shortcuts.
                 // Once search owns focus, its native editor handles all input.
-                if focus == .search {
+                if focus?.isSearch == true {
                     guard press.modifiers.subtracting(.shift).isEmpty else { return .ignored }
                     switch press.key {
                     case .character(let character): query.wrappedValue.append(character)
@@ -230,8 +238,8 @@ extension SearchableList: View {
             let reconciled = SearchSelection.reconciled(selection.wrappedValue, visibleIDs: visibleIDs)
             if selection.wrappedValue != reconciled { selection.wrappedValue = reconciled }
         }
-        .onChange(of: focus == .search, initial: true) {
-            searchFocusChange(focus == .search)
+        .onChange(of: focus?.isSearch == true, initial: true) {
+            searchFocusChange(focus?.isSearch == true)
         }
     }
 }

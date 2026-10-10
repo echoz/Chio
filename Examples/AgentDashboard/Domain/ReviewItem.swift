@@ -48,8 +48,12 @@ struct ReviewItem {
 
     static func ordered(_ items: [Self], by order: Order) -> [Self] {
         items.sorted { lhs, rhs in
-            if order == .repository, lhs.repository != rhs.repository {
-                return lhs.repository < rhs.repository
+            switch order {
+            case .repository:
+                if lhs.repository != rhs.repository {
+                    return lhs.repository < rhs.repository
+                }
+            case .recent: break
             }
             if lhs.updatedAt != rhs.updatedAt {
                 return lhs.updatedAt > rhs.updatedAt
@@ -129,7 +133,7 @@ struct ReviewItem {
         _ id: Int, _ title: String, _ repository: String, _ author: String,
         _ status: Status, _ epoch: TimeInterval, _ files: [String], _ summary: String
     ) -> Self {
-        Self(id: id, title: title, repository: repository, author: author, status: status,
+        ReviewItem(id: id, title: title, repository: repository, author: author, status: status,
              updatedAt: Date(timeIntervalSince1970: epoch), summary: summary, files: files)
     }
 }

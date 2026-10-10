@@ -14,9 +14,54 @@ struct ChoiceExampleView {
     @State private var showsValidation: Bool
     @State private var feedback = Feedback.editing
     let original: ChoiceDraft
-    private let availableCapabilities = Set(ChoiceDraft.Capability.allCases.filter { $0 != .deploy })
+    private let availableCapabilities = Set(ChoiceDraft.Capability.allCases.filter { $0.isAvailableInDemo })
 
-    enum Step { case language, capabilities }
+    enum Step {
+        case language, capabilities
+
+        var isLanguage: Bool {
+            switch self {
+            case .language: true
+            case .capabilities: false
+            }
+        }
+        var isCapabilities: Bool {
+            switch self {
+            case .language: false
+            case .capabilities: true
+            }
+        }
+        var title: String {
+            switch self {
+            case .language: "1 / 2 · Language"
+            case .capabilities: "2 / 2 · Capabilities"
+            }
+        }
+        var activationKey: String {
+            switch self {
+            case .language: "enter"
+            case .capabilities: "space/↵"
+            }
+        }
+        var activationHint: String {
+            switch self {
+            case .language: "choose"
+            case .capabilities: "toggle"
+            }
+        }
+        var advanceHint: String {
+            switch self {
+            case .language: "next"
+            case .capabilities: "save"
+            }
+        }
+        var actionTitle: String {
+            switch self {
+            case .language: "Next"
+            case .capabilities: "Save"
+            }
+        }
+    }
 
     enum Feedback {
         case editing
@@ -24,6 +69,13 @@ struct ChoiceExampleView {
         case rejected
         case cancelled
         case reset
+
+        var isRejected: Bool {
+            switch self {
+            case .rejected: true
+            case .editing, .saved, .cancelled, .reset: false
+            }
+        }
 
         var message: String {
             switch self {
@@ -65,20 +117,24 @@ struct ChoiceExampleView {
     }
 
     private func advance() {
-        if step == .language {
-            continueToCapabilities()
-            return
+        switch step {
+        case .language: continueToCapabilities()
+        case .capabilities: save()
         }
-        save()
     }
 
     private func continueToCapabilities() {
-        guard step == .language else { return }
-        step = .capabilities
+        switch step {
+        case .language: step = .capabilities
+        case .capabilities: break
+        }
     }
 
     private func save() {
-        guard step == .capabilities else { return }
+        switch step {
+        case .language: return
+        case .capabilities: break
+        }
         showsValidation = true
         guard draft.validationMessage(availableCapabilities: availableCapabilities) == nil else {
             feedback = .rejected
@@ -104,16 +160,16 @@ struct ChoiceExampleView {
         feedback = .reset
     }
 
-    private func hints(compact: Bool) -> some View {
+    private func hints(isCompact: Bool) -> some View {
         KeyHints {
             KeyHint("tab", "next")
             KeyHint("/", "search")
             KeyHint("esc", "clear")
-            KeyHint(step == .language ? "enter" : "space/↵", step == .language ? "choose" : "toggle")
-            KeyHint("^S", step == .language ? "next" : "save")
-            if step == .capabilities { KeyHint("^B", "back") }
+            KeyHint(step.activationKey, step.activationHint)
+            KeyHint("^S", step.advanceHint)
+            if step.isCapabilities { KeyHint("^B", "back") }
             KeyHint("^X", "cancel")
-            if !compact { KeyHint("^R", "reset") }
+            if !isCompact { KeyHint("^R", "reset") }
             KeyHint("^T", "theme")
             KeyHint("^Q", "quit")
         }
@@ -124,22 +180,22 @@ extension ChoiceExampleView.Step: Equatable {}
 
 extension ChoiceExampleView: View {
     var body: some View {
-        let compact = terminalSize.width < 50
-        let short = terminalSize.height < 24
-        let controlHeight = max(7, min(14, terminalSize.height - (short ? 11 : 13)))
+        let isCompact = terminalSize.width < 50
+        let isShort = terminalSize.height < 24
+        let controlHeight = max(7, min(14, terminalSize.height - (isShort ? 11 : 13)))
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 1) {
                 Text("chio").bold().foregroundStyle(theme.colors.accent)
                 Text("/ choices").foregroundStyle(theme.colors.secondaryText)
             }
-            if !short {
-                Text(step == .language ? "1 / 2 · Language" : "2 / 2 · Capabilities")
+            if !isShort {
+                Text(step.title)
                     .foregroundStyle(theme.colors.secondaryText)
             }
 
             Group {
-                if step == .language {
-                    FormField(short ? "Language · 1 / 2" : "Language", description: "Enter a result to continue") {
+                if step.isLanguage {
+                    FormField(isShort ? "Language · 1 / 2" : "Language", description: "Enter a result to continue") {
                         SearchableList(ChoiceDraft.Language.allCases, selection: languageSelection,
                                        query: $languageQuery, prompt: "Find a language…", searchText: { $0.label }) {
                             Text($0.label)
@@ -148,7 +204,7 @@ extension ChoiceExampleView: View {
                         .frame(height: controlHeight)
                     }
                 } else {
-                    FormField("Capabilities · \(draft.capabilities.count) / 3" + (short ? " · 2 / 2" : ""),
+                    FormField("Capabilities · \(draft.capabilities.count) / 3" + (isShort ? " · 2 / 2" : ""),
                               description: "Choose 1–3 · Deploy unavailable",
                               error: showsValidation ? draft.validationMessage(availableCapabilities: availableCapabilities) : nil) {
                         SearchableChecklist(ChoiceDraft.Capability.allCases, selection: capabilities,
@@ -157,7 +213,7 @@ extension ChoiceExampleView: View {
                                             isEnabled: { availableCapabilities.contains($0) }) { capability in
                             HStack(spacing: 1) {
                                 Text(capability.label)
-                                if !compact && capability != .deploy {
+                                if !isCompact && capability.isAvailableInDemo {
                                     Text(capability.description).foregroundStyle(theme.colors.secondaryText)
                                 }
                             }
@@ -169,26 +225,26 @@ extension ChoiceExampleView: View {
             .id(step)
 
             Text(feedback.message)
-                .foregroundStyle(feedback == .rejected ? theme.colors.error : theme.colors.secondaryText)
+                .foregroundStyle(feedback.isRejected ? theme.colors.error : theme.colors.secondaryText)
                 .lineLimit(1)
             HStack(spacing: 1) {
-                if step == .capabilities { Button("Back") { step = .language } }
-                Button(step == .language ? "Next" : "Save",
-                       action: step == .language ? continueToCapabilities : save)
+                if step.isCapabilities { Button("Back") { step = .language } }
+                Button(step.actionTitle,
+                       action: step.isLanguage ? continueToCapabilities : save)
                 Button("Cancel", action: cancel)
             }
             Spacer(minLength: 0)
-            if short {
-                hints(compact: true)
+            if isShort {
+                hints(isCompact: true)
             } else {
-                StatusBar { hints(compact: compact) }
+                StatusBar { hints(isCompact: isCompact) }
             }
         }
-        .padding(.horizontal, short ? 0 : 1)
-        .padding(.vertical, short ? 0 : 1)
+        .padding(.horizontal, isShort ? 0 : 1)
+        .padding(.vertical, isShort ? 0 : 1)
         .frame(maxWidth: 76, maxHeight: .infinity, alignment: .topLeading)
         .frame(width: terminalSize.width, height: terminalSize.height, alignment: .top)
-        .chioTheme(short ? theme.replacing(spacing: theme.spacing.replacing(sectionGap: 0)) : theme)
+        .chioTheme(isShort ? theme.replacing(spacing: theme.spacing.replacing(sectionGap: 0)) : theme)
         .onKeyPress { press in
             guard press.modifiers == .ctrl else { return .ignored }
             switch press.key {
@@ -203,7 +259,11 @@ extension ChoiceExampleView: View {
             return .handled
         }
         .onChange(of: draft) {
-            if case .saved(let saved) = feedback, saved != draft { feedback = .editing }
+            switch feedback {
+            case .saved(let saved):
+                if saved != draft { feedback = .editing }
+            case .editing, .rejected, .cancelled, .reset: break
+            }
         }
     }
 }

@@ -13,7 +13,7 @@ struct KeyHintsRenderTests {
                 KeyHint("↵", "run")
                 KeyHint("esc", "clear")
             }.chioTheme(.default),
-            proposal: .init(width: width, height: nil)
+            proposal: ProposedViewSize(width: width, height: nil)
         ).rasterSurface
 
         let expected: [String]
@@ -34,7 +34,7 @@ struct KeyHintsRenderTests {
                 KeyHint("界", "広い")
                 KeyHint("q", "quit")
             }.chioTheme(.default),
-            proposal: .init(width: width, height: nil)
+            proposal: ProposedViewSize(width: width, height: nil)
         ).rasterSurface
 
         #expect(surface.lines.map(trimTrailingSpaces) == (width == 14
@@ -50,13 +50,13 @@ struct KeyHintsRenderTests {
             accent: Color(hexRGB: 0x102030),
             secondaryText: Color(hexRGB: 0x405060)
         ))
-        theme = theme.replacing(spacing: .init(hintGap: 3))
+        theme = theme.replacing(spacing: ChioTheme.Spacing(hintGap: 3))
         let surface = DefaultRenderer().render(
             KeyHints {
                 KeyHint("q", "quit")
                 KeyHint("/", "search")
             }.chioTheme(theme),
-            proposal: .init(width: 32, height: nil)
+            proposal: ProposedViewSize(width: 32, height: nil)
         ).rasterSurface
 
         #expect(surface.lines.map(trimTrailingSpaces) == ["q quit   / search"])
@@ -79,7 +79,7 @@ struct KeyHintsRenderTests {
                     KeyHint("esc", "clear")
                 }
             }.chioTheme(theme),
-            proposal: .init(width: 16, height: nil)
+            proposal: ProposedViewSize(width: 16, height: nil)
         ).rasterSurface
 
         #expect(surface.lines.map(trimTrailingSpaces) == [

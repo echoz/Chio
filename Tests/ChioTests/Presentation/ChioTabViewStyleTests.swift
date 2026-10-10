@@ -15,7 +15,7 @@ struct ChioTabViewStyleTests {
                 Tab("Settings", value: "settings") { Text("Settings body") }
                 Tab("Logs", value: "logs") { Text("Logs body") }
             }.chioTheme(theme),
-            proposal: .init(width: width, height: 8)
+            proposal: ProposedViewSize(width: width, height: 8)
         )
         let lines = rendered.rasterSurface.lines
         #expect(lines[2].contains("Logs body"))
@@ -47,7 +47,7 @@ struct ChioTabViewStyleTests {
                 Tab("日本", value: 0) { Text("First") }
                 Tab("e\u{301}", value: 1) { Text("Second") }
             }.chioTheme(.default),
-            proposal: .init(width: 9, height: 4)
+            proposal: ProposedViewSize(width: 9, height: 4)
         )
         #expect(rendered.rasterSurface.lines[0].contains("日本"))
         #expect(rendered.rasterSurface.lines[0].contains("e\u{301}"))
@@ -61,7 +61,7 @@ struct ChioTabViewStyleTests {
             TabView(selection: .constant(0)) {
                 Tab("A label much wider than this terminal", value: 0) { Text("Only content") }
             }.chioTheme(.default),
-            proposal: .init(width: 12, height: 4)
+            proposal: ProposedViewSize(width: 12, height: 4)
         )
         #expect(rendered.rasterSurface.lines[0].contains("More"))
         #expect(rendered.rasterSurface.lines[1].contains("━"))
@@ -72,12 +72,12 @@ struct ChioTabViewStyleTests {
     func cardinality() {
         let empty = DefaultRenderer().render(
             TabView(selection: .constant(0)) { EmptyView() }.chioTheme(.default),
-            proposal: .init(width: 12, height: 4)
+            proposal: ProposedViewSize(width: 12, height: 4)
         )
         #expect(empty.rasterSurface.lines.allSatisfy { $0.trimmingCharacters(in: .whitespaces).isEmpty })
         let one = DefaultRenderer().render(
             TabView(selection: .constant(0)) { Tab("One", value: 0) { Text("Only") } }.chioTheme(.default),
-            proposal: .init(width: 12, height: 4)
+            proposal: ProposedViewSize(width: 12, height: 4)
         )
         #expect(one.rasterSurface.lines[0].contains("One"))
         #expect(!one.rasterSurface.lines[0].contains("More"))
@@ -91,7 +91,7 @@ struct ChioTabViewStyleTests {
                 Tab("One", value: "one") { Text("Fallback body") }
                 Tab("Two", value: "two") { Text("Second body") }
             }.disabled(true).chioTheme(.default),
-            proposal: .init(width: 36, height: 5)
+            proposal: ProposedViewSize(width: 36, height: 5)
         )
         #expect(rendered.rasterSurface.lines[2].contains("Fallback body"))
         #expect(!rendered.rasterSurface.lines.joined().contains("Second body"))
@@ -106,7 +106,7 @@ struct ChioTabViewStyleTests {
             accent: Color(hexRGB: 0x123456), selectedSurface: Color(hexRGB: 0x654321)
         ))
         let recorder = HostedFrameRecorder()
-        let surface = HostedRasterSurface(surfaceSize: .init(width: 36, height: 8), appearance: .fallback,
+        let surface = HostedRasterSurface(surfaceSize: CellSize(width: 36, height: 8), appearance: .fallback,
                                           onFrame: { recorder.receive($0) })
         let session = try HostedSceneSession(for: TabStyleTestApp(theme: theme, suppressed: suppressed),
                                             sceneID: "tab-style", surface: surface)
@@ -146,7 +146,7 @@ struct ChioTabViewStyleTests {
     @Test("Tiny expanded tab menus leave neighboring layout cells untouched", arguments: [0, 1, 2])
     func tinyOverflow(width: Int) async throws {
         let recorder = HostedFrameRecorder()
-        let surface = HostedRasterSurface(surfaceSize: .init(width: 30, height: 8), appearance: .fallback,
+        let surface = HostedRasterSurface(surfaceSize: CellSize(width: 30, height: 8), appearance: .fallback,
                                           onFrame: { recorder.receive($0) })
         let session = try HostedSceneSession(for: TinyTabsTestApp(width: width), sceneID: "tiny-tabs", surface: surface)
         let run = Task { try await session.start() }
@@ -180,7 +180,7 @@ struct ChioTabViewStyleTests {
           arguments: [false, true])
     func longOverflow(suppressed: Bool) async throws {
         let recorder = HostedFrameRecorder()
-        let surface = HostedRasterSurface(surfaceSize: .init(width: 12, height: 30), appearance: .fallback,
+        let surface = HostedRasterSurface(surfaceSize: CellSize(width: 12, height: 30), appearance: .fallback,
                                           onFrame: { recorder.receive($0) })
         let session = try HostedSceneSession(for: TabStyleTestApp(suppressed: suppressed, count: 20),
                                             sceneID: "tab-style", surface: surface)

@@ -55,19 +55,31 @@ extension MapExampleCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(commandName: "chio-maps",
                                                      abstract: "World and street examples using Chio MapView; offline unless --online is supplied.")
     mutating func validate() throws {
-        guard (20...240).contains(width), (12...100).contains(height) else {
+        let hasSupportedWidth = (20...240).contains(width)
+        let hasSupportedHeight = (12...100).contains(height)
+        guard hasSupportedWidth, hasSupportedHeight else {
             throw ValidationError("Use width 20...240 and height 12...100.")
         }
-        if let cellAspect, !cellAspect.isFinite || !(0.5...4).contains(cellAspect) {
-            throw ValidationError("Cell aspect must be finite in 0.5...4.")
+        if let cellAspect {
+            let isFiniteAspect = cellAspect.isFinite
+            let hasSupportedAspect = (0.5...4).contains(cellAspect)
+            guard isFiniteAspect, hasSupportedAspect else {
+                throw ValidationError("Cell aspect must be finite in 0.5...4.")
+            }
         }
         guard [snapshot, snapshotJSON, benchmark].filter({ $0 }).count <= 1 else {
             throw ValidationError("Choose one output mode: snapshot, snapshot-json or benchmark.")
         }
-        guard !online || !(snapshot || snapshotJSON || benchmark) else {
+        let hasOfflineOutput = snapshot || snapshotJSON || benchmark
+        guard !online || !hasOfflineOutput else {
             throw ValidationError("Online mode is interactive. Snapshot and benchmark modes use bundled data.")
         }
-        guard !online || source == .overpass else {
+        let isDefaultBundledSource: Bool
+        switch source {
+        case .overpass: isDefaultBundledSource = true
+        case .openfreemap: isDefaultBundledSource = false
+        }
+        guard !online || isDefaultBundledSource else {
             throw ValidationError("--source selects a bundled fixture. Use --online on its own for live OpenFreeMap tiles.")
         }
         guard online || tileSource.isEmpty else {
@@ -79,8 +91,16 @@ extension MapExampleCommand: AsyncParsableCommand {
     mutating func run() async throws {
         let fixtures = try MapFixtures.load()
         let detail: MapDetail = sourceDetail ? .source : self.detail
-        let acquisition: MapExampleAcquisition = online
-            ? (tileSource.isEmpty ? .openFreeMap : try .configured(file: tileSource)) : .offline
+        let acquisition: MapExampleAcquisition
+        if online {
+            if tileSource.isEmpty {
+                acquisition = .openFreeMap
+            } else {
+                acquisition = try .configured(file: tileSource)
+            }
+        } else {
+            acquisition = .offline
+        }
         if benchmark {
             try await MapCapture.benchmark(fixtures: fixtures, appearance: theme, cellAspect: cellAspect,
                                            detail: detail, streetSource: source)

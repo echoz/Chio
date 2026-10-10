@@ -39,7 +39,7 @@ public struct MarkdownView {
 
     /// Returns a presentation choice without reparsing the retained document.
     public func codeHighlighting(_ highlighting: CodeHighlighting) -> Self {
-        Self(document: document, links: links, highlighting: highlighting)
+        MarkdownView(document: document, links: links, highlighting: highlighting)
     }
 }
 
@@ -62,8 +62,10 @@ private enum MarkdownLinks {
     case interactive(OpenLinkAction)
 
     var isInteractive: Bool {
-        if case .interactive = self { return true }
-        return false
+        switch self {
+        case .interactive: true
+        case .passive: false
+        }
     }
 
     @MainActor
@@ -126,7 +128,7 @@ private struct MarkdownBlock {
         return Text(Text.RichContent(stringInterpolation: interpolation))
     }
 
-    private func text(_ spans: [MarkdownDocument.Span], inLink: Bool = false) -> Text {
+    private func text(_ spans: [MarkdownDocument.Span], isInLink: Bool = false) -> Text {
         var interpolation = Text.StringInterpolation(
             literalCapacity: 0,
             interpolationCount: spans.count
@@ -138,14 +140,14 @@ private struct MarkdownBlock {
                 if attributes.contains(.strong) { fragment = fragment.bold() }
                 if attributes.contains(.emphasis) { fragment = fragment.italic() }
                 // An active link's style owns its paint, including focus feedback.
-                if attributes.contains(.code) && !inLink {
+                if attributes.contains(.code) && !isInLink {
                     fragment = fragment.foregroundStyle(theme.colors.accent)
                         .cellBackground(theme.colors.selectedSurface)
                 }
                 interpolation.appendInterpolation(fragment)
             case let .link(label, destination, _):
                 if links.isInteractive {
-                    interpolation.appendInterpolation(Link(text(label, inLink: true), destination: destination))
+                    interpolation.appendInterpolation(Link(text(label, isInLink: true), destination: destination))
                 } else {
                     interpolation.appendInterpolation(text(span.passiveSpans))
                 }

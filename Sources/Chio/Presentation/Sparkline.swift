@@ -27,8 +27,13 @@ public struct Sparkline {
 
     public init(_ samples: [Double?], scale: Scale = .automatic) {
         precondition(samples.allSatisfy { $0?.isFinite ?? true }, "Sparkline readings must be finite; use nil for a gap.")
-        if case let .fixed(range) = scale {
-            precondition(range.lowerBound.isFinite && range.upperBound.isFinite && range.lowerBound < range.upperBound,
+        switch scale {
+        case .automatic: break
+        case .fixed(let range):
+            let hasFiniteLowerBound = range.lowerBound.isFinite
+            let hasFiniteUpperBound = range.upperBound.isFinite
+            let hasIncreasingBounds = range.lowerBound < range.upperBound
+            precondition(hasFiniteLowerBound && hasFiniteUpperBound && hasIncreasingBounds,
                          "Sparkline fixed bounds must be finite and strictly increasing.")
         }
         self.samples = samples
@@ -114,7 +119,7 @@ private struct HistoryDrawing {
         }
 
         func including(_ reading: Reading) -> Self {
-            Self(column: column, first: first,
+            Bucket(column: column, first: first,
                  minimum: reading.value < minimum.value ? reading : minimum,
                  maximum: reading.value > maximum.value ? reading : maximum,
                  last: reading)

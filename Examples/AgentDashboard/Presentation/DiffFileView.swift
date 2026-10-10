@@ -5,7 +5,7 @@ import SwiftTUI
 @MainActor
 struct DiffFileView {
     let file: DiffFile
-    let split: Bool
+    let isSplit: Bool
     let minimumWidth: Int
     let sourceWidth: Int
     let activeHunk: Int?
@@ -23,7 +23,7 @@ struct DiffFileView {
 
     private var paneWidth: Int { max(gutterWidth + 3 + sourceWidth, (minimumWidth - 3) / 2) }
     private var contentWidth: Int {
-        split ? paneWidth * 2 + 3 : max(minimumWidth, gutterWidth * 2 + 4 + sourceWidth)
+        isSplit ? paneWidth * 2 + 3 : max(minimumWidth, gutterWidth * 2 + 4 + sourceWidth)
     }
 
     private func gutter(_ number: Int?) -> some View {
@@ -71,22 +71,25 @@ struct DiffFileView {
     private func splitRow(_ row: DiffFile.SplitRow) -> some View {
         let old: DiffFile.Line?
         let new: DiffFile.Line?
-        let changed: Bool
+        let isChanged: Bool
         switch row {
-        case .context(let before, let after): (old, new, changed) = (before, after, false)
-        case .replacement(let before, let after): (old, new, changed) = (before, after, true)
-        case .removed(let line): (old, new, changed) = (line, nil, true)
-        case .added(let line): (old, new, changed) = (nil, line, true)
+        case .context(let before, let after): (old, new, isChanged) = (before, after, false)
+        case .replacement(let before, let after): (old, new, isChanged) = (before, after, true)
+        case .removed(let line): (old, new, isChanged) = (line, nil, true)
+        case .added(let line): (old, new, isChanged) = (nil, line, true)
         }
         return HStack(spacing: 1) {
-            pane(old, marker: changed ? "−" : " ")
+            pane(old, marker: isChanged ? "−" : " ")
             Text("│").foregroundStyle(theme.colors.border)
-            pane(new, marker: changed ? "+" : " ")
+            pane(new, marker: isChanged ? "+" : " ")
         }
     }
 
     private var summary: String {
-        if case .binary = file.content { return "Binary content · no source lines to display." }
+        switch file.content {
+        case .binary: return "Binary content · no source lines to display."
+        case .text: break
+        }
         switch file.change {
         case .added: return "Empty file added."
         case .deleted: return "Empty file deleted."
@@ -102,7 +105,7 @@ extension DiffFileView: View {
             if file.hunks.isEmpty {
                 Text(summary).foregroundStyle(theme.colors.secondaryText).fixedSize()
             } else {
-                if split {
+                if isSplit {
                     HStack(spacing: 1) {
                         Text("BEFORE").frame(width: paneWidth, alignment: .leading)
                         Text("│")
@@ -116,7 +119,7 @@ extension DiffFileView: View {
                         .frame(width: contentWidth, height: 1, alignment: .leading)
                         .background(index == activeHunk ? theme.colors.selectedSurface : theme.colors.surface)
                         .id(HunkAnchor(fileID: file.id, index: index))
-                    if split {
+                    if isSplit {
                         ForEach(Array(hunk.splitRows.enumerated()), id: \.offset) { _, row in splitRow(row) }
                     } else {
                         ForEach(Array(hunk.unifiedRows.enumerated()), id: \.offset) { _, row in unifiedRow(row) }
@@ -135,7 +138,7 @@ extension DiffFileView.HunkAnchor: Sendable {}
 // SwiftTUI validates environment dependencies before reusing an equal view.
 extension DiffFileView: @MainActor Equatable {
     static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.file == rhs.file && lhs.split == rhs.split
+        lhs.file == rhs.file && lhs.isSplit == rhs.isSplit
             && lhs.minimumWidth == rhs.minimumWidth && lhs.sourceWidth == rhs.sourceWidth
             && lhs.activeHunk == rhs.activeHunk
     }

@@ -26,6 +26,20 @@ struct Agent {
         case completed
         case failed
 
+        var runningProgress: RunningProgress? {
+            switch self {
+            case .running(let progress): progress
+            case .idle, .completed, .failed: nil
+            }
+        }
+
+        var isFailed: Bool {
+            switch self {
+            case .failed: true
+            case .idle, .running, .completed: false
+            }
+        }
+
         var label: String {
             switch self {
             case .idle: "Idle"
@@ -61,10 +75,10 @@ struct Agent {
     }
 
     static let examples: [Agent] = [
-        .init(id: "build", name: "Build Agent", summary: "Compile · resolve · package", phase: .running(progress: RunningProgress(fraction: 0.78)!)),
-        .init(id: "review", name: "Review Agent", summary: "Read · inspect · suggest", phase: .idle),
-        .init(id: "test", name: "Test Agent", summary: "Check · verify · report", phase: .failed),
-        .init(id: "docs", name: "Docs Agent", summary: "Write · explain · publish", phase: .completed),
+        Agent(id: "build", name: "Build Agent", summary: "Compile · resolve · package", phase: .running(progress: RunningProgress(fraction: 0.78)!)),
+        Agent(id: "review", name: "Review Agent", summary: "Read · inspect · suggest", phase: .idle),
+        Agent(id: "test", name: "Test Agent", summary: "Check · verify · report", phase: .failed),
+        Agent(id: "docs", name: "Docs Agent", summary: "Write · explain · publish", phase: .completed),
     ]
 }
 
@@ -87,7 +101,7 @@ extension Agent.RunningProgress: Codable {
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let fraction = try container.decode(Double.self, forKey: .fraction)
-        guard let progress = Self(fraction: fraction) else {
+        guard let progress = Agent.RunningProgress(fraction: fraction) else {
             throw DecodingError.dataCorruptedError(
                 forKey: .fraction, in: container,
                 debugDescription: "Running progress must be finite and in 0..<1."

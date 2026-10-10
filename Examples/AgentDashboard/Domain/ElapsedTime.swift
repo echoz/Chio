@@ -30,34 +30,42 @@ struct ElapsedTime {
     }
 
     var isRunning: Bool {
-        if case .running = phase { return true }
-        return false
+        switch phase {
+        case .running: true
+        case .paused: false
+        }
     }
 
     /// Returns accumulated time plus the current running interval.
     /// An instant earlier than its running anchor contributes zero.
     func elapsed(at instant: MonotonicInstant) -> Duration {
-        guard case let .running(since) = phase, instant >= since else {
-            return accumulated
+        switch phase {
+        case .paused: return accumulated
+        case .running(let since):
+            guard instant >= since else { return accumulated }
+            return accumulated + since.duration(to: instant)
         }
-        return accumulated + since.duration(to: instant)
     }
 
     /// Starts another interval, retaining accumulated time. Already running is inert.
     func resumed(at instant: MonotonicInstant) -> Self {
         guard !isRunning else { return self }
-        return Self(accumulated: accumulated, phase: .running(since: instant))
+        return ElapsedTime(accumulated: accumulated, phase: .running(since: instant))
     }
 
     /// Accumulates the current interval and pauses.
     /// Already paused, or an instant earlier than the running anchor, is inert.
     func paused(at instant: MonotonicInstant) -> Self {
-        guard case let .running(since) = phase, instant >= since else { return self }
-        return Self(accumulated: elapsed(at: instant), phase: .paused)
+        switch phase {
+        case .paused: return self
+        case .running(let since):
+            guard instant >= since else { return self }
+            return ElapsedTime(accumulated: elapsed(at: instant), phase: .paused)
+        }
     }
 
     /// Clears accumulated time and returns to paused.
-    func resetting() -> Self { Self() }
+    func resetting() -> Self { ElapsedTime() }
 }
 
 extension ElapsedTime: Hashable {}

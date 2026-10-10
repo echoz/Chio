@@ -44,10 +44,10 @@ struct MetricsExampleView {
     }
 
     private var theme: ChioTheme { themeChoice.theme }
-    private var wide: Bool { terminalSize.width >= 70 }
-    private var compact: Bool { !wide || terminalSize.height < 24 }
+    private var isWide: Bool { terminalSize.width >= 70 }
+    private var isCompact: Bool { !isWide || terminalSize.height < 24 }
     private var panelWidth: Int {
-        wide ? (min(100, terminalSize.width) - (compact ? 2 : 4)) / 2 : terminalSize.width
+        isWide ? (min(100, terminalSize.width) - (isCompact ? 2 : 4)) / 2 : terminalSize.width
     }
     private var meterWidth: Int { max(1, panelWidth - 4) }
 
@@ -90,9 +90,9 @@ struct MetricsExampleView {
                     EmptyView()
                 } currentValueLabel: { EmptyView() }
                 Sparkline(history.displaying(samples), scale: .fixed(0...100))
-                    .frame(height: wide ? 4 : 2)
+                    .frame(height: isWide ? 4 : 2)
                     .accessibilityLabel(historySummary(title, samples: samples))
-                if !compact {
+                if !isCompact {
                     HStack {
                         Text("24 samples · 1s / step")
                         Spacer(minLength: 1)
@@ -103,7 +103,7 @@ struct MetricsExampleView {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(width: wide ? panelWidth : nil)
+        .frame(width: isWide ? panelWidth : nil)
     }
 
     private var hints: some View {
@@ -118,7 +118,7 @@ struct MetricsExampleView {
 
 extension MetricsExampleView: View {
     var body: some View {
-        let layout = wide
+        let layout = isWide
             ? AnyLayout(HStackLayout(alignment: .top, spacing: 2))
             : AnyLayout(VStackLayout(alignment: .leading, spacing: 0))
         VStack(alignment: .leading, spacing: 0) {
@@ -126,7 +126,7 @@ extension MetricsExampleView: View {
                 Text("chio").bold().foregroundStyle(theme.colors.accent)
                 Text("/ metrics · simulated").foregroundStyle(theme.colors.secondaryText)
             }
-            if !compact {
+            if !isCompact {
                 Text("A quiet view of a busy machine. Local samples, advanced by you.")
                     .foregroundStyle(theme.colors.mutedText)
                 Spacer().frame(height: 1)
@@ -139,22 +139,22 @@ extension MetricsExampleView: View {
                 spacing: theme.spacing.replacing(verticalInset: 0, sectionGap: 0)
             ), titlePlacement: .border))
             .progressViewStyle(ChioProgressViewStyle(theme: theme, treatment: .measurement))
-            if !compact { Spacer().frame(height: 1) }
+            if !isCompact { Spacer().frame(height: 1) }
             HStack(spacing: 1) {
                 Button("Next sample", action: nextSample)
                 Button("History") { history = history.next }
                     .accessibilityLabel("Cycle history")
-                Text(compact ? history.rawValue : "History: \(history.rawValue) · step \(sampleIndex)")
+                Text(isCompact ? history.rawValue : "History: \(history.rawValue) · step \(sampleIndex)")
                     .foregroundStyle(theme.colors.mutedText)
             }
             Spacer(minLength: 0)
-            if !compact {
+            if !isCompact {
                 Text("Tab moves focus · Return activates · 100% is utilization")
                     .foregroundStyle(theme.colors.mutedText)
                 StatusBar { hints }
             } else { hints }
         }
-        .padding(compact ? 0 : 1)
+        .padding(isCompact ? 0 : 1)
         .frame(maxWidth: 100, maxHeight: .infinity, alignment: .topLeading)
         .frame(width: terminalSize.width, height: terminalSize.height, alignment: .top)
         .onKeyPress { press in

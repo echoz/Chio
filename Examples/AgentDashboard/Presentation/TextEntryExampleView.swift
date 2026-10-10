@@ -10,23 +10,36 @@ struct TextEntryExampleView {
     @State private var password: String
     @State private var notes: String
     @State private var showsValidation: Bool
-    @State private var inputsDisabled: Bool
+    @State private var areInputsDisabled: Bool
     @State private var feedback = Feedback.editing
     @FocusState private var focus: Field?
 
     init(theme: ExampleTheme = .default, initialPassword: String = "", initialNotes: String = "",
-         showsValidation: Bool = false, inputsDisabled: Bool = false) {
+         showsValidation: Bool = false, areInputsDisabled: Bool = false) {
         _themeChoice = State(wrappedValue: theme)
         _password = State(wrappedValue: initialPassword)
         _notes = State(wrappedValue: initialNotes)
         _showsValidation = State(wrappedValue: showsValidation)
-        _inputsDisabled = State(wrappedValue: inputsDisabled)
+        _areInputsDisabled = State(wrappedValue: areInputsDisabled)
     }
 
     private enum Field: Hashable { case password, notes }
     private enum Feedback: Equatable {
         case editing, rejected, cancelled
         case saved(notes: String)
+
+        var isRejected: Bool {
+            switch self {
+            case .rejected: true
+            case .editing, .saved, .cancelled: false
+            }
+        }
+        var isCancelled: Bool {
+            switch self {
+            case .cancelled: true
+            case .editing, .saved, .rejected: false
+            }
+        }
 
         var message: String {
             switch self {
@@ -39,8 +52,10 @@ struct TextEntryExampleView {
     }
 
     private var isSaved: Bool {
-        if case .saved = feedback { return true }
-        return false
+        switch feedback {
+        case .saved: true
+        case .editing, .rejected, .cancelled: false
+        }
     }
 
     private var theme: ChioTheme { themeChoice.theme }
@@ -50,7 +65,7 @@ struct TextEntryExampleView {
     }
 
     private func save() {
-        guard !inputsDisabled else { return }
+        guard !areInputsDisabled else { return }
         showsValidation = true
         if passwordError != nil {
             feedback = .rejected
@@ -70,12 +85,12 @@ struct TextEntryExampleView {
         notes = ""
         showsValidation = false
         feedback = .cancelled
-        if !inputsDisabled { focus = .password }
+        if !areInputsDisabled { focus = .password }
     }
 
     private func toggleDisabled() {
-        inputsDisabled.toggle()
-        if !inputsDisabled { focus = .password }
+        areInputsDisabled.toggle()
+        if !areInputsDisabled { focus = .password }
     }
 
     private var hints: some View {
@@ -84,7 +99,7 @@ struct TextEntryExampleView {
             KeyHint("↵", "newline")
             KeyHint("^S", "save")
             KeyHint("^X", "cancel")
-            KeyHint("^D", inputsDisabled ? "unlock" : "lock")
+            KeyHint("^D", areInputsDisabled ? "unlock" : "lock")
             KeyHint("^T", "theme")
             KeyHint("^Q", "quit")
         }
@@ -93,55 +108,63 @@ struct TextEntryExampleView {
 
 extension TextEntryExampleView: View {
     var body: some View {
-        let short = terminalSize.height < 24
-        let editorHeight = short ? 4 : min(10, max(5, terminalSize.height - 20))
+        let isShort = terminalSize.height < 24
+        let editorHeight = isShort ? 4 : min(10, max(5, terminalSize.height - 20))
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 1) {
                 Text("chio").bold().foregroundStyle(theme.colors.accent)
                 Text("/ text entry").foregroundStyle(theme.colors.secondaryText)
             }
-            if !short {
+            if !isShort {
                 Text("Local sample · use a made-up password")
                     .foregroundStyle(theme.colors.secondaryText)
             }
-            FormField("Demo password", description: short ? "" : "Made-up value only · at least 8 characters",
+            FormField("Demo password", description: isShort ? "" : "Made-up value only · at least 8 characters",
                       error: showsValidation ? passwordError : nil) {
                 SecureField("Made-up password", text: $password)
                     .accessibilityLabel("Demo password")
                     .focused($focus, equals: .password)
-                    .disabled(inputsDisabled)
+                    .disabled(areInputsDisabled)
             }
-            FormField("Notes", description: short ? "" : "Required · Return inserts a newline",
+            FormField("Notes", description: isShort ? "" : "Required · Return inserts a newline",
                       error: showsValidation ? notesError : nil) {
                 TextEditor(text: $notes)
                     .accessibilityLabel("Notes")
                     .focused($focus, equals: .notes)
-                    .disabled(inputsDisabled)
+                    .disabled(areInputsDisabled)
                     .frame(height: editorHeight)
             }
-            if !short || isSaved || feedback == .cancelled || inputsDisabled {
-                Text(inputsDisabled ? "Inputs locked · ^D unlock" : feedback.message)
-                    .foregroundStyle(feedback == .rejected ? theme.colors.error : theme.colors.secondaryText)
+            if !isShort || isSaved || feedback.isCancelled || areInputsDisabled {
+                Text(areInputsDisabled ? "Inputs locked · ^D unlock" : feedback.message)
+                    .foregroundStyle(feedback.isRejected ? theme.colors.error : theme.colors.secondaryText)
                     .lineLimit(1)
             }
             HStack(spacing: 1) {
-                Button("Save", action: save).disabled(inputsDisabled)
+                Button("Save", action: save).disabled(areInputsDisabled)
                 Button("Cancel", action: cancel)
             }
             Spacer(minLength: 0)
-            if short { hints } else { StatusBar { hints } }
+            if isShort { hints } else { StatusBar { hints } }
         }
-        .padding(.horizontal, short ? 0 : 1)
-        .padding(.vertical, short ? 0 : 1)
+        .padding(.horizontal, isShort ? 0 : 1)
+        .padding(.vertical, isShort ? 0 : 1)
         .frame(maxWidth: 76, maxHeight: .infinity, alignment: .topLeading)
         .frame(width: terminalSize.width, height: terminalSize.height, alignment: .top)
         .chioTheme(theme)
-        .onAppear { if !inputsDisabled { focus = .password } }
+        .onAppear { if !areInputsDisabled { focus = .password } }
         .onChange(of: password) {
-            if case .saved = feedback, !password.isEmpty { feedback = .editing }
+            switch feedback {
+            case .saved:
+                if !password.isEmpty { feedback = .editing }
+            case .editing, .rejected, .cancelled: break
+            }
         }
         .onChange(of: notes) {
-            if case .saved(let acceptedNotes) = feedback, notes != acceptedNotes { feedback = .editing }
+            switch feedback {
+            case .saved(let acceptedNotes):
+                if notes != acceptedNotes { feedback = .editing }
+            case .editing, .rejected, .cancelled: break
+            }
         }
         .onKeyPress { press in
             guard press.modifiers == .ctrl else { return .ignored }

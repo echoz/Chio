@@ -9,7 +9,7 @@ struct ChoiceDraft {
     }
 
     func replacing(language: Language? = nil, capabilities: Set<Capability>? = nil) -> Self {
-        Self(language: language ?? self.language, capabilities: capabilities ?? self.capabilities)
+        ChoiceDraft(language: language ?? self.language, capabilities: capabilities ?? self.capabilities)
     }
 
     func validationMessage(availableCapabilities: Set<Capability>) -> String? {
@@ -44,6 +44,13 @@ struct ChoiceDraft {
 
     enum Capability: String {
         case build, test, lint, format, docs, deploy
+
+        var isAvailableInDemo: Bool {
+            switch self {
+            case .build, .test, .lint, .format, .docs: true
+            case .deploy: false
+            }
+        }
 
         var label: String {
             switch self {

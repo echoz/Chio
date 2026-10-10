@@ -12,7 +12,7 @@ public struct ChioTableStyle {
 extension ChioTableStyle: TableStyle {
     @MainActor
     public func resolvePresentation(for configuration: TableStyleConfiguration) -> TableStylePresentation {
-        .init(
+        TableStylePresentation(
             borderGlyphs: .insetGrouped,
             headerForegroundStyle: AnyShapeStyle(theme.colors.heading),
             headerBackgroundStyle: AnyShapeStyle(theme.colors.selectedSurface),

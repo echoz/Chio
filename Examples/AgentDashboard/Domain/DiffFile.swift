@@ -12,7 +12,9 @@ struct DiffFile {
         case .renamed(let from, let to):
             guard !from.isEmpty, !to.isEmpty else { throw ValidationError.emptyPath }
         }
-        if case .text(let hunks) = content {
+        switch content {
+        case .binary: break
+        case .text(let hunks):
             var oldEnd = 0
             var newEnd = 0
             for hunk in hunks {
@@ -60,8 +62,10 @@ struct DiffFile {
     var addedLineCount: Int {
         hunks.reduce(0) { count, hunk in
             count + hunk.blocks.reduce(0) { count, block in
-                if case .change(_, let added) = block { return count + added.count }
-                return count
+                switch block {
+                case .change(_, let added): count + added.count
+                case .context: count
+                }
             }
         }
     }
@@ -69,8 +73,10 @@ struct DiffFile {
     var removedLineCount: Int {
         hunks.reduce(0) { count, hunk in
             count + hunk.blocks.reduce(0) { count, block in
-                if case .change(let removed, _) = block { return count + removed.count }
-                return count
+                switch block {
+                case .change(let removed, _): count + removed.count
+                case .context: count
+                }
             }
         }
     }
@@ -258,7 +264,7 @@ extension DiffFile: Decodable {
         do {
             try self.init(id: id, change: change, content: content)
         } catch {
-            throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath,
+            throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: decoder.codingPath,
                 debugDescription: "Invalid diff file: \(error)", underlyingError: error))
         }
     }
@@ -295,7 +301,7 @@ extension DiffFile.Hunk: Decodable {
         do {
             try self.init(oldOffset: oldOffset, newOffset: newOffset, blocks: blocks)
         } catch {
-            throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath,
+            throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: decoder.codingPath,
                 debugDescription: "Invalid diff hunk: \(error)", underlyingError: error))
         }
     }

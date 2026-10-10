@@ -39,18 +39,20 @@ private struct HintFlowLayout {
         for subview in subviews {
             let ideal = subview.sizeThatFits(.unspecified)
             let size = ideal.width > limit
-                ? subview.sizeThatFits(.init(width: limit, height: nil)) : ideal
-            if x > 0 && x + size.width > limit {
+                ? subview.sizeThatFits(ProposedViewSize(width: limit, height: nil)) : ideal
+            let hasCurrentRow = x > 0
+            let exceedsRowWidth = x + size.width > limit
+            if hasCurrentRow && exceedsRowWidth {
                 y += rowHeight
                 x = 0
                 rowHeight = 0
             }
-            frames.append(.init(origin: .init(x: x, y: y), size: size))
+            frames.append(LayoutRect(origin: LayoutPoint(x: x, y: y), size: size))
             usedWidth = max(usedWidth, x + size.width)
             x += size.width + gap
             rowHeight = max(rowHeight, size.height)
         }
-        return (.init(width: usedWidth, height: y + rowHeight), frames)
+        return (LayoutSize(width: usedWidth, height: y + rowHeight), frames)
     }
 }
 
@@ -71,8 +73,8 @@ extension HintFlowLayout: Layout {
         let frames = arrange(subviews, width: bounds.size.width).1
         for (subview, frame) in zip(subviews, frames) {
             subview.place(
-                at: .init(x: bounds.origin.x + frame.origin.x, y: bounds.origin.y + frame.origin.y),
-                proposal: .init(width: frame.size.width, height: frame.size.height)
+                at: LayoutPoint(x: bounds.origin.x + frame.origin.x, y: bounds.origin.y + frame.origin.y),
+                proposal: ProposedViewSize(width: frame.size.width, height: frame.size.height)
             )
         }
     }

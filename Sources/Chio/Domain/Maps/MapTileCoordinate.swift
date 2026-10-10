@@ -7,9 +7,10 @@ public struct MapTileCoordinate {
     public let y: Int
 
     public init(zoom: Int, x: Int, y: Int) throws {
-        guard (0...22).contains(zoom), (0..<(1 << zoom)).contains(x),
-              (0..<(1 << zoom)).contains(y)
-        else { throw ValidationError.invalidAddress }
+        guard (0...22).contains(zoom) else { throw ValidationError.invalidAddress }
+        let hasValidX = (0..<(1 << zoom)).contains(x)
+        let hasValidY = (0..<(1 << zoom)).contains(y)
+        guard hasValidX, hasValidY else { throw ValidationError.invalidAddress }
         self.zoom = zoom
         self.x = x
         self.y = y
@@ -19,7 +20,7 @@ public struct MapTileCoordinate {
         get throws {
             let southwest = try coordinate(x: 0, y: 1, extent: 1)
             let northeast = try coordinate(x: 1, y: 0, extent: 1)
-            return try .boundedOfflineExtract(.init(southwest: southwest, northeast: northeast))
+            return try .boundedOfflineExtract(MapCoverage.Bounds(southwest: southwest, northeast: northeast))
         }
     }
 
@@ -33,8 +34,9 @@ public struct MapTileCoordinate {
     /// edges when the adapter subdivides an ambiguous longitude step.
     func coordinate(interpolatedX localX: Double, interpolatedY localY: Double,
                     extent: Int) throws -> MapCoordinate {
-        guard (1...65_536).contains(extent), localX.isFinite, localY.isFinite
-        else { throw ValidationError.invalidAddress }
+        let hasSupportedExtent = (1...65_536).contains(extent)
+        let hasFinitePosition = localX.isFinite && localY.isFinite
+        guard hasSupportedExtent, hasFinitePosition else { throw ValidationError.invalidAddress }
         let side = Double(1 << zoom)
         let horizontal = (Double(x) + localX / Double(extent)) / side
         let vertical = (Double(y) + localY / Double(extent)) / side
@@ -49,7 +51,7 @@ public struct MapTileCoordinate {
         return try MapCoordinate(latitude: latitude, longitude: longitude)
     }
 
-    public enum ValidationError: Error, Equatable, Sendable { case invalidAddress }
+    public enum ValidationError { case invalidAddress }
 }
 
 extension MapTileCoordinate: Hashable {}
@@ -63,3 +65,7 @@ extension MapTileCoordinate: Codable {
                       x: values.decode(Int.self, forKey: .x), y: values.decode(Int.self, forKey: .y))
     }
 }
+
+extension MapTileCoordinate.ValidationError: Error {}
+extension MapTileCoordinate.ValidationError: Equatable {}
+extension MapTileCoordinate.ValidationError: Sendable {}

@@ -6,8 +6,29 @@ import FoundationNetworking
 /// Internal bounded transport. The delegate receives decompressed URLSession data;
 /// Content-Length is only an early rejection, never the authoritative byte bound.
 struct MapHTTPClient {
-    enum Resource { case catalog, tile
-        var limit: Int { self == .catalog ? 256 * 1_024 : 16 * 1_024 * 1_024 }
+    enum Resource {
+        case catalog, tile
+
+        var limit: Int {
+            switch self {
+            case .catalog: 256 * 1_024
+            case .tile: 16 * 1_024 * 1_024
+            }
+        }
+
+        var acceptHeaderValue: String {
+            switch self {
+            case .catalog: "application/json"
+            case .tile: "application/vnd.mapbox-vector-tile, application/x-protobuf, application/octet-stream"
+            }
+        }
+
+        var acceptedMIMETypes: [String] {
+            switch self {
+            case .catalog: ["application/json", "text/json"]
+            case .tile: ["application/vnd.mapbox-vector-tile", "application/x-protobuf", "application/protobuf", "application/octet-stream"]
+            }
+        }
     }
     struct Response {
         let data: Data
@@ -42,12 +63,12 @@ struct MapHTTPClient {
             var continuation: CheckedContinuation<Response, any Error>?
             var task: URLSessionDataTask?
             var session: URLSession?
-            var completed = false
-            var cancelled = false
+            var isCompleted = false
+            var isCancelled = false
             var data = Data()
             var headers: [String: String] = [:]
             var redirects = 0
-            var acceptedResponse = false
+            var hasAcceptedResponse = false
             var firstFailure: (any Error)?
         }
         private let lock = NSLock()
@@ -68,7 +89,7 @@ struct MapHTTPClient {
 
         func start(_ continuation: CheckedContinuation<Response, any Error>) {
             lock.lock()
-            if state.cancelled {
+            if state.isCancelled {
                 lock.unlock()
                 continuation.resume(throwing: CancellationError())
                 return
@@ -87,7 +108,7 @@ struct MapHTTPClient {
             let session = URLSession(configuration: configuration, delegate: self, delegateQueue: queue)
             var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: timeout)
             request.setValue("Chio OpenMapTiles", forHTTPHeaderField: "User-Agent")
-            request.setValue(resource == .catalog ? "application/json" : "application/vnd.mapbox-vector-tile, application/x-protobuf, application/octet-stream", forHTTPHeaderField: "Accept")
+            request.setValue(resource.acceptHeaderValue, forHTTPHeaderField: "Accept")
             let task = session.dataTask(with: request)
             state.session = session
             state.task = task
@@ -99,7 +120,7 @@ struct MapHTTPClient {
 
         func cancel() {
             lock.lock()
-            state.cancelled = true
+            state.isCancelled = true
             lock.unlock()
             reject(CancellationError())
         }
@@ -108,7 +129,7 @@ struct MapHTTPClient {
         /// The terminal delegate acknowledgement owns continuation completion.
         private func reject(_ error: any Error) {
             lock.lock()
-            guard !state.completed else { lock.unlock(); return }
+            guard !state.isCompleted else { lock.unlock(); return }
             if state.firstFailure == nil { state.firstFailure = error }
             let task = state.task, session = state.session
             lock.unlock()
@@ -120,12 +141,12 @@ struct MapHTTPClient {
 
         private func finish(_ result: Result<Response, any Error>) {
             lock.lock()
-            guard !state.completed, let continuation = state.continuation else { lock.unlock(); return }
-            state.completed = true
+            guard !state.isCompleted, let continuation = state.continuation else { lock.unlock(); return }
+            state.isCompleted = true
             state.continuation = nil
             let outcome: Result<Response, any Error>
             if let failure = state.firstFailure { outcome = .failure(failure) }
-            else if state.cancelled { outcome = .failure(CancellationError()) }
+            else if state.isCancelled { outcome = .failure(CancellationError()) }
             else { outcome = result }
             let task = state.task, session = state.session
             state.task = nil
@@ -158,10 +179,7 @@ extension MapHTTPClient.Transfer: URLSessionDataDelegate {
             reject(MapTileLoader.LoadingError.httpStatus(response.statusCode)); completionHandler(.cancel); return
         }
         if let mime = response.mimeType?.lowercased() {
-            let allowed = resource == .catalog
-                ? ["application/json", "text/json"]
-                : ["application/vnd.mapbox-vector-tile", "application/x-protobuf", "application/protobuf", "application/octet-stream"]
-            guard allowed.contains(mime) else {
+            guard resource.acceptedMIMETypes.contains(mime) else {
                 reject(MapTileLoader.LoadingError.unexpectedContentType); completionHandler(.cancel); return
             }
         }
@@ -169,34 +187,34 @@ extension MapHTTPClient.Transfer: URLSessionDataDelegate {
             reject(MapTileLoader.LoadingError.responseTooLarge); completionHandler(.cancel); return
         }
         lock.lock()
-        if !state.completed, state.firstFailure == nil {
-            state.acceptedResponse = true
+        if !state.isCompleted, state.firstFailure == nil {
+            state.hasAcceptedResponse = true
             state.headers = response.allHeaderFields.reduce(into: [:]) { values, entry in
                 values[String(describing: entry.key).lowercased()] = String(describing: entry.value)
             }
         }
-        let completed = state.completed || state.firstFailure != nil
+        let isResponseRejected = state.isCompleted || state.firstFailure != nil
         lock.unlock()
-        if completed { dataTask.cancel(); completionHandler(.cancel) }
+        if isResponseRejected { dataTask.cancel(); completionHandler(.cancel) }
         else { completionHandler(.allow) }
     }
 
     func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
         lock.lock()
-        guard !state.completed, state.firstFailure == nil else { lock.unlock(); return }
-        let overflow = data.count > resource.limit - state.data.count
-        if !overflow { state.data.append(data) }
+        guard !state.isCompleted, state.firstFailure == nil else { lock.unlock(); return }
+        let isOverflow = data.count > resource.limit - state.data.count
+        if !isOverflow { state.data.append(data) }
         lock.unlock()
-        if overflow { reject(MapTileLoader.LoadingError.responseTooLarge) }
+        if isOverflow { reject(MapTileLoader.LoadingError.responseTooLarge) }
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: (any Error)?) {
         if let error { finish(.failure(error)); return }
         lock.lock()
         let response = MapHTTPClient.Response(data: state.data, headers: state.headers)
-        let accepted = state.acceptedResponse
+        let hasAcceptedResponse = state.hasAcceptedResponse
         lock.unlock()
-        finish(accepted ? .success(response) : .failure(MapTileLoader.LoadingError.invalidResponse))
+        finish(hasAcceptedResponse ? .success(response) : .failure(MapTileLoader.LoadingError.invalidResponse))
     }
 
     func urlSession(_ session: URLSession, didBecomeInvalidWithError error: (any Error)?) {
@@ -208,14 +226,19 @@ extension MapHTTPClient.Transfer: URLSessionDataDelegate {
                     completionHandler: @escaping @Sendable (URLRequest?) -> Void) {
         beforeRedirectDecision(task)
         let destination = request.url
-        let allowed = destination.map { MapHTTPClient.sameOrigin($0, url) && $0.user == nil && $0.password == nil } ?? false
+        let isDestinationAllowed = destination.map {
+            let isSameOrigin = MapHTTPClient.sameOrigin($0, url)
+            let hasNoCredentials = $0.user == nil && $0.password == nil
+            return isSameOrigin && hasNoCredentials
+        } ?? false
         lock.lock()
         // corelibs can deliver a queued redirect callback after cancellation.
         // cancel() independently stops the protocol and acknowledges completion;
         // its pending redirect handler must not re-enter the completed protocol.
         let taskState = task.state
-        if state.cancelled || state.firstFailure != nil || state.completed
-            || taskState == .canceling || taskState == .completed {
+        let hasTerminalTransfer = state.isCancelled || state.firstFailure != nil || state.isCompleted
+        let hasTerminalTask = taskState == .canceling || taskState == .completed
+        if hasTerminalTransfer || hasTerminalTask {
             #if canImport(FoundationNetworking)
             lock.unlock()
             return
@@ -226,15 +249,16 @@ extension MapHTTPClient.Transfer: URLSessionDataDelegate {
             #endif
         }
         state.redirects += 1
-        let permitted = allowed && state.redirects <= 3
-        if !permitted { state.firstFailure = MapTileLoader.LoadingError.rejectedRedirect }
+        let isWithinRedirectLimit = state.redirects <= 3
+        let isRedirectPermitted = isDestinationAllowed && isWithinRedirectLimit
+        if !isRedirectPermitted { state.firstFailure = MapTileLoader.LoadingError.rejectedRedirect }
         // Invoking the handler queues corelibs' redirect decision. Keep that
         // enqueue ordered before external cancellation can record its flag, and
         // before this rejection requests task/session cancellation. Reversing the
         // order makes HTTPURLProtocol's waiting-state guard trap on Linux.
-        completionHandler(permitted ? request : nil)
+        completionHandler(isRedirectPermitted ? request : nil)
         lock.unlock()
-        if !permitted { reject(MapTileLoader.LoadingError.rejectedRedirect) }
+        if !isRedirectPermitted { reject(MapTileLoader.LoadingError.rejectedRedirect) }
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask,

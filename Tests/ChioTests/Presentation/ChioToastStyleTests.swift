@@ -13,7 +13,7 @@ struct ChioToastStyleTests {
             Text("Base").frame(width: size.width, height: size.height)
                 .toast("Local feedback", isPresented: .constant(true), style: ChioToastStyle(theme: theme, tone: tone), duration: nil)
                 .chioTheme(theme).environment(\.terminalSize, size),
-            proposal: .init(width: size.width, height: size.height)
+            proposal: ProposedViewSize(width: size.width, height: size.height)
         )
         let icon: Character
         let color: Color
@@ -40,7 +40,7 @@ struct ChioToastStyleTests {
             Text("Base").frame(width: size.width, height: size.height)
                 .toast("Local feedback", isPresented: .constant(true), style: ChioToastStyle(tone: .success), duration: nil)
                 .chioTheme(.default).environment(\.terminalSize, size),
-            proposal: .init(width: size.width, height: size.height)
+            proposal: ProposedViewSize(width: size.width, height: size.height)
         )
         let text = rendered.rasterSurface.lines.joined(separator: "\n")
         #expect(rendered.rasterSurface.size == size)
@@ -61,7 +61,7 @@ struct ChioToastStyleTests {
             Text("Base").frame(width: size.width, height: size.height)
                 .toast("Local feedback", isPresented: .constant(true), style: ChioToastStyle(theme: theme, tone: .danger), duration: nil)
                 .chioTheme(theme).environment(\.terminalSize, size),
-            proposal: .init(width: size.width, height: size.height)
+            proposal: ProposedViewSize(width: size.width, height: size.height)
         )
         let cells = rendered.rasterSurface.cells.flatMap { $0 }
         let icon = try #require(cells.first { $0.character == "✗" })
@@ -100,7 +100,7 @@ struct ChioToastStyleTests {
                 $0.raster.cells != visible.raster.cells && $0.toastContains("Light=true") && $0.toastContains("Local feedback")
             }
             #expect(themed.focusedIdentity == visible.focusedIdentity)
-            surface.updateSurfaceSize(.init(width: 36, height: 18))
+            surface.updateSurfaceSize(CellSize(width: 36, height: 18))
             session.requestSurfaceRefresh()
             let resized = try await recorder.wait(after: themed.sequence, description: "toast remains readable after narrow resize") {
                 $0.raster.size == CellSize(width: 36, height: 18) && $0.toastContains("Local feedback")
@@ -172,7 +172,7 @@ private func withToastScene(
     perform: @MainActor (HostedSceneSession, HostedRasterSurface, HostedFrameRecorder) async throws -> Void
 ) async throws {
     let recorder = HostedFrameRecorder()
-    let surface = HostedRasterSurface(surfaceSize: .init(width: 60, height: 20), appearance: .fallback,
+    let surface = HostedRasterSurface(surfaceSize: CellSize(width: 60, height: 20), appearance: .fallback,
                                       onFrame: { recorder.receive($0) })
     let session = try HostedSceneSession(for: ToastTestApp(timed: timed), sceneID: "chio-toast-tests", surface: surface)
     let run = Task { try await session.start() }

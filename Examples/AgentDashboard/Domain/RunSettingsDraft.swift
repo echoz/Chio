@@ -18,7 +18,7 @@ struct RunSettingsDraft {
 
     func replacing(name: String? = nil, automaticRuns: Bool? = nil,
                    intervalMinutes: String? = nil, timeoutMinutes: String? = nil) -> Self {
-        Self(name: name ?? self.name, automaticRuns: automaticRuns ?? self.automaticRuns,
+        RunSettingsDraft(name: name ?? self.name, automaticRuns: automaticRuns ?? self.automaticRuns,
              intervalMinutes: intervalMinutes ?? self.intervalMinutes,
              timeoutMinutes: timeoutMinutes ?? self.timeoutMinutes)
     }
@@ -27,20 +27,20 @@ struct RunSettingsDraft {
         var issues: [FormValidation<Field>.Issue] = []
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmedName.isEmpty {
-            issues.append(.init(field: .name, message: "Enter a workspace name."))
+            issues.append(FormValidation<Field>.Issue(field: .name, message: "Enter a workspace name."))
         } else if trimmedName.count > 32 {
-            issues.append(.init(field: .name, message: "Use 32 characters or fewer."))
+            issues.append(FormValidation<Field>.Issue(field: .name, message: "Use 32 characters or fewer."))
         }
         if automaticRuns {
             let interval = Self.minutes(intervalMinutes)
             let timeout = Self.minutes(timeoutMinutes)
             if interval == nil {
-                issues.append(.init(field: .interval, message: "Use whole minutes from 1 to 60."))
+                issues.append(FormValidation<Field>.Issue(field: .interval, message: "Use whole minutes from 1 to 60."))
             }
             if timeout == nil {
-                issues.append(.init(field: .timeout, message: "Use whole minutes from 1 to 60."))
+                issues.append(FormValidation<Field>.Issue(field: .timeout, message: "Use whole minutes from 1 to 60."))
             } else if let interval, let timeout, timeout >= interval {
-                issues.append(.init(field: .timeout, message: "Timeout must be shorter than the interval."))
+                issues.append(FormValidation<Field>.Issue(field: .timeout, message: "Timeout must be shorter than the interval."))
             }
         }
         return issues

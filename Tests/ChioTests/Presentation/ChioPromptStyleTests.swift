@@ -14,8 +14,8 @@ struct ChioPromptStyleTests {
         ))
         let rendered = DefaultRenderer().render(
             PromptRenderFixture(alert: alert).chioTheme(theme)
-                .environment(\.terminalSize, .init(width: 36, height: 18)),
-            proposal: .init(width: 36, height: 18)
+                .environment(\.terminalSize, CellSize(width: 36, height: 18)),
+            proposal: ProposedViewSize(width: 36, height: 18)
         )
         let text = rendered.rasterSurface.lines.joined(separator: "\n")
         #expect(text.contains("Local change"))
@@ -48,12 +48,12 @@ struct ChioPromptStyleTests {
         if alert {
             rendered = DefaultRenderer().render(
                 Text("Workspace").alert("Notice", isPresented: .constant(true)).chioTheme(.default),
-                proposal: .init(width: 36, height: 18)
+                proposal: ProposedViewSize(width: 36, height: 18)
             )
         } else {
             rendered = DefaultRenderer().render(
                 Text("Workspace").confirmationDialog("Notice", isPresented: .constant(true)).chioTheme(.default),
-                proposal: .init(width: 36, height: 18)
+                proposal: ProposedViewSize(width: 36, height: 18)
             )
         }
         #expect(rendered.rasterSurface.lines.contains { $0.contains(alert ? "Dismiss" : "Cancel") })
@@ -209,7 +209,7 @@ private func withPromptScene(
     perform: (HostedSceneSession, HostedFrameRecorder) async throws -> Void
 ) async throws {
     let recorder = HostedFrameRecorder()
-    let surface = HostedRasterSurface(surfaceSize: .init(width: 36, height: 18), appearance: .fallback,
+    let surface = HostedRasterSurface(surfaceSize: CellSize(width: 36, height: 18), appearance: .fallback,
                                      onFrame: { recorder.receive($0) })
     let session = try HostedSceneSession(for: PromptTestApp(alert: alert), sceneID: "prompt-tests", surface: surface)
     let run = Task { try await session.start() }

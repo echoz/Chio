@@ -107,11 +107,11 @@ private struct ChioPaletteBody {
         return .handled
     }
 
-    private func row(_ command: PaletteStyleConfiguration.Command, selected: Bool) -> some View {
+    private func row(_ command: PaletteStyleConfiguration.Command, isSelected: Bool) -> some View {
         command.route {
             Button { command.perform() } label: {
                 HStack(alignment: .top, spacing: 1) {
-                    Text(selected ? theme.treatments.selectionMarker : " ")
+                    Text(isSelected ? theme.treatments.selectionMarker : " ")
                         .foregroundStyle(command.isEnabled ? theme.colors.accent : theme.colors.mutedText)
                         .fixedSize()
                     VStack(alignment: .leading, spacing: 0) {
@@ -127,7 +127,7 @@ private struct ChioPaletteBody {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .frame(height: rowHeight, alignment: .topLeading)
-                .background(selected ? theme.colors.selectedSurface : theme.colors.surface)
+                .background(isSelected ? theme.colors.selectedSurface : theme.colors.surface)
             }
             .buttonStyle(.plain)
             .accessibilityLabel(command.name)
@@ -166,7 +166,7 @@ extension ChioPaletteBody: View {
                         .lineLimit(1)
                 } else {
                     ForEach(visible) { command in
-                        row(command, selected: command.id == selectedID)
+                        row(command, isSelected: command.id == selectedID)
                     }
                 }
             }

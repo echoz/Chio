@@ -59,7 +59,7 @@ enum MapPreparation {
                         guard simplified.count >= 2 else { continue }
                         preparedVertices += simplified.count
                         guard preparedVertices <= MapLimits.preparedVertices else { throw MapValidationError.budgetExceeded }
-                        lines.append(.init(featureID: feature.id, kind: feature.kind, points: simplified))
+                        lines.append(PreparedMap.Line(featureID: feature.id, kind: feature.kind, points: simplified))
                         let candidate = try midpoint(of: path, cancellation: cancellation)
                         if distanceToCenter(candidate, viewport: viewport) < (anchor.map({ distanceToCenter($0, viewport: viewport) }) ?? .infinity) {
                             anchor = candidate
@@ -83,9 +83,13 @@ enum MapPreparation {
                 let admittedShifts = try [-1.0, 0, 1].filter { shift in
                     try cancellation.check()
                     let sourceRings = try rings.map { try shifted($0, by: shift * wrapWidth, cancellation: cancellation) }
-                    return try intersects(sourceRings[0], viewport: viewport, cancellation: cancellation)
-                        && (detail == .source || detail.admitsArea(visibleArea(sourceRings, viewport: viewport, cancellation: cancellation),
-                                                                   kind: feature.kind))
+                    guard try intersects(sourceRings[0], viewport: viewport, cancellation: cancellation) else { return false }
+                    switch detail {
+                    case .source: return true
+                    case .silhouette, .minimal, .abstract:
+                        let visibleCellArea = try visibleArea(sourceRings, viewport: viewport, cancellation: cancellation)
+                        return detail.admitsArea(visibleCellArea, kind: feature.kind)
+                    }
                 }
                 guard !admittedShifts.isEmpty else { continue }
                 let preparedRings: [[PreparedMap.Point]]
@@ -106,7 +110,7 @@ enum MapPreparation {
                     // Scanline fill keeps offscreen geometry and all accepted hole rings.
                     preparedVertices += shiftedRings.reduce(0) { $0 + $1.count }
                     guard preparedVertices <= MapLimits.preparedVertices else { throw MapValidationError.budgetExceeded }
-                    polygons.append(.init(featureID: feature.id, kind: feature.kind, rings: shiftedRings))
+                    polygons.append(PreparedMap.Polygon(featureID: feature.id, kind: feature.kind, rings: shiftedRings))
                     for ring in shiftedRings where detail.outlines(feature.kind) {
                         try cancellation.check()
                         for path in try clipped(ring, viewport: viewport, cancellation: cancellation) {
@@ -115,7 +119,7 @@ enum MapPreparation {
                             guard outline.count >= 2 else { continue }
                             preparedVertices += outline.count
                             guard preparedVertices <= MapLimits.preparedVertices else { throw MapValidationError.budgetExceeded }
-                            lines.append(.init(featureID: feature.id, kind: feature.kind, points: outline))
+                            lines.append(PreparedMap.Line(featureID: feature.id, kind: feature.kind, points: outline))
                         }
                     }
                     if let candidate = try polygonAnchor(shiftedRings, viewport: viewport, cancellation: cancellation),
@@ -127,16 +131,16 @@ enum MapPreparation {
             let isVisible = lines.last?.featureID == feature.id || polygons.last?.featureID == feature.id
             if isVisible { visibleIDs.insert(feature.id) }
             if !feature.name.isEmpty, let anchor {
-                labels.append(.init(featureID: feature.id, kind: feature.kind, text: feature.name, position: anchor))
+                labels.append(PreparedMap.Label(featureID: feature.id, kind: feature.kind, text: feature.name, position: anchor))
             }
         }
         // Candidates remain stable within each priority; native Text placement owns collision checks.
         labels.sort { $0.kind.priority > $1.kind.priority }
         try cancellation.check()
         return PreparedMap(lines: lines, polygons: polygons, labels: labels,
-                           statistics: .init(sourceVertices: dataset.vertexCount,
-                                             preparedVertices: preparedVertices,
-                                             visibleFeatures: visibleIDs.count))
+                           statistics: PreparedMap.Statistics(sourceVertices: dataset.vertexCount,
+                                                              preparedVertices: preparedVertices,
+                                                              visibleFeatures: visibleIDs.count))
     }
 
     private static func project(_ coordinates: [MapCoordinate], camera: MapCamera,
@@ -189,7 +193,7 @@ enum MapPreparation {
                                 cancellation: Cancellation) throws -> [PreparedMap.Point] {
         try points.enumerated().map {
             try cancellation.check(index: $0.offset)
-            return .init(x: $0.element.x + x, y: $0.element.y)
+            return PreparedMap.Point(x: $0.element.x + x, y: $0.element.y)
         }
     }
 
@@ -202,7 +206,9 @@ enum MapPreparation {
             minX = min(minX, point.x); maxX = max(maxX, point.x)
             minY = min(minY, point.y); maxY = max(maxY, point.y)
         }
-        return maxX >= 0 && minX <= Double(viewport.columns) && maxY >= 0 && minY <= Double(viewport.rows)
+        let intersectsHorizontalRange = maxX >= 0 && minX <= Double(viewport.columns)
+        let intersectsVerticalRange = maxY >= 0 && minY <= Double(viewport.rows)
+        return intersectsHorizontalRange && intersectsVerticalRange
     }
 
     private static func clipped(_ points: [PreparedMap.Point], viewport: MapViewport,
@@ -234,24 +240,24 @@ enum MapPreparation {
                                     cancellation: Cancellation) throws -> Double {
         func area(_ ring: [PreparedMap.Point]) throws -> Double {
             var points = Array(ring.dropLast())
-            for (horizontal, boundary, greater) in [(true, 0.0, true), (true, Double(viewport.columns), false),
+            for (isHorizontal, boundary, keepsGreaterValues) in [(true, 0.0, true), (true, Double(viewport.columns), false),
                                                    (false, 0.0, true), (false, Double(viewport.rows), false)] {
                 try cancellation.check()
                 guard !points.isEmpty else { return 0 }
-                func value(_ point: PreparedMap.Point) -> Double { horizontal ? point.x : point.y }
-                func inside(_ point: PreparedMap.Point) -> Bool {
-                    greater ? value(point) >= boundary : value(point) <= boundary
+                func value(_ point: PreparedMap.Point) -> Double { isHorizontal ? point.x : point.y }
+                func isInside(_ point: PreparedMap.Point) -> Bool {
+                    keepsGreaterValues ? value(point) >= boundary : value(point) <= boundary
                 }
                 var output: [PreparedMap.Point] = []
                 var previous = points[points.count - 1]
                 for (index, point) in points.enumerated() {
                     try cancellation.check(index: index)
-                    if inside(previous) != inside(point) {
+                    if isInside(previous) != isInside(point) {
                         let fraction = (boundary - value(previous)) / (value(point) - value(previous))
-                        output.append(.init(x: previous.x + (point.x - previous.x) * fraction,
-                                            y: previous.y + (point.y - previous.y) * fraction))
+                        output.append(PreparedMap.Point(x: previous.x + (point.x - previous.x) * fraction,
+                                                        y: previous.y + (point.y - previous.y) * fraction))
                     }
-                    if inside(point) { output.append(point) }
+                    if isInside(point) { output.append(point) }
                     previous = point
                 }
                 points = output
@@ -288,8 +294,8 @@ enum MapPreparation {
             }
         }
         func point(_ fraction: Double) -> PreparedMap.Point {
-            .init(x: min(Double(viewport.columns), max(0, a.x + fraction * dx)),
-                  y: min(Double(viewport.rows), max(0, a.y + fraction * dy)))
+            PreparedMap.Point(x: min(Double(viewport.columns), max(0, a.x + fraction * dx)),
+                              y: min(Double(viewport.rows), max(0, a.y + fraction * dy)))
         }
         return (point(start), point(end))
     }
@@ -331,7 +337,7 @@ enum MapPreparation {
             let length = hypot(b.x - a.x, b.y - a.y)
             if length > 0, remaining <= length {
                 let fraction = remaining / length
-                return .init(x: a.x + (b.x - a.x) * fraction, y: a.y + (b.y - a.y) * fraction)
+                return PreparedMap.Point(x: a.x + (b.x - a.x) * fraction, y: a.y + (b.y - a.y) * fraction)
             }
             remaining -= length
         }
@@ -349,15 +355,16 @@ enum MapPreparation {
             try cancellation.check(index: $1.offset)
             return $0 + $1.element.y
         } / Double(outer.count - 1))
-        guard candidate.x >= 0, candidate.x < Double(viewport.columns),
-              candidate.y >= 0, candidate.y < Double(viewport.rows),
-              try contains(candidate, rings: rings, cancellation: cancellation) else { return nil }
+        let isWithinHorizontalRange = candidate.x >= 0 && candidate.x < Double(viewport.columns)
+        let isWithinVerticalRange = candidate.y >= 0 && candidate.y < Double(viewport.rows)
+        guard isWithinHorizontalRange, isWithinVerticalRange else { return nil }
+        guard try contains(candidate, rings: rings, cancellation: cancellation) else { return nil }
         return candidate
     }
 
     private static func contains(_ point: PreparedMap.Point, rings: [[PreparedMap.Point]],
                                  cancellation: Cancellation) throws -> Bool {
-        var inside = false
+        var isInside = false
         for ring in rings {
             try cancellation.check()
             for (index, segment) in zip(ring, ring.dropFirst()).enumerated() {
@@ -365,10 +372,10 @@ enum MapPreparation {
                 let (a, b) = segment
                 guard (a.y > point.y) != (b.y > point.y) else { continue }
                 let x = a.x + (point.y - a.y) * (b.x - a.x) / (b.y - a.y)
-                if point.x < x { inside.toggle() }
+                if point.x < x { isInside.toggle() }
             }
         }
-        return inside
+        return isInside
     }
 
     private static func distanceToCenter(_ point: PreparedMap.Point, viewport: MapViewport) -> Double {
