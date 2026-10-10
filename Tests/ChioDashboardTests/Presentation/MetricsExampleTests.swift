@@ -12,7 +12,7 @@ struct MetricsExampleTests {
     func layout(size: CellSize, appearance: ExampleTheme) {
         let rendered = DefaultRenderer().render(
             MetricsExampleView(theme: appearance).environment(\.terminalSize, size),
-            proposal: .init(width: size.width, height: size.height)
+            proposal: ProposedSize(width: size.width, height: size.height)
         )
         let text = rendered.rasterSurface.lines.joined(separator: "\n")
         #expect(rendered.rasterSurface.size == size)
@@ -37,7 +37,7 @@ struct MetricsExampleTests {
     @Test("Native actions, shortcuts, theme cycling and resize preserve simulated values and focus")
     func workflow() async throws {
         let recorder = HostedFrameRecorder()
-        let surface = HostedRasterSurface(surfaceSize: .init(width: 100, height: 30), appearance: .fallback,
+        let surface = HostedRasterSurface(surfaceSize: CellSize(width: 100, height: 30), appearance: .fallback,
                                           onFrame: { recorder.receive($0) })
         let session = try HostedSceneSession(for: MetricsTestApp(), sceneID: "metrics-tests", surface: surface)
         let run = Task { try await session.start() }
@@ -66,7 +66,13 @@ struct MetricsExampleTests {
             let advancedEmpty = try await recorder.wait(after: empty.sequence, description: "samples advance even while history is empty") {
                 $0.metricsHistory("empty") && $0.metricsValue("CPU", 28) && $0.metricsValue("RAM", 48)
             }
-            var paletteFrame = advancedEmpty
+            session.send(.key(.character("v")))
+            let dials = try await recorder.wait(after: advancedEmpty.sequence, description: "dial choice changes presentation without changing current values or history") {
+                $0.raster.lines.contains { $0.contains("Dials") }
+                    && $0.metricsHistory("empty") && $0.metricsValue("CPU", 28)
+                    && $0.metricsValue("RAM", 48) && $0.metricsFocused("Cycle history")
+            }
+            var paletteFrame = dials
             for _ in 0..<3 {
                 session.send(.key(.character("t"), modifiers: .ctrl))
                 let preceding = paletteFrame
@@ -76,8 +82,8 @@ struct MetricsExampleTests {
                         && $0.raster.cells != preceding.raster.cells
                 }
             }
-            #expect(paletteFrame.raster.cells == advancedEmpty.raster.cells)
-            surface.updateSurfaceSize(.init(width: 36, height: 18))
+            #expect(paletteFrame.raster.cells == dials.raster.cells)
+            surface.updateSurfaceSize(CellSize(width: 36, height: 18))
             session.requestSurfaceRefresh()
             let narrow = try await recorder.wait(after: paletteFrame.sequence, description: "compact stacking retains native history focus and visible hints") {
                 $0.raster.size == CellSize(width: 36, height: 18) && $0.metricsFocused("Cycle history")
@@ -89,9 +95,16 @@ struct MetricsExampleTests {
                 $0.metricsHistory("full") && $0.metricsFocused("Cycle history") && $0.metricsValue("CPU", 28)
             }
             session.sendInput(Array("nn\t".utf8))
-            _ = try await recorder.wait(after: restored.sequence, description: "batched next shortcuts retain each step before native Tab") {
+            let batched = try await recorder.wait(after: restored.sequence, description: "batched next shortcuts retain each step before native Tab") {
                 $0.metricsFocused("Next sample") && $0.metricsValue("CPU", 36) && $0.metricsValue("RAM", 50)
                     && $0.metricsHistory("full")
+            }
+            surface.updateSurfaceSize(CellSize(width: 100, height: 30))
+            session.requestSurfaceRefresh()
+            _ = try await recorder.wait(after: batched.sequence, description: "widening restores the retained dial preference and simulated values") {
+                $0.raster.lines.contains { $0.contains("Dials") }
+                    && $0.metricsFocused("Next sample") && $0.metricsValue("CPU", 36)
+                    && $0.metricsValue("RAM", 50) && $0.metricsHistory("full")
             }
             session.stop()
             #expect(try await run.value == .inputEnded)

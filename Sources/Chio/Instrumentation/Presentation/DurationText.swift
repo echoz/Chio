@@ -1,11 +1,13 @@
 import SwiftTUIViews
 
-/// Compact, themed elapsed or remaining time with a readable accessibility label.
+/// Themed elapsed or remaining time with a readable accessibility label.
 ///
 /// Durations must be nonnegative and no greater than `Duration.seconds(Int64.max)`.
 /// Elapsed time rounds down to whole seconds; positive remaining time rounds up,
 /// so it never displays zero before expiry. Hours continue past 24 rather than wrap.
 /// Scheduling, pause state and the meaning of expiry belong to the application.
+/// Plain text is the default; segmented lettering shares `InstrumentReadout`'s
+/// three-row presentation and ordinary-text fallback for small allocations.
 @MainActor
 public struct DurationText {
     private enum Kind {
@@ -15,23 +17,32 @@ public struct DurationText {
 
     private let duration: Duration
     private let kind: Kind
-    @Environment(\.chioTheme) private var theme
+    private let style: InstrumentReadout.Style
 
     public init(elapsed duration: Duration) {
-        self.init(duration: duration, kind: .elapsed)
+        self.init(elapsed: duration, style: .plain)
+    }
+
+    public init(elapsed duration: Duration, style: InstrumentReadout.Style) {
+        self.init(duration: duration, kind: .elapsed, style: style)
     }
 
     public init(remaining duration: Duration) {
-        self.init(duration: duration, kind: .remaining)
+        self.init(remaining: duration, style: .plain)
     }
 
-    private init(duration: Duration, kind: Kind) {
+    public init(remaining duration: Duration, style: InstrumentReadout.Style) {
+        self.init(duration: duration, kind: .remaining, style: style)
+    }
+
+    private init(duration: Duration, kind: Kind, style: InstrumentReadout.Style) {
         let isNonnegative = duration >= .zero
         let isWithinWholeSecondLimit = duration <= .seconds(Int64.max)
         precondition(isNonnegative && isWithinWholeSecondLimit,
                      "DurationText requires a duration between zero and Int64.max seconds")
         self.duration = duration
         self.kind = kind
+        self.style = style
     }
 
     private var wholeSeconds: Int64 {
@@ -81,8 +92,7 @@ public struct DurationText {
 
 extension DurationText: View {
     public var body: some View {
-        Text(verbatim: compactText)
-            .foregroundStyle(theme.colors.accent)
+        InstrumentReadout(compactText, style: style)
             .accessibilityLabel(spokenText)
     }
 }

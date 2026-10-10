@@ -337,12 +337,12 @@
             <p id="timers-preview-status" class="preview-status" role="status"></p>
           </div>
           <div class="recording-preview">
-            <img class="recording-image" src="recordings/timers.png" alt="A dark time studio with independent stopwatch and countdown panels, elapsed and remaining time, native pause and reset buttons, and a progress track." width="960" height="798">
+            <img class="recording-image" src="recordings/timers.png" alt="A dark time studio with plain and segmented duration labels, independent stopwatch and countdown panels, native pause and reset buttons, and a progress track." width="960" height="798">
           </div>
           <div class="player" aria-label="Duration labels recording"></div>
           <p class="player-message" role="status" hidden></p>
           <div class="recording-caption">
-            <p>Chio formats elapsed and remaining time; this example supplies its own clock state and controls. Pause, resume and reset both clocks, then follow countdown expiry through a theme change and a compact terminal.</p>
+            <p>Chio formats elapsed and remaining time in plain and segmented styles; this example supplies its own clock state and controls. Pause, resume and reset both clocks, then follow countdown expiry through a theme change and a compact terminal.</p>
             <a class="download" href="recordings/timers.cast" download>Download recording ↓</a>
           </div>
           <div class="recording-run">
@@ -354,7 +354,7 @@
           </div>
           <div class="recording-details">
             <dl class="recording-ingredients">
-              <div><dt>Chio</dt><dd><code>DurationText</code> for elapsed and remaining time.</dd></div>
+              <div><dt>Chio</dt><dd><code>DurationText</code> with plain and segmented readout styles for elapsed and remaining time.</dd></div>
               <div><dt>SwiftTUI</dt><dd><code>TimelineView</code>, <code>ProgressView</code>, <code>Button</code></dd></div>
               <div><dt>Example code</dt><dd>Clock state, pause/resume, reset, and countdown expiry.</dd></div>
             </dl>
@@ -467,12 +467,12 @@
             <p id="metrics-preview-status" class="preview-status" role="status"></p>
           </div>
           <div class="recording-preview">
-            <img class="recording-image" src="recordings/metrics.png" alt="Compact dark instrumentation panels with border titles, utilization tracks, single-series history graphs, and native Next sample and History buttons." width="960" height="798">
+            <img class="recording-image" src="recordings/metrics.png" alt="Dark instrumentation panels with border titles, segmented numeric readouts, measurement gauges, single-series history graphs, and native Next sample and History buttons." width="960" height="798">
           </div>
           <div class="player" aria-label="Compact metrics recording"></div>
           <p class="player-message" role="status" hidden></p>
           <div class="recording-caption">
-            <p>Advance local samples, show missing or empty history, and compare compact border titles and measurement tracks across three palettes. Chio presents the readings; the application owns the data and updates.</p>
+            <p>Advance local samples, switch bars to dials, show missing or empty history, and compare segmented readouts and compact border titles across three palettes. Chio presents the readings; the application owns the data and updates.</p>
             <a class="download" href="recordings/metrics.cast" download>Download recording ↓</a>
           </div>
           <div class="recording-run">
@@ -481,12 +481,13 @@
               <a href="https://github.com/echoz/Chio/blob/main/Docs/Examples.md#compact-metrics">Keyboard controls <span aria-hidden="true">↗</span></a>
             </div>
             <pre><code>swift run -c release chio-dashboard --metrics</code></pre>
+            <p><kbd>n</kbd> next sample · <kbd>g</kbd> history · <kbd>v</kbd> gauge · <kbd>Ctrl-T</kbd> theme · <kbd>Ctrl-Q</kbd> quit</p>
           </div>
           <div class="recording-details">
             <dl class="recording-ingredients">
-              <div><dt>Chio</dt><dd><code>Sparkline</code>, <code>ChioTheme.btop</code>, <code>ChioGroupBoxStyle</code>, <code>ChioProgressViewStyle</code></dd></div>
-              <div><dt>SwiftTUI</dt><dd><code>GroupBox</code>, <code>ProgressView</code>, <code>Button</code></dd></div>
-              <div><dt>Example code</dt><dd>Fixed sample data, manual updates, and the compact instrument layout.</dd></div>
+              <div><dt>Chio</dt><dd><code>MeasurementGauge</code>, <code>InstrumentReadout</code>, <code>Sparkline</code>, <code>ChioTheme.btop</code>, <code>ChioGroupBoxStyle</code></dd></div>
+              <div><dt>SwiftTUI</dt><dd><code>Canvas</code>, <code>GroupBox</code>, <code>Button</code></dd></div>
+              <div><dt>Example code</dt><dd>Fixed sample data, normalization, manual updates, gauge selection and adaptive instrument layout.</dd></div>
             </dl>
             <a class="example-source" href="https://github.com/echoz/Chio/blob/main/Examples/AgentDashboard/Presentation/MetricsExampleView.swift">View example source <span aria-hidden="true">↗</span></a>
           </div>
