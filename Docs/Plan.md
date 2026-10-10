@@ -64,10 +64,12 @@ active plan with completed implementation history.
 The shipped map component remains as described in the existing decisions. The
 following order is the proposed delivery sequence, with one testable slice at a time.
 
-First close the two reproduced audit defects: overflow-safe keyboard-hint spacing,
-and conservative polygon admission across all accepted rings. The latter must not
-assume hole containment that construction and decoding do not establish. Preserve
-existing valid-input behavior and add focused regressions before extending maps.
+The preceding robustness slice fixes the two reproduced audit defects:
+[overflow-safe keyboard-hint spacing](Decisions/KeyboardHelp.md) and
+[conservative polygon admission](Decisions/GeographicMaps.md#detail-and-geographic-limits).
+Focused regressions cover constructed/decoded extreme gaps, accepted uncontained
+rings, ordinary contained holes, native rendering and bounded topology checks.
+Persistent tile caching is the next feature slice after integrated verification.
 
 | Order | Capability | First useful outcome and acceptance evidence |
 | --- | --- | --- |

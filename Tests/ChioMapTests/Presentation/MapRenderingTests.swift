@@ -87,6 +87,30 @@ struct MapRenderingTests {
         }
     }
 
+    @Test("Preparation preserves visible secondary-ring fills and outlines in native raster", arguments: MapDetail.allCases)
+    func uncontainedRingRaster(detail: MapDetail) throws {
+        let projected = [rectangle(-20, -20, -10, -10), rectangle(4, 4, 10, 10)]
+        let rings = try projected.map { points in
+            try MapRing(coordinates: points.map {
+                try MapCoordinate(latitude: MapViewport.latitude(mercatorY: (10 - $0.y) * 2),
+                                  longitude: $0.x - 20)
+            })
+        }
+        let source = try MapDataset(features: [MapFeature(id: "uncontained", kind: .water,
+                                                          geometry: .polygon(MapPolygon(rings: rings)))])
+        let prepared = try MapPreparation.prepare(dataset: source,
+            camera: MapCamera(center: MapCoordinate(latitude: 0, longitude: 0), longitudeSpan: 40),
+            viewport: MapViewport(columns: 40, rows: 20), detail: detail)
+        for theme in [ChioTheme.default, .light, .btop] {
+            let filled = try render(prepared, columns: 40, rows: 20, theme: theme, detail: detail)
+            #expect(filled.cells[6][6].style?.backgroundColor == waterColor(theme))
+            #expect(filled.cells[12][12].style?.backgroundColor == theme.colors.surface)
+            let outline = try render(prepared, columns: 40, rows: 20, theme: theme, fills: false, detail: detail)
+            #expect(outline.cells.flatMap { $0 }.allSatisfy { $0.style?.backgroundColor == theme.colors.surface })
+            #expect(outline.lines.joined().unicodeScalars.contains { (0x2801...0x28FF).contains($0.value) })
+        }
+    }
+
     @Test("Per-cell area paint priority is independent of supplied feature order")
     func areaPriority() throws {
         let park = PreparedMap.Polygon(featureID: "park", kind: .park, rings: [rectangle(1, 1, 9, 9)])

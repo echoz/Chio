@@ -31,7 +31,10 @@ split or general map DSL. [Usage](../Usage.md#maps) has the consumer recipe.
   scale value, longitude span, to 0.0001…360°. Checked pan/zoom return replacements.
 - `MapPolyline`, `MapRing`, `MapPolygon`, `MapGeometry` and `MapFeature` describe
   canonical geometry. Rings require closure, three distinct vertices and nonzero
-  area; they do not claim complete topology validity. IDs are nonempty and unique
+  area; they do not claim complete topology validity or contained, disjoint holes.
+  Spatial admission considers every ring on the same aligned longitude branch
+  used for drawing. An offscreen exterior cannot discard a visible secondary ring.
+  IDs are nonempty and unique
   within `MapDataset`. The supported classes are land, water, park, building,
   road and primary road.
 - `MapSource` composes the dataset with required `MapSourceMetadata` and
@@ -163,6 +166,20 @@ every narrow channel or exterior-minus-holes area. Source order and visibility c
 change which shapes exhaust the simplification allowance. These limitations remain
 part of the component's supported scope.
 
+Reduced-detail area rejection uses clipped signed area minus hole areas only when
+bounded topology checks establish simple rings with contained, disjoint holes.
+If that estimate already meets the detail threshold, no proof is needed. When it
+would reject, the sum of viewport-clipped ring bounding-box areas supplies a safe
+upper bound for arbitrary even-odd fill. Shapes below that bound's threshold can
+be omitted without topology assumptions. Otherwise, self-crossing, overlapping,
+uncontained or unproved geometry remains intact for the existing even-odd renderer.
+This is conservative admission, not
+exact measurement of arbitrary even-odd area or a new input validation rule.
+Ordinary small polygons and thin shells with verified holes retain their existing
+threshold behavior. Exhausted checks may retain an otherwise small valid polygon
+whose bounding boxes are large enough;
+the existing preparation and drawing limits still reject excess work as a whole.
+
 ### Work bounds
 
 Canonical input allows 4,000 features and 200,000 vertices, with at most 20,000
@@ -172,6 +189,14 @@ and path decoders enforce their bounds during traversal. Preparation allows
 600,000 vertices and three million shape operations, at most one million per
 polygon. Shape budget exhaustion retains original geometry; preparation admission
 failure rejects the drawing.
+
+Area-admission topology checks have a separate one-million-operation allowance
+per preparation, divided into equal fixed shares across the dataset's features.
+Each polygon checks its topology at most once across world copies. Unused shares
+are not borrowed: feature order and detail selection cannot change another
+polygon's proof allowance. This extra bounded work does not consume the existing
+shape-reduction budget. Cancellation propagates during topology and containment
+loops; exhausted proof retains geometry instead of guessing that it is invisible.
 
 Drawing admission counts geography and routes together: at most two million edge
 visits, 16 million crossing-sort weight, 250,000 fill writes and 250,000 stroke

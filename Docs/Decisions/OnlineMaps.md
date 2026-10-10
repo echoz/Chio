@@ -50,7 +50,9 @@ enumeration. Desired source zoom targets roughly 48 terminal columns per tile.
 Source zoom is independent of `MapDetail`, which still controls presentation
 after normalization. The loader validates selected source parts, then conservatively
 culls complete parts whose projected bounds cannot intersect the viewport. It
-reuses the renderer's sequential longitude unwrapping and world copies. Crossing
+reuses the renderer's sequential longitude unwrapping, whole-hole branch alignment
+and world copies. Polygon admission checks every accepted ring; containment in
+the exterior is not a construction or decoding guarantee. Crossing
 lines, enclosing polygons and all retained holes remain whole; identities retain
 their original multipart indices. Malformed selected geometry or names reject
 even outside the viewport. No clipping or simplification happens at acquisition. Coarse Cartesian edges

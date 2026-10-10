@@ -278,6 +278,29 @@ struct OpenMapTilesAdapterTests {
         #expect(try MapPreparation.mayIntersect(.polygon(polygon), request: request))
     }
 
+    @Test("Acquisition retains an accepted visible secondary ring outside its offscreen exterior")
+    func uncontainedRingAdmission() throws {
+        let tile = try MapTileCoordinate(zoom: 14, x: 12919, y: 8133)
+        let adapter = OpenMapTilesAdapter(tile: tile, metadata: try credit())
+        let request = try centeredRequest(tile: tile)
+        // The first clockwise ring is offscreen; its counterclockwise secondary
+        // ring is visible but uncontained. The adapter accepts both unchanged.
+        let exterior: [(Int64, Int64)] = [(100, 100), (500, 100), (500, 500), (100, 500)]
+        let secondary: [(Int64, Int64)] = [(1800, 1800), (1800, 2200), (2200, 2200), (2200, 1800)]
+        let input = Data(layer("water", type: 3, words: geometryWords(paths: [exterior, secondary], isPolygon: true)))
+        let whole = try adapter.adapt(input).dataset
+        let selected = try adapter.adapt(input, intersecting: request)
+        #expect(whole.features.count == 1)
+        #expect(selected == whole)
+        #expect(selected.vertexCount == 10)
+        for detail in MapDetail.allCases {
+            let prepared = try MapPreparation.prepare(dataset: selected, camera: request.camera,
+                                                       viewport: request.viewport, detail: detail)
+            let polygon = try #require(prepared.polygons.first)
+            #expect(polygon.rings.map(\.count) == [5, 5])
+        }
+    }
+
     @Test("Culling one multipart path preserves the surviving original part identity")
     func multipartAdmissionIdentity() throws {
         let tile = try MapTileCoordinate(zoom: 14, x: 12919, y: 8133)
