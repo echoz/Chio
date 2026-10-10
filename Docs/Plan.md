@@ -53,8 +53,6 @@ retain their distinct contracts; no broad consolidation was justified.
 
 Remaining audit cleanup is explicit, not a new component queue:
 
-- [Dashboard command](../Examples/AgentDashboard/ChioDashboardCommand.swift)
-  duplicates choice/flag policy across validation, snapshot and live launch paths.
 - Some owned enum policies still use comparisons, including
   [map detail](../Sources/Chio/Domain/Maps/MapDetail.swift),
   [HTTP resource limits](../Sources/Chio/Execution/Maps/MapHTTPClient.swift) and

@@ -102,6 +102,13 @@ language-required placement. Shared frame recorders live in target `TestSupport`
 scenario fixtures/expectations remain beside suites. Global engineering/layout
 rules remain in the working agreements rather than being duplicated here.
 
+The dashboard command resolves its parser flags into one internal `DashboardExample`.
+Validation, theme defaults, snapshot rendering and interactive launch share that
+selection; exhaustive switches retain each native view/application pairing.
+`Execution/ChioDashboardCommand+Execution.swift` owns rendering and live launch,
+including the file example's current-directory lookup. Existing CLI spellings,
+defaults, diagnostic order and unsupported combinations remain stable.
+
 ## Decision index
 
 Read the relevant topic before changing its behavior. Accepted records remain

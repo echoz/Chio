@@ -1,5 +1,3 @@
-import Chio
-import Foundation
 import SwiftTUI
 
 @main
@@ -73,39 +71,69 @@ struct ChioDashboardCommand {
     @OptionGroup(title: "SwiftTUI options")
     var swiftTUIOptions: SwiftTUIOptions
 
-    var resolvedTheme: ExampleTheme { theme ?? (light ? .light : metrics ? .btop : .default) }
-
-    @MainActor @ViewBuilder
-    private var snapshotView: some View {
-        if diff {
-            DiffExampleView(theme: resolvedTheme)
-        } else if inbox {
-            InboxExampleView(theme: resolvedTheme)
-        } else if metrics {
-            MetricsExampleView(theme: resolvedTheme)
-        } else if timers {
-            TimerExampleView(theme: resolvedTheme)
-        } else if forms {
-            GroupedFormExampleView(theme: resolvedTheme)
-        } else if tree {
-            TreeExampleView(theme: resolvedTheme)
-        } else if viewport {
-            ViewportExampleView(theme: resolvedTheme)
-        } else if pagination {
-            PaginationExampleView(theme: resolvedTheme)
-        } else if tabs {
-            TabsExampleView(theme: resolvedTheme)
-        } else if keyboardHelp {
-            HelpExampleView(theme: resolvedTheme)
-        } else if feedback {
-            FeedbackExampleView(theme: resolvedTheme)
-        } else if textEntry {
-            TextEntryExampleView(theme: resolvedTheme)
-        } else if choices {
-            ChoiceExampleView(theme: resolvedTheme)
-        } else {
-            DashboardView(scenario: scenario, theme: resolvedTheme, animates: false, paused: paused)
+    /// Resolve and validate at the parser boundary, without retaining derived state.
+    func resolveExample() throws -> DashboardExample {
+        let hasExplicitTheme = theme != nil
+        if light && hasExplicitTheme {
+            throw ValidationError("Choose --theme or --light, not both.")
         }
+        let isWidthSupported = (20...240).contains(width)
+        let isHeightSupported = (10...100).contains(height)
+        guard isWidthSupported, isHeightSupported else {
+            throw ValidationError("Use --width 20...240 and --height 10...100.")
+        }
+
+        let requestedExamples: [DashboardExample] = [
+            choices ? .choices : nil,
+            textEntry ? .textEntry : nil,
+            feedback ? .feedback : nil,
+            files ? .files : nil,
+            keyboardHelp ? .keyboardHelp : nil,
+            tabs ? .tabs : nil,
+            pagination ? .pagination : nil,
+            viewport ? .viewport : nil,
+            tree ? .tree : nil,
+            forms ? .forms : nil,
+            timers ? .timers : nil,
+            metrics ? .metrics : nil,
+            inbox ? .inbox : nil,
+            diff ? .diff : nil,
+        ].compactMap { $0 }
+        guard requestedExamples.count <= 1 else {
+            throw ValidationError("Choose one example: --choices, --text-entry, --feedback, --files, --keyboard-help, --tabs, --pagination, --viewport, --tree, --forms, --timers, --metrics, --inbox or --diff.")
+        }
+        let example = requestedExamples.first ?? .dashboard
+        if example.isFocusedExample {
+            let hasSimulationScenario = switch scenario {
+            case .normal: false
+            case .empty, .noMatches, .failed, .completed: true
+            }
+            let startsSimulationPaused = paused
+            if hasSimulationScenario || startsSimulationPaused {
+                throw ValidationError("--scenario and --paused describe the dashboard simulation; omit them with a focused example.")
+            }
+        }
+        if directory != nil {
+            guard case .files = example else {
+                throw ValidationError("--directory is available only with --files.")
+            }
+        }
+        if snapshot {
+            if case .files = example {
+                throw Self.fileSnapshotError
+            }
+        }
+        return example
+    }
+
+    func resolveTheme(for example: DashboardExample) -> ExampleTheme {
+        if let theme { return theme }
+        if light { return .light }
+        return example.defaultTheme
+    }
+
+    static var fileSnapshotError: ValidationError {
+        ValidationError("--files loads folders asynchronously and does not support --snapshot; run the interactive example.")
     }
 }
 
@@ -116,69 +144,12 @@ extension ChioDashboardCommand: AsyncParsableCommand {
     )
 
     mutating func validate() throws {
-        if light && theme != nil {
-            throw ValidationError("Choose --theme or --light, not both.")
-        }
-        guard (20...240).contains(width), (10...100).contains(height) else {
-            throw ValidationError("Use --width 20...240 and --height 10...100.")
-        }
-        if [choices, textEntry, feedback, files, keyboardHelp, tabs, pagination, viewport, tree, forms, timers, metrics, inbox, diff].filter({ $0 }).count > 1 {
-            throw ValidationError("Choose one example: --choices, --text-entry, --feedback, --files, --keyboard-help, --tabs, --pagination, --viewport, --tree, --forms, --timers, --metrics, --inbox or --diff.")
-        }
-        if (choices || textEntry || feedback || files || keyboardHelp || tabs || pagination || viewport || tree || forms || timers || metrics || inbox || diff) && (scenario != .normal || paused) {
-            throw ValidationError("--scenario and --paused describe the dashboard simulation; omit them with a focused example.")
-        }
-        if directory != nil && !files {
-            throw ValidationError("--directory is available only with --files.")
-        }
-        if files && snapshot {
-            throw ValidationError("--files loads folders asynchronously and does not support --snapshot; run the interactive example.")
-        }
+        _ = try resolveExample()
     }
 
     @MainActor
     mutating func run() async throws {
-        if snapshot {
-            let frame = DefaultRenderer().render(
-                snapshotView.environment(\.terminalSize, .init(width: width, height: height)),
-                proposal: .init(width: width, height: height),
-                frameInstant: .zero
-            )
-            print(frame.rasterSurface.lines.joined(separator: "\n"))
-        } else if diff {
-            try await WebHostCLIRunner.run(DiffApplication(theme: resolvedTheme), configuration: swiftTUIOptions.runtimeConfiguration())
-        } else if inbox {
-            try await WebHostCLIRunner.run(InboxApplication(theme: resolvedTheme), configuration: swiftTUIOptions.runtimeConfiguration())
-        } else if metrics {
-            try await WebHostCLIRunner.run(MetricsApplication(theme: resolvedTheme), configuration: swiftTUIOptions.runtimeConfiguration())
-        } else if timers {
-            try await WebHostCLIRunner.run(TimersApplication(theme: resolvedTheme), configuration: swiftTUIOptions.runtimeConfiguration())
-        } else if forms {
-            try await WebHostCLIRunner.run(FormsApplication(theme: resolvedTheme), configuration: swiftTUIOptions.runtimeConfiguration())
-        } else if tree {
-            try await WebHostCLIRunner.run(TreeApplication(theme: resolvedTheme), configuration: swiftTUIOptions.runtimeConfiguration())
-        } else if viewport {
-            try await WebHostCLIRunner.run(ViewportApplication(theme: resolvedTheme), configuration: swiftTUIOptions.runtimeConfiguration())
-        } else if pagination {
-            try await WebHostCLIRunner.run(PaginationApplication(theme: resolvedTheme), configuration: swiftTUIOptions.runtimeConfiguration())
-        } else if tabs {
-            try await WebHostCLIRunner.run(TabsApplication(theme: resolvedTheme), configuration: swiftTUIOptions.runtimeConfiguration())
-        } else if keyboardHelp {
-            try await WebHostCLIRunner.run(HelpApplication(theme: resolvedTheme), configuration: swiftTUIOptions.runtimeConfiguration())
-        } else if files {
-            let startingDirectory = URL(fileURLWithPath: directory ?? FileManager.default.currentDirectoryPath,
-                                        isDirectory: true)
-            try await WebHostCLIRunner.run(FileSelectionApplication(directory: startingDirectory, theme: resolvedTheme),
-                                          configuration: swiftTUIOptions.runtimeConfiguration())
-        } else if feedback {
-            try await WebHostCLIRunner.run(FeedbackApplication(theme: resolvedTheme), configuration: swiftTUIOptions.runtimeConfiguration())
-        } else if textEntry {
-            try await WebHostCLIRunner.run(TextEntryApplication(theme: resolvedTheme), configuration: swiftTUIOptions.runtimeConfiguration())
-        } else if choices {
-            try await WebHostCLIRunner.run(ChoiceApplication(theme: resolvedTheme), configuration: swiftTUIOptions.runtimeConfiguration())
-        } else {
-            let app = DashboardApplication(scenario: scenario, theme: resolvedTheme, paused: paused)
-            try await WebHostCLIRunner.run(app, configuration: swiftTUIOptions.runtimeConfiguration())
-        }
+        let example = try resolveExample()
+        try await execute(example, theme: resolveTheme(for: example))
     }
 }
