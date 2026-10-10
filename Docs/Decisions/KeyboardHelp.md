@@ -12,6 +12,13 @@ and Sendable. Empty details/groups are omitted; all-empty help has an explicit
 message. Descriptions neither register actions nor parse key labels into input.
 The pinned command registry and `KeyBinding` are not public.
 
+`KeyHints` keeps whole hints in native layout rows. Every accepted nonnegative
+theme hint gap, including `Int.max` from construction or decoding, remains valid.
+The layout checks remaining row width before adding an inter-hint gap; a gap
+that cannot fit starts the next row. Gaps occur only between hints and never
+inflate the measured width after the final hint. Zero gaps and exact row fits
+retain their authored content and order.
+
 `KeyHint`/`KeyHints` share those values with grouped, wrapping `KeyboardHelp`.
 Applications derive descriptions from context/availability; native handlers remain
 execution authority. Help is passive content for inline or native presentation.
@@ -28,3 +35,5 @@ Escape, including input arriving before the next frame.
 
 - [KeyboardHelp.swift](../../Sources/Chio/KeyboardHelp/Presentation/KeyboardHelp.swift)
 - [KeyboardHelpRenderTests.swift](../../Tests/ChioTests/KeyboardHelp/Presentation/KeyboardHelpRenderTests.swift)
+- [KeyHints.swift](../../Sources/Chio/KeyboardHelp/Presentation/KeyHints.swift)
+- [KeyHintsRenderTests.swift](../../Tests/ChioTests/KeyboardHelp/Presentation/KeyHintsRenderTests.swift)

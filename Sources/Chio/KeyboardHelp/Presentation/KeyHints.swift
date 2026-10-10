@@ -35,22 +35,29 @@ private struct HintFlowLayout {
         var y = 0
         var rowHeight = 0
         var usedWidth = 0
+        var hasCurrentRow = false
         var frames: [LayoutRect] = []
         for subview in subviews {
             let ideal = subview.sizeThatFits(.unspecified)
             let size = ideal.width > limit
                 ? subview.sizeThatFits(ProposedViewSize(width: limit, height: nil)) : ideal
-            let hasCurrentRow = x > 0
-            let exceedsRowWidth = x + size.width > limit
-            if hasCurrentRow && exceedsRowWidth {
-                y += rowHeight
-                x = 0
-                rowHeight = 0
+            if hasCurrentRow {
+                let remainingWidth = max(0, limit - x)
+                let canFitGap = gap <= remainingWidth
+                let canFitHint = canFitGap && size.width <= remainingWidth - gap
+                if canFitHint {
+                    x += gap
+                } else {
+                    y += rowHeight
+                    x = 0
+                    rowHeight = 0
+                }
             }
             frames.append(LayoutRect(origin: LayoutPoint(x: x, y: y), size: size))
-            usedWidth = max(usedWidth, x + size.width)
-            x += size.width + gap
+            x += size.width
+            usedWidth = max(usedWidth, x)
             rowHeight = max(rowHeight, size.height)
+            hasCurrentRow = true
         }
         return (LayoutSize(width: usedWidth, height: y + rowHeight), frames)
     }
