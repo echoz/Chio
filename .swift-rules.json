@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "toolVersion": "0.1.2",
+  "toolVersion": "0.1.3",
   "sourceRoots": [
     "Sources",
     "Examples",
@@ -14,6 +14,9 @@
     "Domain"
   ],
   "pureTargets": [],
+  "componentFirstTargets": [
+    "Chio"
+  ],
   "layoutRoots": [
     "Sources"
   ],

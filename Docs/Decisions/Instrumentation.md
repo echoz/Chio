@@ -66,6 +66,6 @@ records the reference audit and extraction rationale.
 
 ## Implementation and verification
 
-- [Sparkline.swift](../../Sources/Chio/Presentation/Sparkline.swift)
-- [SparklineTests.swift](../../Tests/ChioTests/Presentation/SparklineTests.swift)
-- [DurationTextTests.swift](../../Tests/ChioTests/Presentation/DurationTextTests.swift)
+- [Sparkline.swift](../../Sources/Chio/Instrumentation/Presentation/Sparkline.swift)
+- [SparklineTests.swift](../../Tests/ChioTests/Instrumentation/Presentation/SparklineTests.swift)
+- [DurationTextTests.swift](../../Tests/ChioTests/Instrumentation/Presentation/DurationTextTests.swift)

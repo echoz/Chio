@@ -26,5 +26,5 @@ are outside this finite-value contract.
 
 ## Implementation and verification
 
-- [Pagination.swift](../../Sources/Chio/Domain/Pagination.swift)
-- [PageControlTests.swift](../../Tests/ChioTests/Presentation/PageControlTests.swift)
+- [Pagination.swift](../../Sources/Chio/Pagination/Domain/Pagination.swift)
+- [PageControlTests.swift](../../Tests/ChioTests/Pagination/Presentation/PageControlTests.swift)

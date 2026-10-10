@@ -39,5 +39,5 @@ are rejected rather than pretending to contain a loaded listing.
 
 ## Implementation and verification
 
-- [FilePicker.swift](../../Sources/Chio/Presentation/FilePicker.swift)
-- [FilePickerTests.swift](../../Tests/ChioTests/Presentation/FilePickerTests.swift)
+- [FilePicker.swift](../../Sources/Chio/FilePicker/Presentation/FilePicker.swift)
+- [FilePickerTests.swift](../../Tests/ChioTests/FilePicker/Presentation/FilePickerTests.swift)

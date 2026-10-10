@@ -18,9 +18,14 @@ Update each owning document instead of duplicating contracts or history here.
 - Use immutable stored properties for owned domain and view-configuration values.
   Follow the value contracts and explicit state-owner exceptions in
   [Design.md](Docs/Design.md#value-contracts).
+- Organize the library by component, then responsibility:
+  `Sources/Chio/<Component>/<Domain|Protocol|Execution|Serialization|Presentation>`.
+  Follow [source ownership](Docs/Design.md#source-ownership) for shared foundations
+  and matching focused tests. This overrides the global default directory order.
 - Keep one package and one public `Chio` library until real dependency boundaries
   justify more products. Examples default to local fixtures. Online map acquisition
-  is an explicit opt-in; other external service integrations remain deferred.
+  is an explicit opt-in. Follow the [approved map expansion](Docs/Plan.md#approved-map-expansion)
+  for planned storage and service adapters; other external integrations remain deferred.
 - Apply themes through the environment. Keep behavior in component options and
   application layout in SwiftTUI composition. Do not use private upstream APIs to
   conceal styling or focus limitations.

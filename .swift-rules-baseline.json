@@ -4,7 +4,7 @@
       "count": 1,
       "identity": {
         "anchor": "remaining",
-        "path": "Sources/Chio/Domain/Maps/MapShapeSimplification.swift",
+        "path": "Sources/Chio/Maps/Domain/MapShapeSimplification.swift",
         "ruleID": "immutable_domain"
       },
       "reason": "Invocation-owned private scratch budget passed inout through bounded geometry work; local mutation preserves immutable public inputs and work/cancellation limits (Docs/Verification.md#shared-engineering-rules)."
@@ -1822,7 +1822,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( camera : . init ( center : . init ( latitude : latitude , longitude : longitude ) , longitudeSpan : span ) , viewport : . init ( columns : columns , rows : rows , cellAspectRatio : aspect ) )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTilePlanTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTilePlanTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -1831,7 +1831,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( center : . init ( latitude : 0 , longitude : 0 ) , longitudeSpan : span )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTilePlanTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTilePlanTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -1840,7 +1840,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( center : . init ( latitude : latitude , longitude : longitude ) , longitudeSpan : span )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTilePlanTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTilePlanTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -1849,7 +1849,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( columns : columns , rows : rows , cellAspectRatio : aspect )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTilePlanTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTilePlanTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -1858,7 +1858,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( latitude : 0 , longitude : 0 )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTilePlanTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTilePlanTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -1867,7 +1867,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( latitude : latitude , longitude : longitude )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTilePlanTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTilePlanTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -1876,7 +1876,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( zoom : zoom , x : x , y : y )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTilePlanTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTilePlanTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -1885,7 +1885,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( attribution : \" Test provider \" , license : \" Test license \" , licenseURL : url , sourceURL : url , sourceRevision : \" revision \" )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTileSourceTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTileSourceTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -1894,7 +1894,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( camera : . init ( center : . init ( latitude : latitude , longitude : longitude ) , longitudeSpan : span ) , viewport : . init ( columns : columns , rows : rows , cellAspectRatio : aspect ) )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTileSourceTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTileSourceTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -1903,7 +1903,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( center : . init ( latitude : latitude , longitude : longitude ) , longitudeSpan : span )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTileSourceTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTileSourceTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -1912,7 +1912,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( columns : columns , rows : rows , cellAspectRatio : aspect )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTileSourceTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTileSourceTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -1921,7 +1921,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( dataset : . init ( features : [ ] ) , metadata : metadata ( ) , coverage : coverage )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTileSourceTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTileSourceTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -1930,7 +1930,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( features : [ ] )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTileSourceTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTileSourceTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -1939,7 +1939,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( latitude : - MapLimits . mercatorLatitude , longitude : 180 )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTileSourceTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTileSourceTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -1948,7 +1948,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( latitude : 0 , longitude : - 178.5 )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTileSourceTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTileSourceTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -1957,7 +1957,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( latitude : 0 , longitude : - 179 )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTileSourceTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTileSourceTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -1966,7 +1966,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( latitude : 0 , longitude : 0 )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTileSourceTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTileSourceTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -1975,7 +1975,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( latitude : 0 , longitude : 179 )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTileSourceTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTileSourceTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -1984,7 +1984,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( latitude : 10 , longitude : 20 )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTileSourceTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTileSourceTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -1993,7 +1993,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( latitude : 20 , longitude : 30 )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTileSourceTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTileSourceTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2002,7 +2002,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( latitude : 20 , longitude : 45.1 )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTileSourceTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTileSourceTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2011,7 +2011,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( latitude : 20 , longitude : 45.6 )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTileSourceTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTileSourceTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2020,7 +2020,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( latitude : 90 , longitude : 0 )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTileSourceTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTileSourceTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2029,7 +2029,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( latitude : 90 , longitude : 179 )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTileSourceTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTileSourceTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2038,7 +2038,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( latitude : MapLimits . mercatorLatitude , longitude : - 180 )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTileSourceTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTileSourceTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2047,7 +2047,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( latitude : MapLimits . mercatorLatitude , longitude : 45 )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTileSourceTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTileSourceTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2056,7 +2056,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( latitude : latitude , longitude : longitude )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTileSourceTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTileSourceTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2065,7 +2065,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( southwest : . init ( latitude : 10 , longitude : 20 ) , northeast : . init ( latitude : 20 , longitude : 30 ) )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTileSourceTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTileSourceTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2074,7 +2074,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( tiles : MapTilePlan ( request : region , zoom : 2 ) . tiles , region : region )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTileSourceTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTileSourceTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2083,7 +2083,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( tiles : addresses , region : narrower )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTileSourceTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTileSourceTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2092,7 +2092,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( tiles : addresses , region : request )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTileSourceTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTileSourceTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2101,7 +2101,7 @@
       "count": 2,
       "identity": {
         "anchor": ". init ( zoom : 1 , x : 0 , y : 0 )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTileSourceTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTileSourceTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2110,7 +2110,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( zoom : 3 , x : 7 , y : 1 )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTileSourceTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTileSourceTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2119,7 +2119,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( zoom : 5 , x : $0 , y : 0 )",
-        "path": "Tests/ChioTests/Domain/Maps/MapTileSourceTests.swift",
+        "path": "Tests/ChioTests/Maps/Domain/MapTileSourceTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2128,7 +2128,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( marker : \" \u2022 \" , blocks : [ . paragraph ( [ . text ( \" nested \" , [ ] ) ] ) , ] )",
-        "path": "Tests/ChioTests/Domain/MarkdownDocumentTests.swift",
+        "path": "Tests/ChioTests/Markdown/Domain/MarkdownDocumentTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2137,7 +2137,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( dataset : MapDataset ( features : [ ] ) , camera : MapCamera ( center : MapCoordinate ( latitude : 0 , longitude : 0 ) , longitudeSpan : span ) , viewport : MapViewport ( columns : 100 , rows : 40 ) , detail : . minimal , routes : [ ] , fills : true )",
-        "path": "Tests/ChioTests/Execution/Maps/MapPreparationWorkerTests.swift",
+        "path": "Tests/ChioTests/Maps/Execution/MapPreparationWorkerTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2146,7 +2146,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( dataset : dataset , camera : camera , viewport : viewport , detail : . source , routes : [ ] , fills : false )",
-        "path": "Tests/ChioTests/Execution/Maps/MapPreparationWorkerTests.swift",
+        "path": "Tests/ChioTests/Maps/Execution/MapPreparationWorkerTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2155,7 +2155,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( dataset : dataset , camera : camera , viewport : viewport , detail : . source , routes : [ named , unnamed ] , fills : false )",
-        "path": "Tests/ChioTests/Execution/Maps/MapPreparationWorkerTests.swift",
+        "path": "Tests/ChioTests/Maps/Execution/MapPreparationWorkerTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2164,7 +2164,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( dataset : dataset , camera : localCamera , viewport : viewport , detail : detail , routes : [ route ] , fills : false )",
-        "path": "Tests/ChioTests/Execution/Maps/MapPreparationWorkerTests.swift",
+        "path": "Tests/ChioTests/Maps/Execution/MapPreparationWorkerTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2173,7 +2173,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( dataset : dataset , camera : worldCamera , viewport : viewport , detail : detail , routes : [ route ] , fills : false )",
-        "path": "Tests/ChioTests/Execution/Maps/MapPreparationWorkerTests.swift",
+        "path": "Tests/ChioTests/Maps/Execution/MapPreparationWorkerTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2182,7 +2182,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( featureID : \" shared \" , kind : . primaryRoad , text : \" Walk \" , position : . init ( x : 50 , y : 20 ) )",
-        "path": "Tests/ChioTests/Execution/Maps/MapPreparationWorkerTests.swift",
+        "path": "Tests/ChioTests/Maps/Execution/MapPreparationWorkerTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2191,7 +2191,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( sourceVertices : 0 , preparedVertices : 0 , visibleFeatures : 0 )",
-        "path": "Tests/ChioTests/Execution/Maps/MapPreparationWorkerTests.swift",
+        "path": "Tests/ChioTests/Maps/Execution/MapPreparationWorkerTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2200,7 +2200,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( x : 45 , y : 20 )",
-        "path": "Tests/ChioTests/Execution/Maps/MapPreparationWorkerTests.swift",
+        "path": "Tests/ChioTests/Maps/Execution/MapPreparationWorkerTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2209,7 +2209,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( x : 50 , y : 20 )",
-        "path": "Tests/ChioTests/Execution/Maps/MapPreparationWorkerTests.swift",
+        "path": "Tests/ChioTests/Maps/Execution/MapPreparationWorkerTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2218,7 +2218,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( x : 65 , y : 20 )",
-        "path": "Tests/ChioTests/Execution/Maps/MapPreparationWorkerTests.swift",
+        "path": "Tests/ChioTests/Maps/Execution/MapPreparationWorkerTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2227,7 +2227,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( camera : MapCamera ( center : MapCoordinate ( latitude : 0 , longitude : longitude ) , longitudeSpan : span ) , viewport : MapViewport ( columns : 96 , rows : 32 ) )",
-        "path": "Tests/ChioTests/Execution/Maps/MapTileLoaderTests.swift",
+        "path": "Tests/ChioTests/Maps/Execution/MapTileLoaderTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2236,7 +2236,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( data : Data ( ) , headers : [ \" cache-control \" : \" max-age=60 \" , \" age \" : \" 10 \" ] )",
-        "path": "Tests/ChioTests/Execution/Maps/MapTileLoaderTests.swift",
+        "path": "Tests/ChioTests/Maps/Execution/MapTileLoaderTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2245,7 +2245,7 @@
       "count": 5,
       "identity": {
         "anchor": ". init ( data : Data ( ) , headers : [ : ] )",
-        "path": "Tests/ChioTests/Execution/Maps/MapTileLoaderTests.swift",
+        "path": "Tests/ChioTests/Maps/Execution/MapTileLoaderTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2254,7 +2254,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( data : Data ( [ 0xff ] ) , headers : [ : ] )",
-        "path": "Tests/ChioTests/Execution/Maps/MapTileLoaderTests.swift",
+        "path": "Tests/ChioTests/Maps/Execution/MapTileLoaderTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2263,7 +2263,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( data : padded , headers : [ : ] )",
-        "path": "Tests/ChioTests/Execution/Maps/MapTileLoaderTests.swift",
+        "path": "Tests/ChioTests/Maps/Execution/MapTileLoaderTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2272,7 +2272,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( data : visibleTransportationTile ( url : url , features : 1_000 ) , headers : [ : ] )",
-        "path": "Tests/ChioTests/Execution/Maps/MapTileLoaderTests.swift",
+        "path": "Tests/ChioTests/Maps/Execution/MapTileLoaderTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2281,7 +2281,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( data : visibleTransportationTile ( url : url , features : 1_001 ) , headers : [ : ] )",
-        "path": "Tests/ChioTests/Execution/Maps/MapTileLoaderTests.swift",
+        "path": "Tests/ChioTests/Maps/Execution/MapTileLoaderTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2290,7 +2290,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( data : visibleTransportationTile ( url : url , features : Int ( url . pathComponents [ 2 ] ) == 14 ? 1_001 : 1 ) , headers : [ : ] )",
-        "path": "Tests/ChioTests/Execution/Maps/MapTileLoaderTests.swift",
+        "path": "Tests/ChioTests/Maps/Execution/MapTileLoaderTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2299,7 +2299,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( template : \" https://example.test/tiles/{z}/{x}/{y}.pbf \" , zoomRange : range , metadata : MapSourceMetadata ( attribution : \" Fixture \" , license : \" Fixture \" , licenseURL : URL ( string : \" https://example.test/license \" ) ! , sourceURL : URL ( string : \" https://example.test \" ) ! , sourceRevision : \" fixture \" ) )",
-        "path": "Tests/ChioTests/Execution/Maps/MapTileLoaderTests.swift",
+        "path": "Tests/ChioTests/Maps/Execution/MapTileLoaderTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2308,7 +2308,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 60 , height : 12 )",
-        "path": "Tests/ChioTests/Presentation/ChioFormControlTests.swift",
+        "path": "Tests/ChioTests/Forms/Presentation/ChioFormControlTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2317,7 +2317,7 @@
       "count": 4,
       "identity": {
         "anchor": ". init ( width : 12 , height : 7 )",
-        "path": "Tests/ChioTests/Presentation/ChioScrollViewStyleTests.swift",
+        "path": "Tests/ChioTests/Scrolling/Presentation/ChioScrollViewStyleTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2326,7 +2326,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 18 , height : 8 )",
-        "path": "Tests/ChioTests/Presentation/ChioScrollViewStyleTests.swift",
+        "path": "Tests/ChioTests/Scrolling/Presentation/ChioScrollViewStyleTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2335,7 +2335,7 @@
       "count": 2,
       "identity": {
         "anchor": ". init ( width : 24 , height : 10 )",
-        "path": "Tests/ChioTests/Presentation/ChioScrollViewStyleTests.swift",
+        "path": "Tests/ChioTests/Scrolling/Presentation/ChioScrollViewStyleTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2344,7 +2344,7 @@
       "count": 6,
       "identity": {
         "anchor": ". init ( width : 1 , height : 1 )",
-        "path": "Tests/ChioTests/Presentation/ChioSpinnerStyleTests.swift",
+        "path": "Tests/ChioTests/Instrumentation/Presentation/ChioSpinnerStyleTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2353,7 +2353,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 24 , height : 5 )",
-        "path": "Tests/ChioTests/Presentation/ChioTextEntryRenderTests.swift",
+        "path": "Tests/ChioTests/Forms/Presentation/ChioTextEntryRenderTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2362,7 +2362,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 24 , height : 7 )",
-        "path": "Tests/ChioTests/Presentation/ChioTextEntryRenderTests.swift",
+        "path": "Tests/ChioTests/Forms/Presentation/ChioTextEntryRenderTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2371,7 +2371,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 24 , height : 8 )",
-        "path": "Tests/ChioTests/Presentation/ChioTextEntryRenderTests.swift",
+        "path": "Tests/ChioTests/Forms/Presentation/ChioTextEntryRenderTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2380,7 +2380,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 36 , height : 5 )",
-        "path": "Tests/ChioTests/Presentation/ChioTextEntryRenderTests.swift",
+        "path": "Tests/ChioTests/Forms/Presentation/ChioTextEntryRenderTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2389,7 +2389,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( content : \" A\\n B \" )",
-        "path": "Tests/ChioTests/Presentation/ChioTextEntryTests.swift",
+        "path": "Tests/ChioTests/Forms/Presentation/ChioTextEntryTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2398,7 +2398,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( content : content )",
-        "path": "Tests/ChioTests/Presentation/ChioTextEntryTests.swift",
+        "path": "Tests/ChioTests/Forms/Presentation/ChioTextEntryTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2407,7 +2407,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 24 , height : 16 )",
-        "path": "Tests/ChioTests/Presentation/ChioTextEntryTests.swift",
+        "path": "Tests/ChioTests/Forms/Presentation/ChioTextEntryTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2416,7 +2416,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 60 , height : 16 )",
-        "path": "Tests/ChioTests/Presentation/ChioTextEntryTests.swift",
+        "path": "Tests/ChioTests/Forms/Presentation/ChioTextEntryTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2425,7 +2425,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( secondsComponent : 0 , attosecondsComponent : - 1 )",
-        "path": "Tests/ChioTests/Presentation/DurationTextTests.swift",
+        "path": "Tests/ChioTests/Instrumentation/Presentation/DurationTextTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2434,7 +2434,7 @@
       "count": 2,
       "identity": {
         "anchor": ". init ( secondsComponent : 0 , attosecondsComponent : 1 )",
-        "path": "Tests/ChioTests/Presentation/DurationTextTests.swift",
+        "path": "Tests/ChioTests/Instrumentation/Presentation/DurationTextTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2443,7 +2443,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( secondsComponent : 1 , attosecondsComponent : 1 )",
-        "path": "Tests/ChioTests/Presentation/DurationTextTests.swift",
+        "path": "Tests/ChioTests/Instrumentation/Presentation/DurationTextTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2452,7 +2452,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( secondsComponent : Int64 . max , attosecondsComponent : - 1 )",
-        "path": "Tests/ChioTests/Presentation/DurationTextTests.swift",
+        "path": "Tests/ChioTests/Instrumentation/Presentation/DurationTextTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2461,7 +2461,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( secondsComponent : Int64 . max , attosecondsComponent : 1 )",
-        "path": "Tests/ChioTests/Presentation/DurationTextTests.swift",
+        "path": "Tests/ChioTests/Instrumentation/Presentation/DurationTextTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2470,7 +2470,7 @@
       "count": 2,
       "identity": {
         "anchor": ". init ( width : 32 , height : 1 )",
-        "path": "Tests/ChioTests/Presentation/DurationTextTests.swift",
+        "path": "Tests/ChioTests/Instrumentation/Presentation/DurationTextTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2479,7 +2479,7 @@
       "count": 4,
       "identity": {
         "anchor": ". init ( width : nil , height : nil )",
-        "path": "Tests/ChioTests/Presentation/DurationTextTests.swift",
+        "path": "Tests/ChioTests/Instrumentation/Presentation/DurationTextTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2488,7 +2488,7 @@
       "count": 2,
       "identity": {
         "anchor": ". init ( width : 24 , height : 1 )",
-        "path": "Tests/ChioTests/Presentation/FormFieldRenderTests.swift",
+        "path": "Tests/ChioTests/Forms/Presentation/FormFieldRenderTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2497,7 +2497,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 24 , height : 10 )",
-        "path": "Tests/ChioTests/Presentation/FormFieldRenderTests.swift",
+        "path": "Tests/ChioTests/Forms/Presentation/FormFieldRenderTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2506,7 +2506,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 24 , height : 2 )",
-        "path": "Tests/ChioTests/Presentation/FormFieldRenderTests.swift",
+        "path": "Tests/ChioTests/Forms/Presentation/FormFieldRenderTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2515,7 +2515,7 @@
       "count": 3,
       "identity": {
         "anchor": ". init ( width : 24 , height : nil )",
-        "path": "Tests/ChioTests/Presentation/FormFieldRenderTests.swift",
+        "path": "Tests/ChioTests/Forms/Presentation/FormFieldRenderTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2524,7 +2524,7 @@
       "count": 2,
       "identity": {
         "anchor": ". init ( width : width , height : 10 )",
-        "path": "Tests/ChioTests/Presentation/FormFieldRenderTests.swift",
+        "path": "Tests/ChioTests/Forms/Presentation/FormFieldRenderTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2533,7 +2533,7 @@
       "count": 7,
       "identity": {
         "anchor": ". init ( width : 32 , height : nil )",
-        "path": "Tests/ChioTests/Presentation/KeyboardHelpRenderTests.swift",
+        "path": "Tests/ChioTests/KeyboardHelp/Presentation/KeyboardHelpRenderTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2542,7 +2542,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : width , height : nil )",
-        "path": "Tests/ChioTests/Presentation/KeyboardHelpRenderTests.swift",
+        "path": "Tests/ChioTests/KeyboardHelp/Presentation/KeyboardHelpRenderTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2551,7 +2551,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( featureID : \" far \" , kind : . park , text : \" Elsewhere \" , position : . init ( x : 5 , y : 3 ) )",
-        "path": "Tests/ChioTests/Presentation/Maps/MapOverlayRenderingTests.swift",
+        "path": "Tests/ChioTests/Maps/Presentation/MapOverlayRenderingTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2560,7 +2560,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( featureID : \" lake \" , kind : . water , points : points )",
-        "path": "Tests/ChioTests/Presentation/Maps/MapOverlayRenderingTests.swift",
+        "path": "Tests/ChioTests/Maps/Presentation/MapOverlayRenderingTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2569,7 +2569,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( featureID : \" lake \" , kind : . water , rings : [ points ] )",
-        "path": "Tests/ChioTests/Presentation/Maps/MapOverlayRenderingTests.swift",
+        "path": "Tests/ChioTests/Maps/Presentation/MapOverlayRenderingTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2578,7 +2578,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( featureID : \" near \" , kind : . water , text : \" Lake \" , position : . init ( x : 22 , y : 10 ) )",
-        "path": "Tests/ChioTests/Presentation/Maps/MapOverlayRenderingTests.swift",
+        "path": "Tests/ChioTests/Maps/Presentation/MapOverlayRenderingTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2587,7 +2587,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( featureID : \" park \" , kind : . park , rings : [ rectangle ( 0 , 0 , 10 , 10 ) ] )",
-        "path": "Tests/ChioTests/Presentation/Maps/MapOverlayRenderingTests.swift",
+        "path": "Tests/ChioTests/Maps/Presentation/MapOverlayRenderingTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2596,7 +2596,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( featureID : \" water \" , kind : . water , rings : [ rectangle ( 2 , 2 , 8 , 8 ) ] )",
-        "path": "Tests/ChioTests/Presentation/Maps/MapOverlayRenderingTests.swift",
+        "path": "Tests/ChioTests/Maps/Presentation/MapOverlayRenderingTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2605,7 +2605,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( featureID : id , kind : . primaryRoad , points : ( 0 ... segments ) . map { . init ( x : $0 . isMultiple ( of : 2 ) ? 0 : 240 , y : 50 ) } )",
-        "path": "Tests/ChioTests/Presentation/Maps/MapOverlayRenderingTests.swift",
+        "path": "Tests/ChioTests/Maps/Presentation/MapOverlayRenderingTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2614,7 +2614,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( lines : lines , polygons : polygons , labels : [ ] , statistics : . init ( sourceVertices : 0 , preparedVertices : 0 , visibleFeatures : 0 ) )",
-        "path": "Tests/ChioTests/Presentation/Maps/MapOverlayRenderingTests.swift",
+        "path": "Tests/ChioTests/Maps/Presentation/MapOverlayRenderingTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2623,7 +2623,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( sourceVertices : 0 , preparedVertices : 0 , visibleFeatures : 0 )",
-        "path": "Tests/ChioTests/Presentation/Maps/MapOverlayRenderingTests.swift",
+        "path": "Tests/ChioTests/Maps/Presentation/MapOverlayRenderingTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2632,7 +2632,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 32 , height : 1 )",
-        "path": "Tests/ChioTests/Presentation/Maps/MapOverlayRenderingTests.swift",
+        "path": "Tests/ChioTests/Maps/Presentation/MapOverlayRenderingTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2641,7 +2641,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : drawing . viewport . columns , height : drawing . viewport . rows )",
-        "path": "Tests/ChioTests/Presentation/Maps/MapOverlayRenderingTests.swift",
+        "path": "Tests/ChioTests/Maps/Presentation/MapOverlayRenderingTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2650,7 +2650,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( x : $0 . isMultiple ( of : 2 ) ? 0 : 240 , y : 50 )",
-        "path": "Tests/ChioTests/Presentation/Maps/MapOverlayRenderingTests.swift",
+        "path": "Tests/ChioTests/Maps/Presentation/MapOverlayRenderingTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2659,7 +2659,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( x : 2 , y : 4.1 )",
-        "path": "Tests/ChioTests/Presentation/Maps/MapOverlayRenderingTests.swift",
+        "path": "Tests/ChioTests/Maps/Presentation/MapOverlayRenderingTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2668,7 +2668,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( x : 22 , y : 10 )",
-        "path": "Tests/ChioTests/Presentation/Maps/MapOverlayRenderingTests.swift",
+        "path": "Tests/ChioTests/Maps/Presentation/MapOverlayRenderingTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2677,7 +2677,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( x : 4.6 , y : 2 )",
-        "path": "Tests/ChioTests/Presentation/Maps/MapOverlayRenderingTests.swift",
+        "path": "Tests/ChioTests/Maps/Presentation/MapOverlayRenderingTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2686,7 +2686,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( x : 4.6 , y : 8 )",
-        "path": "Tests/ChioTests/Presentation/Maps/MapOverlayRenderingTests.swift",
+        "path": "Tests/ChioTests/Maps/Presentation/MapOverlayRenderingTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2695,7 +2695,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( x : 5 , y : 3 )",
-        "path": "Tests/ChioTests/Presentation/Maps/MapOverlayRenderingTests.swift",
+        "path": "Tests/ChioTests/Maps/Presentation/MapOverlayRenderingTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2704,7 +2704,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( x : 8 , y : 4.1 )",
-        "path": "Tests/ChioTests/Presentation/Maps/MapOverlayRenderingTests.swift",
+        "path": "Tests/ChioTests/Maps/Presentation/MapOverlayRenderingTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2713,7 +2713,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( x : left , y : bottom )",
-        "path": "Tests/ChioTests/Presentation/Maps/MapOverlayRenderingTests.swift",
+        "path": "Tests/ChioTests/Maps/Presentation/MapOverlayRenderingTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2722,7 +2722,7 @@
       "count": 2,
       "identity": {
         "anchor": ". init ( x : left , y : top )",
-        "path": "Tests/ChioTests/Presentation/Maps/MapOverlayRenderingTests.swift",
+        "path": "Tests/ChioTests/Maps/Presentation/MapOverlayRenderingTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2731,7 +2731,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( x : right , y : bottom )",
-        "path": "Tests/ChioTests/Presentation/Maps/MapOverlayRenderingTests.swift",
+        "path": "Tests/ChioTests/Maps/Presentation/MapOverlayRenderingTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2740,7 +2740,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( x : right , y : top )",
-        "path": "Tests/ChioTests/Presentation/Maps/MapOverlayRenderingTests.swift",
+        "path": "Tests/ChioTests/Maps/Presentation/MapOverlayRenderingTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2749,7 +2749,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 100 , height : 34 )",
-        "path": "Tests/ChioTests/Presentation/Maps/MapViewInteractionTests.swift",
+        "path": "Tests/ChioTests/Maps/Presentation/MapViewInteractionTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2758,7 +2758,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 76 , height : 30 )",
-        "path": "Tests/ChioTests/Presentation/Maps/MapViewInteractionTests.swift",
+        "path": "Tests/ChioTests/Maps/Presentation/MapViewInteractionTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2767,7 +2767,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 16 , height : 10 )",
-        "path": "Tests/ChioTests/Presentation/MarkdownInteractionTests.swift",
+        "path": "Tests/ChioTests/Markdown/Presentation/MarkdownInteractionTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2776,7 +2776,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 20 , height : 10 )",
-        "path": "Tests/ChioTests/Presentation/MarkdownInteractionTests.swift",
+        "path": "Tests/ChioTests/Markdown/Presentation/MarkdownInteractionTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2785,7 +2785,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 24 , height : 18 )",
-        "path": "Tests/ChioTests/Presentation/MarkdownLinkTests.swift",
+        "path": "Tests/ChioTests/Markdown/Presentation/MarkdownLinkTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2794,7 +2794,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 30 , height : 18 )",
-        "path": "Tests/ChioTests/Presentation/MarkdownLinkTests.swift",
+        "path": "Tests/ChioTests/Markdown/Presentation/MarkdownLinkTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2803,7 +2803,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 40 , height : 15 )",
-        "path": "Tests/ChioTests/Presentation/MarkdownLinkTests.swift",
+        "path": "Tests/ChioTests/Markdown/Presentation/MarkdownLinkTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2812,7 +2812,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 48 , height : 16 )",
-        "path": "Tests/ChioTests/Presentation/MarkdownLinkTests.swift",
+        "path": "Tests/ChioTests/Markdown/Presentation/MarkdownLinkTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2821,7 +2821,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 70 , height : 5 )",
-        "path": "Tests/ChioTests/Presentation/MarkdownLinkTests.swift",
+        "path": "Tests/ChioTests/Markdown/Presentation/MarkdownLinkTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2830,7 +2830,7 @@
       "count": 2,
       "identity": {
         "anchor": ". init ( width : 80 , height : 5 )",
-        "path": "Tests/ChioTests/Presentation/MarkdownLinkTests.swift",
+        "path": "Tests/ChioTests/Markdown/Presentation/MarkdownLinkTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2839,7 +2839,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : width , height : 20 )",
-        "path": "Tests/ChioTests/Presentation/MarkdownLinkTests.swift",
+        "path": "Tests/ChioTests/Markdown/Presentation/MarkdownLinkTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2848,7 +2848,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 16 , height : 12 )",
-        "path": "Tests/ChioTests/Presentation/MarkdownTableInteractionTests.swift",
+        "path": "Tests/ChioTests/Markdown/Presentation/MarkdownTableInteractionTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2857,7 +2857,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 20 , height : 12 )",
-        "path": "Tests/ChioTests/Presentation/MarkdownTableInteractionTests.swift",
+        "path": "Tests/ChioTests/Markdown/Presentation/MarkdownTableInteractionTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2866,7 +2866,7 @@
       "count": 2,
       "identity": {
         "anchor": ". init ( width : 24 , height : 12 )",
-        "path": "Tests/ChioTests/Presentation/MarkdownTableRenderTests.swift",
+        "path": "Tests/ChioTests/Markdown/Presentation/MarkdownTableRenderTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2875,7 +2875,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 40 , height : 20 )",
-        "path": "Tests/ChioTests/Presentation/MarkdownTableRenderTests.swift",
+        "path": "Tests/ChioTests/Markdown/Presentation/MarkdownTableRenderTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2884,7 +2884,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 60 , height : 20 )",
-        "path": "Tests/ChioTests/Presentation/MarkdownTableRenderTests.swift",
+        "path": "Tests/ChioTests/Markdown/Presentation/MarkdownTableRenderTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2893,7 +2893,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : width , height : 24 )",
-        "path": "Tests/ChioTests/Presentation/MarkdownTableRenderTests.swift",
+        "path": "Tests/ChioTests/Markdown/Presentation/MarkdownTableRenderTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2902,7 +2902,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 20 , height : 18 )",
-        "path": "Tests/ChioTests/Presentation/PageControlTests.swift",
+        "path": "Tests/ChioTests/Pagination/Presentation/PageControlTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2911,7 +2911,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 20 , height : nil )",
-        "path": "Tests/ChioTests/Presentation/PageControlTests.swift",
+        "path": "Tests/ChioTests/Pagination/Presentation/PageControlTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2920,7 +2920,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 36 , height : nil )",
-        "path": "Tests/ChioTests/Presentation/PageControlTests.swift",
+        "path": "Tests/ChioTests/Pagination/Presentation/PageControlTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2929,7 +2929,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 76 , height : 18 )",
-        "path": "Tests/ChioTests/Presentation/PageControlTests.swift",
+        "path": "Tests/ChioTests/Pagination/Presentation/PageControlTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2938,7 +2938,7 @@
       "count": 2,
       "identity": {
         "anchor": ". init ( width : width , height : nil )",
-        "path": "Tests/ChioTests/Presentation/PageControlTests.swift",
+        "path": "Tests/ChioTests/Pagination/Presentation/PageControlTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2947,7 +2947,7 @@
       "count": 2,
       "identity": {
         "anchor": ". init ( width : 32 , height : 14 )",
-        "path": "Tests/ChioTests/Presentation/SearchableListTests.swift",
+        "path": "Tests/ChioTests/SearchableList/Presentation/SearchableListTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2956,7 +2956,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 60 , height : 18 )",
-        "path": "Tests/ChioTests/Presentation/SearchableListTests.swift",
+        "path": "Tests/ChioTests/SearchableList/Presentation/SearchableListTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2965,7 +2965,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 10 , height : 2 )",
-        "path": "Tests/ChioTests/Presentation/SparklineTests.swift",
+        "path": "Tests/ChioTests/Instrumentation/Presentation/SparklineTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2974,7 +2974,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 4 , height : 1 )",
-        "path": "Tests/ChioTests/Presentation/SparklineTests.swift",
+        "path": "Tests/ChioTests/Instrumentation/Presentation/SparklineTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2983,7 +2983,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : width , height : height )",
-        "path": "Tests/ChioTests/Presentation/SparklineTests.swift",
+        "path": "Tests/ChioTests/Instrumentation/Presentation/SparklineTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -2992,7 +2992,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( x : 0 , y : 0 )",
-        "path": "Tests/ChioTests/Presentation/SparklineTests.swift",
+        "path": "Tests/ChioTests/Instrumentation/Presentation/SparklineTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -3001,7 +3001,7 @@
       "count": 4,
       "identity": {
         "anchor": ". init ( x : 0 , y : 7 )",
-        "path": "Tests/ChioTests/Presentation/SparklineTests.swift",
+        "path": "Tests/ChioTests/Instrumentation/Presentation/SparklineTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -3010,7 +3010,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( x : 1 , y : 7 )",
-        "path": "Tests/ChioTests/Presentation/SparklineTests.swift",
+        "path": "Tests/ChioTests/Instrumentation/Presentation/SparklineTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -3019,7 +3019,7 @@
       "count": 3,
       "identity": {
         "anchor": ". init ( x : 9 , y : 0 )",
-        "path": "Tests/ChioTests/Presentation/SparklineTests.swift",
+        "path": "Tests/ChioTests/Instrumentation/Presentation/SparklineTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -3028,7 +3028,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( x : 9 , y : 4 )",
-        "path": "Tests/ChioTests/Presentation/SparklineTests.swift",
+        "path": "Tests/ChioTests/Instrumentation/Presentation/SparklineTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -3037,7 +3037,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( x : x * 2 + dot . 0 , y : y * 4 + dot . 1 )",
-        "path": "Tests/ChioTests/Presentation/SparklineTests.swift",
+        "path": "Tests/ChioTests/Instrumentation/Presentation/SparklineTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
@@ -3046,7 +3046,7 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 4 , height : 1 )",
-        "path": "Tests/ChioTests/Presentation/TerminalColorEmissionTests.swift",
+        "path": "Tests/ChioTests/Integration/TerminalColorEmissionTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."

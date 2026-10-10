@@ -7,8 +7,8 @@ and preservation of current contracts.
 
 ## Shared engineering rules
 
-Chio pins [EngineeringRules v0.1.2](https://github.com/echoz/EngineeringRules/releases/tag/v0.1.2)
-(`b2b8e8046fde8a482be7ae7e7ded72befd1e8d97`) through
+Chio pins [EngineeringRules v0.1.3](https://github.com/echoz/EngineeringRules/releases/tag/v0.1.3)
+(`659a84a286ae81321304058de44dc67b64146014`) through
 [.swift-rules.json](../.swift-rules.json). This is a required local development
 gate alongside the compiler, tests and platform checks below. It is not a package
 dependency or a guarantee of purity, correct enum policy or API compatibility.
@@ -27,8 +27,12 @@ pinned installation is a failed prerequisite.
 
 The gate scans all retained Swift files in `Sources`, `Examples` and `Tests`,
 with no path exclusions and explicit target import allowlists. Its production
-layout and file-scope checks apply to `Sources`; `Sources/Chio/Domain` also gets
-immutability and direct-effect checks. In v0.1.2 those production rules cannot
+layout and file-scope checks apply to `Sources`. The explicit
+`componentFirstTargets: ["Chio"]` setting checks component/responsibility order
+and selects the nested `Domain` groups for immutability and direct-effect checks.
+Other targets retain the default responsibility-first layout. Moving files only
+translates their existing baseline paths; anchors, rules, counts and reasons stay
+unchanged. In v0.1.3 those production rules cannot
 target `Examples`, whose syntax, constructors, ternaries, imports and selected
 SwiftLint rules are still checked. Tests receive the latter checks too. Extend
 the configuration when introducing retained source roots such as new spikes;
