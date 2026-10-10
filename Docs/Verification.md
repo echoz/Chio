@@ -196,14 +196,20 @@ the true-color run must preserve authored RGB.
 
 ### Demo site
 
-The [showcase](https://echoz.github.io/Chio/) serves thirteen recordings and 39
+The [showcase](https://echoz.github.io/Chio/) serves fifteen recordings and 45
 three-theme previews from `Docs/Media`, using the pinned local asciinema player
-in `Docs/Site`. Its upstream license remains with the vendored assets. Components
-and compositions stay separate; the map component uses the same public API as its local example. Each card identifies Chio APIs, native controls,
-application-owned behavior, source, launch command and keyboard guide.
+in `Docs/Site`. Its upstream license remains with the vendored assets. The catalog
+opens on Maps and separates Chio views, styles for native SwiftTUI controls and
+example apps. Entries identify public APIs, native controls, application-owned
+behavior, source, launch command and keyboard guide. Minimal view fragments name
+their application-owned inputs; examples link back to the pieces they compose.
+Supporting APIs sit beside their owning view rather than implying a separate
+performance toolkit. Component options remain independent of themes.
 
-Each example retains its selected static-preview theme during navigation. The
-command follows that choice; original recordings retain their recorded themes.
+One shared static-preview theme follows navigation. The preview, Swift fragment
+and command follow that choice; original recordings retain their recorded themes.
+The optional `theme` query parameter and entry fragment support shareable choices
+and browser history. Unknown themes use Chio; unknown entries show Maps.
 Playback is explicit, pauses when leaving a recording, and can return to the
 selected preview. Fragment links/history, script-free previews/downloads and
 missing-asset fallbacks remain supported. The build gives owned CSS/JavaScript
@@ -231,7 +237,8 @@ Completing a visible example change includes updating the showcase:
 3. Update captions, matching commands and guide/source links. Preserve the
    Codex-assisted development and personal-software statement.
 4. Check site assembly, assets/links, playback, pause, forward/backward seeking,
-   navigation, focus, a 390-pixel layout and missing-asset/script-free fallbacks.
+   category and related-entry navigation, shared-theme commands/snippets, URL
+   history, focus, a 390-pixel layout and missing-asset/script-free fallbacks.
 5. Commit, deploy and verify the published result before declaring the slice
    complete. An internal change with no visible difference needs no new capture.
 
