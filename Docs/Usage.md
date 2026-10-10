@@ -314,6 +314,26 @@ loader used for regions and streets. Online mode never substitutes bundled geogr
 Buffered/clipped polygon seams are still possible. See
 [online acquisition contracts](Decisions/OnlineMaps.md) for limits and lifecycle.
 
+To reuse fresh raw tiles across launches, opt into an application-selected cache:
+
+```swift
+let cache = try MapTileCache.open(directory: cacheDirectory, source: endpoint)
+let loader = MapTileLoader(cache: cache)
+// Retain both while the map consumer is active; cancel and await its loads first.
+// When the consumer has stopped:
+await cache.close()
+```
+
+The directory belongs to that exact source and permits one owner at a time.
+Opening a different source in it fails without wiping its contents. Defaults
+bound encoded tiles to 128 MiB and 256 entries; `maximumBytes` and
+`maximumEntries` can select smaller limits. HTTP freshness still applies, up to
+thirty minutes. Expired/corrupt entries are misses, ordinary storage failures
+propagate, and closing the cache prevents later loads through attached loaders.
+This is an evictable cache, not an offline tile pack. See the
+[persistence contract](Decisions/OnlineMaps.md#persistent-raw-tile-cache) for file
+bounds, ownership, clock assumptions and process-interruption recovery.
+
 ## Tabs
 
 Use SwiftTUI's tab declarations with stable values; the theme supplies their style:

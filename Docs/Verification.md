@@ -161,6 +161,17 @@ Test owners await child shutdown even after cancellation or a thrown operation.
 Cleanup retains a five-second bound and reports signal results and observed process
 state when it fails.
 
+Persistent-cache changes additionally exercise source/format isolation, checked
+file framing, original expiry, clock movement, encoded byte and entry bounds,
+FIFO eviction, corrupt entries, interrupted temporary cleanup and explicit closed
+ownership. `Scripts/maps/cache-probe.py` runs actual map executables against counted
+loopback fixtures: cold acquisition, live ownership contention, warm reuse without
+HTTP, graceful terminal restoration and reopening after SIGKILL. The kill occurs
+after loading; a separately planted partial temporary proves startup cleanup,
+not a kill during a real write. Unit cases cover publication failures. Run these
+on macOS and Linux; they establish neither power-loss durability nor hostile
+filesystem safety. Map geometry and the default recording remain unchanged.
+
 Pass an example flag such as `--choices`, `--inbox` or `--diff` for its workflow;
 [verify.sh](../Scripts/ci/verify.sh) is the complete list. Terminal checks cover
 input/output, raw mode, cursor/alternate-screen restoration and exact original

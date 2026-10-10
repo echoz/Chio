@@ -115,3 +115,6 @@ python3 Scripts/maps/terminal-probe.py "$map_binary" \
   --online-source "$online_directory/source.json" --output-dir "$online_directory"
 stop_online_server
 trap - EXIT
+
+# Separate executable launches prove disk reuse and cooperative ownership.
+python3 -B Scripts/maps/cache-probe.py "$map_binary" --output-dir .build/ci-results/maps/cache

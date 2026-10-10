@@ -27,12 +27,15 @@ composition demonstrates a concrete missing contract. Showcase applications
 validate the framework; their domain models do not define its product scope.
 Coverage inventories describe gaps, without committing to catalog parity.
 
-The [approved map expansion](Plan.md#approved-map-expansion) adds planned disk
-storage, downloadable tile packs, geocoding and routing adapters at explicit
+The [approved map expansion](Plan.md#approved-map-expansion) adds disk storage
+and planned downloadable tile packs, geocoding and routing adapters at explicit
 effect boundaries beside the view. Applications retain invocation, storage and
 provider policy, credentials and workflow ownership. These capabilities are
-approved scope, not shipped APIs; their detailed contracts will be established
-with each slice. The current map renderer and acquisition contracts remain intact.
+delivered one slice at a time; packs and service APIs remain planned. The current
+map renderer and acquisition contracts remain intact. Opt-in persistence is
+defined in [online acquisition](Decisions/OnlineMaps.md#persistent-raw-tile-cache).
+Its private `ChioFileSystem` target bridges native locking and
+directory enumeration without adding another public product.
 
 ## Value contracts
 

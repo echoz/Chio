@@ -77,7 +77,8 @@ failure, or reduced source resolution when data exceeds geometry budgets. Press
 `e` to retry using the loader's cache policy. World, region and street views all
 use online tiles; the initial view stays empty until data arrives. `--source` selects an
 offline fixture and is not needed online. Detail and theme changes do not fetch
-new data. No disk cache or background download is created. Online snapshots and
+new data. No disk cache is created unless requested; there is no background
+download. Online snapshots and
 benchmarks are rejected so the inspection modes remain deterministic.
 
 Use `--online --tile-source source.json` to load an explicitly configured
@@ -88,6 +89,23 @@ For a reproducible local HTTP replay, run
 in one terminal, then add `--tile-source .build/maps-source.json` to the online
 launch in another. The replay serves four world z1 tiles and three Singapore z12
 tiles, and deliberately returns an error at unretained scales or locations; it never accesses the Internet.
+
+Add `--tile-cache .build/map-cache` to reuse fresh tiles across launches. For
+example, with the replay server started using `--cache-seconds 1800`:
+
+```sh
+swift run -c release chio-maps --online \
+  --tile-source .build/maps-source.json --tile-cache .build/map-cache
+```
+
+Quit and launch again with the same source file and cache directory. Fresh tiles
+already visited can load even if that replay server has stopped. Expired or
+unvisited tiles still need the server; this is not a complete offline pack. The
+replay's default `no-store` responses intentionally do not persist. A newly started
+replay server selects a new port, hence a new source identity: choose another
+cache directory. OpenFreeMap discovery likewise still needs a network connection
+unless a source file is supplied. Cache contention and source mismatches are
+reported before the TUI starts.
 
 Give the component at least **32 × 16** drawing cells for longitude spans of
 60 degrees or more, or **58 × 16** for closer views, plus two credit rows.

@@ -41,16 +41,21 @@ active plan with completed implementation history.
 
 ## Approved map expansion
 
-**Status:** Scope approved on 2026-10-09; implementation and public APIs pending.
-The shipped map component remains as described in the existing decisions. The
-following order is the proposed delivery sequence, with one testable slice at a time.
+**Status:** Scope approved on 2026-10-09. Persistent caching is implemented;
+offline packs, geocoding and routing remain planned. The following order keeps
+one testable slice at a time; current contracts live in the owning decisions.
 
 The preceding robustness slice fixes the two reproduced audit defects:
 [overflow-safe keyboard-hint spacing](Decisions/KeyboardHelp.md) and
 [conservative polygon admission](Decisions/GeographicMaps.md#detail-and-geographic-limits).
 Focused regressions cover constructed/decoded extreme gaps, accepted uncontained
 rings, ordinary contained holes, native rendering and bounded topology checks.
-Persistent tile caching is the next feature slice after integrated verification.
+The opt-in persistent cache preserves the raw
+tile pipeline; [its storage contract](Decisions/OnlineMaps.md#persistent-raw-tile-cache)
+defines identity, freshness, bounds and recovery. Before delivery, its
+[verification gates](Verification.md) require independent review, unit and real
+process checks on macOS/Linux, and the updated showcase. Downloadable offline
+packs are the next design slice; their retention policy differs from this cache.
 
 | Order | Capability | First useful outcome and acceptance evidence |
 | --- | --- | --- |

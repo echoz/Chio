@@ -12,6 +12,8 @@ struct MapExampleCommand {
     var online = false
     @Option(help: "Optional JSON OpenMapTilesSource file for --online; otherwise discover OpenFreeMap.")
     var tileSource = ""
+    @Option(help: "Opt-in dedicated disk cache directory for --online. A directory belongs to one exact tile source.")
+    var tileCache = ""
     @Option(help: "Theme: default, light or btop.") var theme: Appearance = .default
     @Flag(help: "Print a deterministic native raster as text.") var snapshot = false
     @Flag(help: "Export native raster cells as JSON for visual inspection.") var snapshotJSON = false
@@ -85,6 +87,9 @@ extension MapExampleCommand: AsyncParsableCommand {
         guard online || tileSource.isEmpty else {
             throw ValidationError("--tile-source requires --online.")
         }
+        guard online || tileCache.isEmpty else {
+            throw ValidationError("--tile-cache requires --online.")
+        }
     }
 
     @MainActor
@@ -113,10 +118,32 @@ extension MapExampleCommand: AsyncParsableCommand {
                                       foreground: theme.theme.colors.foreground)
             } else { print(capture.raster.lines.joined(separator: "\n")) }
         } else {
-            try await WebHostCLIRunner.run(MapExampleApplication(fixtures: fixtures, scene: scene, appearance: theme,
+            let cacheOwner: MapTileCache?
+            let liveAcquisition: MapExampleAcquisition
+            if tileCache.isEmpty {
+                cacheOwner = nil
+                liveAcquisition = acquisition
+            } else {
+                let cache: MapTileCache
+                do { cache = try await acquisition.openCache(directory: URL(fileURLWithPath: tileCache)) }
+                catch MapTileCache.CacheError.alreadyInUse {
+                    throw ValidationError("Tile cache is already in use. Close its other map session or choose another directory.")
+                } catch MapTileCache.CacheError.sourceMismatch {
+                    throw ValidationError("Tile cache belongs to a different source. Choose another --tile-cache directory.")
+                }
+                cacheOwner = cache
+                liveAcquisition = .cached(MapTileLoader(cache: cache))
+            }
+            do {
+                try await WebHostCLIRunner.run(MapExampleApplication(fixtures: fixtures, scene: scene, appearance: theme,
                                                                cellAspect: cellAspect,
-                                                               detail: detail, streetSource: source, acquisition: acquisition),
+                                                               detail: detail, streetSource: source, acquisition: liveAcquisition),
                                           configuration: swiftTUIOptions.runtimeConfiguration())
+            } catch {
+                await cacheOwner?.close()
+                throw error
+            }
+            await cacheOwner?.close()
         }
     }
 }
