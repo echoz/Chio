@@ -34,9 +34,12 @@ let package = Package(
         ),
     ],
     targets: [
+        // Private POSIX bridge; no additional public library product.
+        .target(name: "ChioFileSystem"),
         .target(
             name: "Chio",
             dependencies: [
+                "ChioFileSystem",
                 .product(name: "SwiftTUIViews", package: "swift-tui"),
                 .product(name: "Markdown", package: "swift-markdown"),
                 .product(name: "TreeSitter", package: "tree-sitter"),

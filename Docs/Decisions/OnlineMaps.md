@@ -101,8 +101,9 @@ between decodes; existing wire and geometry bounds limit synchronous work.
 
 The memory cache stores raw responses: at most 64 entries and 32 MiB, with a
 30-minute maximum lifetime and LRU eviction. `no-store`, `no-cache`, `max-age`
-and `Age` restrict reuse. There is no disk cache, background prefetch or automatic
-HTTP retry. A loader's immutable source configuration scopes its cache.
+and `Age` restrict reuse. A loader's immutable source configuration scopes its
+cache. Persistent reuse is opt-in as described below; there is no background
+prefetch or automatic HTTP retry.
 
 The internal URLSession delegate owns a locked mutable transfer lifecycle, with
 exactly-once continuation completion and explicit task/session teardown. It is a
@@ -146,17 +147,89 @@ Adjacent tiles are normalized and aggregated. Buffered geometry can overlap,
 and clipped polygon edges can appear as artificial outlines. This is not polygon
 stitching or a topology engine. Provider comparison work remains shelved.
 
-Disk caching, downloadable tile packs, geocoding and route calculation were
-excluded from this delivered acquisition slice. They are now
-[approved follow-up scope](../Plan.md#approved-map-expansion), with implementation
-pending. The memory-only cache and explicit online/offline behavior above remain
-the shipped contract. Pack acquisition needs a separately evaluated source and
+Downloadable tile packs, geocoding and route calculation remain
+[approved follow-up scope](../Plan.md#approved-map-expansion). Pack acquisition needs a separately evaluated source and
 download policy; this approval does not turn the interactive loader into a bulk
 downloader. Credential storage remains application-owned.
 
 There is no new Swift package dependency. FoundationNetworking on Linux adds its
 normal libcurl transport requirements; existing static Linux limitations in
 [Dependencies](Dependencies.md#static-linux-blocker) remain unproved by this work.
+
+## Persistent raw-tile cache
+
+**Status:** Accepted opt-in implementation, 2026-10-10. Required platform and
+recovery checks are defined in [Verification](../Verification.md).
+
+Applications opt in with `MapTileCache.open(directory:source:)` and pass the
+result to `MapTileLoader(cache:)`. The original `MapTileLoader(source:)` remains
+memory-only. The cache owns one exact checked source, including its template,
+zoom range, attribution and provenance; the loader derives that source from the
+cache. A directory cannot silently change providers or revisions. A mismatch
+fails without wiping it; select a separate directory when changing sources.
+Provider revision paths still do not imply immutable bytes.
+
+The application selects a dedicated private directory, retains the cache while
+loaders use it, and explicitly closes it after those consumers stop. Deinitializing
+the owner also releases its native resources. Only one cooperative owner may
+open a directory at a time, including within one process. A retained lockfile
+and directory descriptor anchor access; symlinks, hard-linked entries, unknown
+files and unsupported formats reject. Applications must not replace the directory
+or its lockfile while it is in use. This is not a store for hostile directories,
+untrusted tile packs or credentials. Source configuration can contain sensitive
+query parameters; choose and protect the directory accordingly.
+
+Version 1 stores a bounded source manifest and one framed raw file per XYZ tile.
+The frame contains its tile address, response receipt time, original expiry and
+payload length. CRC32 covers both framing and payload, detecting accidental
+corruption rather than authenticity. Cached bytes pass through the same checked
+MVT decoder, viewport admission and rendering pipeline as online responses.
+Checksum-valid malformed provider data remains a decoder failure; it never
+becomes an empty tile or triggers an automatic fetch retry.
+
+The default limits are 256 published entries and 128 MiB of encoded tile files,
+with hard ceilings of 1,024 entries and 256 MiB. Encoded-byte accounting includes
+the pending replacement before publication. One temporary tile file and a
+manifest of at most 16 KiB are the only bounded extra files, beside the empty
+lockfile. These are logical file-length limits, not filesystem allocation or
+journal-size guarantees. A tile larger than the selected byte budget is usable
+for that response but not retained. Disk eviction removes the oldest receipt
+first, breaking ties by XYZ address; memory keeps its existing LRU behavior.
+
+Expiry follows the existing HTTP policy and thirty-minute cap. It starts at
+response receipt, never at a write, reopen or cache hit. A UTC time before receipt
+or at/after expiry rejects reuse. Within one loader session, a monotonic freshness
+floor also prevents stalled/backward UTC from renewing a disk entry after memory
+eviction. Across launches, expiry necessarily depends on the system wall clock;
+this cache cannot establish elapsed time across arbitrary clock changes. There
+is no stale-on-error fallback, conditional HTTP revalidation or offline-pack
+completeness claim.
+
+Writes stage a bounded sibling temporary and publish by same-directory rename.
+Pre-eviction can lose old cache entries if the replacement fails, which is
+acceptable for an evictable cache. Startup validates identity and directory
+shape before reclaiming recognized abandoned temporaries or expired/corrupt
+entries. It does not delete unknown content. Storage failures propagate from the
+explicitly configured cache; they do not silently switch to memory-only mode.
+An ordinary publication failure retains the directory lock but disables further
+operations through that owner. Stop its consumers, explicitly close it, and reopen
+to recover; retrying through the same failed owner cannot succeed. Cancellation
+with confirmed temporary cleanup leaves the owner usable for replacement work.
+Cancellation is checked between bounded operations and before publication, with
+no detached writer. Native filesystem calls cannot be hard-interrupted by the
+loader deadline. Recovery targets process interruption; no power-loss durability
+or filesystem-stress guarantee is claimed.
+
+The private `ChioFileSystem` C target bridges native advisory locking and bounded
+directory enumeration. Swift owns the storage policy and descriptor lifetimes.
+It adds no package dependency or public product. macOS and Linux require their
+own real-process evidence; the earlier macOS feasibility spike alone is insufficient.
+
+`chio-maps --online --tile-cache DIRECTORY` enables this path. Supplying a checked
+`--tile-source` file also avoids catalogue discovery on the next launch. Without
+that file, provider discovery still requires network access even if tile entries
+are fresh. Cache opening errors occur before entering the interactive terminal.
+The existing offline defaults and map appearance are unchanged.
 
 ## Verification boundary
 

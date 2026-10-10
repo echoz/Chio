@@ -11,6 +11,8 @@ public actor MapTileLoader {
     private struct CachedTile {
         let data: Data
         let expires: TimeInterval
+        let storedAt: TimeInterval
+        let expiresAt: TimeInterval
         let access: UInt64
     }
     struct Statistics {
@@ -21,21 +23,38 @@ public actor MapTileLoader {
     }
 
     private let source: OpenMapTilesSource
+    private let diskCache: MapTileCache?
     private let transport: MapHTTPClient.Transport
     private let now: @Sendable () -> TimeInterval
+    private let wallNow: @Sendable () -> TimeInterval
     private let sleep: @Sendable (Duration) async throws -> Void
     private var active: Task<MapTileSnapshot, any Error>?
     private var generation: UInt64 = 0
     private var cache: [MapTileCoordinate: CachedTile] = [:]
     private var cacheBytes = 0
     private var access: UInt64 = 0
+    private var freshnessClock: (effective: TimeInterval, uptime: TimeInterval)?
     private var inFlight = 0
     private var maximumInFlight = 0
 
     public init(source: OpenMapTilesSource) {
         self.source = source
+        self.diskCache = nil
         self.transport = { try await MapHTTPClient.fetch($0, resource: $1) }
         self.now = { ProcessInfo.processInfo.systemUptime }
+        self.wallNow = { Date().timeIntervalSince1970 }
+        self.sleep = { try await Task.sleep(for: $0) }
+    }
+
+    /// Reuse fresh raw tiles across launches using an explicitly opened cache.
+    /// The cache owns its source and must remain open while this loader is used.
+    /// Storage failures propagate; closing the cache also disables memory hits.
+    public init(cache: MapTileCache) {
+        self.source = cache.source
+        self.diskCache = cache
+        self.transport = { try await MapHTTPClient.fetch($0, resource: $1) }
+        self.now = { ProcessInfo.processInfo.systemUptime }
+        self.wallNow = { Date().timeIntervalSince1970 }
         self.sleep = { try await Task.sleep(for: $0) }
     }
 
@@ -43,7 +62,17 @@ public actor MapTileLoader {
     init(source: OpenMapTilesSource, transport: @escaping MapHTTPClient.Transport,
          now: @escaping @Sendable () -> TimeInterval = { ProcessInfo.processInfo.systemUptime },
          sleep: @escaping @Sendable (Duration) async throws -> Void = { try await Task.sleep(for: $0) }) {
-        self.source = source; self.transport = transport; self.now = now; self.sleep = sleep
+        self.source = source; self.diskCache = nil
+        self.transport = transport; self.now = now; self.sleep = sleep
+        self.wallNow = { Date().timeIntervalSince1970 }
+    }
+
+    init(cache: MapTileCache, transport: @escaping MapHTTPClient.Transport,
+         now: @escaping @Sendable () -> TimeInterval = { ProcessInfo.processInfo.systemUptime },
+         wallNow: @escaping @Sendable () -> TimeInterval = { Date().timeIntervalSince1970 },
+         sleep: @escaping @Sendable (Duration) async throws -> Void = { try await Task.sleep(for: $0) }) {
+        self.source = cache.source; self.diskCache = cache
+        self.transport = transport; self.now = now; self.wallNow = wallNow; self.sleep = sleep
     }
 
     public func load(_ request: MapTileRequest) async throws -> MapTileSnapshot {
@@ -165,32 +194,91 @@ public actor MapTileLoader {
 
     private func bytes(for tile: MapTileCoordinate) async throws -> Data {
         try Task.checkCancellation()
+        try await diskCache?.ensureOpen()
+        try Task.checkCancellation()
         expireCache()
         access &+= 1
         if let cached = cache[tile] {
-            cache[tile] = CachedTile(data: cached.data, expires: cached.expires, access: access)
+            cache[tile] = CachedTile(data: cached.data, expires: cached.expires,
+                                     storedAt: cached.storedAt, expiresAt: cached.expiresAt, access: access)
             return cached.data
         }
+        let lookup = cacheTime()
+        if let diskCache, let entry = try await diskCache.read(tile, at: lookup.effective) {
+            try Task.checkCancellation()
+            let expires = lookup.uptime + (entry.expiresAt - lookup.effective)
+            let completed = cacheTime()
+            let hasValidReceipt = completed.wall.isFinite && completed.wall >= entry.storedAt
+            let isStillFresh = completed.uptime < expires && completed.effective < entry.expiresAt
+            if hasValidReceipt && isStillFresh {
+                insert(entry.data, tile: tile, expires: expires,
+                       storedAt: entry.storedAt, expiresAt: entry.expiresAt)
+                return entry.data
+            }
+            try await diskCache.remove(tile)
+        }
+        try Task.checkCancellation()
         let url = try source.url(for: tile)
         inFlight += 1
         maximumInFlight = max(maximumInFlight, inFlight)
         defer { inFlight -= 1 }
         let response = try await transport(url, .tile)
         try Task.checkCancellation()
+        let received = now()
+        let receivedAt = wallNow()
+        try await diskCache?.ensureOpen()
+        try Task.checkCancellation()
         // Injected transports must preserve the production byte admission contract.
         guard response.data.count <= MapHTTPClient.Resource.tile.limit else { throw LoadingError.responseTooLarge }
         if let ttl = Self.cacheLifetime(headers: response.headers), ttl > 0 {
-            insert(response.data, tile: tile, expires: now() + ttl)
+            let expiresAt = receivedAt + ttl
+            if let diskCache {
+                // A fractional HTTP lifetime may be below UTC's representable
+                // precision. The response remains usable without disk retention.
+                if expiresAt == receivedAt {
+                    try await diskCache.remove(tile)
+                    try Task.checkCancellation()
+                    return response.data
+                }
+                try await diskCache.store(response.data, for: tile, storedAt: receivedAt, expiresAt: expiresAt)
+            }
+            try Task.checkCancellation()
+            insert(response.data, tile: tile, expires: received + ttl,
+                   storedAt: receivedAt, expiresAt: expiresAt)
+        } else {
+            try await diskCache?.remove(tile)
         }
+        try Task.checkCancellation()
         return response.data
     }
 
     private func expireCache() {
-        let expired = cache.filter { $0.value.expires <= now() }.map(\.key)
+        let time = cacheTime()
+        let expired = cache.filter {
+            let hasExpiredUptime = $0.value.expires <= time.uptime
+            let hasInvalidWallTime = !time.wall.isFinite || time.wall < $0.value.storedAt || time.effective >= $0.value.expiresAt
+            return hasExpiredUptime || (diskCache != nil && hasInvalidWallTime)
+        }.map(\.key)
         for tile in expired { cacheBytes -= cache.removeValue(forKey: tile)!.data.count }
     }
 
-    private func insert(_ data: Data, tile: MapTileCoordinate, expires: TimeInterval) {
+    /// A loader-session floor keeps a stalled/backward UTC clock from renewing
+    /// disk freshness after memory eviction. Persisted receipt times remain UTC.
+    private func cacheTime() -> (wall: TimeInterval, effective: TimeInterval, uptime: TimeInterval) {
+        let wall = wallNow()
+        let uptime = now()
+        guard wall.isFinite, uptime.isFinite else { return (wall, wall, uptime) }
+        let effective: TimeInterval
+        if let freshnessClock {
+            let elapsed = max(0, uptime - freshnessClock.uptime)
+            effective = max(wall, freshnessClock.effective + elapsed)
+        } else { effective = wall }
+        freshnessClock = (effective, uptime)
+        return (wall, effective, uptime)
+    }
+
+    private func insert(_ data: Data, tile: MapTileCoordinate, expires: TimeInterval,
+                        storedAt: TimeInterval, expiresAt: TimeInterval) {
         expireCache()
         if let prior = cache.removeValue(forKey: tile) { cacheBytes -= prior.data.count }
         while cache.count >= 64 || cacheBytes + data.count > 32 * 1_024 * 1_024 {
@@ -198,7 +286,8 @@ public actor MapTileLoader {
             cacheBytes -= cache.removeValue(forKey: oldest)!.data.count
         }
         access &+= 1
-        cache[tile] = CachedTile(data: data, expires: expires, access: access)
+        cache[tile] = CachedTile(data: data, expires: expires, storedAt: storedAt,
+                                 expiresAt: expiresAt, access: access)
         cacheBytes += data.count
     }
 

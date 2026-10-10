@@ -12,9 +12,11 @@ struct OnlineMapInteractionTests {
         #expect(try !MapExampleCommand.parse([]).online)
         let online = try MapExampleCommand.parse(["--online", "--map", "street", "--detail", "source"])
         #expect(online.online && online.scene == .street && online.detail == .source)
+        let cached = try MapExampleCommand.parse(["--online", "--tile-cache", "/tmp/chio-cache"])
+        #expect(cached.tileCache == "/tmp/chio-cache")
         for flags in [["--online", "--snapshot"], ["--online", "--snapshot-json"],
                       ["--online", "--benchmark"], ["--online", "--source", "openfreemap"],
-                      ["--tile-source", "source.json"]] {
+                      ["--tile-source", "source.json"], ["--tile-cache", "/tmp/chio-cache"]] {
             #expect(throws: (any Error).self) { try MapExampleCommand.parse(flags) }
         }
     }
@@ -30,7 +32,11 @@ struct OnlineMapInteractionTests {
         try JSONEncoder().encode(source).write(to: file)
         let command = try MapExampleCommand.parse(["--online", "--tile-source", file.path])
         #expect(command.online && command.tileSource == file.path)
-        #expect(try MapExampleAcquisition.configured(file: command.tileSource) == .configured(source))
+        let acquisition = try MapExampleAcquisition.configured(file: command.tileSource)
+        guard case .configured(let decoded) = acquisition else {
+            Issue.record("Expected explicit source configuration"); return
+        }
+        #expect(decoded == source)
         try Data("{}".utf8).write(to: file)
         #expect(throws: (any Error).self) { try MapExampleAcquisition.configured(file: file.path) }
         try Data(repeating: 0x61, count: 16 * 1_024 + 1).write(to: file)

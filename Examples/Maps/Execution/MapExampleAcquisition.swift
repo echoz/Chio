@@ -6,11 +6,12 @@ enum MapExampleAcquisition {
     case offline
     case openFreeMap
     case configured(OpenMapTilesSource)
+    case cached(MapTileLoader)
 
     var isOnline: Bool {
         switch self {
         case .offline: false
-        case .openFreeMap, .configured: true
+        case .openFreeMap, .configured, .cached: true
         }
     }
 
@@ -19,7 +20,18 @@ enum MapExampleAcquisition {
         case .offline: throw MapTileLoader.LoadingError.unsupportedViewport
         case .openFreeMap: return MapTileLoader(source: try await .fetchOpenFreeMap())
         case .configured(let source): return MapTileLoader(source: source)
+        case .cached(let loader): return loader
         }
+    }
+
+    func openCache(directory: URL) async throws -> MapTileCache {
+        let source: OpenMapTilesSource
+        switch self {
+        case .offline, .cached: throw MapTileCache.CacheError.invalidConfiguration
+        case .openFreeMap: source = try await OpenMapTilesSource.fetchOpenFreeMap()
+        case .configured(let configured): source = configured
+        }
+        return try MapTileCache.open(directory: directory, source: source)
     }
 
     static func configured(file: String) throws -> Self {
@@ -31,5 +43,4 @@ enum MapExampleAcquisition {
     }
 }
 
-extension MapExampleAcquisition: Hashable {}
 extension MapExampleAcquisition: Sendable {}
