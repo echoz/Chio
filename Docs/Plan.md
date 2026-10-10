@@ -7,18 +7,6 @@ live in [Design](Design.md) and its decision index; implementation and showcase
 checks live in [Verification](Verification.md). Completed release scope and results
 live in [0.1.0](Releases/0.1.0.md).
 
-## Current work: component organization
-
-The library and focused tests are arranged by component, then responsibility, as
-described in [source ownership](Design.md#source-ownership). This takes priority
-over the map expansion below. Swift source contents and public APIs are unchanged.
-
-The move requires explicit component-first support in the shared engineering
-checker before it can merge. Preserve the current operational pin until that
-support is reviewed and released, then adopt it with domain coverage and baseline
-path-only migration verified. Compiler, test and macOS/Linux gates remain required;
-see [Verification](Verification.md#shared-engineering-rules).
-
 ## Latest slice: online maps
 
 **Status:** Accepted implementation with explicit offline and online world/street modes.
