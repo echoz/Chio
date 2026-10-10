@@ -1,13 +1,19 @@
 (() => {
   const recordings = [...document.querySelectorAll(".recording")];
   const links = [...document.querySelectorAll("[data-demo]")];
-  const categories = [...document.querySelectorAll("[data-category]")];
+  const categories = [...document.querySelectorAll(".demo-categories [data-category]")];
   const groups = [...document.querySelectorAll("[data-recording-group]")];
+  const descriptions = [...document.querySelectorAll("[data-category-description]")];
+  const themeSelect = document.querySelector("#gallery-theme");
   const players = new Map();
   const previewStates = new Map();
 
   function previewURL(recording) {
-    return `recordings/themes/${recording.id}-${previewStates.get(recording.id).select.value}.png`;
+    return `recordings/themes/${recording.id}-${previewStates.get(recording.id).theme}.png`;
+  }
+
+  function themeName(theme) {
+    return [...themeSelect.options].find(option => option.value === theme).textContent;
   }
 
   function describePreview(recording, playback = false) {
@@ -17,9 +23,9 @@
     if (playback) {
       state.status.textContent = "Original terminal recording · theme choices change the static preview and run command only.";
     } else if (state.unavailable) {
-      state.status.textContent = `Static preview unavailable · showing the original recording preview. The run command uses ${state.select.selectedOptions[0].textContent}.`;
+      state.status.textContent = `Static preview unavailable · showing the original recording preview. The run command uses ${themeName(state.theme)}.`;
     } else {
-      state.status.textContent = `Static preview · ${state.select.selectedOptions[0].textContent} theme. The original recording keeps its recorded themes.`;
+      state.status.textContent = `Static preview · ${themeName(state.theme)} theme. The original recording keeps its recorded themes.`;
     }
   }
 
@@ -33,16 +39,21 @@
     container.hidden = true;
     if (player) recording.querySelector(".play-recording").textContent = "Resume original recording";
     describePreview(recording);
-    if (restoreFocus) state.select.focus({ preventScroll: true });
+    if (restoreFocus) themeSelect.focus({ preventScroll: true });
   }
 
   function selectTheme(recording) {
     const state = previewStates.get(recording.id);
+    if (state.theme === themeSelect.value) return;
+    state.theme = themeSelect.value;
     state.unavailable = false;
     state.image.setAttribute("src", previewURL(recording));
     const name = links.find(link => link.dataset.demo === recording.id).textContent;
-    state.image.alt = `${name} in the ${state.select.selectedOptions[0].textContent} theme (static preview).`;
-    state.command.textContent = `${state.baseCommand} --theme ${state.select.value}`;
+    state.image.alt = `${name} in the ${themeName(state.theme)} theme (static preview).`;
+    state.command.textContent = `${state.baseCommand} --theme ${state.theme}`;
+    for (const snippet of state.snippets) {
+      snippet.element.textContent = snippet.source.replaceAll(".chioTheme(.default)", `.chioTheme(.${state.theme})`);
+    }
     showPreview(recording);
   }
 
@@ -110,6 +121,9 @@
   }
 
   function selectRecording() {
+    const requestedTheme = new URL(location.href).searchParams.get("theme");
+    const hasKnownTheme = [...themeSelect.options].some(option => option.value === requestedTheme);
+    themeSelect.value = hasKnownTheme ? requestedTheme : "default";
     const requestedID = location.hash.slice(1);
     const selected = recordings.find(recording => recording.id === requestedID) ?? recordings[0];
     const selectedLink = links.find(link => link.dataset.demo === selected.id);
@@ -126,18 +140,22 @@
       else link.removeAttribute("aria-current");
     }
     for (const group of groups) group.hidden = group !== selectedGroup;
+    for (const description of descriptions) {
+      description.hidden = description.dataset.categoryDescription !== selected.dataset.category;
+    }
     for (const category of categories) {
       if (category.dataset.category === selectedGroup.dataset.recordingGroup) category.setAttribute("aria-current", "true");
       else category.removeAttribute("aria-current");
     }
     if (hidesFocus) selectedLink.focus({ preventScroll: true });
-
+    selectTheme(selected);
     revealSelectedLink();
   }
 
   // Keep the chooser in view; ordinary links still work without JavaScript and
   // modified clicks retain the browser's open-in-new-tab behavior.
-  for (const link of [...categories, ...links]) {
+  const relatedLinks = [...document.querySelectorAll("[data-catalog-link]")];
+  for (const link of [...categories, ...links, ...relatedLinks]) {
     link.addEventListener("click", event => {
       if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       event.preventDefault();
@@ -147,18 +165,16 @@
     });
   }
 
-  // Hide inactive cards before updating their live preview descriptions.
-  selectRecording();
-
   // Keep the screenshot until explicit playback. NPT posters in player 3.17
   // can leave its first seek with stale replay indices and an incomplete frame.
   for (const recording of recordings) {
     const controls = recording.querySelector(".theme-preview-controls");
-    const select = controls.querySelector("select");
     const image = recording.querySelector(".recording-image");
     const command = recording.querySelector(".recording-run code");
     const state = {
-      select, image, command,
+      image, command,
+      theme: null,
+      snippets: [...recording.querySelectorAll("[data-theme-code]")].map(element => ({ element, source: element.textContent })),
       status: controls.querySelector(".preview-status"),
       showPreview: controls.querySelector(".show-theme-preview"),
       originalSource: image.getAttribute("src"),
@@ -175,14 +191,23 @@
       describePreview(recording, !recording.querySelector(".player").hidden);
     });
     controls.hidden = false;
-    select.addEventListener("change", () => selectTheme(recording));
     state.showPreview.addEventListener("click", () => showPreview(recording));
     const playButton = recording.querySelector(".play-recording");
     playButton.hidden = false;
-    selectTheme(recording);
     playButton.addEventListener("click", () => mount(recording));
   }
 
+  themeSelect.addEventListener("change", () => {
+    const url = new URL(location.href);
+    if (themeSelect.value === "default") url.searchParams.delete("theme");
+    else url.searchParams.set("theme", themeSelect.value);
+    history.pushState(null, "", url);
+    selectRecording();
+  });
+  document.querySelector(".gallery-theme-controls").hidden = false;
+  selectRecording();
+
+  window.addEventListener("popstate", selectRecording);
   window.addEventListener("hashchange", selectRecording);
   window.addEventListener("resize", revealSelectedLink);
 })();
