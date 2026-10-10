@@ -142,8 +142,15 @@ bytes are immutable or from one atomic provider snapshot.
 
 Adjacent tiles are normalized and aggregated. Buffered geometry can overlap,
 and clipped polygon edges can appear as artificial outlines. This is not polygon
-stitching or a topology engine. Provider comparison work remains shelved. Disk
-packs, credential management, geocoding and route calculation are outside scope.
+stitching or a topology engine. Provider comparison work remains shelved.
+
+Disk caching, downloadable tile packs, geocoding and route calculation were
+excluded from this delivered acquisition slice. They are now
+[approved follow-up scope](../Plan.md#approved-map-expansion), with implementation
+pending. The memory-only cache and explicit online/offline behavior above remain
+the shipped contract. Pack acquisition needs a separately evaluated source and
+download policy; this approval does not turn the interactive loader into a bulk
+downloader. Credential storage remains application-owned.
 
 There is no new Swift package dependency. FoundationNetworking on Linux adds its
 normal libcurl transport requirements; existing static Linux limitations in

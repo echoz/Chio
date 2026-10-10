@@ -27,5 +27,5 @@ native chrome; pinned `sheetStyle` cannot style that container.
 
 ## Implementation and verification
 
-- [ChioPaletteStyle.swift](../../Sources/Chio/Presentation/Styles/ChioPaletteStyle.swift)
-- [ChioPaletteStyleTests.swift](../../Tests/ChioTests/Presentation/ChioPaletteStyleTests.swift)
+- [ChioPaletteStyle.swift](../../Sources/Chio/CommandPalette/Presentation/ChioPaletteStyle.swift)
+- [ChioPaletteStyleTests.swift](../../Tests/ChioTests/CommandPalette/Presentation/ChioPaletteStyleTests.swift)

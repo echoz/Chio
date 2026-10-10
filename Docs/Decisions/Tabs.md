@@ -33,5 +33,5 @@ fresh native menu frame before subsequent navigation; Chio does not replay input
 
 ## Implementation and verification
 
-- [ChioTabViewStyle.swift](../../Sources/Chio/Presentation/Styles/ChioTabViewStyle.swift)
-- [ChioTabViewStyleTests.swift](../../Tests/ChioTests/Presentation/ChioTabViewStyleTests.swift)
+- [ChioTabViewStyle.swift](../../Sources/Chio/Tabs/Presentation/ChioTabViewStyle.swift)
+- [ChioTabViewStyleTests.swift](../../Tests/ChioTests/Tabs/Presentation/ChioTabViewStyleTests.swift)

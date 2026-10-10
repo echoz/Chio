@@ -19,5 +19,5 @@ body offset one cell per overflowing axis. Chio preserves that geometry.
 
 ## Implementation and verification
 
-- [ChioScrollViewStyle.swift](../../Sources/Chio/Presentation/Styles/ChioScrollViewStyle.swift)
-- [ChioScrollViewStyleTests.swift](../../Tests/ChioTests/Presentation/ChioScrollViewStyleTests.swift)
+- [ChioScrollViewStyle.swift](../../Sources/Chio/Scrolling/Presentation/ChioScrollViewStyle.swift)
+- [ChioScrollViewStyleTests.swift](../../Tests/ChioTests/Scrolling/Presentation/ChioScrollViewStyleTests.swift)

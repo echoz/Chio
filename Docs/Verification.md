@@ -27,8 +27,12 @@ pinned installation is a failed prerequisite.
 
 The gate scans all retained Swift files in `Sources`, `Examples` and `Tests`,
 with no path exclusions and explicit target import allowlists. Its production
-layout and file-scope checks apply to `Sources`; `Sources/Chio/Domain` also gets
-immutability and direct-effect checks. In v0.1.2 those production rules cannot
+layout and file-scope checks apply to `Sources`. The component-first move is
+pending shared-tool support: v0.1.2 rejects the new layout and does not select
+its nested `Domain` groups for immutability and direct-effect checks. Keep the
+existing pin until a reviewed stable release supports an explicit `Chio` target
+opt-in; passing that gate with restored domain coverage is required before merging
+the move. Do not suppress these findings or add baseline allowances. In v0.1.2 those production rules cannot
 target `Examples`, whose syntax, constructors, ternaries, imports and selected
 SwiftLint rules are still checked. Tests receive the latter checks too. Extend
 the configuration when introducing retained source roots such as new spikes;

@@ -61,7 +61,7 @@ transports or persists them.
 
 ## Implementation and verification
 
-- [FormField.swift](../../Sources/Chio/Presentation/FormField.swift)
-- [FormValidation.swift](../../Sources/Chio/Domain/FormValidation.swift)
-- [FormValidationTests.swift](../../Tests/ChioTests/Domain/FormValidationTests.swift)
+- [FormField.swift](../../Sources/Chio/Forms/Presentation/FormField.swift)
+- [FormValidation.swift](../../Sources/Chio/Forms/Domain/FormValidation.swift)
+- [FormValidationTests.swift](../../Tests/ChioTests/Forms/Domain/FormValidationTests.swift)
 - [GroupedFormExampleTests.swift](../../Tests/ChioDashboardTests/Presentation/GroupedFormExampleTests.swift)

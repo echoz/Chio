@@ -87,7 +87,7 @@ remains blocked separately.
 
 ## Implementation and verification
 
-- [MarkdownDocument.swift](../../Sources/Chio/Domain/MarkdownDocument.swift)
-- [MarkdownView.swift](../../Sources/Chio/Presentation/MarkdownView.swift)
-- [MarkdownCodeTests.swift](../../Tests/ChioTests/Domain/MarkdownCodeTests.swift)
-- [MarkdownLinkTests.swift](../../Tests/ChioTests/Presentation/MarkdownLinkTests.swift)
+- [MarkdownDocument.swift](../../Sources/Chio/Markdown/Domain/MarkdownDocument.swift)
+- [MarkdownView.swift](../../Sources/Chio/Markdown/Presentation/MarkdownView.swift)
+- [MarkdownCodeTests.swift](../../Tests/ChioTests/Markdown/Domain/MarkdownCodeTests.swift)
+- [MarkdownLinkTests.swift](../../Tests/ChioTests/Markdown/Presentation/MarkdownLinkTests.swift)

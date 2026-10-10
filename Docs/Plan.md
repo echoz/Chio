@@ -7,6 +7,18 @@ live in [Design](Design.md) and its decision index; implementation and showcase
 checks live in [Verification](Verification.md). Completed release scope and results
 live in [0.1.0](Releases/0.1.0.md).
 
+## Current work: component organization
+
+The library and focused tests are arranged by component, then responsibility, as
+described in [source ownership](Design.md#source-ownership). This takes priority
+over the map expansion below. Swift source contents and public APIs are unchanged.
+
+The move requires explicit component-first support in the shared engineering
+checker before it can merge. Preserve the current operational pin until that
+support is reviewed and released, then adopt it with domain coverage and baseline
+path-only migration verified. Compiler, test and macOS/Linux gates remain required;
+see [Verification](Verification.md#shared-engineering-rules).
+
 ## Latest slice: online maps
 
 **Status:** Accepted implementation with explicit offline and online world/street modes.
@@ -33,10 +45,60 @@ Required verification for this slice:
 - Capture the verified release recording, theme previews and showcase checks;
   deploy and inspect the published result before declaring the slice complete.
 
-Disk caches, tile packs, credentials, arbitrary schemas, routing/geocoding and
-provider parity remain outside this slice. Existing polygon cut-edge limitations
-remain explicit. Keep revision-specific results in release records rather than
-expanding this active plan with completed implementation history.
+Disk caches, tile packs and routing/geocoding were excluded from that delivered
+slice and are now approved follow-up scope below. Arbitrary schemas and provider
+parity remain outside it. Existing polygon cut-edge limitations remain explicit.
+Keep revision-specific results in release records rather than expanding this
+active plan with completed implementation history.
+
+## Approved map expansion
+
+**Status:** Scope approved on 2026-10-09; implementation and public APIs pending.
+The shipped map component remains as described in the existing decisions. The
+following order is the proposed delivery sequence, with one testable slice at a time.
+
+First close the two reproduced audit defects: overflow-safe keyboard-hint spacing,
+and conservative polygon admission across all accepted rings. The latter must not
+assume hole containment that construction and decoding do not establish. Preserve
+existing valid-input behavior and add focused regressions before extending maps.
+
+| Order | Capability | First useful outcome and acceptance evidence |
+| --- | --- | --- |
+| 1 | Persistent tile cache | Reuse acquired raw tiles across launches through the existing decode/preparation pipeline. Prove source isolation, bounded disk use, freshness rules, eviction, corrupt-entry handling and interrupted-write recovery. |
+| 2 | Downloadable offline tile packs | Explicitly select an area and zoom range, inspect the planned tile/byte limits, download with progress/cancellation, then reopen the pack without network access. Preserve coverage, attribution and checksums; incomplete downloads must not appear complete. |
+| 3 | Geocoding | Forward place/address search and reverse coordinate lookup through an explicit provider adapter. Return bounded results that applications can turn into markers and camera changes; prove no-result/failure distinctions, cancellation and stale-result rejection. |
+| 4 | Routing | Explicit route requests between supplied locations through a provider adapter, returning checked geometry and available distance/duration metadata. Compose with existing route overlays; prove no-route/failure distinctions, cancellation, stale-result rejection and route work limits. |
+
+### Boundaries and open choices
+
+- Keep `MapView` free of network and disk effects. Add explicit, opt-in services
+  beside acquisition; applications choose when to call them, where to store data,
+  which providers to use and how to present results. SwiftTUI retains native state,
+  focus, input and rendering ownership.
+- Reuse one raw-tile acquisition/decoding path for online responses, persistent
+  cache entries and packaged copies. A pack can supply bundled tiles through that
+  path. Source selection remains explicit: no automatic switch to unrelated bundled
+  geography. Cache freshness and intentional offline-pack retention are distinct
+  policies; an evictable cache is not a completeness guarantee for a pack.
+- Scope persisted identity to the source and tile scheme/address, retain provenance
+  and attribution, and check imported bytes and metadata before use. A provider's
+  revision string alone does not establish immutable bytes or an atomic snapshot.
+  Choose pack format, schema/versioning and migration behavior during storage design;
+  PMTiles/MBTiles support is not decided by approving downloadable packs.
+- Choose the first geocoding and routing providers after evaluating their actual
+  contracts, terms, attribution, rate limits and static-Linux dependency impact.
+  Keep tile, geocoding and routing capabilities independently replaceable; changing
+  a provider must not redefine visual detail. Provider credentials, when needed,
+  are explicitly supplied by the application; no credential store is implied.
+- Tile-pack acquisition needs a source that permits the planned downloads and
+  explicit request/byte/concurrency limits. Approval of packs does not authorize
+  bulk downloading from the current interactive endpoint. Offline tile packs do
+  not imply an offline routing graph or offline geocoding database.
+- Prove each service with deterministic fixtures and real adapter boundary tests,
+  then macOS/Linux checks and a bounded live-provider probe where applicable.
+  Extend `chio-maps` and its showcase for each visible slice. Service integration
+  is in scope; implementing a routing engine, live navigation or a geocoder index
+  is not implied by this roadmap.
 
 ## Remaining scope audit
 
@@ -63,10 +125,9 @@ separate rewrite. Intentional single-case
 filters, extensible upstream/raw-input switches, native wrappers and private
 nested conformances retain their documented roles.
 
-There is no committed broader component queue. Real application use of the
-public map remains useful validation.
-Further hardening and a stable release are possible directions, not approved
-numbered phases or completion promises.
+The approved map expansion above is the current feature queue. Real application
+use of the public map remains useful validation. Other component additions and a
+new stable release remain possible directions, not delivery promises.
 
 Prioritize demonstrated regressions in shipped behavior: focus, selection,
 editing, narrow layout, presentation, responsiveness and supported-platform
@@ -82,8 +143,9 @@ Public additions require a concrete consumer need and reusable UX value:
   shared contract.
 - Completion/history, async choices, wizards, broader file selection, tree
   adapters, status queues and more themes remain possible gaps, not tasks.
-- Keep monitoring, clocks, workflow engines, annotation content, persistence, external
-  services and repository operations with applications.
+- Keep monitoring, clocks, workflow engines, annotation content, general application
+  persistence and repository operations with applications. Map storage and service
+  adapters follow the explicit boundaries in the approved expansion above.
 
 Prove an accepted addition in a small runnable example, document actual public
 APIs, retain relevant model/raster/hosted regressions, and run a release terminal

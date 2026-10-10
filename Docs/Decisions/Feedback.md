@@ -27,6 +27,6 @@ Application tasks own simulated work and cancellation; native controls own timin
 
 ## Implementation and verification
 
-- [ChioPromptStyle.swift](../../Sources/Chio/Presentation/Styles/ChioPromptStyle.swift)
-- [ChioPromptStyleTests.swift](../../Tests/ChioTests/Presentation/ChioPromptStyleTests.swift)
+- [ChioPromptStyle.swift](../../Sources/Chio/Feedback/Presentation/ChioPromptStyle.swift)
+- [ChioPromptStyleTests.swift](../../Tests/ChioTests/Feedback/Presentation/ChioPromptStyleTests.swift)
 - [FeedbackExampleTests.swift](../../Tests/ChioDashboardTests/Presentation/FeedbackExampleTests.swift)

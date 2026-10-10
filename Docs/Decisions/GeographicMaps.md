@@ -237,9 +237,13 @@ not completion gates for this slice. Keep these limitations explicit:
 
 The former deferred-loading proposal is superseded by the authorized
 [online acquisition slice](OnlineMaps.md). The adapter remains a pure decoder;
-`MapTileLoader` explicitly owns bounded acquisition and caching. Credentials,
-PMTiles/MBTiles, geocoding and routing services remain deferred. No new Swift
-package dependency is introduced; existing static Linux limitations remain in
+`MapTileLoader` explicitly owns bounded acquisition and memory caching. Disk
+caching, downloadable tile packs, geocoding and routing adapters are now
+[approved follow-up scope](../Plan.md#approved-map-expansion), not shipped APIs.
+Pack formats, including whether to support PMTiles/MBTiles, remain undecided;
+credential storage stays application-owned. The view continues to consume supplied
+geometry and overlays without hidden service calls. No new Swift package dependency
+is introduced by the shipped slice; existing static Linux limitations remain in
 [Dependencies](Dependencies.md#static-linux-blocker).
 
 <a id="rendering-spike-findings"></a>

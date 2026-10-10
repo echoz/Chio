@@ -26,5 +26,5 @@ Escape, including input arriving before the next frame.
 
 ## Implementation and verification
 
-- [KeyboardHelp.swift](../../Sources/Chio/Presentation/KeyboardHelp.swift)
-- [KeyboardHelpRenderTests.swift](../../Tests/ChioTests/Presentation/KeyboardHelpRenderTests.swift)
+- [KeyboardHelp.swift](../../Sources/Chio/KeyboardHelp/Presentation/KeyboardHelp.swift)
+- [KeyboardHelpRenderTests.swift](../../Tests/ChioTests/KeyboardHelp/Presentation/KeyboardHelpRenderTests.swift)

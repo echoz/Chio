@@ -25,5 +25,5 @@ is implied.
 
 ## Implementation and verification
 
-- [ChioDisclosureGroupStyle.swift](../../Sources/Chio/Presentation/Styles/ChioDisclosureGroupStyle.swift)
-- [ChioDisclosureGroupStyleTests.swift](../../Tests/ChioTests/Presentation/ChioDisclosureGroupStyleTests.swift)
+- [ChioDisclosureGroupStyle.swift](../../Sources/Chio/Composition/Presentation/ChioDisclosureGroupStyle.swift)
+- [ChioDisclosureGroupStyleTests.swift](../../Tests/ChioTests/Composition/Presentation/ChioDisclosureGroupStyleTests.swift)

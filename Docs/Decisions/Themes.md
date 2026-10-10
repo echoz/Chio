@@ -28,9 +28,9 @@ whole-cell rectangular fill behind rounded border glyphs.
 
 ## Implementation and verification
 
-- [ChioTheme.swift](../../Sources/Chio/Domain/ChioTheme.swift)
-- [View+ChioTheme.swift](../../Sources/Chio/Presentation/View+ChioTheme.swift)
-- [ChioThemeTests.swift](../../Tests/ChioTests/Domain/ChioThemeTests.swift)
+- [ChioTheme.swift](../../Sources/Chio/Theme/Domain/ChioTheme.swift)
+- [View+ChioTheme.swift](../../Sources/Chio/Theme/Presentation/View+ChioTheme.swift)
+- [ChioThemeTests.swift](../../Tests/ChioTests/Theme/Domain/ChioThemeTests.swift)
 
 ## References
 

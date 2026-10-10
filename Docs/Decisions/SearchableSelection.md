@@ -64,7 +64,7 @@ callback as `SearchableList`.
 
 ## Implementation and verification
 
-- [SearchableList.swift](../../Sources/Chio/Presentation/SearchableList.swift)
-- [SearchableChecklist.swift](../../Sources/Chio/Presentation/SearchableChecklist.swift)
-- [SearchableListTests.swift](../../Tests/ChioTests/Presentation/SearchableListTests.swift)
-- [SearchableChecklistTests.swift](../../Tests/ChioTests/Presentation/SearchableChecklistTests.swift)
+- [SearchableList.swift](../../Sources/Chio/SearchableList/Presentation/SearchableList.swift)
+- [SearchableChecklist.swift](../../Sources/Chio/SearchableChecklist/Presentation/SearchableChecklist.swift)
+- [SearchableListTests.swift](../../Tests/ChioTests/SearchableList/Presentation/SearchableListTests.swift)
+- [SearchableChecklistTests.swift](../../Tests/ChioTests/SearchableChecklist/Presentation/SearchableChecklistTests.swift)

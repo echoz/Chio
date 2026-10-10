@@ -27,6 +27,13 @@ composition demonstrates a concrete missing contract. Showcase applications
 validate the framework; their domain models do not define its product scope.
 Coverage inventories describe gaps, without committing to catalog parity.
 
+The [approved map expansion](Plan.md#approved-map-expansion) adds planned disk
+storage, downloadable tile packs, geocoding and routing adapters at explicit
+effect boundaries beside the view. Applications retain invocation, storage and
+provider policy, credentials and workflow ownership. These capabilities are
+approved scope, not shipped APIs; their detailed contracts will be established
+with each slice. The current map renderer and acquisition contracts remain intact.
+
 ## Value contracts
 
 Owned domain values and view configuration have `let` stored properties and pure
@@ -87,15 +94,32 @@ application work. These examples do not establish product parity.
 
 | Path | Responsibility |
 | --- | --- |
-| `Sources/Chio/Domain` | Theme/shortcut values, pure search/membership, pagination, validation visibility, file observations, parsed Markdown and checked geographic values |
-| `Sources/Chio/Execution` | Filesystem loading/confirmation, serial map preparation and explicit bounded tile acquisition |
-| `Sources/Chio/Presentation` | Components/environment integration; `Styles` owns native styles |
+| `Sources/Chio/<Component>/Domain` | Immutable values and pure rules belonging to that component or shared foundation |
+| `Sources/Chio/<Component>/Protocol` | Component substitution contracts, such as map source adapters |
+| `Sources/Chio/<Component>/Execution` | Explicit resource owners and effects, including file loading and map acquisition/preparation |
+| `Sources/Chio/<Component>/Serialization` | Component codecs and source normalization |
+| `Sources/Chio/<Component>/Presentation` | Views, native control styles and environment integration |
 | `Examples/AgentDashboard` | Local models, workflows/views and thin entry point |
 | `Examples/Maps`, `Tests/ChioMapTests` | Maps consuming the public API, offline fixtures, opt-in online acquisition and integration checks |
-| `Tests/ChioTests`, `Tests/ChioDashboardTests` | Library responsibilities and example domain/hosted interactions |
+| `Tests/ChioTests/<Component>/<Responsibility>` | Focused library suites matching their source owner |
+| `Tests/ChioTests/Integration`, `Tests/ChioDashboardTests` | Cross-component rendering/terminal checks and example domain/hosted interactions |
 | `Docs/Site`, `Docs/Media`, `Scripts/docs` | Static showcase, shared terminal assets and assembly without Swift build |
 
-Create only useful responsibility groups; independently useful production types
+Chio deliberately uses component-first organization inside its single library
+target: `Sources/Chio/<Component>/<Responsibility>/<Type>.swift`. This project
+override replaces the default responsibility-first order; it changes neither
+Swift modules nor public names. Maps and Markdown keep their complete implementations
+together. Theme owns shared palette/environment integration, Search owns matching
+used by several controls, and KeyboardHelp owns shortcut values and views. Related
+controls stay in the Forms, Instrumentation, Composition and Feedback families;
+there is no target-wide styles or miscellaneous helper bucket. Only populated
+responsibility groups exist. Examples keep their existing application structure.
+
+Source links follow this organization. Inbox review payloads and recorded demos
+retain their fixed synthetic file paths; those are displayed snapshot content,
+not links or runtime lookups into this checkout.
+
+Independently useful production types
 have matching files and dedicated conformance extensions. Private nested helpers
 retain inline conformances when extraction would widen access; raw enums keep
 language-required placement. Shared frame recorders live in target `TestSupport`;
