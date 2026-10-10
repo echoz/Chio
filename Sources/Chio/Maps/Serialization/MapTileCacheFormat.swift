@@ -7,14 +7,6 @@ enum MapTileCacheFormat {
     static let overheadBytes = 48
     static let maximumManifestBytes = 16 * 1_024
     private static let magic = Data("CHIOTILE".utf8)
-    private static let checksumTable: [UInt32] = (0..<256).map { byte in
-        var value = UInt32(byte)
-        for _ in 0..<8 {
-            if value & 1 == 1 { value = (value >> 1) ^ 0xedb88320 }
-            else { value >>= 1 }
-        }
-        return value
-    }
 
     struct Manifest: Codable {
         let version: Int
@@ -63,7 +55,7 @@ enum MapTileCacheFormat {
         append(entry.expiresAt.bitPattern, bytes: 8, to: &encoded)
         append(UInt64(entry.data.count), bytes: 4, to: &encoded)
         encoded.append(entry.data)
-        append(UInt64(try checksum(encoded)), bytes: 4, to: &encoded)
+        append(UInt64(try MapTileChecksum.crc32(encoded)), bytes: 4, to: &encoded)
         return encoded
     }
 
@@ -81,7 +73,7 @@ enum MapTileCacheFormat {
         catch { return nil }
         guard integer(data, offset: 40, bytes: 4) == UInt64(data.count - overheadBytes) else { return nil }
         let framed = Data(data.dropLast(4))
-        guard integer(data, offset: data.count - 4, bytes: 4) == UInt64(try checksum(framed)) else { return nil }
+        guard integer(data, offset: data.count - 4, bytes: 4) == UInt64(try MapTileChecksum.crc32(framed)) else { return nil }
         return MapTileCache.Entry(data: Data(data[44..<(data.count - 4)]), storedAt: storedAt, expiresAt: expiresAt)
     }
 
@@ -104,12 +96,5 @@ enum MapTileCacheFormat {
         return number
     }
 
-    private static func checksum(_ data: Data) throws -> UInt32 {
-        var value: UInt32 = 0xffffffff
-        for (index, byte) in data.enumerated() {
-            if index.isMultiple(of: 65_536) { try Task.checkCancellation() }
-            value = checksumTable[Int((value ^ UInt32(byte)) & 255)] ^ (value >> 8)
-        }
-        return value ^ 0xffffffff
-    }
+
 }

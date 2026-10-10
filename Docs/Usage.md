@@ -278,7 +278,10 @@ See the [runnable example](Examples.md#maps) and its
 
 ### Online vectors
 
-Opt into networking at the application boundary. The view itself stays offline:
+OpenFreeMap is Chio's recommended online provider and the default for
+`chio-maps --online`. It supplies compatible vectors without an API key; Chio
+supplies the terminal styling. Opt into networking at the application boundary.
+The view itself never loads data:
 
 ```swift
 let endpoint = try await OpenMapTilesSource.fetchOpenFreeMap()
@@ -293,7 +296,7 @@ Nil means the compact fallback is visible. Use SwiftTUI's `.task(id:)` to load
 when the camera/allocation changes, retain the previous source during loading,
 and check cancellation before publication. Start with `MapView(source: nil, ...)`
 when nothing has loaded; its controls and allocation reporting remain available. See the complete
-[online example composition](../Examples/Maps/Presentation/OnlineMapContent.swift).
+[tile example composition](../Examples/Maps/Presentation/TiledMapContent.swift).
 Changing theme or `MapDetail` does not change a tile request.
 
 For another OpenMapTiles-compatible service, construct
@@ -333,6 +336,44 @@ propagate, and closing the cache prevents later loads through attached loaders.
 This is an evictable cache, not an offline tile pack. See the
 [persistence contract](Decisions/OnlineMaps.md#persistent-raw-tile-cache) for file
 bounds, ownership, clock assumptions and process-interruption recovery.
+
+### Offline tile packs
+
+Prepare a pack programmatically from application-supplied OpenMapTiles-compatible
+raw MVT bytes. The producer receives each XYZ address in the checked plan:
+
+```swift
+let plan = try MapTilePackPlan(bounds: bounds, zoomRange: 10...12)
+let pack = try await MapTilePack.create(at: packURL, plan: plan, metadata: metadata) { tile in
+    let file = tileDirectory.appendingPathComponent("\(tile.zoom)-\(tile.x)-\(tile.y).pbf")
+    let handle = try FileHandle(forReadingFrom: file)
+    defer { try? handle.close() }
+    return try handle.read(upToCount: 16 * 1_024 * 1_024 + 1) ?? Data()
+}
+let loader = MapTileLoader(pack: pack)
+let snapshot = try await loader.load(request)
+// Stop and await the consumer's loads before closing:
+await pack.close()
+
+// A later launch can open the same file, including from read-only storage:
+let reopened = try MapTilePack.open(at: packURL)
+let offlineLoader = MapTileLoader(pack: reopened)
+```
+
+The destination must not exist and its parent must exist. Preparation requires
+every planned tile before publication. Plans accept nonwrapping bounds, source
+zooms 1…22 and at most 1,024 tiles. The raw-byte budget defaults to 128 MiB, with
+a 256 MiB ceiling and 16 MiB per tile; bounded framing is additional. An excessive
+plan fails before invoking the producer. The producer owns its own I/O and
+cancellation responsiveness. Empty successful tiles are permitted.
+
+Packs feed the existing bounded memory cache on demand, without HTTP expiry,
+writable cache copies, discovery or network fallback. Missing coverage throws
+`MapTileLoader.LoadingError.outsidePackCoverage`; corrupt packs and malformed MVT
+remain distinct failures. Replacing a pack requires a new reader/loader. Close
+the reopened reader after its consumers stop, just as above. See the
+[storage contract](Decisions/OfflineTilePacks.md) for integrity, publication and
+process-interruption limits. Provider archive downloads are not implemented.
 
 ## Tabs
 

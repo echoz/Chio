@@ -4,7 +4,7 @@ import SwiftTUI
 /// The example explicitly owns discovery, acquisition and the last accepted source.
 /// MapView remains the same native focus target through every loading state.
 @MainActor
-struct OnlineMapContent {
+struct TiledMapContent {
     private let camera: Binding<MapCamera>
     private let selection: Binding<String?>
     private let overlays: MapOverlays
@@ -12,6 +12,7 @@ struct OnlineMapContent {
     private let fillsAreas: Bool
     private let showsLabels: Bool
     private let retry: Int
+    private let sourceLabel: String
     private let activate: @MainActor (MapMarker) -> Void
     private let makeLoader: @Sendable () async throws -> MapTileLoader
     @Environment(\.chioTheme) private var theme
@@ -21,7 +22,7 @@ struct OnlineMapContent {
     @State private var update: Update = .idle
 
     init(camera: Binding<MapCamera>, selection: Binding<String?>,
-         overlays: MapOverlays, detail: MapDetail, fillsAreas: Bool, showsLabels: Bool, retry: Int,
+         overlays: MapOverlays, detail: MapDetail, fillsAreas: Bool, showsLabels: Bool, retry: Int, sourceLabel: String = "Online",
          activate: @escaping @MainActor (MapMarker) -> Void,
          makeLoader: @escaping @Sendable () async throws -> MapTileLoader = {
              MapTileLoader(source: try await OpenMapTilesSource.fetchOpenFreeMap())
@@ -33,6 +34,7 @@ struct OnlineMapContent {
         self.fillsAreas = fillsAreas
         self.showsLabels = showsLabels
         self.retry = retry
+        self.sourceLabel = sourceLabel
         self.activate = activate
         self.makeLoader = makeLoader
     }
@@ -41,6 +43,7 @@ struct OnlineMapContent {
         case idle
         case loading(MapTileRequest)
         case failed(MapTileRequest)
+        case unavailable(MapTileRequest)
     }
 
     private struct Work: Hashable {
@@ -52,27 +55,30 @@ struct OnlineMapContent {
         viewport.map { MapTileRequest(camera: camera.wrappedValue, viewport: $0) }
     }
     private var status: String {
-        guard let request else { return "Online paused · resize to load tiles" }
+        guard let request else { return "\(sourceLabel) paused · resize to load tiles" }
         let retained: String
         if snapshot == nil { retained = "no map loaded" }
         else { retained = "showing previous coverage" }
         switch update {
+        case .unavailable(let unavailable) where unavailable == request:
+            return "Offline pack · area unavailable · \(retained) · pan or reset"
         case .failed(let failed) where failed == request:
             return "Could not load this area · \(retained) · e retry"
         case .loading(let pending) where pending == request:
             return "Loading tiles… · \(retained)"
-        case .idle, .failed, .loading:
+        case .idle, .failed, .loading, .unavailable:
             guard let snapshot, snapshot.request == request else {
                 return "Loading tiles… · \(retained)"
             }
             let resolution = snapshot.attainedZoom < snapshot.requestedZoom
                 ? " · reduced from z\(snapshot.requestedZoom) to fit geometry limits" : ""
-            return "Online · z\(snapshot.attainedZoom)\(resolution) · e retry"
+            return "\(sourceLabel) · z\(snapshot.attainedZoom)\(resolution) · e retry"
         }
     }
 
     private func load(_ work: Work) async {
         guard let requested = work.request else { update = .idle; return }
+        if case .unavailable(let unavailable) = update, unavailable == requested { return }
         update = .loading(requested)
         do {
             // Coalesce rapid native key events without delaying camera feedback.
@@ -87,6 +93,9 @@ struct OnlineMapContent {
             guard !Task.isCancelled, request == requested else { return }
             snapshot = loaded
             update = .idle
+        } catch MapTileLoader.LoadingError.outsidePackCoverage {
+            guard !Task.isCancelled, request == requested else { return }
+            update = .unavailable(requested)
         } catch is CancellationError {
             // A replaced request cannot publish over its successor.
         } catch {
@@ -96,7 +105,7 @@ struct OnlineMapContent {
     }
 }
 
-extension OnlineMapContent: View {
+extension TiledMapContent: View {
     var body: some View {
         let work = Work(request: request, retry: retry)
         VStack(alignment: .leading, spacing: 0) {

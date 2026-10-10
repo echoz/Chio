@@ -107,6 +107,22 @@ cache directory. OpenFreeMap discovery likewise still needs a network connection
 unless a source file is supplied. Cache contention and source mismatches are
 reported before the TUI starts.
 
+To try durable offline tiles, prepare a world pack from the four retained zoom-1
+fixtures, then reopen it in the same map UI:
+
+```sh
+swift run -c release chio-maps --write-tile-pack .build/world.chiomap
+swift run -c release chio-maps --tile-pack .build/world.chiomap
+```
+
+Preparation exits before entering the TUI and refuses an existing destination.
+Viewing needs no network, writable cache or writable pack directory. This fixture
+pack contains coarse world geography only; zooming closer does not add street
+detail. Application code can supply another checked area and source zoom interval
+through the [programmatic API](Usage.md#offline-tile-packs). `--tile-pack` and
+`--write-tile-pack` are separate operations and reject online/cache options and
+snapshot/benchmark modes. The default bundled example is unchanged.
+
 Give the component at least **32 × 16** drawing cells for longitude spans of
 60 degrees or more, or **58 × 16** for closer views, plus two credit rows.
 Smaller allocations show a resize summary while preserving the camera and

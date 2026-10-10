@@ -172,6 +172,17 @@ not a kill during a real write. Unit cases cover publication failures. Run these
 on macOS and Linux; they establish neither power-loss durability nor hostile
 filesystem safety. Map geometry and the default recording remain unchanged.
 
+Offline-pack changes additionally check bounded plan construction and decoding,
+exact index completeness, offsets/lengths/checksums, version rejection, byte caps,
+no-overwrite publication, cancellation cleanup and closed-reader behavior.
+Exercise pack memory eviction/rereading and wall-clock independence without HTTP,
+and preserve online cache freshness tests. Genuine world fixtures and hosted
+sessions verify geometry, unavailable coverage, retained camera/focus and recovery.
+`Scripts/maps/pack-probe.py` prepares a pack through the real executable, reopens
+it in fresh processes from read-only storage, checks interaction and terminal
+restoration, and compares file bytes before/after. Run on macOS and Linux. These
+checks do not simulate power loss or kill a writer during a filesystem operation.
+
 Pass an example flag such as `--choices`, `--inbox` or `--diff` for its workflow;
 [verify.sh](../Scripts/ci/verify.sh) is the complete list. Terminal checks cover
 input/output, raw mode, cursor/alternate-screen restoration and exact original

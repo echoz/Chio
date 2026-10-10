@@ -1,18 +1,26 @@
 import Foundation
 
-/// Explicit online acquisition for one mounted map consumer. A replacement load
-/// cancels and drains its predecessor before starting at most two HTTP requests.
+/// Explicit tile acquisition for one mounted map consumer. A replacement load
+/// cancels and drains its predecessor before starting at most two tile reads.
 public actor MapTileLoader {
     public enum LoadingError {
-        case unsupportedViewport, deadlineExceeded, invalidCatalog
+        case unsupportedViewport, outsidePackCoverage, deadlineExceeded, invalidCatalog
         case invalidResponse, httpStatus(Int), unexpectedContentType, responseTooLarge, rejectedRedirect
+    }
+
+    private enum Backing {
+        case online(OpenMapTilesSource, MapTileCache?, MapHTTPClient.Transport)
+        case pack(MapTilePack)
+    }
+
+    private enum Retention {
+        case online(expires: TimeInterval, storedAt: TimeInterval, expiresAt: TimeInterval)
+        case pack
     }
 
     private struct CachedTile {
         let data: Data
-        let expires: TimeInterval
-        let storedAt: TimeInterval
-        let expiresAt: TimeInterval
+        let retention: Retention
         let access: UInt64
     }
     struct Statistics {
@@ -22,9 +30,25 @@ public actor MapTileLoader {
         let maximumInFlight: Int
     }
 
-    private let source: OpenMapTilesSource
-    private let diskCache: MapTileCache?
-    private let transport: MapHTTPClient.Transport
+    private let backing: Backing
+    private var metadata: MapSourceMetadata {
+        switch backing {
+        case .online(let source, _, _): source.metadata
+        case .pack(let pack): pack.metadata
+        }
+    }
+    private var zoomRange: ClosedRange<Int> {
+        switch backing {
+        case .online(let source, _, _): source.zoomRange
+        case .pack(let pack): pack.plan.zoomRange
+        }
+    }
+    private var diskCache: MapTileCache? {
+        switch backing {
+        case .online(_, let cache, _): cache
+        case .pack: nil
+        }
+    }
     private let now: @Sendable () -> TimeInterval
     private let wallNow: @Sendable () -> TimeInterval
     private let sleep: @Sendable (Duration) async throws -> Void
@@ -38,9 +62,7 @@ public actor MapTileLoader {
     private var maximumInFlight = 0
 
     public init(source: OpenMapTilesSource) {
-        self.source = source
-        self.diskCache = nil
-        self.transport = { try await MapHTTPClient.fetch($0, resource: $1) }
+        self.backing = .online(source, nil, { try await MapHTTPClient.fetch($0, resource: $1) })
         self.now = { ProcessInfo.processInfo.systemUptime }
         self.wallNow = { Date().timeIntervalSince1970 }
         self.sleep = { try await Task.sleep(for: $0) }
@@ -50,9 +72,7 @@ public actor MapTileLoader {
     /// The cache owns its source and must remain open while this loader is used.
     /// Storage failures propagate; closing the cache also disables memory hits.
     public init(cache: MapTileCache) {
-        self.source = cache.source
-        self.diskCache = cache
-        self.transport = { try await MapHTTPClient.fetch($0, resource: $1) }
+        self.backing = .online(cache.source, cache, { try await MapHTTPClient.fetch($0, resource: $1) })
         self.now = { ProcessInfo.processInfo.systemUptime }
         self.wallNow = { Date().timeIntervalSince1970 }
         self.sleep = { try await Task.sleep(for: $0) }
@@ -62,8 +82,8 @@ public actor MapTileLoader {
     init(source: OpenMapTilesSource, transport: @escaping MapHTTPClient.Transport,
          now: @escaping @Sendable () -> TimeInterval = { ProcessInfo.processInfo.systemUptime },
          sleep: @escaping @Sendable (Duration) async throws -> Void = { try await Task.sleep(for: $0) }) {
-        self.source = source; self.diskCache = nil
-        self.transport = transport; self.now = now; self.sleep = sleep
+        self.backing = .online(source, nil, transport)
+        self.now = now; self.sleep = sleep
         self.wallNow = { Date().timeIntervalSince1970 }
     }
 
@@ -71,8 +91,25 @@ public actor MapTileLoader {
          now: @escaping @Sendable () -> TimeInterval = { ProcessInfo.processInfo.systemUptime },
          wallNow: @escaping @Sendable () -> TimeInterval = { Date().timeIntervalSince1970 },
          sleep: @escaping @Sendable (Duration) async throws -> Void = { try await Task.sleep(for: $0) }) {
-        self.source = cache.source; self.diskCache = cache
-        self.transport = transport; self.now = now; self.wallNow = wallNow; self.sleep = sleep
+        self.backing = .online(cache.source, cache, transport)
+        self.now = now; self.wallNow = wallNow; self.sleep = sleep
+    }
+
+    /// Read immutable pack tiles without discovery, HTTP or writable disk caching.
+    /// Retain the reader until this consumer stops; closing it also disables memory hits.
+    public init(pack: MapTilePack) {
+        self.backing = .pack(pack)
+        self.now = { ProcessInfo.processInfo.systemUptime }
+        self.wallNow = { Date().timeIntervalSince1970 }
+        self.sleep = { try await Task.sleep(for: $0) }
+    }
+
+    /// Only the deadline clock is used by pack loading; UTC must not affect retention.
+    init(pack: MapTilePack, now: @escaping @Sendable () -> TimeInterval,
+         wallNow: @escaping @Sendable () -> TimeInterval) {
+        self.backing = .pack(pack)
+        self.now = now; self.wallNow = wallNow
+        self.sleep = { try await Task.sleep(for: $0) }
     }
 
     public func load(_ request: MapTileRequest) async throws -> MapTileSnapshot {
@@ -93,6 +130,7 @@ public actor MapTileLoader {
         let result = try await withTaskCancellationHandler {
             try await operation.value
         } onCancel: { operation.cancel() }
+        try await ensureBackingOpen()
         try Task.checkCancellation()
         guard owner == generation else { throw CancellationError() }
         return result
@@ -120,9 +158,9 @@ public actor MapTileLoader {
     }
 
     private func acquire(_ request: MapTileRequest) async throws -> MapTileSnapshot {
-        let floor = max(1, source.zoomRange.lowerBound)
-        guard floor <= source.zoomRange.upperBound else { throw LoadingError.unsupportedViewport }
-        let requested = MapTilePlan.desiredZoom(for: request, range: floor...source.zoomRange.upperBound)
+        let floor = max(1, zoomRange.lowerBound)
+        guard floor <= zoomRange.upperBound else { throw LoadingError.unsupportedViewport }
+        let requested = MapTilePlan.desiredZoom(for: request, range: floor...zoomRange.upperBound)
         var lastBudgetError: (any Error)?
         for zoom in stride(from: requested, through: max(floor, requested - 2), by: -1) {
             try Task.checkCancellation()
@@ -134,7 +172,7 @@ public actor MapTileLoader {
                 for tile in plan.tiles {
                     try Task.checkCancellation()
                     guard let data = tiles[tile] else { throw LoadingError.invalidResponse }
-                    let decoded = try OpenMapTilesAdapter(tile: tile, metadata: source.metadata)
+                    let decoded = try OpenMapTilesAdapter(tile: tile, metadata: metadata)
                         .adapt(data, intersecting: request)
                     try Task.checkCancellation()
                     vertices += decoded.vertexCount
@@ -143,7 +181,7 @@ public actor MapTileLoader {
                     features.append(contentsOf: decoded.features)
                 }
                 let coverage = try MapTileCoverage(tiles: plan.tiles, region: request)
-                let aggregate = try MapSource(dataset: MapDataset(features: features), metadata: source.metadata,
+                let aggregate = try MapSource(dataset: MapDataset(features: features), metadata: metadata,
                                               coverage: .tiled(coverage))
                 try Task.checkCancellation()
                 return try MapTileSnapshot(request: request, source: aggregate, requestedZoom: requested)
@@ -192,17 +230,38 @@ public actor MapTileLoader {
         }
     }
 
+    private func ensureBackingOpen() async throws {
+        switch backing {
+        case .online(_, let cache, _): try await cache?.ensureOpen()
+        case .pack(let pack): try await pack.ensureOpen()
+        }
+    }
+
     private func bytes(for tile: MapTileCoordinate) async throws -> Data {
         try Task.checkCancellation()
-        try await diskCache?.ensureOpen()
+        try await ensureBackingOpen()
         try Task.checkCancellation()
         expireCache()
         access &+= 1
         if let cached = cache[tile] {
-            cache[tile] = CachedTile(data: cached.data, expires: cached.expires,
-                                     storedAt: cached.storedAt, expiresAt: cached.expiresAt, access: access)
+            cache[tile] = CachedTile(data: cached.data, retention: cached.retention, access: access)
             return cached.data
         }
+        switch backing {
+        case .pack(let pack):
+            guard let data = try await pack.read(tile) else { throw LoadingError.outsidePackCoverage }
+            try Task.checkCancellation()
+            try await pack.ensureOpen()
+            try Task.checkCancellation()
+            insert(data, tile: tile, retention: .pack)
+            return data
+        case .online(let source, _, let transport):
+            return try await onlineBytes(for: tile, source: source, transport: transport)
+        }
+    }
+
+    private func onlineBytes(for tile: MapTileCoordinate, source: OpenMapTilesSource,
+                             transport: MapHTTPClient.Transport) async throws -> Data {
         let lookup = cacheTime()
         if let diskCache, let entry = try await diskCache.read(tile, at: lookup.effective) {
             try Task.checkCancellation()
@@ -211,8 +270,8 @@ public actor MapTileLoader {
             let hasValidReceipt = completed.wall.isFinite && completed.wall >= entry.storedAt
             let isStillFresh = completed.uptime < expires && completed.effective < entry.expiresAt
             if hasValidReceipt && isStillFresh {
-                insert(entry.data, tile: tile, expires: expires,
-                       storedAt: entry.storedAt, expiresAt: entry.expiresAt)
+                insert(entry.data, tile: tile, retention: .online(expires: expires,
+                       storedAt: entry.storedAt, expiresAt: entry.expiresAt))
                 return entry.data
             }
             try await diskCache.remove(tile)
@@ -243,8 +302,8 @@ public actor MapTileLoader {
                 try await diskCache.store(response.data, for: tile, storedAt: receivedAt, expiresAt: expiresAt)
             }
             try Task.checkCancellation()
-            insert(response.data, tile: tile, expires: received + ttl,
-                   storedAt: receivedAt, expiresAt: expiresAt)
+            insert(response.data, tile: tile, retention: .online(expires: received + ttl,
+                   storedAt: receivedAt, expiresAt: expiresAt))
         } else {
             try await diskCache?.remove(tile)
         }
@@ -253,11 +312,19 @@ public actor MapTileLoader {
     }
 
     private func expireCache() {
+        switch backing {
+        case .pack: return
+        case .online: break
+        }
         let time = cacheTime()
-        let expired = cache.filter {
-            let hasExpiredUptime = $0.value.expires <= time.uptime
-            let hasInvalidWallTime = !time.wall.isFinite || time.wall < $0.value.storedAt || time.effective >= $0.value.expiresAt
-            return hasExpiredUptime || (diskCache != nil && hasInvalidWallTime)
+        let expired = cache.filter { _, tile in
+            switch tile.retention {
+            case .pack: return false
+            case .online(let expires, let storedAt, let expiresAt):
+                let hasExpiredUptime = expires <= time.uptime
+                let hasInvalidWallTime = !time.wall.isFinite || time.wall < storedAt || time.effective >= expiresAt
+                return hasExpiredUptime || (diskCache != nil && hasInvalidWallTime)
+            }
         }.map(\.key)
         for tile in expired { cacheBytes -= cache.removeValue(forKey: tile)!.data.count }
     }
@@ -277,8 +344,7 @@ public actor MapTileLoader {
         return (wall, effective, uptime)
     }
 
-    private func insert(_ data: Data, tile: MapTileCoordinate, expires: TimeInterval,
-                        storedAt: TimeInterval, expiresAt: TimeInterval) {
+    private func insert(_ data: Data, tile: MapTileCoordinate, retention: Retention) {
         expireCache()
         if let prior = cache.removeValue(forKey: tile) { cacheBytes -= prior.data.count }
         while cache.count >= 64 || cacheBytes + data.count > 32 * 1_024 * 1_024 {
@@ -286,8 +352,7 @@ public actor MapTileLoader {
             cacheBytes -= cache.removeValue(forKey: oldest)!.data.count
         }
         access &+= 1
-        cache[tile] = CachedTile(data: data, expires: expires, storedAt: storedAt,
-                                 expiresAt: expiresAt, access: access)
+        cache[tile] = CachedTile(data: data, retention: retention, access: access)
         cacheBytes += data.count
     }
 

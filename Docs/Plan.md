@@ -42,7 +42,8 @@ active plan with completed implementation history.
 ## Approved map expansion
 
 **Status:** Scope approved on 2026-10-09. Persistent caching is implemented;
-offline packs, geocoding and routing remain planned. The following order keeps
+programmatic local packs are implemented.
+Provider downloads, geocoding and routing remain planned. The following order keeps
 one testable slice at a time; current contracts live in the owning decisions.
 
 The preceding robustness slice fixes the two reproduced audit defects:
@@ -54,15 +55,36 @@ The opt-in persistent cache preserves the raw
 tile pipeline; [its storage contract](Decisions/OnlineMaps.md#persistent-raw-tile-cache)
 defines identity, freshness, bounds and recovery. Before delivery, its
 [verification gates](Verification.md) require independent review, unit and real
-process checks on macOS/Linux, and the updated showcase. Downloadable offline
-packs are the next design slice; their retention policy differs from this cache.
+process checks on macOS/Linux, and the updated showcase. Programmatic offline
+packs now provide durable read-only backing with separate retention; provider
+downloads remain the next acquisition slice.
+The [provider recommendation](Decisions/OnlineMaps.md#explicit-effects-and-source-configuration)
+uses the existing explicit OpenFreeMap discovery API; it adds no provider registry
+or implicit network behavior.
 
 | Order | Capability | First useful outcome and acceptance evidence |
 | --- | --- | --- |
 | 1 | Persistent tile cache | Reuse acquired raw tiles across launches through the existing decode/preparation pipeline. Prove source isolation, bounded disk use, freshness rules, eviction, corrupt-entry handling and interrupted-write recovery. |
-| 2 | Downloadable offline tile packs | Explicitly select an area and zoom range, inspect the planned tile/byte limits, download with progress/cancellation, then reopen the pack without network access. Preserve coverage, attribution and checksums; incomplete downloads must not appear complete. |
+| 2 | Programmatic offline tile packs | Prepare or supply a checked pack in application code, then use its durable read-only tiles through the shared loader and memory cache without network access. Preserve coverage, attribution, identity and checksums. Follow with bounded programmatic acquisition from a download-permitted source; incomplete preparation must not appear complete. |
 | 3 | Geocoding | Forward place/address search and reverse coordinate lookup through an explicit provider adapter. Return bounded results that applications can turn into markers and camera changes; prove no-result/failure distinctions, cancellation and stale-result rejection. |
 | 4 | Routing | Explicit route requests between supplied locations through a provider adapter, returning checked geometry and available distance/duration metadata. Compose with existing route overlays; prove no-route/failure distinctions, cancellation, stale-result rejection and route work limits. |
+
+### Next slice: offline pack acquisition
+
+**Status:** Programmatic local preparation and read-only loading implemented.
+Delivery requires the platform, process and review gates in [Verification](Verification.md). [Offline packs](Decisions/OfflineTilePacks.md)
+owns the format, limits and lifetime contracts. [Usage](Usage.md#offline-tile-packs)
+and [Examples](Examples.md#maps) contain the public API and runnable commands.
+
+`MapTilePackPlan`, `MapTilePack.create/open` and `MapTileLoader(pack:)` implement
+the local path with supplied raw bytes and no network fallback. Pack memory is
+bounded; the durable file is retained independently of online cache freshness.
+The example creates a pack from retained world fixtures and reopens it explicitly.
+
+Programmatic provider downloads remain follow-up scope. Prove a permitted source,
+bounded planning and progress/cancellation before adding acquisition. Published
+archives such as OpenFreeMap's PMTiles remain candidates, not supported formats.
+Resumable preparation and combined pack/network fallback remain separate decisions.
 
 ### Boundaries and open choices
 

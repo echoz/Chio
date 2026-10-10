@@ -31,11 +31,18 @@ The [approved map expansion](Plan.md#approved-map-expansion) adds disk storage
 and planned downloadable tile packs, geocoding and routing adapters at explicit
 effect boundaries beside the view. Applications retain invocation, storage and
 provider policy, credentials and workflow ownership. These capabilities are
-delivered one slice at a time; packs and service APIs remain planned. The current
+delivered one slice at a time; provider archive downloads and service APIs remain planned. The current
 map renderer and acquisition contracts remain intact. Opt-in persistence is
 defined in [online acquisition](Decisions/OnlineMaps.md#persistent-raw-tile-cache).
 Its private `ChioFileSystem` target bridges native locking and
 directory enumeration without adding another public product.
+
+Offline packs are programmatically prepared or supplied immutable tile
+data, serving the shared loader and bounded memory cache through a read-only
+backing store. They retain their contents independently of the writable online
+cache's expiry and eviction. Applications own distribution and any management UI;
+[Offline packs](Decisions/OfflineTilePacks.md) owns storage and lifetime contracts;
+[Plan](Plan.md#next-slice-offline-pack-acquisition) owns the delivery sequence.
 
 ## Value contracts
 
@@ -165,6 +172,7 @@ in Releases; avoid duplicating full contracts across documents.
 | <a id="markdown-and-agent-reports"></a>[Markdown, code and interactive links](Decisions/Markdown.md) | Accepted |
 | <a id="references-and-boundaries"></a>[Dependencies and distribution](Decisions/Dependencies.md) | Current pins, toolchain findings and static Linux blocker |
 | [Online tile acquisition](Decisions/OnlineMaps.md) | Accepted explicit loader and opt-in online example |
+| [Programmatic offline packs](Decisions/OfflineTilePacks.md) | Implemented immutable raw-tile backing |
 | [Native integration](Decisions/NativeIntegration.md) | Current limitations and ownership |
 | [Terminal colors](Decisions/TerminalColors.md) | Accepted native detection; conversion experiment shelved |
 | [Table rendering](Decisions/TableRendering.md) | Proposed correction; patches unapplied |

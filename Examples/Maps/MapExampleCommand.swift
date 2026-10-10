@@ -14,6 +14,10 @@ struct MapExampleCommand {
     var tileSource = ""
     @Option(help: "Opt-in dedicated disk cache directory for --online. A directory belongs to one exact tile source.")
     var tileCache = ""
+    @Option(help: "Open an explicitly prepared offline .chiomap tile-pack file; interactive only.")
+    var tilePack = ""
+    @Option(help: "Prepare an immutable zoom-one world pack from bundled tiles, then exit.")
+    var writeTilePack = ""
     @Option(help: "Theme: default, light or btop.") var theme: Appearance = .default
     @Flag(help: "Print a deterministic native raster as text.") var snapshot = false
     @Flag(help: "Export native raster cells as JSON for visual inspection.") var snapshotJSON = false
@@ -84,6 +88,20 @@ extension MapExampleCommand: AsyncParsableCommand {
         guard !online || isDefaultBundledSource else {
             throw ValidationError("--source selects a bundled fixture. Use --online on its own for live OpenFreeMap tiles.")
         }
+        let usesPack = !tilePack.isEmpty || !writeTilePack.isEmpty
+        let usesNetworkConfiguration = online || !tileSource.isEmpty || !tileCache.isEmpty
+        guard !usesPack || !usesNetworkConfiguration else {
+            throw ValidationError("Tile packs cannot be combined with --online, --tile-source or --tile-cache.")
+        }
+        guard tilePack.isEmpty || writeTilePack.isEmpty else {
+            throw ValidationError("Choose --tile-pack or --write-tile-pack.")
+        }
+        guard !usesPack || isDefaultBundledSource else {
+            throw ValidationError("--source selects a bundled fixture. Use a tile-pack option on its own.")
+        }
+        guard !usesPack || !hasOfflineOutput else {
+            throw ValidationError("Tile-pack viewing is interactive; preparation exits after writing. Snapshot and benchmark modes use bundled data.")
+        }
         guard online || tileSource.isEmpty else {
             throw ValidationError("--tile-source requires --online.")
         }
@@ -94,6 +112,11 @@ extension MapExampleCommand: AsyncParsableCommand {
 
     @MainActor
     mutating func run() async throws {
+        if !writeTilePack.isEmpty {
+            try await MapExamplePack.writeWorld(at: URL(fileURLWithPath: writeTilePack))
+            print("Prepared offline world tile pack: \(writeTilePack)")
+            return
+        }
         let fixtures = try MapFixtures.load()
         let detail: MapDetail = sourceDetail ? .source : self.detail
         let acquisition: MapExampleAcquisition
@@ -119,11 +142,19 @@ extension MapExampleCommand: AsyncParsableCommand {
             } else { print(capture.raster.lines.joined(separator: "\n")) }
         } else {
             let cacheOwner: MapTileCache?
+            let packOwner: MapTilePack?
             let liveAcquisition: MapExampleAcquisition
-            if tileCache.isEmpty {
+            if !tilePack.isEmpty {
+                let pack = try MapTilePack.open(at: URL(fileURLWithPath: tilePack))
+                packOwner = pack
+                cacheOwner = nil
+                liveAcquisition = .pack(MapTileLoader(pack: pack))
+            } else if tileCache.isEmpty {
+                packOwner = nil
                 cacheOwner = nil
                 liveAcquisition = acquisition
             } else {
+                packOwner = nil
                 let cache: MapTileCache
                 do { cache = try await acquisition.openCache(directory: URL(fileURLWithPath: tileCache)) }
                 catch MapTileCache.CacheError.alreadyInUse {
@@ -141,9 +172,11 @@ extension MapExampleCommand: AsyncParsableCommand {
                                           configuration: swiftTUIOptions.runtimeConfiguration())
             } catch {
                 await cacheOwner?.close()
+                await packOwner?.close()
                 throw error
             }
             await cacheOwner?.close()
+            await packOwner?.close()
         }
     }
 }

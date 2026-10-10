@@ -25,6 +25,14 @@ Discovery accepts only HTTPS tile templates on the provider's tile host.
 The example can also decode a checked `OpenMapTilesSource` from an explicit
 `--tile-source` JSON file (at most 16 KiB), requiring `--online`.
 
+OpenFreeMap is the recommended online provider and the example's default when
+`--online` has no custom source. The named discovery operation above is the
+convenient public entry point; no additional default-provider registry or alias
+is needed. Provider choice supplies data, provenance and source zoom limits.
+Chio's themes and `MapDetail` continue to own terminal presentation independently.
+This recommendation covers interactive vectors; offline archive acquisition,
+geocoding and routing need their own evaluated sources.
+
 The default example remains offline. `--online` selects online tiles at every
 camera scale, including the world overview; it never switches to Natural Earth.
 Before the first successful load, `MapView(source: nil, ...)` keeps its allocation,
@@ -147,7 +155,7 @@ Adjacent tiles are normalized and aggregated. Buffered geometry can overlap,
 and clipped polygon edges can appear as artificial outlines. This is not polygon
 stitching or a topology engine. Provider comparison work remains shelved.
 
-Downloadable tile packs, geocoding and route calculation remain
+Provider archive downloads, geocoding and route calculation remain
 [approved follow-up scope](../Plan.md#approved-map-expansion). Pack acquisition needs a separately evaluated source and
 download policy; this approval does not turn the interactive loader into a bulk
 downloader. Credential storage remains application-owned.
