@@ -6,6 +6,23 @@ enum MapShapeSimplification {
     static let operationLimit = 3_000_000
     private static let polygonOperationLimit = 1_000_000
 
+    /// A bounded proof for area admission. Failure or exhaustion means unknown;
+    /// it never establishes invalid public input or authorizes discarding rings.
+    /// Cancellation propagates instead of becoming an admission decision.
+    static func provesTopology(_ rings: [[PreparedMap.Point]], operationBudget: inout Int,
+                               isCancelled: @escaping @Sendable () -> Bool = { false }) throws -> Bool {
+        var remaining = Budget(remaining: min(operationBudget, polygonOperationLimit), isCancelled: isCancelled)
+        let initial = remaining.remaining
+        defer { operationBudget -= initial - remaining.remaining }
+        try remaining.checkCancellation()
+        guard remaining.remaining > 0 else { return false }
+        do {
+            return try hasValidTopology(rings, budget: &remaining)
+        } catch Exhausted.budget {
+            return false
+        }
+    }
+
     /// Explicit cuts, ordinary dateline crossings and clamped polar rings remain exact.
     /// Merely touching the seam is safe: every projected extrema vertex is pinned.
     /// Simplifying these requires geographic seam semantics outside this local spike.
@@ -162,8 +179,9 @@ enum MapShapeSimplification {
                 }
                 try spend(&budget, amount: rings[i].count + rings[j].count)
                 if i == 0 {
-                    guard contains(rings[j][0], ring: rings[0]) else { return false }
-                } else if contains(rings[j][0], ring: rings[i]) || contains(rings[i][0], ring: rings[j]) {
+                    guard try contains(rings[j][0], ring: rings[0], budget: &budget) else { return false }
+                } else if try contains(rings[j][0], ring: rings[i], budget: &budget)
+                            || contains(rings[i][0], ring: rings[j], budget: &budget) {
                     return false // Overlapping/nested holes are not repaired.
                 }
             }
@@ -190,9 +208,13 @@ enum MapShapeSimplification {
         return straddles(abC, abD) && straddles(cdA, cdB)
     }
 
-    private static func contains(_ point: PreparedMap.Point, ring: [PreparedMap.Point]) -> Bool {
+    private static func contains(_ point: PreparedMap.Point, ring: [PreparedMap.Point],
+                                 budget: inout Budget) throws -> Bool {
         var isInside = false
-        for (a, b) in zip(ring, ring.dropFirst()) where (a.y > point.y) != (b.y > point.y) {
+        for (index, segment) in zip(ring, ring.dropFirst()).enumerated() {
+            if index.isMultiple(of: 256) { try budget.checkCancellation() }
+            let (a, b) = segment
+            guard (a.y > point.y) != (b.y > point.y) else { continue }
             if point.x < a.x + (point.y - a.y) * (b.x - a.x) / (b.y - a.y) { isInside.toggle() }
         }
         return isInside

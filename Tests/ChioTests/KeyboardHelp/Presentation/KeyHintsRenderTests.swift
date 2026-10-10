@@ -1,9 +1,53 @@
 import Chio
+import Foundation
 import SwiftTUIRuntime
 import Testing
 
 @MainActor
 struct KeyHintsRenderTests {
+    @Test("Extreme constructed hint gaps wrap without overflowing", arguments: [10, 40])
+    func extremeConstructedGap(width: Int) {
+        let spacing = ChioTheme.Spacing(hintGap: Int.max)
+        #expect(spacing.hintGap == Int.max)
+        expectSeparatedHints(spacing: spacing, width: width)
+    }
+
+    @Test("Extreme decoded hint gaps wrap without overflowing", arguments: [10, 40])
+    func extremeDecodedGap(width: Int) throws {
+        let fixture = Data("{\"horizontalInset\":1,\"verticalInset\":0,\"sectionGap\":0,\"hintGap\":\(Int.max)}".utf8)
+        let spacing = try JSONDecoder().decode(ChioTheme.Spacing.self, from: fixture)
+        #expect(spacing.hintGap == Int.max)
+        expectSeparatedHints(spacing: spacing, width: width)
+    }
+
+    @Test("Zero hint gaps preserve exact fits and measure only content", arguments: [14, 40])
+    func zeroGap(width: Int) {
+        let surface = DefaultRenderer().render(
+            KeyHints {
+                KeyHint("q", "quit")
+                KeyHint("/", "search")
+                KeyHint("esc", "clear")
+            }.chioTheme(ChioTheme.default.replacing(spacing: ChioTheme.Spacing(hintGap: 0))),
+            proposal: ProposedViewSize(width: width, height: nil)
+        ).rasterSurface
+
+        let expected = width == 14 ? ["q quit/ search", "esc clear"] : ["q quit/ searchesc clear"]
+        #expect(surface.lines.map(trimTrailingSpaces) == expected)
+        #expect(surface.size.width == (width == 14 ? 14 : 23))
+    }
+
+    @Test("A trailing extreme gap does not inflate a single hint")
+    func singleHintExtremeGap() {
+        let surface = DefaultRenderer().render(
+            KeyHints { KeyHint("q", "quit") }
+                .chioTheme(ChioTheme.default.replacing(spacing: ChioTheme.Spacing(hintGap: Int.max))),
+            proposal: ProposedViewSize(width: 40, height: nil)
+        ).rasterSurface
+
+        #expect(surface.lines == ["q quit"])
+        #expect(surface.size.width == 6)
+    }
+
     @Test("Key hints wrap whole shortcuts into readable rows", arguments: [10, 16, 20, 40])
     func wholeHintWrapping(width: Int) {
         let surface = DefaultRenderer().render(
@@ -86,6 +130,21 @@ struct KeyHintsRenderTests {
             "────────────────", "", "/ search", "esc clear",
         ])
         #expect(surface.cells[0].allSatisfy { $0.style?.foregroundColor == theme.colors.border })
+    }
+
+    private func expectSeparatedHints(spacing: ChioTheme.Spacing, width: Int) {
+        let surface = DefaultRenderer().render(
+            KeyHints {
+                KeyHint("q", "quit")
+                KeyHint("/", "search")
+                KeyHint("esc", "clear")
+            }.chioTheme(ChioTheme.default.replacing(spacing: spacing)),
+            proposal: ProposedViewSize(width: width, height: nil)
+        ).rasterSurface
+
+        #expect(surface.lines.map(trimTrailingSpaces) == ["q quit", "/ search", "esc clear"])
+        #expect(surface.size.width == 9)
+        #expect(surface.size.height == 3)
     }
 }
 

@@ -2,22 +2,29 @@ import Foundation
 
 /// Pure bounded preparation; native SwiftTUI still owns all cell rasterization.
 enum MapPreparation {
+    /// Separate from shape reduction so admission cannot consume its allowance.
+    static let admissionOperationLimit = 1_000_000
+
     /// Conservative spatial admission for acquisition. Reuse the renderer's
     /// longitude branches and inclusive bounds; retain whole parts and holes.
     /// False positives are safe. This does not simplify or clip geometry.
     static func mayIntersect(_ geometry: MapGeometry, request: MapTileRequest) throws -> Bool {
-        let coordinates: [MapCoordinate]
-        switch geometry {
-        case .polyline(let line): coordinates = line.coordinates
-        case .polygon(let polygon): coordinates = polygon.rings[0].coordinates
-        }
         let cancellation = Cancellation(isCancelled: { false })
-        let points = try project(coordinates, camera: request.camera, viewport: request.viewport,
-                                 cancellation: cancellation)
+        let paths: [[PreparedMap.Point]]
+        switch geometry {
+        case .polyline(let line):
+            paths = try [project(line.coordinates, camera: request.camera, viewport: request.viewport,
+                                 cancellation: cancellation)]
+        case .polygon(let polygon):
+            paths = try project(polygon, camera: request.camera, viewport: request.viewport,
+                                cancellation: cancellation)
+        }
         let wrap = 360 * Double(request.viewport.columns) / request.camera.longitudeSpan
         for shift in [-1.0, 0, 1] {
-            if try intersects(shifted(points, by: shift * wrap, cancellation: cancellation),
-                              viewport: request.viewport, cancellation: cancellation) { return true }
+            for path in paths {
+                if try intersects(shifted(path, by: shift * wrap, cancellation: cancellation),
+                                  viewport: request.viewport, cancellation: cancellation) { return true }
+            }
         }
         return false
     }
@@ -35,6 +42,9 @@ enum MapPreparation {
         var visibleIDs: Set<String> = []
         var preparedVertices = 0
         var shapeOperations = MapShapeSimplification.operationLimit
+        // Fixed shares keep proof fallback independent of feature order and the
+        // current detail level. Unused shares are not borrowed by later shapes.
+        let admissionOperationsPerFeature = admissionOperationLimit / max(1, dataset.features.count)
         let wrapWidth = 360 * Double(viewport.columns) / camera.longitudeSpan
         let ordered = dataset.features.enumerated().sorted {
             if $0.element.kind.priority != $1.element.kind.priority {
@@ -67,28 +77,35 @@ enum MapPreparation {
                     }
                 }
             case .polygon(let polygon):
-                let outer = try project(polygon.rings[0].coordinates, camera: camera, viewport: viewport, cancellation: cancellation)
-                // Unwrap the whole hole before choosing its world copy. Bounds
-                // midpoints are independent of vertex density and ring start point.
-                let exteriorMidpoint = try horizontalMidpoint(outer, cancellation: cancellation)
-                let rings = try [outer] + polygon.rings.dropFirst().map {
-                    try cancellation.check()
-                    let hole = try project($0.coordinates, camera: camera, viewport: viewport, cancellation: cancellation)
-                    let holeMidpoint = try horizontalMidpoint(hole, cancellation: cancellation)
-                    let worldShift = ((exteriorMidpoint - holeMidpoint) / wrapWidth).rounded() * wrapWidth
-                    return try shifted(hole, by: worldShift, cancellation: cancellation)
-                }
+                let rings = try project(polygon, camera: camera, viewport: viewport, cancellation: cancellation)
+                var admissionOperations = admissionOperationsPerFeature
+                // Unknown until a detail threshold needs proof. World translations
+                // preserve topology, so one proof serves every admitted copy.
+                var hasProvenTopology: Bool?
                 // Cull and admit source geometry before spending generalization work.
                 // Admission stays monotonic across levels and independent of fallback.
                 let admittedShifts = try [-1.0, 0, 1].filter { shift in
                     try cancellation.check()
                     let sourceRings = try rings.map { try shifted($0, by: shift * wrapWidth, cancellation: cancellation) }
-                    guard try intersects(sourceRings[0], viewport: viewport, cancellation: cancellation) else { return false }
+                    let hasVisibleRing = try sourceRings.contains {
+                        try intersects($0, viewport: viewport, cancellation: cancellation)
+                    }
+                    guard hasVisibleRing else { return false }
                     switch detail {
                     case .source: return true
                     case .silhouette, .minimal, .abstract:
                         let visibleCellArea = try visibleArea(sourceRings, viewport: viewport, cancellation: cancellation)
-                        return detail.admitsArea(visibleCellArea, kind: feature.kind)
+                        if detail.admitsArea(visibleCellArea, kind: feature.kind) { return true }
+                        // Signed area and hole subtraction justify rejection only
+                        // for simple, contained, disjoint rings. Accepted source
+                        // geometry makes no such topology promise. Unproved input
+                        // stays intact, including when the proof budget runs out.
+                        if hasProvenTopology == nil {
+                            hasProvenTopology = try MapShapeSimplification.provesTopology(
+                                rings, operationBudget: &admissionOperations, isCancelled: isCancelled
+                            )
+                        }
+                        return hasProvenTopology == false
                     }
                 }
                 guard !admittedShifts.isEmpty else { continue }
@@ -141,6 +158,24 @@ enum MapPreparation {
                            statistics: PreparedMap.Statistics(sourceVertices: dataset.vertexCount,
                                                               preparedVertices: preparedVertices,
                                                               visibleFeatures: visibleIDs.count))
+    }
+
+    /// Both acquisition and preparation use the same aligned polygon branches.
+    private static func project(_ polygon: MapPolygon, camera: MapCamera, viewport: MapViewport,
+                                cancellation: Cancellation) throws -> [[PreparedMap.Point]] {
+        let outer = try project(polygon.rings[0].coordinates, camera: camera, viewport: viewport,
+                                cancellation: cancellation)
+        let wrapWidth = 360 * Double(viewport.columns) / camera.longitudeSpan
+        // Unwrap the whole hole before choosing its world copy. Bounds midpoints
+        // are independent of vertex density and ring start point.
+        let exteriorMidpoint = try horizontalMidpoint(outer, cancellation: cancellation)
+        return try [outer] + polygon.rings.dropFirst().map {
+            try cancellation.check()
+            let hole = try project($0.coordinates, camera: camera, viewport: viewport, cancellation: cancellation)
+            let holeMidpoint = try horizontalMidpoint(hole, cancellation: cancellation)
+            let worldShift = ((exteriorMidpoint - holeMidpoint) / wrapWidth).rounded() * wrapWidth
+            return try shifted(hole, by: worldShift, cancellation: cancellation)
+        }
     }
 
     private static func project(_ coordinates: [MapCoordinate], camera: MapCamera,

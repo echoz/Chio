@@ -91,6 +91,24 @@ struct MapPreparationCancellationTests {
         #expect(dataset == captured)
     }
 
+    @Test("Admission topology proof propagates cancellation with consumed work retained")
+    func cancelledAdmissionProof() throws {
+        let rings = [circle(samples: 512)]
+        let captured = rings
+        // Entry and ring-start checks precede work; the third observation occurs
+        // inside the pairwise edge loop after its first batch of operations.
+        let probe = Probe(stopAt: 3)
+        var budget = MapPreparation.admissionOperationLimit
+        #expect(throws: CancellationError.self) {
+            try MapShapeSimplification.provesTopology(rings, operationBudget: &budget,
+                                                       isCancelled: { probe.observe() })
+        }
+        #expect(probe.count == 3)
+        #expect(budget >= 0)
+        #expect(budget < MapPreparation.admissionOperationLimit)
+        #expect(rings == captured)
+    }
+
     private func circle(samples: Int) -> [PreparedMap.Point] {
         let points = (0..<samples).map { index in
             let angle = Double(index) / Double(samples) * 2 * .pi
