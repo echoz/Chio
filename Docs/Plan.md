@@ -43,9 +43,10 @@ active plan with completed implementation history.
 
 The demonstrated native shutdown issue currently takes priority over the next map
 acquisition slice. [SwiftTUI PR #45](https://github.com/SwiftTUI/swift-tui/pull/45)
-proposes a focused cooperative-exit correction. Chio has not adopted it;
-[native integration](Decisions/NativeIntegration.md#cooperative-shutdown-follow-up)
-owns the scope and remaining startup/cancellation and performance follow-ups.
+was closed without merging; the current direction is an internal workaround using
+the existing public SwiftTUI APIs, with no dependency patch or pin change.
+[Native integration](Decisions/NativeIntegration.md#cooperative-shutdown-follow-up)
+owns the constraints and remaining startup/cancellation and performance follow-ups.
 
 ## Approved map expansion
 

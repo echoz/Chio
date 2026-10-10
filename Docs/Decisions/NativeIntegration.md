@@ -23,19 +23,32 @@ renderer, focus system or hidden dependency patch.
 | Choice composition | Changing choice fields inside `GeometryReader` triggered a native debug lifecycle-publication assertion. The full-window example uses `terminalSize`; arbitrary nesting remains unproved. |
 | Collection measurement | Native ideal-size probes can realize all rows before a bounded viewport commits and emit deferred `collection.unboundedRealization` warnings. Small fixtures do not prove virtualization or large-dataset performance; diagnostics are retained. |
 | Early input | Search, palette and form handoffs cover documented type-ahead/batched paths. Arbitrary multi-control input before presentation settles needs native support, not an application-built editor or focus graph. |
-| Cooperative shutdown | Continuous state writes can prolong the final native render drain after quit or EOF. The [upstream proposal](https://github.com/SwiftTUI/swift-tui/pull/45) limits that drain to final-input presentation and required synchronous UI follow-ups. It is not adopted by Chio. |
+| Cooperative shutdown | Continuous state writes can prolong the final native render drain after quit or EOF. The [upstream proposal](https://github.com/SwiftTUI/swift-tui/pull/45) was closed without merging. An internal workaround using public APIs is under investigation; Chio's dependency is unchanged. |
 | Portability and accessibility | CI and pseudo-terminals cover specific workflows. Other distributions, architectures, assistive technologies and live SSH devices require separate evidence. Static Linux remains [blocked](Dependencies.md#static-linux-blocker). |
 
 ## Cooperative shutdown follow-up
 
-The upstream proposal preserves completed final-input presentation, cancelled-frame
-retries, focus and lifecycle callbacks, terminal cleanup, the existing acquisition
-cap and the stricter signal limit. Normal render drains retain their current policy.
-The regression and process fixtures use synthetic SwiftTUI-only content.
+The upstream proposal was closed on 2026-10-10 at the user's request. Retained
+synthetic regression and process evidence establishes the native drain issue;
+the patch was not merged or adopted. Current work investigates an internal
+workaround through supported public APIs, without modifying SwiftTUI.
 
-The proposal does not change Chio's dependency pin or establish consumer adoption.
-After upstream review, an explicit dependency update still needs Chio integration
-checks and the consuming application's own qualification. A finite acquisition cap
-does not guarantee a deadline for an arbitrarily expensive frame or callback.
+At the pinned revision, `onTerminationRequest` runs after the final render drain
+for exit keys and batched EOF. Cleanup in that callback alone cannot prevent the
+delay. Any workaround must preserve completed final-input presentation, focus and
+lifecycle callbacks, termination cancellation, and terminal cleanup. Applications
+own their background producers; Chio cannot silently stop arbitrary external work.
+A finite acquisition cap does not guarantee a deadline for an arbitrarily
+expensive frame or callback.
+
+The supported candidate is application-owned quiescence before an accepted quit:
+prevent subsequent background publication, cancel owned producers, then leave
+native final-input rendering and cleanup intact. Cancellation alone does not
+exclude a queued publication. Preserve focused-control handling and termination
+vetoes; observing an exit chord is not proof that the session will end. An
+application owning `RunLoop` can also wrap its public input reader to quiesce
+before forwarding EOF. The default scene launcher has no public pre-EOF hook.
+This is a proposed workaround, not an implemented Chio API or verified process fix.
+
 Separate startup and task-cancellation delays reproduced on the upstream baseline
 and remain unresolved; incremental-rendering performance needs separate measurement.
