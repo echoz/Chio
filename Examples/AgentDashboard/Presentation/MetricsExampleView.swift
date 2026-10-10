@@ -9,6 +9,7 @@ struct MetricsExampleView {
     @State private var themeChoice: ExampleTheme
     @State private var history: History = .populated
     @State private var sampleIndex = 0
+    @State private var gaugeStyle: MeasurementGauge.Style
 
     private static let processorFixture: [Double] = [
         22, 28, 24, 36, 42, 34, 48, 57, 45, 38, 52, 67,
@@ -19,8 +20,9 @@ struct MetricsExampleView {
         61, 63, 64, 65, 65, 67, 68, 69, 68, 70, 71, 71,
     ]
 
-    init(theme: ExampleTheme = .btop) {
+    init(theme: ExampleTheme = .btop, gaugeStyle: MeasurementGauge.Style = .bar) {
         _themeChoice = State(wrappedValue: theme)
+        _gaugeStyle = State(wrappedValue: gaugeStyle)
     }
 
     private enum History: String {
@@ -55,6 +57,19 @@ struct MetricsExampleView {
         }
     }
     private var meterWidth: Int { max(1, panelWidth - 4) }
+    private var gaugeLabel: String {
+        switch gaugeStyle {
+        case .bar: "Bars"
+        case .dial: isCompact ? "Dials (compact bars)" : "Dials"
+        }
+    }
+
+    private func toggleGauge() {
+        switch gaugeStyle {
+        case .bar: gaugeStyle = .dial
+        case .dial: gaugeStyle = .bar
+        }
+    }
 
     private var processorSamples: [Double?] { samples(Self.processorFixture) }
     private var memorySamples: [Double?] { samples(Self.memoryFixture) }
@@ -84,6 +99,10 @@ struct MetricsExampleView {
         let current = samples.last.flatMap { $0 } ?? 0
         return GroupBox(title) {
             VStack(alignment: .leading, spacing: 0) {
+                if !isCompact {
+                    InstrumentReadout("\(Int(current))")
+                        .accessibilityHidden(true)
+                }
                 HStack(spacing: 1) {
                     Text(label).foregroundStyle(theme.colors.secondaryText)
                     Spacer(minLength: 1)
@@ -91,9 +110,9 @@ struct MetricsExampleView {
                         .foregroundStyle(theme.colors.accent)
                         .accessibilityLabel("\(label) utilization: \(Int(current)) percent")
                 }
-                ProgressView(value: current / 100, barWidth: meterWidth) {
-                    EmptyView()
-                } currentValueLabel: { EmptyView() }
+                MeasurementGauge(position: current / 100, style: isCompact ? .bar : gaugeStyle)
+                    .frame(width: meterWidth)
+                    .accessibilityLabel("\(label) utilization: \(Int(current)) percent, scale 0 to 100 percent")
                 Sparkline(history.displaying(samples), scale: .fixed(0...100))
                     .frame(height: isWide ? 4 : 2)
                     .accessibilityLabel(historySummary(title, samples: samples))
@@ -115,6 +134,7 @@ struct MetricsExampleView {
         KeyHints {
             KeyHint("n", "next")
             KeyHint("g", "history")
+            KeyHint("v", "gauge")
             KeyHint("^T", "theme")
             KeyHint("^Q", "quit")
         }
@@ -132,7 +152,7 @@ extension MetricsExampleView: View {
                 Text("/ metrics · simulated").foregroundStyle(theme.colors.secondaryText)
             }
             if !isCompact {
-                Text("A quiet view of a busy machine. Local samples, advanced by you.")
+                Text("Local samples, advanced by you. \(gaugeLabel) · v changes the gauge.")
                     .foregroundStyle(theme.colors.mutedText)
                 Spacer().frame(height: 1)
             }
@@ -143,7 +163,6 @@ extension MetricsExampleView: View {
             .groupBoxStyle(ChioGroupBoxStyle(theme: theme.replacing(
                 spacing: theme.spacing.replacing(verticalInset: 0, sectionGap: 0)
             ), titlePlacement: .border))
-            .progressViewStyle(ChioProgressViewStyle(theme: theme, treatment: .measurement))
             if !isCompact { Spacer().frame(height: 1) }
             HStack(spacing: 1) {
                 Button("Next sample", action: nextSample)
@@ -173,6 +192,7 @@ extension MetricsExampleView: View {
                 switch press.key {
                 case .character("n"): nextSample()
                 case .character("g"): history = history.next
+                case .character("v"): toggleGauge()
                 default: return .ignored
                 }
             } else { return .ignored }

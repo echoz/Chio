@@ -106,7 +106,38 @@ let theme = base.replacing(
 
 ## Compact metrics and history
 
-Combine native groups and progress views with a passive history graph:
+Combine native groups and progress views with a passive history graph. For a
+standalone measurement, supply a normalized position and keep units in an authored
+label:
+
+```swift
+VStack(alignment: .leading) {
+    InstrumentReadout("64") // Segmented numeric lettering by default.
+    Text("CPU · 64%")
+    MeasurementGauge(position: 0.64, style: .dial)
+        .accessibilityLabel("CPU utilization: 64 percent, scale 0 to 100 percent")
+}
+.chioTheme(.btop)
+```
+
+`MeasurementGauge` defaults to `.bar`; `.dial` draws a semicircular needle.
+Supply a finite position in `0...1`, or `nil` for a missing reading. Normalize
+measurements and decide how to handle out-of-range data in your application before
+construction. The bar uses one row and the dial up to five; native allocation
+controls their size, with a preferred width of twenty and a 512-column drawing
+limit. Both remain accented at one. These passive views have no sampling or input
+behavior; replace the normalized accessibility summary with your scale and units.
+
+`InstrumentReadout` accepts an already formatted string. Use `style: .plain` for
+ordinary text. Segmented lettering uses three rows and supports digits, decimal
+points, colons and signs, up to 32 characters. Unsupported, empty or longer strings,
+and allocations too small for the complete lettering, use native text. Its
+accessibility label is the original string. Keep units in surrounding labels and
+supply a more descriptive accessibility label when needed.
+Apply a replacement label directly to the readout before wrapping it in a theme
+or container; labeling an outer container follows SwiftTUI's aggregate semantics.
+
+A native progress view remains useful when its progress-bar semantics fit:
 
 ```swift
 let theme = ChioTheme.btop
@@ -612,13 +643,16 @@ Present durations from your application's state or a native timeline:
 ```swift
 DurationText(elapsed: .seconds(83))             // 1:23
 DurationText(remaining: .milliseconds(12_250))  // 0:13
+DurationText(elapsed: .seconds(83), style: .segmented)
 ```
 
 Apply `.chioTheme(...)` around the composition. Elapsed fractions round down;
 positive remaining fractions round up. Formats are `m:ss` and `h:mm:ss`, with
 hours continuing past 24. Inputs range from zero through
 `Duration.seconds(Int64.max)`. Both labels use accent color and readable spoken
-accessibility labels.
+accessibility labels. Plain text is the default; `style: .segmented` shares
+`InstrumentReadout`'s three-row lettering and native text fallback for small
+allocations, while preserving the same rounding and spoken labels.
 
 The application owns measurement, countdown limits, pause/resume and expiry
 behavior; SwiftTUI's `TimelineView` can drive presentation updates. The
@@ -626,5 +660,5 @@ behavior; SwiftTUI's `TimelineView` can drive presentation updates. The
 implementation. Its internal
 [`ElapsedTime`](../Examples/AgentDashboard/Domain/ElapsedTime.swift) helper is no
 longer exported by Chio. Code using that experimental API must move its timing
-state into the application; `DurationText` is unchanged. The existing demo and
-recording retain their behavior.
+state into the application. Existing `DurationText` calls retain plain text and
+their formatting behavior.

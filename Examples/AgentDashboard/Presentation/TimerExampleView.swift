@@ -61,6 +61,8 @@ struct TimerExampleView {
                         .foregroundStyle(stopwatch.isRunning ? theme.colors.success : theme.colors.mutedText)
                 }
                 if !isCompact {
+                    DurationText(elapsed: stopwatch.elapsed(at: instant), style: .segmented)
+                        .accessibilityHidden(true)
                     Text("Keep time across pauses.").foregroundStyle(theme.colors.secondaryText)
                 }
                 HStack(spacing: 1) {
@@ -91,6 +93,8 @@ struct TimerExampleView {
                         .foregroundStyle(isComplete ? theme.colors.success : theme.colors.mutedText)
                 }
                 if !isCompact {
+                    DurationText(remaining: remaining, style: .segmented)
+                        .accessibilityHidden(true)
                     Text(isComplete ? "Time is up. Ready for another round." : "A short focus interval. No alarm or background job.")
                         .foregroundStyle(theme.colors.secondaryText)
                 }

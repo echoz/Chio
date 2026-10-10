@@ -486,7 +486,9 @@ buttons; Return or Space activates them. `s` starts, pauses or resumes the stopw
 values. Each panel also has its own Reset button. At expiry the countdown stops
 at zero with a Complete status; reset it for another round. Ctrl-T changes theme
 and Ctrl-Q quits. These clocks run only in this local process, without alarms or
-background jobs. Both panels and their controls fit 36 × 18.
+background jobs. Wide layouts add segmented duration figures alongside the plain
+labels; compact layouts keep the plain values and native controls. Both panels
+and their controls fit 36 × 18.
 
 Use `--timers --snapshot` for a deterministic initial frame.
 See [duration labels](Usage.md#duration-labels).
@@ -497,10 +499,13 @@ See [duration labels](Usage.md#duration-labels).
 COLORTERM=truecolor swift run -c release chio-dashboard --metrics
 ```
 
-Compact border titles, measurement tracks and single-series sparklines share the
+Compact border titles, `MeasurementGauge` bars or dials, segmented numeric
+readouts and single-series sparklines share the
 btop-inspired palette. Press `n` or activate **Next sample** to advance the local
 24-sample history. Press `g` or activate **History** to cycle through full, missing
-and empty readings. Tab/Shift-Tab moves between native buttons; Return/Space
+and empty readings. Press `v` to switch between bars and dials. Compact layouts
+use bars and omit the large readouts, retaining the chosen style for expansion.
+Tab/Shift-Tab moves between native buttons; Return/Space
 activates them. Ctrl-T cycles btop, default and light themes; Ctrl-Q quits.
 
 The application owns the sample sequence and history updates. No clock runs and
@@ -572,7 +577,7 @@ Cancel restores the latest saved snapshot. The example starts no background jobs
 
 ### Timers and stopwatches
 
-![A themed time studio with independent stopwatch and countdown panels and native pause and reset controls](Media/timers.png)
+![A themed time studio with plain and segmented duration labels, independent stopwatch and countdown panels and native pause and reset controls](Media/timers.png)
 
 Pause each clock independently, resume its retained interval, and follow countdown
 expiry through theme and terminal-size changes.
@@ -591,11 +596,11 @@ activation does; this demo opens no browser and makes no network requests.
 
 ### Compact metrics
 
-![Compact instrumentation panels with border titles, utilization tracks, single-series history graphs and native sample controls](Media/metrics.png)
+![Instrumentation panels with segmented numeric readouts, measurement gauges, single-series history graphs and native sample controls](Media/metrics.png)
 
-Advance local readings, show missing or empty history, and compare the same compact
-presentation across btop, default and light palettes. Measurement tracks preserve
-their meaning at 100%; the application supplies data and updates.
+Advance local readings, switch bars to dials, show missing or empty history, and
+compare btop, default and light palettes. Gauges remain accented at 100%; the
+application supplies data, normalization and updates.
 [Watch](https://echoz.github.io/Chio/#metrics) · [Download recording](Media/metrics.cast).
 
 ### Review inbox

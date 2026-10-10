@@ -222,6 +222,7 @@ def run(binary, choices=False, text_entry=False, feedback=False, files=False, ke
             send(b"\t\r", "History: gaps")
             send(b"g", "History: empty")
             send(b"n", "28%")
+            send(b"v", "Dials")
             send(b"\x14", "History: empty")
             send(b"\x14", "History: empty")
             send(b"\x14", "History: empty")
@@ -232,6 +233,11 @@ def run(binary, choices=False, text_entry=False, feedback=False, files=False, ke
             until("empty")
             send(b"\r", "full")  # Native history focus survived theme and resize.
             send(b"nn\t\r", "42%")
+            WIDTH, HEIGHT = 100, 30
+            fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", HEIGHT, WIDTH, 0, 0))
+            process.send_signal(signal.SIGWINCH)
+            until("Dials")
+            until("42%")
         elif timers:
             until("0:20")
             send(b"\r", "Running")

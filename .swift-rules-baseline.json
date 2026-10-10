@@ -607,33 +607,6 @@
       "count": 1,
       "identity": {
         "anchor": ". init ( width : 100 , height : 30 )",
-        "path": "Tests/ChioDashboardTests/Presentation/MetricsExampleTests.swift",
-        "ruleID": "explicit_constructor"
-      },
-      "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
-    },
-    {
-      "count": 1,
-      "identity": {
-        "anchor": ". init ( width : 36 , height : 18 )",
-        "path": "Tests/ChioDashboardTests/Presentation/MetricsExampleTests.swift",
-        "ruleID": "explicit_constructor"
-      },
-      "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
-    },
-    {
-      "count": 1,
-      "identity": {
-        "anchor": ". init ( width : size . width , height : size . height )",
-        "path": "Tests/ChioDashboardTests/Presentation/MetricsExampleTests.swift",
-        "ruleID": "explicit_constructor"
-      },
-      "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
-    },
-    {
-      "count": 1,
-      "identity": {
-        "anchor": ". init ( width : 100 , height : 30 )",
         "path": "Tests/ChioDashboardTests/Presentation/PaginationExampleTests.swift",
         "ruleID": "explicit_constructor"
       },
@@ -2417,69 +2390,6 @@
       "identity": {
         "anchor": ". init ( width : 60 , height : 16 )",
         "path": "Tests/ChioTests/Forms/Presentation/ChioTextEntryTests.swift",
-        "ruleID": "explicit_constructor"
-      },
-      "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
-    },
-    {
-      "count": 1,
-      "identity": {
-        "anchor": ". init ( secondsComponent : 0 , attosecondsComponent : - 1 )",
-        "path": "Tests/ChioTests/Instrumentation/Presentation/DurationTextTests.swift",
-        "ruleID": "explicit_constructor"
-      },
-      "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
-    },
-    {
-      "count": 2,
-      "identity": {
-        "anchor": ". init ( secondsComponent : 0 , attosecondsComponent : 1 )",
-        "path": "Tests/ChioTests/Instrumentation/Presentation/DurationTextTests.swift",
-        "ruleID": "explicit_constructor"
-      },
-      "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
-    },
-    {
-      "count": 1,
-      "identity": {
-        "anchor": ". init ( secondsComponent : 1 , attosecondsComponent : 1 )",
-        "path": "Tests/ChioTests/Instrumentation/Presentation/DurationTextTests.swift",
-        "ruleID": "explicit_constructor"
-      },
-      "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
-    },
-    {
-      "count": 1,
-      "identity": {
-        "anchor": ". init ( secondsComponent : Int64 . max , attosecondsComponent : - 1 )",
-        "path": "Tests/ChioTests/Instrumentation/Presentation/DurationTextTests.swift",
-        "ruleID": "explicit_constructor"
-      },
-      "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
-    },
-    {
-      "count": 1,
-      "identity": {
-        "anchor": ". init ( secondsComponent : Int64 . max , attosecondsComponent : 1 )",
-        "path": "Tests/ChioTests/Instrumentation/Presentation/DurationTextTests.swift",
-        "ruleID": "explicit_constructor"
-      },
-      "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
-    },
-    {
-      "count": 2,
-      "identity": {
-        "anchor": ". init ( width : 32 , height : 1 )",
-        "path": "Tests/ChioTests/Instrumentation/Presentation/DurationTextTests.swift",
-        "ruleID": "explicit_constructor"
-      },
-      "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."
-    },
-    {
-      "count": 4,
-      "identity": {
-        "anchor": ". init ( width : nil , height : nil )",
-        "path": "Tests/ChioTests/Instrumentation/Presentation/DurationTextTests.swift",
         "ruleID": "explicit_constructor"
       },
       "reason": "Existing test-fixture constructor shorthand; migrate with the owning suite and prune this entry (Docs/Verification.md#shared-engineering-rules)."

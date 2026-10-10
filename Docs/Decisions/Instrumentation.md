@@ -1,6 +1,8 @@
 # Compact instrumentation and duration display
 
-**Status:** Accepted; shipped in 0.1.0. These contracts remain current.
+**Status:** Accepted presentation contracts. Compact styles, `Sparkline` and plain
+`DurationText` shipped in 0.1.0; measurement gauges and segmented readouts are
+implemented in the current candidate, pending verification and release.
 
 Present supplied measurements and durations; applications retain sampling, timing and interpretation.
 
@@ -40,11 +42,37 @@ a count/latest/extrema summary that applications can replace to include units.
 Chio owns no sampler, clock, monitoring state or alert policy. Native overlapping
 subcell writes share one cell's paint; independently colored overlaps are unclaimed.
 
+## Measurement gauges and numeric readouts
+
+`MeasurementGauge(position:style:)` presents an application-normalized position.
+A known position must be finite and in `0...1`; construction traps otherwise.
+`nil` means a missing reading, distinct from zero. Applications own scale
+normalization, units, thresholds, out-of-range policy and surrounding labels.
+The view owns no sampler, clock or monitoring state.
+
+`.bar` is the default and uses one row; `.dial` uses up to five rows. Both use
+native Canvas, prefer twenty columns and bound drawing to 512 columns. Missing
+bars show dots and missing dials retain their arc without a needle. The current
+theme's accent applies at every position, including one. Native image semantics
+supply a normalized-position or missing-reading summary; applications should
+replace it with their scale and units. The gauge is passive and adds no focus stop.
+
+`InstrumentReadout(_:style:)` presents an application-formatted string in theme
+accent, with the original string as its accessibility label. `.segmented` is the
+default and paints three rows; `.plain` uses native text. Segmented lettering
+supports digits, decimal points, colons and signs (`+`, `-`), at most 32 characters.
+Empty, unsupported or longer values use native text. Native `ViewThatFits` also
+chooses text when the complete lettering does not fit the allocation. Formatting,
+units and interpretation remain application-owned; this is a passive readout.
+
 ## Duration presentation and example-owned timekeeping
 
 `DurationText(elapsed:)` floors whole seconds; `DurationText(remaining:)` rounds
 positive fractions up, showing zero only at expiry. Both use `m:ss` below an hour
 and `h:mm:ss` thereafter without a 24-hour wrap, accent paint and spoken labels.
+Plain text remains the default. `style: .segmented` delegates to
+`InstrumentReadout` while retaining duration rounding and spoken labels; its
+ordinary-text fallback also applies.
 Inputs are nonnegative and at most `Duration.seconds(Int64.max)`, checked before
 component extraction. Integer formatting preserves attosecond boundaries.
 
@@ -66,6 +94,8 @@ records the reference audit and extraction rationale.
 
 ## Implementation and verification
 
+- [MeasurementGauge.swift](../../Sources/Chio/Instrumentation/Presentation/MeasurementGauge.swift)
+- [InstrumentReadout.swift](../../Sources/Chio/Instrumentation/Presentation/InstrumentReadout.swift)
 - [Sparkline.swift](../../Sources/Chio/Instrumentation/Presentation/Sparkline.swift)
 - [SparklineTests.swift](../../Tests/ChioTests/Instrumentation/Presentation/SparklineTests.swift)
 - [DurationTextTests.swift](../../Tests/ChioTests/Instrumentation/Presentation/DurationTextTests.swift)
