@@ -54,7 +54,7 @@ The opt-in persistent cache preserves the raw
 tile pipeline; [its storage contract](Decisions/OnlineMaps.md#persistent-raw-tile-cache)
 defines identity, freshness, bounds and recovery. Before delivery, its
 [verification gates](Verification.md) require independent review, unit and real
-process checks on macOS/Linux, and the updated showcase. Downloadable offline
+process checks on macOS/Linux, and the updated showcase. Programmatic offline
 packs are the next design slice; their retention policy differs from this cache.
 The [provider recommendation](Decisions/OnlineMaps.md#explicit-effects-and-source-configuration)
 uses the existing explicit OpenFreeMap discovery API; it adds no provider registry
@@ -63,45 +63,62 @@ or implicit network behavior.
 | Order | Capability | First useful outcome and acceptance evidence |
 | --- | --- | --- |
 | 1 | Persistent tile cache | Reuse acquired raw tiles across launches through the existing decode/preparation pipeline. Prove source isolation, bounded disk use, freshness rules, eviction, corrupt-entry handling and interrupted-write recovery. |
-| 2 | Downloadable offline tile packs | Explicitly select an area and zoom range, inspect the planned tile/byte limits, download with progress/cancellation, then reopen the pack without network access. Preserve coverage, attribution and checksums; incomplete downloads must not appear complete. |
+| 2 | Programmatic offline tile packs | Prepare or supply a checked pack in application code, then use its durable read-only tiles through the shared loader and memory cache without network access. Preserve coverage, attribution, identity and checksums. Follow with bounded programmatic acquisition from a download-permitted source; incomplete preparation must not appear complete. |
 | 3 | Geocoding | Forward place/address search and reverse coordinate lookup through an explicit provider adapter. Return bounded results that applications can turn into markers and camera changes; prove no-result/failure distinctions, cancellation and stale-result rejection. |
 | 4 | Routing | Explicit route requests between supplied locations through a provider adapter, returning checked geometry and available distance/duration metadata. Compose with existing route overlays; prove no-route/failure distinctions, cancellation, stale-result rejection and route work limits. |
 
 ### Next slice: offline pack acquisition
 
-**Status:** Design direction; archive support and public pack APIs are not implemented.
+**Status:** Programmatic, read-only backing-store direction accepted on 2026-10-10;
+public pack APIs and archive support are not implemented.
 
-First prove a suitable download source. OpenFreeMap advertises
-[downloadable planet archives](https://github.com/hyperknot/openfreemap#full-planet-downloads),
-including PMTiles. This is a candidate for region extraction, separate from the
-interactive XYZ endpoint. [PMTiles](https://docs.protomaps.com/pmtiles/) permits
-indexed reads through HTTP ranges, but Chio's transport currently accepts whole
-HTTP 200 tile responses. Before choosing that format, verify bounded range reads,
-archive identity across requests, compression, tile-schema compatibility and
-usable extraction latency. Archive publication alone proves none of those runtime
-contracts. Do not require a full planet download or an external CLI at runtime.
+Applications prepare or supply packs through code and explicitly open them for
+use. A pack may ship with an application or arrive through an application-owned
+distribution workflow. Chio supplies checked storage and tile access; a download
+manager screen is not part of the library contract. This refines the earlier
+download-first sequence: first prove local pack preparation and use with supplied
+tile bytes, then add acquisition from a suitable source.
 
-The smallest useful pack workflow should:
+- Prepare checked coverage and a zoom interval with bounded tile/byte accounting.
+  Validate identity, attribution, addresses and checksums. Publish only when every
+  required tile and its metadata is present; an incomplete pack cannot open as
+  complete. Keep preparation separate from the read-only reader's lifetime.
+- Use the pack as durable backing for the shared raw-tile memory cache. A miss in
+  memory reads the selected pack; memory eviction never removes pack data.
+  Do not copy an entire pack into the writable disk cache or invent infinite HTTP
+  expiry. Pack bytes remain reusable for that immutable pack identity without
+  HTTP freshness checks; online entries retain the current freshness rules.
+- Opening and reading must work on read-only storage without creating lockfiles,
+  updating access metadata or repairing files. Validate bounded metadata and tile
+  integrity; distinguish unavailable coverage from corruption, closed resources
+  and I/O failure. Missing or corrupt tiles never become empty successful tiles.
+  A missing tile advertised by the pack is a failure, not an ordinary coverage miss.
+- Resolve the tile backing store when composing the loader. Reuse memory bounds,
+  viewport planning, decoding, geometry admission and snapshot publication.
+  Pack identity scopes memory reuse; replacing a pack must not reuse another
+  pack's bytes merely because its source URL and tile coordinates match. Fix one
+  pack per loader lifetime; closing its reader disables even memory hits.
+- Pack-only lookup performs no discovery or HTTP fallback. Existing online lookup
+  retains memory, optional writable disk cache and network acquisition. Combining
+  those backing stores is a separate, explicitly selected policy, not an automatic
+  hybrid. Pack coverage and available zooms constrain viewport requests.
 
-- Plan a checked area and zoom interval before effects. Count required tiles with
-  checked arithmetic before enumeration; show exact tile count and a byte ceiling,
-  distinguishing any estimate from actual downloaded bytes.
-- Own bounded acquisition, progress, cancellation and staging in one downloader.
-  Publish only after every planned tile and required metadata is present and checked.
-  A partial download must never open as a completed pack.
-- Retain source identity, attribution, coverage, addresses and checksums without
-  cache expiry or eviction. Validate manifest completeness and tile integrity on
-  use; corruption must remain visible rather than trigger online repair.
-- Resolve online or local tile access when composing the loader. Reuse viewport
-  planning, decoding, geometry admission and snapshot publication. Pack viewing
-  must work without discovery or network capability, and explicitly report areas
-  or zooms it cannot supply.
+Choose the first persisted format and narrow public API around this local path;
+a live archive probe is not a prerequisite for it. Keep the viewport's 16-tile
+bound separate from pack limits. Verify reopening, read-only filesystem access,
+memory eviction and rereading, identity isolation, invalid/incomplete packs and
+zero network use. Preserve the existing macOS/Linux, independent-review and
+showcase gates for the eventual implementation.
 
-Choose the persisted format and public API after the source probe. Keep the
-viewport's existing 16-tile bound separate from pack limits. The first delivery
-needs complete-pack reopening; resumable incomplete downloads remain a separate
-decision. Preserve the existing macOS/Linux, independent-review and showcase gates
-for the eventual implementation.
+Programmatic downloads remain follow-up scope: return a checked plan, exact tile
+count and byte ceiling before effects, with bounded progress/cancellation and
+publication. Applications decide how to present these values. OpenFreeMap's
+[published archives](https://github.com/hyperknot/openfreemap#full-planet-downloads),
+including [PMTiles](https://docs.protomaps.com/pmtiles/), remain candidates; verify
+range responses, archive identity, compression, schema and extraction latency
+before adopting them. The current HTTP transport handles whole HTTP 200 tile
+responses. Do not require a full planet download or an external CLI at runtime.
+Resumable incomplete downloads remain a separate decision.
 
 ### Boundaries and open choices
 

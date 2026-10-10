@@ -37,6 +37,12 @@ defined in [online acquisition](Decisions/OnlineMaps.md#persistent-raw-tile-cach
 Its private `ChioFileSystem` target bridges native locking and
 directory enumeration without adding another public product.
 
+Planned offline packs are programmatically prepared or supplied immutable tile
+data, serving the shared loader and bounded memory cache through a read-only
+backing store. They retain their contents independently of the writable online
+cache's expiry and eviction. Applications own distribution and any management UI;
+[Plan](Plan.md#next-slice-offline-pack-acquisition) owns the delivery sequence.
+
 ## Value contracts
 
 Owned domain values and view configuration have `let` stored properties and pure
