@@ -39,6 +39,14 @@ parity remain outside it. Existing polygon cut-edge limitations remain explicit.
 Keep revision-specific results in release records rather than expanding this
 active plan with completed implementation history.
 
+## Native runtime follow-up
+
+The demonstrated native shutdown issue currently takes priority over the next map
+acquisition slice. [SwiftTUI PR #45](https://github.com/SwiftTUI/swift-tui/pull/45)
+proposes a focused cooperative-exit correction. Chio has not adopted it;
+[native integration](Decisions/NativeIntegration.md#cooperative-shutdown-follow-up)
+owns the scope and remaining startup/cancellation and performance follow-ups.
+
 ## Approved map expansion
 
 **Status:** Scope approved on 2026-10-09. Persistent caching is implemented;
